@@ -80,6 +80,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           [this]() { return debugEnabled(); },
           [this](fcitx::InputContext &inputContext, const char *reason) {
             protectBackendVerdict(inputContext, reason);
+          },
+          [this](fcitx::InputContext &inputContext,
+                 const std::string &shownText) {
+            return shouldCaptureBackspaceRecovery(inputContext, shownText);
           }),
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
@@ -152,17 +156,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&forwardBackspaceBackend_};
   }
 
-  if (!backendVerdictContextKnown_ ||
-      backendVerdictContextId_ != inputContext.uuid()) {
-    backendVerdictContextKnown_ = true;
-    backendVerdictContextId_ = inputContext.uuid();
-    backendVerdict_.reset();
-    backendVerdictProtectedUntil_ = 0;
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: backend verdict cache switched context"
-                   << " program=" << inputContext.program();
-    }
-  }
+  ensureBackendVerdictContext(inputContext, true);
 
   const auto capabilities = inputContext.capabilityFlags();
   const auto decision = reliabilityChecker_.evaluate(
@@ -211,6 +205,65 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   return {&forwardBackspaceBackend_};
+}
+
+void ArecaEngine::ensureBackendVerdictContext(
+    fcitx::InputContext &inputContext, bool logSwitch) {
+  if (backendVerdictContextKnown_ &&
+      backendVerdictContextId_ == inputContext.uuid()) {
+    return;
+  }
+
+  backendVerdictContextKnown_ = true;
+  backendVerdictContextId_ = inputContext.uuid();
+  backendVerdict_.reset();
+  backendVerdictProtectedUntil_ = 0;
+  if (logSwitch && debugEnabled()) {
+    FCITX_INFO() << "areca: backend verdict cache switched context"
+                 << " program=" << inputContext.program();
+  }
+}
+
+bool ArecaEngine::wouldUseUinputFallback(
+    fcitx::InputContext &inputContext, const ReliabilityDecision &decision) {
+  if (decision.browserAutocomplete || decision.useSurrounding) {
+    return false;
+  }
+
+  const char *frontend = inputContext.frontend();
+  const std::string &program = inputContext.program();
+  const bool dbusTerminalOrUnknown =
+      frontend && std::string_view(frontend) == "dbus" &&
+      (program.empty() || isTerminalProgram(program));
+  const bool forceUinput = advancedConfig_.forceUinput.value();
+  return (dbusTerminalOrUnknown || forceUinput) &&
+         uinputBackspaceBackend_.isAvailable();
+}
+
+bool ArecaEngine::shouldCaptureBackspaceRecovery(
+    fcitx::InputContext &inputContext, const std::string &shownText) {
+  if (!config_.backspaceRecovery.value()) {
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: Backspace recovery disabled by config";
+    }
+    return false;
+  }
+
+  ensureBackendVerdictContext(inputContext, false);
+
+  const auto decision = reliabilityChecker_.evaluate(inputContext, shownText,
+                                                     backendVerdict_,
+                                                     debugEnabled());
+  const char *frontend = inputContext.frontend();
+  const std::string &program = inputContext.program();
+  const bool wouldUseUinput = wouldUseUinputFallback(inputContext, decision);
+
+  if (wouldUseUinput && debugEnabled()) {
+    FCITX_INFO() << "areca: Backspace recovery disabled for uinput backend"
+                 << " program=" << program
+                 << " frontend=" << (frontend ? frontend : "");
+  }
+  return !wouldUseUinput;
 }
 
 InputModeHandler &ArecaEngine::activeHandler() {

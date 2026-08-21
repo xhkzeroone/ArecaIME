@@ -47,12 +47,15 @@ public:
   using BoolProvider = std::function<bool()>;
   using BackendVerdictProtector =
       std::function<void(fcitx::InputContext &, const char *)>;
+  using BackspaceRecoveryGate =
+      std::function<bool(fcitx::InputContext &, const std::string &)>;
 
   RewriteModeHandler(fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
                      InputScheduler &scheduler,
                      BoolProvider autoCapitalizeProvider,
                      BoolProvider debugProvider,
-                     BackendVerdictProtector backendVerdictProtector);
+                     BackendVerdictProtector backendVerdictProtector,
+                     BackspaceRecoveryGate backspaceRecoveryGate);
   ~RewriteModeHandler();
 
   RewriteInputState *stateFor(fcitx::InputContext &inputContext) const;
@@ -63,12 +66,19 @@ public:
   void resetContext(fcitx::InputContext &inputContext) override;
 
 private:
+  bool syncEngineBackspace(RewriteInputState &state);
+  void forwardSyncedBackspace(fcitx::KeyEvent &event,
+                              RewriteInputState &state);
+  bool shouldRecoverBackspace(fcitx::InputContext &inputContext,
+                              RewriteInputState &state) const;
+
   fcitx::EventLoop &eventLoop_;
   StateFactory &stateFactory_;
   InputScheduler &scheduler_;
   BoolProvider autoCapitalizeProvider_;
   BoolProvider debugProvider_;
   BackendVerdictProtector backendVerdictProtector_;
+  BackspaceRecoveryGate backspaceRecoveryGate_;
 };
 
 } // namespace areca

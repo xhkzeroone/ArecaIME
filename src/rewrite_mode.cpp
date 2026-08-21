@@ -78,11 +78,14 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                        BoolProvider autoCapitalizeProvider,
                                        BoolProvider debugProvider,
                                        BackendVerdictProtector
-                                           backendVerdictProtector)
+                                           backendVerdictProtector,
+                                       BackspaceRecoveryGate
+                                           backspaceRecoveryGate)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
-      backendVerdictProtector_(std::move(backendVerdictProtector)) {}
+      backendVerdictProtector_(std::move(backendVerdictProtector)),
+      backspaceRecoveryGate_(std::move(backspaceRecoveryGate)) {}
 
 RewriteModeHandler::~RewriteModeHandler() {}
 
@@ -97,6 +100,31 @@ void RewriteModeHandler::activate(fcitx::InputContext &inputContext) {
 
 void RewriteModeHandler::deactivate(fcitx::InputContext &inputContext) {
   resetContext(inputContext);
+}
+
+bool RewriteModeHandler::syncEngineBackspace(RewriteInputState &state) {
+  try {
+    state.engine->backspace();
+    return true;
+  } catch (const std::exception &error) {
+    FCITX_ERROR() << "areca: rewrite Backspace failed: " << error.what();
+    state.engine->reset();
+    return false;
+  }
+}
+
+void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
+                                                RewriteInputState &state) {
+  syncEngineBackspace(state);
+  event.forward();
+}
+
+bool RewriteModeHandler::shouldRecoverBackspace(
+    fcitx::InputContext &inputContext, RewriteInputState &state) const {
+  if (state.engine->currentText().empty() && scheduler_.queuedKeyCount() == 0) {
+    return false;
+  }
+  return backspaceRecoveryGate_(inputContext, state.engine->currentText());
 }
 
 void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
@@ -168,18 +196,12 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   if (isBackspace) {
     state->sentenceCapitalization.reset();
-    if (!state->engine->currentText().empty() || scheduler_.queuedKeyCount() > 0) {
+    if (shouldRecoverBackspace(*inputContext, *state)) {
       event.filterAndAccept();
       scheduler_.enqueueBackspace(*inputContext);
       return;
     }
-    try {
-      state->engine->backspace();
-    } catch (const std::exception &error) {
-      FCITX_ERROR() << "areca: rewrite Backspace failed: " << error.what();
-      state->engine->reset();
-    }
-    event.forward();
+    forwardSyncedBackspace(event, *state);
     return;
   }
   if (isEnter) {

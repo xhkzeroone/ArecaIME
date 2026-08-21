@@ -123,6 +123,9 @@ FCITX_CONFIGURATION(
     fcitx::OptionWithAnnotation<SpellcheckMode, fcitx::EnumAnnotation>
         spellcheckMode{this, "SpellcheckMode", N_("Chế độ kiểm tra chính tả"),
                        SpellcheckMode::Realtime};
+    fcitx::Option<bool> backspaceRecovery{
+        this, "BackspaceRecovery",
+        N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> modernStyle{
         this, "ModernStyle", N_("Đặt dấu kiểu oà, uý thay cho òa, úy"), true};
     fcitx::Option<bool> autoCapitalizeAfterPunctuation{

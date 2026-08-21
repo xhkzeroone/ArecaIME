@@ -227,6 +227,7 @@ SwitchModeKey=Alt+space
 BambooInputMethod=Telex 2
 OutputCharset=Unicode
 SpellcheckMode="Khôi phục từ ngay trong lúc gõ"
+BackspaceRecovery=True
 ModernStyle=True
 AutoCapitalizeAfterPunctuation=False
 EnableMacro=True
@@ -256,6 +257,7 @@ ForceUinput=False
 | Chính | `BambooInputMethod` | Tên input method được định nghĩa bởi Bamboo, mặc định `Telex 2`. |
 | Chính | `OutputCharset` | Bảng mã do Bamboo cung cấp, mặc định `Unicode`; gồm Unicode dựng sẵn/tổ hợp cùng các bảng mã tương thích cũ như TCVN3, VNI Windows, VIQR… |
 | Chính | `SpellcheckMode` | Chế độ kiểm tra cấu trúc âm tiết của Bamboo; có ba mức: `"Không kiểm tra (Tắt)"` – tắt hoàn toàn; `"Khôi phục từ sau khi gõ xong"` – tại word boundary, tự khôi phục từ tiếng Việt không hợp lệ về chuỗi phím Latin ban đầu; `"Khôi phục từ ngay trong lúc gõ"` – như mode 2 nhưng khôi phục trong khi gõ từng ký tự. Mặc định `"Khôi phục từ ngay trong lúc gõ"`. |
+| Chính | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Tính năng này tự tắt với backend `uinput`; mặc định `True`. |
 | Chính | `ModernStyle` | `True` đặt dấu kiểu `hoà`, `thuý`; `False` dùng kiểu `hòa`, `thúy`. |
 | Chính | `AutoCapitalizeAfterPunctuation` | Tự viết hoa chữ ASCII đầu tiên sau `.`, `!`, `?` và khoảng trắng. Nhiều khoảng trắng vẫn giữ trạng thái chờ; `Enter` không kích hoạt. |
 | Chính | `EnableMacro` | Bật thay thế từ viết tắt tại dấu cách hoặc dấu câu. |
