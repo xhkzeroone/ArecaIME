@@ -168,6 +168,11 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   if (isBackspace) {
     state->sentenceCapitalization.reset();
+    if (!state->engine->currentText().empty() || scheduler_.queuedKeyCount() > 0) {
+      event.filterAndAccept();
+      scheduler_.enqueueBackspace(*inputContext);
+      return;
+    }
     try {
       state->engine->backspace();
     } catch (const std::exception &error) {

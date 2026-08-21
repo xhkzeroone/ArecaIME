@@ -13,6 +13,7 @@ struct QueuedKey {
   uint64_t sequence = 0;
   uint32_t codepoint = 0;
   std::string utf8Text;
+  bool isBackspace = false;
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext;
 };
 

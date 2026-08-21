@@ -35,6 +35,19 @@ void InputScheduler::enqueue(fcitx::InputContext &inputContext,
   scheduleNext();
 }
 
+void InputScheduler::enqueueBackspace(fcitx::InputContext &inputContext) {
+  QueuedKey key;
+  key.sequence = nextSequence_++;
+  key.isBackspace = true;
+  key.inputContext = inputContext.watch();
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: queue push kind=backspace seq=" << key.sequence
+                 << " depth_before=" << queue_.size();
+  }
+  queue_.push(std::move(key));
+  scheduleNext();
+}
+
 bool InputScheduler::shouldRejectReset() const {
   if (processing_ || rewritePending()) {
     return true;
@@ -94,12 +107,16 @@ void InputScheduler::processNext() {
   processing_ = true;
   if (debugProvider_()) {
     FCITX_INFO() << "areca: scheduler process seq=" << key.sequence
-                 << " kind=text"
+                 << " kind=" << (key.isBackspace ? "backspace" : "text")
                  << " depth_after=" << queue_.size();
   }
   try {
-    applyResult(*inputContext, *engine,
-                engine->process(key.codepoint, key.utf8Text), key.utf8Text);
+    if (key.isBackspace) {
+      applyResult(*inputContext, *engine, engine->processBackspace(), "");
+    } else {
+      applyResult(*inputContext, *engine,
+                  engine->process(key.codepoint, key.utf8Text), key.utf8Text);
+    }
   } catch (const std::exception &error) {
     FCITX_ERROR() << "areca: Bamboo processing failed: " << error.what();
     engine->reset();

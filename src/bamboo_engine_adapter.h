@@ -18,6 +18,7 @@ public:
   virtual ~VietnameseEngine() = default;
   virtual BambooResult process(uint32_t codepoint,
                                const std::string &utf8Text) = 0;
+  virtual BambooResult processBackspace() = 0;
   virtual void backspace() = 0;
   virtual void reset() = 0;
   virtual const std::string &currentText() const = 0;
@@ -40,6 +41,7 @@ public:
 
   BambooResult process(uint32_t codepoint,
                        const std::string &utf8Text) override;
+  BambooResult processBackspace() override;
   void backspace() override;
   void reset() override;
   const std::string &currentText() const override { return renderedText_; }

@@ -246,6 +246,19 @@ int main() {
   }
   assert(display == "Viê\u0323t Nam ");
 
+  // Test spellcheck mistake recovery on Backspace:
+  // Typing "nhanhsh" (typo of "nhánh" + extra "h"), calling processBackspace()
+  // restores the valid Vietnamese syllable "nhánh".
+  engine.reset();
+  display.clear();
+  for (char key : std::string("nhanhsh")) {
+    applyToDisplay(display, type(engine, key));
+  }
+  assert(display == "nhanhsh");
+  auto backspaceResult = engine.processBackspace();
+  applyToDisplay(display, backspaceResult);
+  assert(display == "nhánh");
+
   std::cout << "Bamboo adapter tests passed\n";
   return 0;
 }

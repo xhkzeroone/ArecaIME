@@ -179,6 +179,25 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
   return result;
 }
 
+BambooResult BambooEngineAdapter::processBackspace() {
+  BambooResult result;
+  result.currentText = renderedText_;
+  backspace();
+  result.newText = renderedText_;
+
+  const auto oldChars = codepoints(result.currentText);
+  const auto newChars = codepoints(result.newText);
+  size_t prefix = 0;
+  while (prefix + 1 < oldChars.size() && prefix + 1 < newChars.size() &&
+         oldChars[prefix].first == newChars[prefix].first) {
+    ++prefix;
+  }
+
+  result.deleteCount = static_cast<uint32_t>((oldChars.size() - 1) - prefix);
+  result.commitText = result.newText.substr(newChars[prefix].second);
+  return result;
+}
+
 void BambooEngineAdapter::reset() {
   ArecaBambooReset(handle_);
   renderedText_.clear();

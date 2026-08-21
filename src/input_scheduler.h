@@ -42,6 +42,7 @@ public:
 
   void enqueue(fcitx::InputContext &inputContext, uint32_t codepoint,
                std::string utf8Text);
+  void enqueueBackspace(fcitx::InputContext &inputContext);
   void resetContext(fcitx::InputContext &inputContext);
 
   size_t queuedKeyCount() const { return queue_.size(); }

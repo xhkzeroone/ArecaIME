@@ -221,7 +221,18 @@ func ArecaBambooBackspace(id C.uint64_t) *C.char {
 		return nil
 	}
 	engine.RemoveLastChar(true)
-	return C.CString(engine.GetProcessedString(bamboo.VietnameseMode))
+	text := engine.GetProcessedString(bamboo.VietnameseMode)
+	rawText := engine.GetProcessedString(bamboo.EnglishMode)
+	if rawText != "" && text == rawText {
+		tempEngine := bamboo.NewEngine(engine.GetInputMethod(), bamboo.EstdFlags)
+		tempEngine.ProcessString(rawText, bamboo.VietnameseMode)
+		if tempEngine.IsValid(false) {
+			engine.Reset()
+			engine.ProcessString(rawText, bamboo.VietnameseMode)
+			text = engine.GetProcessedString(bamboo.VietnameseMode)
+		}
+	}
+	return C.CString(text)
 }
 
 //export ArecaBambooReset
