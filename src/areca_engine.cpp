@@ -226,7 +226,7 @@ void ArecaEngine::ensureBackendVerdictContext(
 
 bool ArecaEngine::shouldCaptureBackspaceRecovery(
     fcitx::InputContext &inputContext, const std::string &) {
-  if (!config_.backspaceRecovery.value()) {
+  if (!advancedConfig_.backspaceRecovery.value()) {
     if (debugEnabled()) {
       const char *frontend = inputContext.frontend();
       FCITX_INFO() << "areca: backspace recovery gate=disabled"

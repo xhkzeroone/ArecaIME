@@ -86,6 +86,9 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<bool> backspaceRecovery{
+        this, "BackspaceRecovery",
+        N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
                                       N_("Dùng timer độ chính xác cao"), true};
     fcitx::Option<bool> forceUinput{
@@ -123,9 +126,6 @@ FCITX_CONFIGURATION(
     fcitx::OptionWithAnnotation<SpellcheckMode, fcitx::EnumAnnotation>
         spellcheckMode{this, "SpellcheckMode", N_("Chế độ kiểm tra chính tả"),
                        SpellcheckMode::Realtime};
-    fcitx::Option<bool> backspaceRecovery{
-        this, "BackspaceRecovery",
-        N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> modernStyle{
         this, "ModernStyle", N_("Đặt dấu kiểu oà, uý thay cho òa, úy"), true};
     fcitx::Option<bool> autoCapitalizeAfterPunctuation{
