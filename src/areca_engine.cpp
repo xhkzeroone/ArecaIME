@@ -98,6 +98,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   config_.outputCharset.annotation().setList(
       BambooEngineAdapter::charsetNames());
   reloadConfig();
+  scheduleUinputWarmup();
 }
 
 ArecaEngine::~ArecaEngine() = default;
@@ -244,6 +245,25 @@ bool ArecaEngine::shouldCaptureBackspaceRecovery(
                  << " frontend=" << (frontend ? frontend : "");
   }
   return true;
+}
+
+void ArecaEngine::scheduleUinputWarmup() {
+  uinputWarmupTimer_.reset();
+  const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC);
+  uinputWarmupTimer_ = instance_->eventLoop().addTimeEvent(
+      CLOCK_MONOTONIC, deadline, 0,
+      [this](fcitx::EventSourceTime *, uint64_t) {
+        auto timer = std::move(uinputWarmupTimer_);
+        const bool available = uinputBackspaceBackend_.isAvailable();
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: uinput warmup completed"
+                       << " available=" << available;
+        }
+        return false;
+      });
+  if (uinputWarmupTimer_) {
+    uinputWarmupTimer_->setOneShot();
+  }
 }
 
 InputModeHandler &ArecaEngine::activeHandler() {

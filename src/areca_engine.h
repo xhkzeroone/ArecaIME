@@ -67,6 +67,7 @@ private:
   void clearBackendVerdictForLifecycle(fcitx::InputContext &inputContext,
                                        const char *eventName);
   bool backendVerdictProtected(fcitx::InputContext &inputContext) const;
+  void scheduleUinputWarmup();
   void applyConfig();
   std::vector<MacroDefinition> macroDefinitions() const;
 
@@ -88,6 +89,7 @@ private:
   AutocompleteForwardSurroundingBackend autocompleteEdgeForwardBackend_;
   ForwardBackspaceBackend forwardBackspaceBackend_;
   UinputBackspaceBackend uinputBackspaceBackend_;
+  std::unique_ptr<fcitx::EventSourceTime> uinputWarmupTimer_;
   InputScheduler scheduler_;
   RewriteModeHandler rewriteHandler_;
   PreeditModeHandler preeditHandler_;
