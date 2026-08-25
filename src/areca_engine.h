@@ -62,8 +62,6 @@ private:
                                       const std::string &shownText);
   void ensureBackendVerdictContext(fcitx::InputContext &inputContext,
                                    bool logSwitch);
-  bool wouldUseUinputFallback(fcitx::InputContext &inputContext,
-                              const ReliabilityDecision &decision);
   void protectBackendVerdict(fcitx::InputContext &inputContext,
                              const char *reason);
   void clearBackendVerdictForLifecycle(fcitx::InputContext &inputContext,

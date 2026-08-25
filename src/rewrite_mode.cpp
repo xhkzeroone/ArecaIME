@@ -121,10 +121,65 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
 
 bool RewriteModeHandler::shouldRecoverBackspace(
     fcitx::InputContext &inputContext, RewriteInputState &state) const {
-  if (state.engine->currentText().empty() && scheduler_.queuedKeyCount() == 0) {
+  const auto &currentText = state.engine->currentText();
+  const auto queuedKeys = scheduler_.queuedKeyCount();
+  if (currentText.empty() && queuedKeys == 0) {
+    if (debugProvider_()) {
+      const char *frontend = inputContext.frontend();
+      FCITX_INFO() << "areca: backspace route=forward"
+                   << " reason=no-composition"
+                   << " queue=" << queuedKeys
+                   << " program=" << inputContext.program()
+                   << " frontend=" << (frontend ? frontend : "");
+    }
     return false;
   }
-  return backspaceRecoveryGate_(inputContext, state.engine->currentText());
+  const bool capture = backspaceRecoveryGate_(inputContext, currentText);
+  if (debugProvider_()) {
+    const char *frontend = inputContext.frontend();
+    FCITX_INFO() << "areca: backspace route="
+                 << (capture ? "recovery" : "forward")
+                 << " reason="
+                 << (capture ? "composition-active" : "gate-disabled")
+                 << " current=" << currentText
+                 << " queue=" << queuedKeys
+                 << " program=" << inputContext.program()
+                 << " frontend=" << (frontend ? frontend : "");
+  }
+  return capture;
+}
+
+void RewriteModeHandler::deferBackspaceRecoveryUntilRelease(
+    fcitx::KeyEvent &event, RewriteInputState &state) {
+  state.backspaceRecoveryAwaitingRelease = true;
+  if (debugProvider_()) {
+    auto *inputContext = event.inputContext();
+    const char *frontend =
+        inputContext && inputContext->frontend() ? inputContext->frontend() : "";
+    FCITX_INFO() << "areca: backspace recovery deferred until release"
+                 << " current=" << state.engine->currentText()
+                 << " queue=" << scheduler_.queuedKeyCount()
+                 << " program="
+                 << (inputContext ? inputContext->program() : "")
+                 << " frontend=" << frontend;
+  }
+  event.filterAndAccept();
+}
+
+void RewriteModeHandler::runDeferredBackspaceRecovery(
+    fcitx::InputContext &inputContext, fcitx::KeyEvent &event,
+    RewriteInputState &state) {
+  state.backspaceRecoveryAwaitingRelease = false;
+  if (debugProvider_()) {
+    const char *frontend = inputContext.frontend();
+    FCITX_INFO() << "areca: backspace recovery resumed after release"
+                 << " current=" << state.engine->currentText()
+                 << " queue=" << scheduler_.queuedKeyCount()
+                 << " program=" << inputContext.program()
+                 << " frontend=" << (frontend ? frontend : "");
+  }
+  event.filterAndAccept();
+  scheduler_.enqueueBackspace(inputContext);
 }
 
 void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
@@ -150,6 +205,10 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                  << " queue=" << scheduler_.queuedKeyCount();
   }
   if (event.isRelease()) {
+    if (isBackspace && state && state->engine &&
+        state->backspaceRecoveryAwaitingRelease) {
+      runDeferredBackspaceRecovery(*inputContext, event, *state);
+    }
     return;
   }
   if (rawKey.isModifier()) {
@@ -196,9 +255,21 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   if (isBackspace) {
     state->sentenceCapitalization.reset();
-    if (shouldRecoverBackspace(*inputContext, *state)) {
+    if (state->backspaceRecoveryAwaitingRelease) {
+      if (debugProvider_()) {
+        const char *frontend = inputContext->frontend();
+        FCITX_INFO() << "areca: backspace route=recovery"
+                     << " reason=awaiting-release"
+                     << " current=" << state->engine->currentText()
+                     << " queue=" << scheduler_.queuedKeyCount()
+                     << " program=" << inputContext->program()
+                     << " frontend=" << (frontend ? frontend : "");
+      }
       event.filterAndAccept();
-      scheduler_.enqueueBackspace(*inputContext);
+      return;
+    }
+    if (shouldRecoverBackspace(*inputContext, *state)) {
+      deferBackspaceRecoveryUntilRelease(event, *state);
       return;
     }
     forwardSyncedBackspace(event, *state);
@@ -242,6 +313,7 @@ void RewriteModeHandler::requestProtectedReset(
 void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   scheduler_.resetContext(inputContext);
   if (auto *state = stateFor(inputContext)) {
+    state->backspaceRecoveryAwaitingRelease = false;
     state->sentenceCapitalization.reset();
   }
 }

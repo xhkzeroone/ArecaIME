@@ -39,6 +39,7 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   std::unique_ptr<VietnameseEngine> engine;
   SentenceCapitalizationState sentenceCapitalization;
   SurroundingReliabilityState surroundingReliability;
+  bool backspaceRecoveryAwaitingRelease = false;
 };
 
 class RewriteModeHandler final : public InputModeHandler {
@@ -71,6 +72,11 @@ private:
                               RewriteInputState &state);
   bool shouldRecoverBackspace(fcitx::InputContext &inputContext,
                               RewriteInputState &state) const;
+  void deferBackspaceRecoveryUntilRelease(fcitx::KeyEvent &event,
+                                          RewriteInputState &state);
+  void runDeferredBackspaceRecovery(fcitx::InputContext &inputContext,
+                                    fcitx::KeyEvent &event,
+                                    RewriteInputState &state);
 
   fcitx::EventLoop &eventLoop_;
   StateFactory &stateFactory_;

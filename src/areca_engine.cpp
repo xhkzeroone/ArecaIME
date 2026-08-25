@@ -224,46 +224,26 @@ void ArecaEngine::ensureBackendVerdictContext(
   }
 }
 
-bool ArecaEngine::wouldUseUinputFallback(
-    fcitx::InputContext &inputContext, const ReliabilityDecision &decision) {
-  if (decision.browserAutocomplete || decision.useSurrounding) {
-    return false;
-  }
-
-  const char *frontend = inputContext.frontend();
-  const std::string &program = inputContext.program();
-  const bool dbusTerminalOrUnknown =
-      frontend && std::string_view(frontend) == "dbus" &&
-      (program.empty() || isTerminalProgram(program));
-  const bool forceUinput = advancedConfig_.forceUinput.value();
-  return (dbusTerminalOrUnknown || forceUinput) &&
-         uinputBackspaceBackend_.isAvailable();
-}
-
 bool ArecaEngine::shouldCaptureBackspaceRecovery(
-    fcitx::InputContext &inputContext, const std::string &shownText) {
+    fcitx::InputContext &inputContext, const std::string &) {
   if (!config_.backspaceRecovery.value()) {
     if (debugEnabled()) {
-      FCITX_INFO() << "areca: Backspace recovery disabled by config";
+      const char *frontend = inputContext.frontend();
+      FCITX_INFO() << "areca: backspace recovery gate=disabled"
+                   << " reason=config"
+                   << " program=" << inputContext.program()
+                   << " frontend=" << (frontend ? frontend : "");
     }
     return false;
   }
 
-  ensureBackendVerdictContext(inputContext, false);
-
-  const auto decision = reliabilityChecker_.evaluate(inputContext, shownText,
-                                                     backendVerdict_,
-                                                     debugEnabled());
-  const char *frontend = inputContext.frontend();
-  const std::string &program = inputContext.program();
-  const bool wouldUseUinput = wouldUseUinputFallback(inputContext, decision);
-
-  if (wouldUseUinput && debugEnabled()) {
-    FCITX_INFO() << "areca: Backspace recovery disabled for uinput backend"
-                 << " program=" << program
+  if (debugEnabled()) {
+    const char *frontend = inputContext.frontend();
+    FCITX_INFO() << "areca: backspace recovery gate=enabled"
+                 << " program=" << inputContext.program()
                  << " frontend=" << (frontend ? frontend : "");
   }
-  return !wouldUseUinput;
+  return true;
 }
 
 InputModeHandler &ArecaEngine::activeHandler() {
