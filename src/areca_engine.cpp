@@ -163,8 +163,19 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const auto capabilities = inputContext.capabilityFlags();
+  const std::string &program = inputContext.program();
+
+  if (isMicrosoftEdgeProgram(program) && uinputBackspaceBackend_.isAvailable()) {
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: uinput backend for Edge (forced)"
+                   << " program=" << program;
+    }
+    return {&uinputBackspaceBackend_};
+  }
+
   const auto decision = reliabilityChecker_.evaluate(
       inputContext, result.currentText, backendVerdict_, debugEnabled());
+
   if (decision.browserAutocomplete) {
     const bool isUrl = capabilities.test(fcitx::CapabilityFlag::Url);
     if (debugEnabled()) {
@@ -182,7 +193,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const char *frontend = inputContext.frontend();
-  const std::string &program = inputContext.program();
   if (frontend && std::string_view(frontend) == "dbus" &&
       (program.empty() || isTerminalProgram(program))) {
     if (uinputBackspaceBackend_.isAvailable()) {
@@ -195,10 +205,9 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     }
   }
 
-  if (advancedConfig_.forceUinput.value() &&
-      uinputBackspaceBackend_.isAvailable()) {
+  if (uinputBackspaceBackend_.isAvailable()) {
     if (debugEnabled()) {
-      FCITX_INFO() << "areca: forced uinput backend for forward backspace fallback"
+      FCITX_INFO() << "areca: uinput backend (default fallback)"
                    << " program=" << program
                    << " backend=" << uinputBackspaceBackend_.name();
     }

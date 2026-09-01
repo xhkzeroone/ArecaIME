@@ -4,6 +4,14 @@
 #include <cassert>
 
 int main() {
+  using areca::isMicrosoftEdgeProgram;
+  assert(isMicrosoftEdgeProgram("microsoft-edge"));
+  assert(isMicrosoftEdgeProgram("/usr/bin/microsoft-edge-stable"));
+  assert(isMicrosoftEdgeProgram("microsoft-edge-beta.desktop"));
+  assert(isMicrosoftEdgeProgram("com.microsoft.Edge.desktop"));
+  assert(!isMicrosoftEdgeProgram("firefox"));
+  assert(!isMicrosoftEdgeProgram("edge-notes"));
+
   using areca::isVSCodeFamilyProgram;
 
   // Existing VS Code-family matching remains intact.

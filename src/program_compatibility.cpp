@@ -160,6 +160,14 @@ bool isProgrammingProgram(const std::string &program) {
 
 } // namespace
 
+bool isMicrosoftEdgeProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  return program == "microsoft-edge" ||
+         program.starts_with("microsoft-edge-") ||
+         program == "com.microsoft.edge" ||
+         program.starts_with("com.microsoft.edge.");
+}
+
 bool isTerminalProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   static constexpr auto distroTerminals =

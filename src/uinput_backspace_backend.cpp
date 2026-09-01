@@ -11,6 +11,7 @@
 
 #include <fcitx-utils/log.h>
 
+
 namespace areca {
 
 UinputBackspaceBackend::UinputBackspaceBackend(fcitx::EventLoop &eventLoop,
@@ -42,7 +43,8 @@ bool UinputBackspaceBackend::ensureDevice() {
   }
 
   if (ioctl(uinputFd_, UI_SET_EVBIT, EV_KEY) < 0 ||
-      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_BACKSPACE) < 0 ||
+      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFTSHIFT) < 0 ||
+      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFT) < 0 ||
       ioctl(uinputFd_, UI_SET_EVBIT, EV_SYN) < 0) {
     closeDevice();
     return false;
@@ -119,8 +121,8 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
-  remainingBackspaces_ = plan.backspaceCount;
-  sentBackspaces_ = 0;
+  selectionCount_ = plan.backspaceCount;
+  selectedCharacters_ = plan.backspaceCount;
   backspaceDelayMs_ = plan.backspaceDelayMs;
   const char *frontend = inputContext.frontend();
   afterBackspaceWaitMs_ = resolveAfterBackspaceWaitMs(frontend, plan);
@@ -129,49 +131,93 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
 
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-backspace start tx=" << transactionId_
-                 << " backspaces=" << remainingBackspaces_
+                 << " select_left=" << selectionCount_
                  << " delay_ms=" << backspaceDelayMs_
                  << " after_wait_ms=" << afterBackspaceWaitMs_
                  << " frontend=" << (frontend ? frontend : "")
                  << " accuracy_us=" << timerAccuracyUsec_;
   }
 
-  if (!remainingBackspaces_) {
+  if (!selectionCount_) {
     scheduleCommit();
   } else {
-    sendNextBackspace();
+    beginSelectionAndDelete();
   }
   return ApplyStatus::Pending;
 }
 
-void UinputBackspaceBackend::sendNextBackspace() {
+void UinputBackspaceBackend::beginSelectionAndDelete() {
   auto *inputContext = inputContext_.get();
   if (!inputContext) {
     completeWithoutCommit();
     return;
   }
 
-  sendKeyEvent(KEY_BACKSPACE, 1); // press
-  sendKeyEvent(KEY_BACKSPACE, 0); // release
-
-  --remainingBackspaces_;
-  ++sentBackspaces_;
-
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-backspace sent tx=" << transactionId_
-                 << " sent=" << sentBackspaces_
-                 << " remaining=" << remainingBackspaces_;
-  }
-
-  if (remainingBackspaces_) {
-    scheduleNextBackspace();
-  } else {
-    scheduleCommit();
-  }
+  sendKeyEvent(KEY_LEFTSHIFT, 1); // Shift down
+  shiftHeld_ = true;
+  // Wait one backspaceDelayMs cycle before the first Left so the browser
+  // has time to flush the Shift modifier state (needed for React/Facebook).
+  schedule(backspaceDelayMs_, [this]() { sendNextSelectionLeft(); });
 }
 
-void UinputBackspaceBackend::scheduleNextBackspace() {
-  schedule(backspaceDelayMs_, [this]() { sendNextBackspace(); });
+void UinputBackspaceBackend::sendNextSelectionLeft() {
+  if (!inputContext_.get()) {
+    releaseShift();
+    completeWithoutCommit();
+    return;
+  }
+
+  sendKeyEvent(KEY_LEFT, 1); // Left press
+  sendKeyEvent(KEY_LEFT, 0); // Left release
+  --selectionCount_;
+
+  if (selectionCount_) {
+    schedule(backspaceDelayMs_, [this]() { sendNextSelectionLeft(); });
+    return;
+  }
+
+  // Last Left done — delay before Shift UP.
+  schedule(backspaceDelayMs_, [this]() { releaseShiftThenCommit(); });
+}
+
+void UinputBackspaceBackend::releaseShiftThenCommit() {
+  releaseShift();
+  // Delay after Shift UP before committing, giving the browser time to
+  // finalize the selection before the IM protocol commit replaces it.
+  schedule(backspaceDelayMs_, [this]() { commitSelectionAndComplete(); });
+}
+
+void UinputBackspaceBackend::releaseShift() {
+  if (!shiftHeld_) {
+    return;
+  }
+  sendKeyEvent(KEY_LEFTSHIFT, 0); // Shift up
+  shiftHeld_ = false;
+}
+
+void UinputBackspaceBackend::commitSelectionAndComplete() {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
+  }
+
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: uinput-select commit tx="
+                 << transactionId_ << " chars=" << selectedCharacters_
+                 << " commit=" << commitText_;
+  }
+
+  if (!commitText_.empty()) {
+    inputContext->commitString(commitText_);
+  }
+
+  const uint64_t transactionId = transactionId_;
+  auto onDone = std::move(onDone_);
+  clearPending();
+  if (onDone) {
+    onDone(transactionId);
+  }
 }
 
 void UinputBackspaceBackend::scheduleCommit() {
@@ -193,7 +239,7 @@ void UinputBackspaceBackend::commitAndComplete() {
   auto onDone = std::move(onDone_);
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-backspace complete tx=" << transactionId
-                 << " sent=" << sentBackspaces_ << " commit=" << commitText_;
+                 << " commit=" << commitText_;
   }
   clearPending();
   if (onDone) {
@@ -236,14 +282,16 @@ void UinputBackspaceBackend::schedule(uint32_t delayMs,
 
 void UinputBackspaceBackend::clearPending() {
   timer_.reset();
+  releaseShift();
   inputContext_.unwatch();
   onDone_ = {};
   transactionId_ = 0;
-  remainingBackspaces_ = 0;
-  sentBackspaces_ = 0;
+  selectionCount_ = 0;
+  selectedCharacters_ = 0;
   backspaceDelayMs_ = 0;
   afterBackspaceWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
+  shiftHeld_ = false;
   commitText_.clear();
 }
 

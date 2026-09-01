@@ -163,7 +163,8 @@ if(BUILD_TESTING)
 
     add_executable(areca-uinput-backspace-test
         tests/uinput_backspace_backend_test.cpp
-        src/uinput_backspace_backend.cpp)
+        src/uinput_backspace_backend.cpp
+        src/program_compatibility.cpp)
     target_compile_features(areca-uinput-backspace-test PRIVATE cxx_std_20)
     target_compile_options(areca-uinput-backspace-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)

@@ -31,8 +31,11 @@ private:
   bool ensureDevice();
   void closeDevice();
   void sendKeyEvent(uint16_t code, int value);
-  void sendNextBackspace();
-  void scheduleNextBackspace();
+  void beginSelectionAndDelete();
+  void sendNextSelectionLeft();
+  void releaseShiftThenCommit();
+  void releaseShift();
+  void commitSelectionAndComplete();
   void scheduleCommit();
   void commitAndComplete();
   void completeWithoutCommit();
@@ -48,11 +51,12 @@ private:
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;
   RewriteDone onDone_;
   uint64_t transactionId_ = 0;
-  uint32_t remainingBackspaces_ = 0;
-  uint32_t sentBackspaces_ = 0;
+  uint32_t selectionCount_ = 0;
+  uint32_t selectedCharacters_ = 0;
   uint32_t backspaceDelayMs_ = 0;
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
+  bool shiftHeld_ = false;
   std::string commitText_;
 };
 
