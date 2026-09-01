@@ -36,6 +36,7 @@ private:
   void releaseShiftThenCommit();
   void releaseShift();
   void commitSelectionAndComplete();
+  void commitNextChar(size_t index);
   void scheduleCommit();
   void commitAndComplete();
   void completeWithoutCommit();
@@ -58,6 +59,7 @@ private:
   uint64_t timerAccuracyUsec_ = 1;
   bool shiftHeld_ = false;
   std::string commitText_;
+  std::vector<std::string> commitChars_;
 };
 
 } // namespace areca

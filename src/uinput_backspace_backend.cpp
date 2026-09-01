@@ -10,7 +10,7 @@
 #include <utility>
 
 #include <fcitx-utils/log.h>
-
+#include <fcitx-utils/utf8.h>
 
 namespace areca {
 
@@ -202,21 +202,52 @@ void UinputBackspaceBackend::commitSelectionAndComplete() {
     return;
   }
 
+  commitChars_.clear();
+  auto it = commitText_.begin();
+  while (it != commitText_.end()) {
+    auto start = it;
+    uint32_t codepoint = 0;
+    it = fcitx::utf8::getNextChar(it, commitText_.end(), &codepoint);
+    commitChars_.emplace_back(start, it);
+  }
+
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-select commit tx="
                  << transactionId_ << " chars=" << selectedCharacters_
-                 << " commit=" << commitText_;
+                 << " commit=" << commitText_
+                 << " split_count=" << commitChars_.size();
   }
 
-  if (!commitText_.empty()) {
-    inputContext->commitString(commitText_);
+  if (commitChars_.empty()) {
+    const uint64_t transactionId = transactionId_;
+    auto onDone = std::move(onDone_);
+    clearPending();
+    if (onDone) {
+      onDone(transactionId);
+    }
+  } else {
+    commitNextChar(0);
+  }
+}
+
+void UinputBackspaceBackend::commitNextChar(size_t index) {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
   }
 
-  const uint64_t transactionId = transactionId_;
-  auto onDone = std::move(onDone_);
-  clearPending();
-  if (onDone) {
-    onDone(transactionId);
+  inputContext->commitString(commitChars_[index]);
+
+  if (index + 1 < commitChars_.size()) {
+    schedule(backspaceDelayMs_, [this, index]() { commitNextChar(index + 1); });
+  } else {
+    const uint64_t transactionId = transactionId_;
+    auto onDone = std::move(onDone_);
+    clearPending();
+    if (onDone) {
+      onDone(transactionId);
+    }
   }
 }
 
@@ -293,6 +324,7 @@ void UinputBackspaceBackend::clearPending() {
   timerAccuracyUsec_ = 1;
   shiftHeld_ = false;
   commitText_.clear();
+  commitChars_.clear();
 }
 
 } // namespace areca
