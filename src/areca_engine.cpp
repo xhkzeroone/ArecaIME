@@ -234,10 +234,13 @@ void ArecaEngine::scheduleUinputWarmup() {
       CLOCK_MONOTONIC, deadline, 0,
       [this](fcitx::EventSourceTime *, uint64_t) {
         auto timer = std::move(uinputWarmupTimer_);
-        const bool available = uinputBackspaceBackend_.isAvailable();
+        const bool backspaceAvailable = uinputBackspaceBackend_.isAvailable();
+        const bool shiftSelectAvailable =
+            uinputShiftSelectBackend_.isAvailable();
         if (debugEnabled()) {
           FCITX_INFO() << "areca: uinput warmup completed"
-                       << " available=" << available;
+                       << " uinput-backspace=" << backspaceAvailable
+                       << " uinput-shift-select=" << shiftSelectAvailable;
         }
         return false;
       });
