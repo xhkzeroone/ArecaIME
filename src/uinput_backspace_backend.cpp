@@ -1,4 +1,5 @@
 #include "uinput_backspace_backend.h"
+#include "browser_autocomplete.h"
 #include "program_compatibility.h"
 
 #include <cstring>
@@ -123,7 +124,7 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
   constexpr uint64_t kForwardBackspaceCapabilityMask = 0x72;
   const std::string &program = inputContext.program();
   splitCommitChars_ = (capMask == kForwardBackspaceCapabilityMask ||
-                       isMicrosoftEdgeProgram(program) ||
+                       isBrowserLikeProgram(program) ||
                        isVSCodeFamilyProgram(program));
 
   transactionId_ = plan.transactionId;
