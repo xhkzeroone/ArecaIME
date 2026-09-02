@@ -115,15 +115,31 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
     return;
   }
 
+  if (commitText_.empty()) {
+    if (selectedCharacters_ > 0) {
+      if (debugProvider_()) {
+        FCITX_INFO() << "areca: uinput-select erase selection with backspace tx="
+                     << transactionId_ << " chars=" << selectedCharacters_;
+      }
+      device_.sendKeyEvent(KEY_BACKSPACE, 1);
+      device_.sendKeyEvent(KEY_BACKSPACE, 0);
+    }
+    const uint64_t transactionId = transactionId_;
+    auto onDone = std::move(onDone_);
+    clearPending();
+    if (onDone) {
+      onDone(transactionId);
+    }
+    return;
+  }
+
   if (!splitCommitChars_) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-select batch commit tx=" << transactionId_
                    << " chars=" << selectedCharacters_
                    << " commit=" << commitText_;
     }
-    if (!commitText_.empty()) {
-      inputContext->commitString(commitText_);
-    }
+    inputContext->commitString(commitText_);
     const uint64_t transactionId = transactionId_;
     auto onDone = std::move(onDone_);
     clearPending();
@@ -149,16 +165,7 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
                  << " split_count=" << commitChars_.size();
   }
 
-  if (commitChars_.empty()) {
-    const uint64_t transactionId = transactionId_;
-    auto onDone = std::move(onDone_);
-    clearPending();
-    if (onDone) {
-      onDone(transactionId);
-    }
-  } else {
-    commitNextChar(0);
-  }
+  commitNextChar(0);
 }
 
 void UinputShiftSelectBackend::commitNextChar(size_t index) {
