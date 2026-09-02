@@ -25,6 +25,10 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
     return ApplyStatus::Failed;
   }
 
+  const uint64_t capMask = inputContext.capabilityFlags().toInteger();
+  constexpr uint64_t kForwardBackspaceCapabilityMask = 0x72;
+  splitCommitChars_ = (capMask <= kForwardBackspaceCapabilityMask);
+
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
@@ -38,6 +42,8 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
 
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-shift-select start tx=" << transactionId_
+                 << " cap_mask=0x" << std::hex << capMask << std::dec
+                 << " split_commit=" << splitCommitChars_
                  << " select_left=" << selectionCount_
                  << " delay_ms=" << backspaceDelayMs_
                  << " after_wait_ms=" << afterBackspaceWaitMs_
@@ -106,6 +112,24 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
   auto *inputContext = inputContext_.get();
   if (!inputContext) {
     completeWithoutCommit();
+    return;
+  }
+
+  if (!splitCommitChars_) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: uinput-select batch commit tx=" << transactionId_
+                   << " chars=" << selectedCharacters_
+                   << " commit=" << commitText_;
+    }
+    if (!commitText_.empty()) {
+      inputContext->commitString(commitText_);
+    }
+    const uint64_t transactionId = transactionId_;
+    auto onDone = std::move(onDone_);
+    clearPending();
+    if (onDone) {
+      onDone(transactionId);
+    }
     return;
   }
 
@@ -207,6 +231,7 @@ void UinputShiftSelectBackend::clearPending() {
   afterBackspaceWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
   shiftHeld_ = false;
+  splitCommitChars_ = false;
   commitText_.clear();
   commitChars_.clear();
 }

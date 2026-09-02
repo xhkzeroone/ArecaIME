@@ -55,6 +55,7 @@ private:
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
   bool shiftHeld_ = false;
+  bool splitCommitChars_ = false;
   std::string commitText_;
   std::vector<std::string> commitChars_;
 };
