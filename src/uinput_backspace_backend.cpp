@@ -236,8 +236,8 @@ void UinputBackspaceBackend::commitSelectionAndComplete() {
   }
 
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-select split commit (20ms) tx=" << transactionId_
-                 << " chars=" << selectedCharacters_
+    FCITX_INFO() << "areca: uinput-select split commit (20ms) tx="
+                 << transactionId_ << " chars=" << selectedCharacters_
                  << " commit=" << commitText_
                  << " split_count=" << commitChars_.size();
   }
