@@ -49,6 +49,7 @@ add_library(areca MODULE
     src/surrounding_text_backend.cpp
     src/surrounding_text_cache.cpp
     src/uinput_backspace_backend.cpp
+    src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
     src/word_segment.cpp)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
@@ -165,6 +166,7 @@ if(BUILD_TESTING)
     add_executable(areca-uinput-backspace-test
         tests/uinput_backspace_backend_test.cpp
         src/uinput_backspace_backend.cpp
+        src/uinput_device.cpp
         src/program_compatibility.cpp)
     target_compile_features(areca-uinput-backspace-test PRIVATE cxx_std_20)
     target_compile_options(areca-uinput-backspace-test PRIVATE
@@ -177,6 +179,7 @@ if(BUILD_TESTING)
     add_executable(areca-uinput-shift-select-test
         tests/uinput_shift_select_backend_test.cpp
         src/uinput_shift_select_backend.cpp
+        src/uinput_device.cpp
         src/program_compatibility.cpp)
     target_compile_features(areca-uinput-shift-select-test PRIVATE cxx_std_20)
     target_compile_options(areca-uinput-shift-select-test PRIVATE

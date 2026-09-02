@@ -57,9 +57,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                           [this]() { return debugEnabled(); }),
       forwardBackspaceBackend_(instance_->eventLoop(),
                                [this]() { return debugEnabled(); }),
-      uinputBackspaceBackend_(instance_->eventLoop(),
+      uinputDevice_([this]() { return debugEnabled(); }),
+      uinputBackspaceBackend_(instance_->eventLoop(), uinputDevice_,
                               [this]() { return debugEnabled(); }),
-      uinputShiftSelectBackend_(instance_->eventLoop(),
+      uinputShiftSelectBackend_(instance_->eventLoop(), uinputDevice_,
                                 [this]() { return debugEnabled(); }),
       scheduler_(
           instance_->eventLoop(),
@@ -234,13 +235,10 @@ void ArecaEngine::scheduleUinputWarmup() {
       CLOCK_MONOTONIC, deadline, 0,
       [this](fcitx::EventSourceTime *, uint64_t) {
         auto timer = std::move(uinputWarmupTimer_);
-        const bool backspaceAvailable = uinputBackspaceBackend_.isAvailable();
-        const bool shiftSelectAvailable =
-            uinputShiftSelectBackend_.isAvailable();
+        const bool available = uinputDevice_.ensureDevice();
         if (debugEnabled()) {
           FCITX_INFO() << "areca: uinput warmup completed"
-                       << " uinput-backspace=" << backspaceAvailable
-                       << " uinput-shift-select=" << shiftSelectAvailable;
+                       << " uinput-available=" << available;
         }
         return false;
       });

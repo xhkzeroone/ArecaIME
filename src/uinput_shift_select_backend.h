@@ -10,6 +10,7 @@
 #include <fcitx-utils/trackableobject.h>
 
 #include "rewrite_backend.h"
+#include "uinput_device.h"
 
 namespace areca {
 
@@ -17,7 +18,7 @@ class UinputShiftSelectBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
 
-  UinputShiftSelectBackend(fcitx::EventLoop &eventLoop,
+  UinputShiftSelectBackend(fcitx::EventLoop &eventLoop, UinputDevice &device,
                            DebugProvider debugProvider);
   ~UinputShiftSelectBackend() override;
 
@@ -29,9 +30,6 @@ public:
   bool hasPending() const { return transactionId_ != 0; }
 
 private:
-  bool ensureDevice();
-  void closeDevice();
-  void sendKeyEvent(uint16_t code, int value);
   void beginSelection();
   void sendNextSelectionLeft();
   void releaseShiftThenCommit();
@@ -39,15 +37,13 @@ private:
   void commitSelectionAndComplete();
   void commitNextChar(size_t index);
   void scheduleCommit();
-  void commitAndComplete();
   void completeWithoutCommit();
   void schedule(uint32_t delayMs, std::function<void()> callback);
   void clearPending();
 
   fcitx::EventLoop &eventLoop_;
+  UinputDevice &device_;
   DebugProvider debugProvider_;
-  int uinputFd_ = -1;
-  bool deviceInitialized_ = false;
 
   std::unique_ptr<fcitx::EventSourceTime> timer_;
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;
@@ -59,7 +55,6 @@ private:
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
   bool shiftHeld_ = false;
-  bool splitCommitChars_ = false;
   std::string commitText_;
   std::vector<std::string> commitChars_;
 };

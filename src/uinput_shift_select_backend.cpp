@@ -1,12 +1,6 @@
 #include "uinput_shift_select_backend.h"
 
-#include <cstring>
-#include <fcntl.h>
 #include <linux/input.h>
-#include <linux/uinput.h>
-#include <string_view>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <utility>
 
 #include <fcitx-utils/log.h>
@@ -15,112 +9,21 @@
 namespace areca {
 
 UinputShiftSelectBackend::UinputShiftSelectBackend(fcitx::EventLoop &eventLoop,
+                                                   UinputDevice &device,
                                                    DebugProvider debugProvider)
-    : eventLoop_(eventLoop), debugProvider_(std::move(debugProvider)) {}
+    : eventLoop_(eventLoop), device_(device),
+      debugProvider_(std::move(debugProvider)) {}
 
-UinputShiftSelectBackend::~UinputShiftSelectBackend() {
-  clearPending();
-  closeDevice();
-}
+UinputShiftSelectBackend::~UinputShiftSelectBackend() { clearPending(); }
 
-bool UinputShiftSelectBackend::isAvailable() { return ensureDevice(); }
-
-bool UinputShiftSelectBackend::ensureDevice() {
-  if (deviceInitialized_) {
-    return uinputFd_ >= 0;
-  }
-  deviceInitialized_ = true;
-
-  uinputFd_ = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-  if (uinputFd_ < 0) {
-    uinputFd_ = open("/dev/input/uinput", O_WRONLY | O_NONBLOCK);
-  }
-  if (uinputFd_ < 0) {
-    if (debugProvider_()) {
-      FCITX_INFO() << "areca: uinput failed to open /dev/uinput";
-    }
-    return false;
-  }
-
-  if (ioctl(uinputFd_, UI_SET_EVBIT, EV_KEY) < 0 ||
-      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFTSHIFT) < 0 ||
-      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFT) < 0 ||
-      ioctl(uinputFd_, UI_SET_EVBIT, EV_SYN) < 0) {
-    closeDevice();
-    return false;
-  }
-
-#ifdef UI_DEV_SETUP
-  struct uinput_setup usetup;
-  std::memset(&usetup, 0, sizeof(usetup));
-  usetup.id.bustype = BUS_USB;
-  usetup.id.vendor = 0x1234;
-  usetup.id.product = 0x5678;
-  std::strncpy(usetup.name, "ArecaIME Virtual Keyboard",
-               UINPUT_MAX_NAME_SIZE - 1);
-  if (ioctl(uinputFd_, UI_DEV_SETUP, &usetup) < 0 ||
-      ioctl(uinputFd_, UI_DEV_CREATE) < 0) {
-#endif
-    struct uinput_user_dev udev;
-    std::memset(&udev, 0, sizeof(udev));
-    std::strncpy(udev.name, "ArecaIME Virtual Keyboard",
-                 UINPUT_MAX_NAME_SIZE - 1);
-    udev.id.bustype = BUS_USB;
-    udev.id.vendor = 0x1234;
-    udev.id.product = 0x5678;
-    if (write(uinputFd_, &udev, sizeof(udev)) < 0 ||
-        ioctl(uinputFd_, UI_DEV_CREATE) < 0) {
-      closeDevice();
-      return false;
-    }
-#ifdef UI_DEV_SETUP
-  }
-#endif
-
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-shift-select device initialized successfully (fd="
-                 << uinputFd_ << ")";
-  }
-  return true;
-}
-
-void UinputShiftSelectBackend::closeDevice() {
-  if (uinputFd_ >= 0) {
-    ioctl(uinputFd_, UI_DEV_DESTROY);
-    close(uinputFd_);
-    uinputFd_ = -1;
-  }
-}
-
-void UinputShiftSelectBackend::sendKeyEvent(uint16_t code, int value) {
-  if (uinputFd_ < 0) {
-    return;
-  }
-
-  struct input_event ev;
-  std::memset(&ev, 0, sizeof(ev));
-  ev.type = EV_KEY;
-  ev.code = code;
-  ev.value = value;
-  (void)write(uinputFd_, &ev, sizeof(ev));
-
-  std::memset(&ev, 0, sizeof(ev));
-  ev.type = EV_SYN;
-  ev.code = SYN_REPORT;
-  ev.value = 0;
-  (void)write(uinputFd_, &ev, sizeof(ev));
-}
+bool UinputShiftSelectBackend::isAvailable() { return device_.isAvailable(); }
 
 ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
                                             const RewritePlan &plan,
                                             RewriteDone onDone) {
-  if (hasPending() || !plan.transactionId || !ensureDevice()) {
+  if (hasPending() || !plan.transactionId || !device_.ensureDevice()) {
     return ApplyStatus::Failed;
   }
-
-  const uint64_t capMask = inputContext.capabilityFlags().toInteger();
-  constexpr uint64_t kForwardBackspaceCapabilityMask = 0x72;
-  splitCommitChars_ = (capMask <= kForwardBackspaceCapabilityMask);
 
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
@@ -135,8 +38,6 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
 
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-shift-select start tx=" << transactionId_
-                 << " cap_mask=0x" << std::hex << capMask << std::dec
-                 << " split_commit=" << splitCommitChars_
                  << " select_left=" << selectionCount_
                  << " delay_ms=" << backspaceDelayMs_
                  << " after_wait_ms=" << afterBackspaceWaitMs_
@@ -159,7 +60,7 @@ void UinputShiftSelectBackend::beginSelection() {
     return;
   }
 
-  sendKeyEvent(KEY_LEFTSHIFT, 1); // Shift down
+  device_.sendKeyEvent(KEY_LEFTSHIFT, 1); // Shift down
   shiftHeld_ = true;
   // Wait one backspaceDelayMs cycle before the first Left so the browser
   // has time to flush the Shift modifier state (needed for React/Facebook).
@@ -173,8 +74,8 @@ void UinputShiftSelectBackend::sendNextSelectionLeft() {
     return;
   }
 
-  sendKeyEvent(KEY_LEFT, 1); // Left press
-  sendKeyEvent(KEY_LEFT, 0); // Left release
+  device_.sendKeyEvent(KEY_LEFT, 1); // Left press
+  device_.sendKeyEvent(KEY_LEFT, 0); // Left release
   --selectionCount_;
 
   if (selectionCount_) {
@@ -197,7 +98,7 @@ void UinputShiftSelectBackend::releaseShift() {
   if (!shiftHeld_) {
     return;
   }
-  sendKeyEvent(KEY_LEFTSHIFT, 0); // Shift up
+  device_.sendKeyEvent(KEY_LEFTSHIFT, 0); // Shift up
   shiftHeld_ = false;
 }
 
@@ -205,24 +106,6 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
   auto *inputContext = inputContext_.get();
   if (!inputContext) {
     completeWithoutCommit();
-    return;
-  }
-
-  if (!splitCommitChars_) {
-    if (debugProvider_()) {
-      FCITX_INFO() << "areca: uinput-select batch commit tx=" << transactionId_
-                   << " chars=" << selectedCharacters_
-                   << " commit=" << commitText_;
-    }
-    if (!commitText_.empty()) {
-      inputContext->commitString(commitText_);
-    }
-    const uint64_t transactionId = transactionId_;
-    auto onDone = std::move(onDone_);
-    clearPending();
-    if (onDone) {
-      onDone(transactionId);
-    }
     return;
   }
 
@@ -277,30 +160,7 @@ void UinputShiftSelectBackend::commitNextChar(size_t index) {
 }
 
 void UinputShiftSelectBackend::scheduleCommit() {
-  schedule(afterBackspaceWaitMs_, [this]() { commitAndComplete(); });
-}
-
-void UinputShiftSelectBackend::commitAndComplete() {
-  auto *inputContext = inputContext_.get();
-  if (!inputContext) {
-    completeWithoutCommit();
-    return;
-  }
-
-  if (!commitText_.empty()) {
-    inputContext->commitString(commitText_);
-  }
-
-  const uint64_t transactionId = transactionId_;
-  auto onDone = std::move(onDone_);
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-shift-select complete tx=" << transactionId
-                 << " commit=" << commitText_;
-  }
-  clearPending();
-  if (onDone) {
-    onDone(transactionId);
-  }
+  schedule(afterBackspaceWaitMs_, [this]() { commitSelectionAndComplete(); });
 }
 
 void UinputShiftSelectBackend::completeWithoutCommit() {
@@ -347,7 +207,6 @@ void UinputShiftSelectBackend::clearPending() {
   afterBackspaceWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
   shiftHeld_ = false;
-  splitCommitChars_ = false;
   commitText_.clear();
   commitChars_.clear();
 }

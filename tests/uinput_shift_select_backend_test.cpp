@@ -3,11 +3,13 @@
 
 #include <fcitx-utils/event.h>
 
+#include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
 
 int main() {
   fcitx::EventLoop eventLoop;
-  areca::UinputShiftSelectBackend backend(eventLoop, []() { return false; });
+  areca::UinputDevice device([]() { return false; });
+  areca::UinputShiftSelectBackend backend(eventLoop, device, []() { return false; });
 
   assert(std::string(backend.name()) == "uinput-shift-select");
   assert(!backend.hasPending());

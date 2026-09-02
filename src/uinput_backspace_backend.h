@@ -9,6 +9,7 @@
 #include <fcitx-utils/trackableobject.h>
 
 #include "rewrite_backend.h"
+#include "uinput_device.h"
 
 namespace areca {
 
@@ -16,7 +17,7 @@ class UinputBackspaceBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
 
-  UinputBackspaceBackend(fcitx::EventLoop &eventLoop,
+  UinputBackspaceBackend(fcitx::EventLoop &eventLoop, UinputDevice &device,
                          DebugProvider debugProvider);
   ~UinputBackspaceBackend() override;
 
@@ -28,9 +29,6 @@ public:
   bool hasPending() const { return transactionId_ != 0; }
 
 private:
-  bool ensureDevice();
-  void closeDevice();
-  void sendKeyEvent(uint16_t code, int value);
   void sendNextBackspace();
   void scheduleNextBackspace();
   void scheduleCommit();
@@ -40,9 +38,8 @@ private:
   void clearPending();
 
   fcitx::EventLoop &eventLoop_;
+  UinputDevice &device_;
   DebugProvider debugProvider_;
-  int uinputFd_ = -1;
-  bool deviceInitialized_ = false;
 
   std::unique_ptr<fcitx::EventSourceTime> timer_;
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;
