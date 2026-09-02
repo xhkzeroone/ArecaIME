@@ -1,4 +1,5 @@
 #include "uinput_backspace_backend.h"
+#include "program_compatibility.h"
 
 #include <cstring>
 #include <fcntl.h>
@@ -120,7 +121,10 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
 
   const uint64_t capMask = inputContext.capabilityFlags().toInteger();
   constexpr uint64_t kForwardBackspaceCapabilityMask = 0x72;
-  splitCommitChars_ = (capMask == kForwardBackspaceCapabilityMask);
+  const std::string &program = inputContext.program();
+  splitCommitChars_ = (capMask == kForwardBackspaceCapabilityMask ||
+                       isMicrosoftEdgeProgram(program) ||
+                       isVSCodeFamilyProgram(program));
 
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
