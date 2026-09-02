@@ -374,7 +374,7 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
   if (auto *inputContext = event.inputContext()) {
     if (scheduler_.shouldRejectReset()) {
       if (debugEnabled()) {
-        FCITX_INFO() << "areca: app reset rejected (active rewrite or 50ms post-commit window)";
+        FCITX_INFO() << "areca: app reset rejected (active rewrite or 300ms post-commit window)";
       }
       return;
     }

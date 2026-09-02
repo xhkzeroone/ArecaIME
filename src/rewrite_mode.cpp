@@ -234,7 +234,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (isBackspace) {
     backendVerdictProtector_(*inputContext, "user-backspace");
   } else if ((key.isCursorMove() || isSelectAllShortcut(rawKey)) &&
-             !scheduler_.rewritePending()) {
+             !scheduler_.shouldRejectReset()) {
     backendVerdictProtector_(*inputContext,
                              "selection-or-navigation-shortcut");
   }
@@ -244,8 +244,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       rawSym == FcitxKey_KP_Tab || rawSym == FcitxKey_ISO_Left_Tab ||
       rawSym == FcitxKey_Escape || hasRewriteShortcutModifier(rawKey);
   if (resetAndForward) {
-    if (scheduler_.rewritePending()) {
-      // Cursor/modifier keys injected by uinput during an active rewrite.
+    if (scheduler_.shouldRejectReset()) {
+      // Cursor/modifier keys injected by uinput during or within post-commit window of a rewrite.
       // Forward without resetting state.
       event.forward();
       return;

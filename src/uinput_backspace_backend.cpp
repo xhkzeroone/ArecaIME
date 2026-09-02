@@ -210,8 +210,8 @@ void UinputBackspaceBackend::commitSelectionAndComplete() {
 
   if (!splitCommitChars_) {
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: uinput-select batch commit tx="
-                   << transactionId_ << " chars=" << selectedCharacters_
+      FCITX_INFO() << "areca: uinput-select batch commit tx=" << transactionId_
+                   << " chars=" << selectedCharacters_
                    << " commit=" << commitText_;
     }
     if (!commitText_.empty()) {
@@ -236,8 +236,8 @@ void UinputBackspaceBackend::commitSelectionAndComplete() {
   }
 
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-select split commit tx="
-                 << transactionId_ << " chars=" << selectedCharacters_
+    FCITX_INFO() << "areca: uinput-select split commit tx=" << transactionId_
+                 << " chars=" << selectedCharacters_
                  << " commit=" << commitText_
                  << " split_count=" << commitChars_.size();
   }
@@ -306,8 +306,7 @@ void UinputBackspaceBackend::completeWithoutCommit() {
   const uint64_t transactionId = transactionId_;
   auto onDone = std::move(onDone_);
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-backspace context lost tx="
-                 << transactionId;
+    FCITX_INFO() << "areca: uinput-backspace context lost tx=" << transactionId;
   }
   clearPending();
   if (onDone) {
