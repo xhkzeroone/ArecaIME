@@ -22,7 +22,7 @@ Wayland và Fcitx5.
 | `RewriteBackend` | Interface chung cho thao tác apply một `RewritePlan`. |
 | `SurroundingTextBackend` | Gọi `deleteSurroundingText()` và `commitString()`. |
 | `ForwardBackspaceBackend` | Phát tuần tự Backspace press/release bằng `forwardKey()`, chờ settling delay rồi commit text và hoàn tất transaction. |
-| `UinputBackspaceBackend` | Gửi sự kiện Backspace (EV_KEY KEY_BACKSPACE) trực tiếp tới Linux input subsystem qua `/dev/uinput`, rồi commit replacement text. Fallback về `ForwardBackspaceBackend` nếu uinput không khả dụng. |
+| `UinputBackspaceBackend` | Gửi `Shift down`, `Left` × N, `Shift up`, `Delete` trực tiếp tới Linux input subsystem qua `/dev/uinput`, rồi commit replacement text. Riêng Edge thử chord `Shift+Left` riêng cho từng ký tự. Fallback về `ForwardBackspaceBackend` nếu uinput không khả dụng. |
 
 ## Phân tách cấu hình
 

@@ -59,6 +59,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                [this]() { return debugEnabled(); }),
       uinputBackspaceBackend_(instance_->eventLoop(),
                               [this]() { return debugEnabled(); }),
+      uinputShiftSelectBackend_(instance_->eventLoop(),
+                                [this]() { return debugEnabled(); }),
       scheduler_(
           instance_->eventLoop(),
           [this](fcitx::InputContext &inputContext) -> VietnameseEngine * {
@@ -183,6 +185,17 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 
   const char *frontend = inputContext.frontend();
   const std::string &program = inputContext.program();
+
+  if (isBrowserLikeProgram(program) &&
+      uinputShiftSelectBackend_.isAvailable()) {
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: browser selected uinput-shift-select backend (unreliable surrounding)"
+                   << " program=" << program
+                   << " backend=" << uinputShiftSelectBackend_.name();
+    }
+    return {&uinputShiftSelectBackend_};
+  }
+
   if (frontend && std::string_view(frontend) == "dbus" &&
       (program.empty() || isTerminalProgram(program))) {
     if (uinputBackspaceBackend_.isAvailable()) {
@@ -365,7 +378,8 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
   if (auto *inputContext = event.inputContext()) {
     if (scheduler_.shouldRejectReset()) {
       if (debugEnabled()) {
-        FCITX_INFO() << "areca: app reset rejected (active rewrite or 50ms post-commit window)";
+        FCITX_INFO() << "areca: app reset rejected (active rewrite or 300ms "
+                        "post-commit window)";
       }
       return;
     }
@@ -482,9 +496,9 @@ void ArecaEngine::applyConfig() {
   const bool modeChanged = requestedMode != activePresentationMode_;
   const auto macros = macroDefinitions();
   instance_->inputContextManager().foreach (
-      [this, &inputMethod, spellCheck, realtimeSpellcheck, modernStyle, &outputCharset,
-       macroEnabled, capitalizeMacro, autoCapitalize, modeChanged,
-       &macros](fcitx::InputContext *inputContext) {
+      [this, &inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
+       &outputCharset, macroEnabled, capitalizeMacro, autoCapitalize,
+       modeChanged, &macros](fcitx::InputContext *inputContext) {
         if (modeChanged) {
           rewriteHandler_.resetContext(*inputContext);
           preeditHandler_.resetContext(*inputContext);
@@ -510,8 +524,8 @@ void ArecaEngine::applyConfig() {
           try {
             resetMode();
             state->engine = std::make_unique<BambooEngineAdapter>(
-                inputMethod, spellCheck, realtimeSpellcheck, modernStyle, outputCharset,
-                macroEnabled, capitalizeMacro, macros);
+                inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
+                outputCharset, macroEnabled, capitalizeMacro, macros);
             state->inputMethod = inputMethod;
             state->spellCheck = spellCheck;
             state->realtimeSpellcheck = realtimeSpellcheck;

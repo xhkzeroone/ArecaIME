@@ -16,6 +16,7 @@
 #include "rewrite_mode.h"
 #include "surrounding_text_backend.h"
 #include "uinput_backspace_backend.h"
+#include "uinput_shift_select_backend.h"
 
 namespace areca {
 
@@ -83,6 +84,7 @@ private:
   SurroundingTextBackend surroundingBackend_;
   ForwardBackspaceBackend forwardBackspaceBackend_;
   UinputBackspaceBackend uinputBackspaceBackend_;
+  UinputShiftSelectBackend uinputShiftSelectBackend_;
   std::unique_ptr<fcitx::EventSourceTime> uinputWarmupTimer_;
   InputScheduler scheduler_;
   RewriteModeHandler rewriteHandler_;

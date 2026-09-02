@@ -232,8 +232,11 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
 
   if (isBackspace) {
-    backendVerdictProtector_(*inputContext, "user-backspace");
-  } else if (key.isCursorMove() || isSelectAllShortcut(rawKey)) {
+    if (!scheduler_.shouldRejectReset()) {
+      backendVerdictProtector_(*inputContext, "user-backspace");
+    }
+  } else if ((key.isCursorMove() || isSelectAllShortcut(rawKey)) &&
+             !scheduler_.shouldRejectReset()) {
     backendVerdictProtector_(*inputContext,
                              "selection-or-navigation-shortcut");
   }
@@ -243,17 +246,33 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       rawSym == FcitxKey_KP_Tab || rawSym == FcitxKey_ISO_Left_Tab ||
       rawSym == FcitxKey_Escape || hasRewriteShortcutModifier(rawKey);
   if (resetAndForward) {
+    if (scheduler_.shouldRejectReset()) {
+      // Cursor/modifier keys injected by uinput during or within post-commit window of a rewrite.
+      // Forward without resetting state.
+      event.forward();
+      return;
+    }
     state->sentenceCapitalization.reset();
     state->engine->reset();
     event.forward();
     return;
   }
   if (textSym == FcitxKey_Delete || rawSym == FcitxKey_Delete) {
+    if (scheduler_.shouldRejectReset()) {
+      event.forward();
+      return;
+    }
     state->sentenceCapitalization.reset();
     event.forward();
     return;
   }
   if (isBackspace) {
+    if (scheduler_.shouldRejectReset()) {
+      // Backspace key injected by uinput during or within post-commit window of a rewrite.
+      // Forward without running backspace recovery or resetting state.
+      event.forward();
+      return;
+    }
     state->sentenceCapitalization.reset();
     if (state->backspaceRecoveryAwaitingRelease) {
       if (debugProvider_()) {

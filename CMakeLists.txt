@@ -49,6 +49,7 @@ add_library(areca MODULE
     src/surrounding_text_backend.cpp
     src/surrounding_text_cache.cpp
     src/uinput_backspace_backend.cpp
+    src/uinput_shift_select_backend.cpp
     src/word_segment.cpp)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
 target_compile_features(areca PRIVATE cxx_std_20)
@@ -163,7 +164,8 @@ if(BUILD_TESTING)
 
     add_executable(areca-uinput-backspace-test
         tests/uinput_backspace_backend_test.cpp
-        src/uinput_backspace_backend.cpp)
+        src/uinput_backspace_backend.cpp
+        src/program_compatibility.cpp)
     target_compile_features(areca-uinput-backspace-test PRIVATE cxx_std_20)
     target_compile_options(areca-uinput-backspace-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
@@ -171,4 +173,16 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(areca-uinput-backspace-test PRIVATE Fcitx5::Core Fcitx5::Utils)
     add_test(NAME uinput-backspace COMMAND areca-uinput-backspace-test)
+
+    add_executable(areca-uinput-shift-select-test
+        tests/uinput_shift_select_backend_test.cpp
+        src/uinput_shift_select_backend.cpp
+        src/program_compatibility.cpp)
+    target_compile_features(areca-uinput-shift-select-test PRIVATE cxx_std_20)
+    target_compile_options(areca-uinput-shift-select-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-uinput-shift-select-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(areca-uinput-shift-select-test PRIVATE Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME uinput-shift-select COMMAND areca-uinput-shift-select-test)
 endif()
