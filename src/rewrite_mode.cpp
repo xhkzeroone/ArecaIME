@@ -232,7 +232,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
 
   if (isBackspace) {
-    backendVerdictProtector_(*inputContext, "user-backspace");
+    if (!scheduler_.shouldRejectReset()) {
+      backendVerdictProtector_(*inputContext, "user-backspace");
+    }
   } else if ((key.isCursorMove() || isSelectAllShortcut(rawKey)) &&
              !scheduler_.shouldRejectReset()) {
     backendVerdictProtector_(*inputContext,
@@ -256,11 +258,21 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
   if (textSym == FcitxKey_Delete || rawSym == FcitxKey_Delete) {
+    if (scheduler_.shouldRejectReset()) {
+      event.forward();
+      return;
+    }
     state->sentenceCapitalization.reset();
     event.forward();
     return;
   }
   if (isBackspace) {
+    if (scheduler_.shouldRejectReset()) {
+      // Backspace key injected by uinput during or within post-commit window of a rewrite.
+      // Forward without running backspace recovery or resetting state.
+      event.forward();
+      return;
+    }
     state->sentenceCapitalization.reset();
     if (state->backspaceRecoveryAwaitingRelease) {
       if (debugProvider_()) {
