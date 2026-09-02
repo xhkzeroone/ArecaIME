@@ -188,9 +188,9 @@ void UinputBackspaceBackend::sendNextSelectionLeft() {
 
 void UinputBackspaceBackend::releaseShiftThenCommit() {
   releaseShift();
-  // Delay after Shift UP before committing, giving the browser time to
-  // finalize the selection before the IM protocol commit replaces it.
-  schedule(backspaceDelayMs_, [this]() { commitSelectionAndComplete(); });
+  // Delay after Shift UP before committing, using the configured after-backspace wait delay.
+  const uint32_t waitMs = std::max(backspaceDelayMs_, afterBackspaceWaitMs_);
+  schedule(waitMs, [this]() { commitSelectionAndComplete(); });
 }
 
 void UinputBackspaceBackend::releaseShift() {
