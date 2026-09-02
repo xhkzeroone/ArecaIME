@@ -95,8 +95,7 @@ void UinputShiftSelectBackend::sendNextSelectionLeft() {
 
 void UinputShiftSelectBackend::releaseShiftThenCommit() {
   releaseShift();
-  // Delay after Shift UP before committing (10ms).
-  const uint32_t waitMs = 10U;
+  const uint32_t waitMs = afterBackspaceWaitMs_;
   schedule(waitMs, [this]() { commitSelectionAndComplete(); });
 }
 
