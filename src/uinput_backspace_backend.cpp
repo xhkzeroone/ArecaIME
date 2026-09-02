@@ -141,12 +141,12 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
   if (!selectionCount_) {
     scheduleCommit();
   } else {
-    beginSelectionAndDelete();
+    beginSelection();
   }
   return ApplyStatus::Pending;
 }
 
-void UinputBackspaceBackend::beginSelectionAndDelete() {
+void UinputBackspaceBackend::beginSelection() {
   auto *inputContext = inputContext_.get();
   if (!inputContext) {
     completeWithoutCommit();

@@ -31,7 +31,7 @@ private:
   bool ensureDevice();
   void closeDevice();
   void sendKeyEvent(uint16_t code, int value);
-  void beginSelectionAndDelete();
+  void beginSelection();
   void sendNextSelectionLeft();
   void releaseShiftThenCommit();
   void releaseShift();
