@@ -94,6 +94,9 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> forceUinput{
         this, "ForceUinput", N_("Ép dùng uinput thay cho forward Backspace"),
         false};
+    fcitx::Option<bool> useUinputShiftSelectForBrowser{
+        this, "UseUinputShiftSelectForBrowser",
+        N_("Dùng uinput Shift+Left bôi đen cho trình duyệt và XIM"), true};
 );
 
 FCITX_CONFIGURATION(

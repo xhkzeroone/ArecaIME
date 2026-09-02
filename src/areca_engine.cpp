@@ -187,7 +187,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const char *frontend = inputContext.frontend();
   const std::string &program = inputContext.program();
 
-  if ((isBrowserLikeProgram(program) ||
+  if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
+      (isBrowserLikeProgram(program) ||
        (frontend && std::string_view(frontend) == "xim")) &&
       uinputShiftSelectBackend_.isAvailable()) {
     if (debugEnabled()) {
