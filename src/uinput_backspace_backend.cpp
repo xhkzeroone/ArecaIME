@@ -123,7 +123,7 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
   const uint64_t capMask = inputContext.capabilityFlags().toInteger();
   constexpr uint64_t kForwardBackspaceCapabilityMask = 0x72;
   const std::string &program = inputContext.program();
-  splitCommitChars_ = (capMask == kForwardBackspaceCapabilityMask ||
+  splitCommitChars_ = (capMask <= kForwardBackspaceCapabilityMask ||
                        isBrowserLikeProgram(program) ||
                        isVSCodeFamilyProgram(program));
 
