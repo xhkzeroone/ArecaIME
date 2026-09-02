@@ -189,7 +189,7 @@ void UinputBackspaceBackend::sendNextSelectionLeft() {
 void UinputBackspaceBackend::releaseShiftThenCommit() {
   releaseShift();
   // Delay after Shift UP before committing, using the configured after-backspace wait delay.
-  const uint32_t waitMs = std::max(backspaceDelayMs_, afterBackspaceWaitMs_);
+  const uint32_t waitMs = afterBackspaceWaitMs_;
   schedule(waitMs, [this]() { commitSelectionAndComplete(); });
 }
 
@@ -264,7 +264,7 @@ void UinputBackspaceBackend::commitNextChar(size_t index) {
   inputContext->commitString(commitChars_[index]);
 
   if (index + 1 < commitChars_.size()) {
-    const uint32_t charDelayMs = std::max(20U, backspaceDelayMs_);
+    const uint32_t charDelayMs = 20U;
     schedule(charDelayMs, [this, index]() { commitNextChar(index + 1); });
   } else {
     const uint64_t transactionId = transactionId_;

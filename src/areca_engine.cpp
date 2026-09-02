@@ -165,7 +165,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const auto capabilities = inputContext.capabilityFlags();
   const std::string &program = inputContext.program();
 
-  if (isMicrosoftEdgeProgram(program) && uinputBackspaceBackend_.isAvailable()) {
+  if (isMicrosoftEdgeProgram(program) &&
+      uinputBackspaceBackend_.isAvailable()) {
     if (debugEnabled()) {
       FCITX_INFO() << "areca: uinput backend for Edge (forced)"
                    << " program=" << program;
@@ -180,8 +181,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     const bool isUrl = capabilities.test(fcitx::CapabilityFlag::Url);
     if (debugEnabled()) {
       FCITX_INFO() << "areca: browser autocomplete strategy="
-                   << forwardBackspaceBackend_.name()
-                   << " is_url=" << isUrl
+                   << forwardBackspaceBackend_.name() << " is_url=" << isUrl
                    << " additional_backspaces=1"
                    << " bamboo_delete=" << result.deleteCount;
     }
@@ -189,7 +189,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   if (decision.useSurrounding) {
-    return {&surroundingBackend_};
+    return {&uinputBackspaceBackend_};
   }
 
   const char *frontend = inputContext.frontend();
@@ -197,9 +197,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       (program.empty() || isTerminalProgram(program))) {
     if (uinputBackspaceBackend_.isAvailable()) {
       if (debugEnabled()) {
-        FCITX_INFO() << "areca: DBus terminal/unknown program selected uinput backend"
-                     << " program=" << program
-                     << " backend=" << uinputBackspaceBackend_.name();
+        FCITX_INFO()
+            << "areca: DBus terminal/unknown program selected uinput backend"
+            << " program=" << program
+            << " backend=" << uinputBackspaceBackend_.name();
       }
       return {&uinputBackspaceBackend_};
     }
@@ -225,8 +226,7 @@ void ArecaEngine::scheduleUinputWarmup() {
   uinputWarmupTimer_.reset();
   const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC);
   uinputWarmupTimer_ = instance_->eventLoop().addTimeEvent(
-      CLOCK_MONOTONIC, deadline, 0,
-      [this](fcitx::EventSourceTime *, uint64_t) {
+      CLOCK_MONOTONIC, deadline, 0, [this](fcitx::EventSourceTime *, uint64_t) {
         auto timer = std::move(uinputWarmupTimer_);
         const bool available = uinputBackspaceBackend_.isAvailable();
         if (debugEnabled()) {
@@ -374,7 +374,8 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
   if (auto *inputContext = event.inputContext()) {
     if (scheduler_.shouldRejectReset()) {
       if (debugEnabled()) {
-        FCITX_INFO() << "areca: app reset rejected (active rewrite or 300ms post-commit window)";
+        FCITX_INFO() << "areca: app reset rejected (active rewrite or 300ms "
+                        "post-commit window)";
       }
       return;
     }
@@ -459,18 +460,16 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
 }
 
 SchedulerTiming ArecaEngine::timing() const {
-  return {static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
-          static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
-          static_cast<uint32_t>(
-              advancedConfig_.waylandAfterBackspaceWaitMs.value()),
-          static_cast<uint32_t>(
-              advancedConfig_.ximAfterBackspaceWaitMs.value()),
-          static_cast<uint32_t>(
-              advancedConfig_.fcitx4AfterBackspaceWaitMs.value()),
-          static_cast<uint32_t>(
-              advancedConfig_.dbusAfterBackspaceWaitMs.value()),
-          static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
-          advancedConfig_.preciseTiming.value() ? 1U : 0U};
+  return {
+      static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
+      static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.waylandAfterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.ximAfterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.fcitx4AfterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.dbusAfterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
+      advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }
 
 void ArecaEngine::applyConfig() {
@@ -491,9 +490,9 @@ void ArecaEngine::applyConfig() {
   const bool modeChanged = requestedMode != activePresentationMode_;
   const auto macros = macroDefinitions();
   instance_->inputContextManager().foreach (
-      [this, &inputMethod, spellCheck, realtimeSpellcheck, modernStyle, &outputCharset,
-       macroEnabled, capitalizeMacro, autoCapitalize, modeChanged,
-       &macros](fcitx::InputContext *inputContext) {
+      [this, &inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
+       &outputCharset, macroEnabled, capitalizeMacro, autoCapitalize,
+       modeChanged, &macros](fcitx::InputContext *inputContext) {
         if (modeChanged) {
           rewriteHandler_.resetContext(*inputContext);
           preeditHandler_.resetContext(*inputContext);
@@ -519,8 +518,8 @@ void ArecaEngine::applyConfig() {
           try {
             resetMode();
             state->engine = std::make_unique<BambooEngineAdapter>(
-                inputMethod, spellCheck, realtimeSpellcheck, modernStyle, outputCharset,
-                macroEnabled, capitalizeMacro, macros);
+                inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
+                outputCharset, macroEnabled, capitalizeMacro, macros);
             state->inputMethod = inputMethod;
             state->spellCheck = spellCheck;
             state->realtimeSpellcheck = realtimeSpellcheck;
