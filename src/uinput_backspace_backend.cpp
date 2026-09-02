@@ -183,11 +183,13 @@ void UinputBackspaceBackend::sendNextSelectionLeft() {
 
 void UinputBackspaceBackend::releaseShiftThenCommit() {
   releaseShift();
-  // Send KEY_DELETE to clear the active selection explicitly,
-  // then commit commitText_ atomically in a single commitString call.
-  sendKeyEvent(KEY_DELETE, 1); // Delete press
-  sendKeyEvent(KEY_DELETE, 0); // Delete release
-  schedule(backspaceDelayMs_, [this]() { commitSelectionAndComplete(); });
+  // Delay after Shift UP so browser/Facebook flushes Shift modifier state,
+  // then send KEY_DELETE to clear the selection, then delay before commit.
+  schedule(backspaceDelayMs_, [this]() {
+    sendKeyEvent(KEY_DELETE, 1); // Delete press
+    sendKeyEvent(KEY_DELETE, 0); // Delete release
+    schedule(backspaceDelayMs_, [this]() { commitSelectionAndComplete(); });
+  });
 }
 
 void UinputBackspaceBackend::releaseShift() {
