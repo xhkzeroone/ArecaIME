@@ -236,7 +236,7 @@ void UinputBackspaceBackend::commitSelectionAndComplete() {
   }
 
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-select split commit (10ms) tx=" << transactionId_
+    FCITX_INFO() << "areca: uinput-select split commit (20ms) tx=" << transactionId_
                  << " chars=" << selectedCharacters_
                  << " commit=" << commitText_
                  << " split_count=" << commitChars_.size();
@@ -264,7 +264,7 @@ void UinputBackspaceBackend::commitNextChar(size_t index) {
   inputContext->commitString(commitChars_[index]);
 
   if (index + 1 < commitChars_.size()) {
-    const uint32_t charDelayMs = std::max(10U, backspaceDelayMs_);
+    const uint32_t charDelayMs = std::max(20U, backspaceDelayMs_);
     schedule(charDelayMs, [this, index]() { commitNextChar(index + 1); });
   } else {
     const uint64_t transactionId = transactionId_;
