@@ -45,6 +45,7 @@ bool UinputBackspaceBackend::ensureDevice() {
   if (ioctl(uinputFd_, UI_SET_EVBIT, EV_KEY) < 0 ||
       ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFTSHIFT) < 0 ||
       ioctl(uinputFd_, UI_SET_KEYBIT, KEY_LEFT) < 0 ||
+      ioctl(uinputFd_, UI_SET_KEYBIT, KEY_DELETE) < 0 ||
       ioctl(uinputFd_, UI_SET_EVBIT, EV_SYN) < 0) {
     closeDevice();
     return false;
@@ -182,8 +183,10 @@ void UinputBackspaceBackend::sendNextSelectionLeft() {
 
 void UinputBackspaceBackend::releaseShiftThenCommit() {
   releaseShift();
-  // Delay after Shift UP before committing, giving the browser time to
-  // finalize the selection before the IM protocol commit replaces it.
+  // Send KEY_DELETE to clear the active selection explicitly,
+  // then commit commitText_ atomically in a single commitString call.
+  sendKeyEvent(KEY_DELETE, 1); // Delete press
+  sendKeyEvent(KEY_DELETE, 0); // Delete release
   schedule(backspaceDelayMs_, [this]() { commitSelectionAndComplete(); });
 }
 
