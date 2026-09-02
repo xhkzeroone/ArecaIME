@@ -187,11 +187,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const std::string &program = inputContext.program();
 
   if ((isBrowserLikeProgram(program) ||
-       (frontend && (std::string_view(frontend) == "xim" ||
-                     std::string_view(frontend) == "fcitx4"))) &&
+       (frontend && std::string_view(frontend) == "xim")) &&
       uinputShiftSelectBackend_.isAvailable()) {
     if (debugEnabled()) {
-      FCITX_INFO() << "areca: selected uinput-shift-select backend for browser/XIM/fcitx4"
+      FCITX_INFO() << "areca: selected uinput-shift-select backend for browser or XIM"
                    << " program=" << program
                    << " frontend=" << (frontend ? frontend : "")
                    << " backend=" << uinputShiftSelectBackend_.name();
