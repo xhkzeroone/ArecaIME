@@ -55,7 +55,7 @@ bool InputScheduler::shouldRejectReset() const {
   if (lastRewriteCompletionTimeUsec_ != 0) {
     const uint64_t now = fcitx::now(CLOCK_MONOTONIC);
     if (now >= lastRewriteCompletionTimeUsec_ &&
-        (now - lastRewriteCompletionTimeUsec_) <= 300000) {
+        (now - lastRewriteCompletionTimeUsec_) <= 20000) {
       return true;
     }
   }
