@@ -156,11 +156,20 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   RewritePlan plan;
   plan.transactionId = nextTransactionId_++;
   plan.backspaceDelayMs = timing.backspaceDelayMs;
+  plan.waylandBackspaceDelayMs = timing.waylandBackspaceDelayMs;
   plan.afterBackspaceWaitMs = timing.afterBackspaceWaitMs;
   plan.waylandAfterBackspaceWaitMs = timing.waylandAfterBackspaceWaitMs;
   plan.ximAfterBackspaceWaitMs = timing.ximAfterBackspaceWaitMs;
   plan.fcitx4AfterBackspaceWaitMs = timing.fcitx4AfterBackspaceWaitMs;
   plan.dbusAfterBackspaceWaitMs = timing.dbusAfterBackspaceWaitMs;
+  plan.surroundingWaitMs = timing.surroundingWaitMs;
+  plan.waylandSurroundingDeleteDelayMs = timing.waylandSurroundingDeleteDelayMs;
+  const char *frontend = inputContext.frontend();
+  const bool isWayland =
+      frontend && std::string_view(frontend).find("wayland") != std::string_view::npos;
+  plan.surroundingDeleteDelayMs =
+      isWayland ? timing.waylandSurroundingDeleteDelayMs
+                : timing.surroundingDeleteDelayMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;
 

@@ -59,6 +59,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> waylandBackspaceDelayMs{
+        this, "WaylandBackspaceDelayMs",
+        N_("Delay giữa các Backspace Wayland (ms)"), 0,
+        fcitx::IntConstrain(0, 1000)};
     fcitx::Option<int, fcitx::IntConstrain> afterBackspaceWaitMs{
         this, "AfterBackspaceWaitMs",
         N_("Chờ sau Backspace cuối (ms)"), 10,
@@ -83,6 +87,21 @@ FCITX_CONFIGURATION(
         N_("Chờ sau Backspace cuối DBus (ms)"),
         5,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
+        this, "SurroundingWaitMs",
+        N_("Chờ sau khi xóa Surrounding (ms)"),
+        3,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
+        this, "SurroundingDeleteDelayMs",
+        N_("Delay giữa các phím xóa Surrounding DBus (ms)"),
+        10,
+        fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> waylandSurroundingDeleteDelayMs{
+        this, "WaylandSurroundingDeleteDelayMs",
+        N_("Delay giữa các phím xóa Surrounding Wayland (ms)"),
+        0,
+        fcitx::IntConstrain(0, 1000)};
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
@@ -91,6 +110,8 @@ FCITX_CONFIGURATION(
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
                                       N_("Dùng timer độ chính xác cao"), true};
+    fcitx::Option<bool> useV2Backends{
+        this, "UseV2Backends", N_("Sử dụng Backend V2 (Mới)"), false};
     fcitx::Option<bool> forceUinput{
         this, "ForceUinput", N_("Ép dùng uinput thay cho forward Backspace"),
         false};

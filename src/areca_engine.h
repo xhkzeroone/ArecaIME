@@ -15,6 +15,7 @@
 #include "reliability_checker.h"
 #include "rewrite_mode.h"
 #include "surrounding_text_backend.h"
+#include "surrounding_text_backend_v2.h"
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
@@ -83,6 +84,7 @@ private:
   SurroundingReliabilityState backendVerdict_;
   uint64_t backendVerdictProtectedUntil_ = 0;
   SurroundingTextBackend surroundingBackend_;
+  SurroundingTextBackendV2 surroundingBackendV2_;
   ForwardBackspaceBackend forwardBackspaceBackend_;
   UinputDevice uinputDevice_;
   UinputBackspaceBackend uinputBackspaceBackend_;

@@ -47,6 +47,7 @@ add_library(areca MODULE
     src/rewrite_mode.cpp
     src/sentence_capitalizer.cpp
     src/surrounding_text_backend.cpp
+    src/surrounding_text_backend_v2.cpp
     src/surrounding_text_cache.cpp
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp

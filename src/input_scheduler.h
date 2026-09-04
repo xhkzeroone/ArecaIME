@@ -14,11 +14,15 @@ namespace areca {
 
 struct SchedulerTiming {
   uint32_t backspaceDelayMs = 1;
+  uint32_t waylandBackspaceDelayMs = 0;
   uint32_t afterBackspaceWaitMs = 10;
   uint32_t waylandAfterBackspaceWaitMs = 3;
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
   uint32_t dbusAfterBackspaceWaitMs = 5;
+  uint32_t surroundingWaitMs = 3;
+  uint32_t surroundingDeleteDelayMs = 10;
+  uint32_t waylandSurroundingDeleteDelayMs = 0;
   uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
 };

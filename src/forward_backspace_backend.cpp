@@ -26,8 +26,10 @@ ApplyStatus ForwardBackspaceBackend::apply(fcitx::InputContext &inputContext,
   onDone_ = std::move(onDone);
   remainingBackspaces_ = plan.backspaceCount;
   sentBackspaces_ = 0;
-  backspaceDelayMs_ = plan.backspaceDelayMs;
   const char *frontend = inputContext.frontend();
+  const bool isWayland =
+      frontend && std::string_view(frontend).find("wayland") != std::string_view::npos;
+  backspaceDelayMs_ = isWayland ? plan.waylandBackspaceDelayMs : plan.backspaceDelayMs;
   afterBackspaceWaitMs_ = resolveAfterBackspaceWaitMs(frontend, plan);
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
   commitText_ = plan.commitText;

@@ -17,12 +17,16 @@ struct RewritePlan {
   uint64_t transactionId = 0;
   uint32_t backspaceCount = 0;
   uint32_t backspaceDelayMs = 1;
+  uint32_t waylandBackspaceDelayMs = 0;
   uint32_t afterBackspaceWaitMs = 10;
   uint32_t waylandAfterBackspaceWaitMs = 3;
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
   uint32_t dbusAfterBackspaceWaitMs = 5;
   uint64_t timerAccuracyUsec = 1;
+  uint32_t surroundingWaitMs = 3;
+  uint32_t surroundingDeleteDelayMs = 10;
+  uint32_t waylandSurroundingDeleteDelayMs = 0;
   std::string commitText;
 };
 

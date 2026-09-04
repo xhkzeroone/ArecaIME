@@ -55,6 +55,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       }),
       surroundingBackend_(instance_->eventLoop(),
                           [this]() { return debugEnabled(); }),
+      surroundingBackendV2_(instance_->eventLoop(),
+                            [this]() { return debugEnabled(); }),
       forwardBackspaceBackend_(instance_->eventLoop(),
                                [this]() { return debugEnabled(); }),
       uinputDevice_([this]() { return debugEnabled(); }),
@@ -148,6 +150,7 @@ void ArecaEngine::clearBackendVerdictForLifecycle(
 RewriteBackendSelection
 ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                                   const BambooResult &result) {
+  const bool useV2 = advancedConfig_.useV2Backends.value();
   auto *state = inputContext.propertyFor(&rewriteStateFactory_);
   if (!state) {
     return {&forwardBackspaceBackend_};
@@ -181,7 +184,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   if (decision.useSurrounding) {
-    return {&surroundingBackend_};
+    RewriteBackend *surrBackend = useV2
+                                      ? static_cast<RewriteBackend *>(&surroundingBackendV2_)
+                                      : static_cast<RewriteBackend *>(&surroundingBackend_);
+    return {surrBackend};
   }
 
   const char *frontend = inputContext.frontend();
@@ -469,6 +475,8 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
 
 SchedulerTiming ArecaEngine::timing() const {
   return {static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
+          static_cast<uint32_t>(
+              advancedConfig_.waylandBackspaceDelayMs.value()),
           static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
           static_cast<uint32_t>(
               advancedConfig_.waylandAfterBackspaceWaitMs.value()),
@@ -478,6 +486,12 @@ SchedulerTiming ArecaEngine::timing() const {
               advancedConfig_.fcitx4AfterBackspaceWaitMs.value()),
           static_cast<uint32_t>(
               advancedConfig_.dbusAfterBackspaceWaitMs.value()),
+          static_cast<uint32_t>(
+              advancedConfig_.surroundingWaitMs.value()),
+          static_cast<uint32_t>(
+              advancedConfig_.surroundingDeleteDelayMs.value()),
+          static_cast<uint32_t>(
+              advancedConfig_.waylandSurroundingDeleteDelayMs.value()),
           static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
           advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }
