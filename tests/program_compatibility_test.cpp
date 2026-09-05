@@ -90,6 +90,7 @@ int main() {
   assert(!isTerminalProgram(""));
 
   using areca::resolveAfterBackspaceWaitMs;
+  using areca::resolveAfterUinputShiftSelectWaitMs;
   areca::RewritePlan plan;
   plan.afterBackspaceWaitMs = 10;
   plan.waylandAfterBackspaceWaitMs = 3;
@@ -97,7 +98,16 @@ int main() {
   plan.fcitx4AfterBackspaceWaitMs = 10;
   plan.dbusAfterBackspaceWaitMs = 5;
 
+  plan.afterUinputShiftSelectWaitMs = 20;
+  plan.waylandAfterUinputShiftSelectWaitMs = 8;
+  plan.ximAfterUinputShiftSelectWaitMs = 20;
+  plan.fcitx4AfterUinputShiftSelectWaitMs = 20;
+  plan.dbusAfterUinputShiftSelectWaitMs = 15;
+
   assert(resolveAfterBackspaceWaitMs("wayland", plan) == 3);
+  assert(resolveAfterBackspaceWaitMs("wayland_v2", plan) == 3);
+  assert(resolveAfterBackspaceWaitMs("waylandim", plan) == 3);
+  assert(resolveAfterBackspaceWaitMs("waylandfrontend", plan) == 3);
   assert(resolveAfterBackspaceWaitMs("xim", plan) == 10);
   assert(resolveAfterBackspaceWaitMs("fcitx4", plan) == 10);
   assert(resolveAfterBackspaceWaitMs("fcitx4frontend", plan) == 10);
@@ -105,4 +115,13 @@ int main() {
   assert(resolveAfterBackspaceWaitMs("dbusfrontend", plan) == 5);
   assert(resolveAfterBackspaceWaitMs("unknown", plan) == 10);
   assert(resolveAfterBackspaceWaitMs(nullptr, plan) == 10);
+
+  assert(resolveAfterUinputShiftSelectWaitMs("wayland", plan) == 8);
+  assert(resolveAfterUinputShiftSelectWaitMs("wayland_v2", plan) == 8);
+  assert(resolveAfterUinputShiftSelectWaitMs("waylandim", plan) == 8);
+  assert(resolveAfterUinputShiftSelectWaitMs("waylandfrontend", plan) == 8);
+  assert(resolveAfterUinputShiftSelectWaitMs("dbus", plan) == 15);
+  assert(resolveAfterUinputShiftSelectWaitMs("dbusfrontend", plan) == 15);
+  assert(resolveAfterUinputShiftSelectWaitMs("unknown", plan) == 20);
+  assert(resolveAfterUinputShiftSelectWaitMs(nullptr, plan) == 20);
 }

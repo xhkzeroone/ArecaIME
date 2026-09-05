@@ -40,16 +40,16 @@ inline uint32_t resolveAfterBackspaceWaitMs(const char *frontendName,
     return plan.afterBackspaceWaitMs;
   }
   const std::string_view fe(frontendName);
-  if (fe == "wayland") {
+  if (fe.starts_with("wayland")) {
     return plan.waylandAfterBackspaceWaitMs;
   }
-  if (fe == "xim") {
+  if (fe.starts_with("xim")) {
     return plan.ximAfterBackspaceWaitMs;
   }
-  if (fe == "fcitx4" || fe == "fcitx4frontend") {
+  if (fe.starts_with("fcitx4")) {
     return plan.fcitx4AfterBackspaceWaitMs;
   }
-  if (fe == "dbus" || fe == "dbusfrontend") {
+  if (fe.starts_with("dbus")) {
     return plan.dbusAfterBackspaceWaitMs;
   }
   return plan.afterBackspaceWaitMs;
@@ -61,16 +61,16 @@ inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
     return plan.afterUinputShiftSelectWaitMs;
   }
   const std::string_view fe(frontendName);
-  if (fe == "wayland") {
+  if (fe.starts_with("wayland")) {
     return plan.waylandAfterUinputShiftSelectWaitMs;
   }
-  if (fe == "xim") {
+  if (fe.starts_with("xim")) {
     return plan.ximAfterUinputShiftSelectWaitMs;
   }
-  if (fe == "fcitx4" || fe == "fcitx4frontend") {
+  if (fe.starts_with("fcitx4")) {
     return plan.fcitx4AfterUinputShiftSelectWaitMs;
   }
-  if (fe == "dbus" || fe == "dbusfrontend") {
+  if (fe.starts_with("dbus")) {
     return plan.dbusAfterUinputShiftSelectWaitMs;
   }
   return plan.afterUinputShiftSelectWaitMs;

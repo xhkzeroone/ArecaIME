@@ -169,7 +169,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const std::string &program = inputContext.program();
 
   const bool isDbusTerminalOrUnknown =
-      frontend && std::string_view(frontend) == "dbus" &&
+      frontend && std::string_view(frontend).starts_with("dbus") &&
       (program.empty() || isTerminalProgram(program));
 
   if (isDbusTerminalOrUnknown) {
