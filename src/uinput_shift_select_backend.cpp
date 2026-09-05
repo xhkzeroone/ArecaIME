@@ -120,40 +120,36 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
     return;
   }
 
-  commitChars_.clear();
   auto it = commitText_.begin();
-  while (it != commitText_.end()) {
-    auto start = it;
-    uint32_t codepoint = 0;
-    it = fcitx::utf8::getNextChar(it, commitText_.end(), &codepoint);
-    commitChars_.emplace_back(start, it);
-  }
+  uint32_t codepoint = 0;
+  auto nextIt = fcitx::utf8::getNextChar(it, commitText_.end(), &codepoint);
+  std::string firstChar(it, nextIt);
+  std::string remainingText(nextIt, commitText_.end());
 
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-select split commit (1ms) tx="
-                 << transactionId_ << " chars=" << selectedCharacters_
-                 << " commit=" << commitText_
-                 << " split_count=" << commitChars_.size();
+    FCITX_INFO() << "areca: uinput-select 2-step commit tx=" << transactionId_
+                 << " chars=" << selectedCharacters_
+                 << " first=" << firstChar
+                 << " remaining=" << remainingText;
   }
 
-  commitNextChar(0);
-}
+  inputContext->commitString(firstChar);
 
-void UinputShiftSelectBackend::commitNextChar(size_t index) {
-  auto *inputContext = inputContext_.get();
-  if (!inputContext) {
-    completeWithoutCommit();
+  if (remainingText.empty()) {
+    finishTransaction();
     return;
   }
 
-  inputContext->commitString(commitChars_[index]);
-
-  if (index + 1 < commitChars_.size()) {
-    const uint32_t charDelayMs = 1U;
-    schedule(charDelayMs, [this, index]() { commitNextChar(index + 1); });
-  } else {
+  const uint32_t charDelayMs = 5U;
+  schedule(charDelayMs, [this, remainingText = std::move(remainingText)]() {
+    auto *inputContext = inputContext_.get();
+    if (!inputContext) {
+      completeWithoutCommit();
+      return;
+    }
+    inputContext->commitString(remainingText);
     finishTransaction();
-  }
+  });
 }
 
 void UinputShiftSelectBackend::scheduleCommit() {
@@ -210,7 +206,6 @@ void UinputShiftSelectBackend::clearPending() {
   timerAccuracyUsec_ = 1;
   shiftHeld_ = false;
   commitText_.clear();
-  commitChars_.clear();
 }
 
 } // namespace areca
