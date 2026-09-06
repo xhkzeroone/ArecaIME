@@ -237,7 +237,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   // Fallback: nếu browser không hỗ trợ surrounding text thì dùng shift-select
   // thay vì forward-backspace. Khác với useUinputShiftSelectForBrowser vốn
   // override cả nhánh useSurrounding bên trên.
-  if (advancedConfig_.shiftSelectFallbackForBrowser.value() &&
+  if (config_.shiftSelectFallbackForBrowser.value() &&
       isBrowserForShiftSelect && uinputShiftSelectBackend_.isAvailable()) {
     if (debugEnabled()) {
       FCITX_INFO()
@@ -264,7 +264,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 }
 
 bool ArecaEngine::backspaceRecoveryEnabled() const {
-  return advancedConfig_.backspaceRecovery.value();
+  return config_.backspaceRecovery.value();
 }
 
 void ArecaEngine::scheduleUinputWarmup() {

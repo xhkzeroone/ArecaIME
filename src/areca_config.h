@@ -103,9 +103,6 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<bool> backspaceRecovery{
-        this, "BackspaceRecovery",
-        N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
                                       N_("Dùng timer độ chính xác cao"), true};
     fcitx::Option<bool> forceUinput{
@@ -113,11 +110,7 @@ FCITX_CONFIGURATION(
         false};
     fcitx::Option<bool> useUinputShiftSelectForBrowser{
         this, "UseUinputShiftSelectForBrowser",
-        N_("Ép uinput Shift+Left cho trình duyệt"), false};
-    fcitx::Option<bool> shiftSelectFallbackForBrowser{
-        this, "ShiftSelectFallbackForBrowser",
-        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ surrounding text"),
-        false};);
+        N_("Ép uinput Shift+Left cho trình duyệt"), false};);
 
 FCITX_CONFIGURATION(
     ArecaConfig,
@@ -161,6 +154,13 @@ FCITX_CONFIGURATION(
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};
+    fcitx::Option<bool> backspaceRecovery{
+        this, "BackspaceRecovery",
+        N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
+    fcitx::Option<bool> shiftSelectFallbackForBrowser{
+        this, "ShiftSelectFallbackForBrowser",
+        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ surrounding text"),
+        false};
     fcitx::SubConfigOption advancedEditor{
         this, "AdvancedEditor", N_("Cấu hình nâng cao"),
         "fcitx://config/addon/areca/advanced"};
