@@ -234,6 +234,21 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&uinputShiftSelectBackend_};
   }
 
+  // Fallback: nếu browser không hỗ trợ surrounding text thì dùng shift-select
+  // thay vì forward-backspace. Khác với useUinputShiftSelectForBrowser vốn
+  // override cả nhánh useSurrounding bên trên.
+  if (advancedConfig_.shiftSelectFallbackForBrowser.value() &&
+      isBrowserForShiftSelect && uinputShiftSelectBackend_.isAvailable()) {
+    if (debugEnabled()) {
+      FCITX_INFO()
+          << "areca: browser no surrounding text, fallback to shift-select"
+          << " program=" << program
+          << " frontend=" << (frontend ? frontend : "")
+          << " backend=" << uinputShiftSelectBackend_.name();
+    }
+    return {&uinputShiftSelectBackend_};
+  }
+
   if (advancedConfig_.forceUinput.value() &&
       uinputBackspaceBackend_.isAvailable()) {
     if (debugEnabled()) {

@@ -113,7 +113,11 @@ FCITX_CONFIGURATION(
         false};
     fcitx::Option<bool> useUinputShiftSelectForBrowser{
         this, "UseUinputShiftSelectForBrowser",
-        N_("Ép uinput Shift+Left cho trình duyệt"), false};);
+        N_("Ép uinput Shift+Left cho trình duyệt"), false};
+    fcitx::Option<bool> shiftSelectFallbackForBrowser{
+        this, "ShiftSelectFallbackForBrowser",
+        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ surrounding text"),
+        false};);
 
 FCITX_CONFIGURATION(
     ArecaConfig,
