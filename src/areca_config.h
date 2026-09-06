@@ -159,8 +159,9 @@ FCITX_CONFIGURATION(
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> shiftSelectFallbackForBrowser{
         this, "ShiftSelectFallbackForBrowser",
-        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ surrounding text"),
-        false};
+        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "
+           "surrounding text"),
+        true};
     fcitx::SubConfigOption advancedEditor{
         this, "AdvancedEditor", N_("Cấu hình nâng cao"),
         "fcitx://config/addon/areca/advanced"};
