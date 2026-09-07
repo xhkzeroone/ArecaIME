@@ -43,8 +43,8 @@ private:
   uint64_t transactionId_ = 0;
   uint32_t remainingDeletes_ = 0;
   uint32_t totalDeletes_ = 0;
-  uint32_t deleteDelayMs_ = 1;
-  uint32_t afterDeleteWaitMs_ = 3;
+  uint32_t deleteDelayMs_ = 10;
+  uint32_t afterDeleteWaitMs_ = 1;
   uint64_t timerAccuracyUsec_ = 1;
   std::string commitText_;
 };
