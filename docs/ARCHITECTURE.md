@@ -209,7 +209,7 @@ sequenceDiagram
     alt backspaceCount > 0
         B->>IC: deleteSurroundingText(-count, count)
         B->>B: updateSurroundingCacheAfterDelete(...)
-        B->>EL: addTimeEvent(DefaultWaitMs = 3ms)
+        B->>EL: addTimeEvent(SurroundingWaitMs = 3ms)
         Note over B,EL: Chờ event-loop settling delay
         EL-->>B: Timer callback
         B->>IC: commitString(commitText)
@@ -408,30 +408,31 @@ Policy `SurroundingOnly` sau này có thể được thêm như một rewrite mo
 với state và scheduler riêng hoặc backend selector luôn chọn
 `SurroundingTextBackend`. Nó không cần thay đổi `PreeditModeHandler`.
 
-### 2. Đề xuất cải tiến SurroundingTextBackend (Xóa từng ký tự thay vì xóa toàn bộ)
+### 2. SurroundingTextV2Backend: Xóa từng ký tự thay vì xóa toàn bộ
 
-#### Hiện trạng
-Hiện tại, `SurroundingTextBackend` thực hiện xóa `N` ký tự trong một câu lệnh duy nhất:
+#### Hiện trạng của v1
+`SurroundingTextBackend` v1 thực hiện xóa `N` ký tự trong một câu lệnh duy nhất:
 ```cpp
 inputContext.deleteSurroundingText(-static_cast<int>(plan.backspaceCount), plan.backspaceCount);
 ```
 
 #### Hạn chế của cơ chế xóa gộp
-- **Lỗi tính offset của ứng dụng**: Một số trình duyệt (đặc biệt là Firefox Gecko trên Wayland) hoặc các bộ soạn thảo Web (Monaco Editor, CodeMirror) xử lý câu lệnh xóa gộp `-N` ký tự không ổn định khi phía sau con trỏ đang có các ký tự đặc biệt (như dấu ngoặc `}}` hoặc thẻ HTML).
+- **Lỗi tính offset của ứng dụng**: Một số trình duyệt như Firefox Gecko trên Wayland hoặc các bộ soạn thảo Web như Monaco Editor, CodeMirror xử lý câu lệnh xóa gộp `-N` ký tự không ổn định khi phía sau con trỏ đang có các ký tự đặc biệt như dấu ngoặc `}}` hoặc thẻ HTML.
 - **Rủi ro lệch vị trí xóa**: Việc xóa gộp một lượt có thể dẫn tới hiện tượng trình duyệt xóa thiếu ký tự hoặc tính nhầm độ dài ký tự UTF-8 multibyte.
 
-#### Giải pháp đề xuất
-Chuyển `SurroundingTextBackend` sang cơ chế vòng lặp xóa từng ký tự qua timer event-loop (tương tự như `UinputShiftSelectBackend`):
-1. Mỗi nhịp timer (ví dụ `1ms` - `3ms`), phát lệnh xóa 1 ký tự trước con trỏ: `deleteSurroundingText(-1, 1)`.
-2. Lặp lại `N` lần cho tới khi xóa đủ số ký tự cần thiết (`backspaceCount`).
-3. Chờ hết thời gian settling delay (`WaitMs`), sau đó mới thực hiện `commitString(commitText)`.
+#### Cơ chế của SurroundingTextV2Backend
+`SurroundingTextV2Backend` sử dụng cơ chế vòng lặp xóa từng ký tự qua timer event loop:
+1. Mỗi nhịp timer `SurroundingDeleteDelayMs`, phát lệnh xóa 1 ký tự trước con trỏ: `deleteSurroundingText(-1, 1)`.
+2. Lặp lại cho tới khi xóa đủ số ký tự cần thiết `backspaceCount`.
+3. Chờ hết thời gian settling delay `AfterSurroundingDeleteWaitMs`, sau đó mới thực hiện `commitString(commitText)`.
+4. Có thể kích hoạt thông qua tùy chọn `UseSurroundingV2ForBrowser` khi ứng dụng là trình duyệt.
 
-#### Sơ đồ Sequence đề xuất
+#### Sơ đồ Sequence của SurroundingTextV2Backend
 ```mermaid
 sequenceDiagram
     autonumber
     participant S as InputScheduler
-    participant B as SurroundingTextBackend (Đề xuất)
+    participant B as SurroundingTextV2Backend
     participant IC as InputContext
     participant EL as EventLoop
 
@@ -441,12 +442,12 @@ sequenceDiagram
         loop N = backspaceCount lần
             B->>IC: deleteSurroundingText(-1, 1)
             B->>B: updateSurroundingCacheAfterDelete(-1, 1)
-            B->>EL: addTimeEvent(DeleteDelayMs = 1ms)
+            B->>EL: addTimeEvent(SurroundingDeleteDelayMs = 1ms)
             EL-->>B: Timer callback
         end
         
-        B->>EL: addTimeEvent(WaitMs = 3ms)
-        EL-->>B: Timer callback (Settling wait hoàn tất)
+        B->>EL: addTimeEvent(AfterSurroundingDeleteWaitMs = 3ms)
+        EL-->>B: Timer callback
         B->>IC: commitString(commitText)
         B->>B: updateSurroundingCacheAfterCommit(...)
         B->>S: onDone(transactionId)

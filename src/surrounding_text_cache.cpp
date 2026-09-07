@@ -49,6 +49,34 @@ void updateSurroundingCacheAfterCommit(fcitx::InputContext &inputContext,
   st.setText(newText, newCursor, newCursor);
 }
 
+void updateSurroundingCacheAfterDeleteV2(fcitx::InputContext &inputContext,
+                                         int offset, uint32_t count) {
+  inputContext.surroundingText().deleteText(offset, count);
+}
+
+void updateSurroundingCacheAfterCommitV2(fcitx::InputContext &inputContext,
+                                         const std::string &committedText) {
+  if (committedText.empty()) {
+    return;
+  }
+  auto &st = inputContext.surroundingText();
+
+  const auto &text = st.text();
+  const unsigned int cursor = st.cursor();
+
+  const size_t cursorBytes = fcitx::utf8::ncharByteLength(text.begin(), cursor);
+  std::string newText;
+  newText.reserve(text.size() + committedText.size());
+  newText.append(text, 0, cursorBytes);
+  newText.append(committedText);
+  newText.append(text, cursorBytes);
+
+  const unsigned int committedChars =
+      static_cast<unsigned int>(fcitx::utf8::length(committedText));
+  const unsigned int newCursor = cursor + committedChars;
+  st.setText(newText, newCursor, newCursor);
+}
+
 std::size_t commonPrefixBytesUTF8Boundary(const std::string &s1,
                                           const std::string &s2) {
   std::size_t n = std::min(s1.size(), s2.size());

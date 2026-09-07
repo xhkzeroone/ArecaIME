@@ -55,6 +55,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       }),
       surroundingBackend_(instance_->eventLoop(),
                           [this]() { return debugEnabled(); }),
+      surroundingV2Backend_(instance_->eventLoop(),
+                            [this]() { return debugEnabled(); }),
       forwardBackspaceBackend_(instance_->eventLoop(),
                                [this]() { return debugEnabled(); }),
       uinputDevice_([this]() { return debugEnabled(); }),
@@ -219,6 +221,17 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
             << " backend=" << uinputShiftSelectBackend_.name();
       }
       return {&uinputShiftSelectBackend_};
+    }
+    if (advancedConfig_.useSurroundingV2ForBrowser.value() &&
+        isBrowserForShiftSelect) {
+      if (debugEnabled()) {
+        FCITX_INFO()
+            << "areca: selected surrounding-text-v2 backend"
+            << " program=" << program
+            << " frontend=" << (frontend ? frontend : "")
+            << " backend=" << surroundingV2Backend_.name();
+      }
+      return {&surroundingV2Backend_};
     }
     return {&surroundingBackend_};
   }
@@ -524,6 +537,10 @@ SchedulerTiming ArecaEngine::timing() const {
           advancedConfig_.fcitx4AfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.dbusAfterUinputShiftSelectWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.surroundingDeleteDelayMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.afterSurroundingDeleteWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }

@@ -27,6 +27,9 @@ struct SchedulerTiming {
   uint32_t fcitx4AfterUinputShiftSelectWaitMs = 20;
   uint32_t dbusAfterUinputShiftSelectWaitMs = 20;
 
+  uint32_t surroundingWaitMs = 3;
+  uint32_t surroundingDeleteDelayMs = 0;
+  uint32_t afterSurroundingDeleteWaitMs = 3;
   uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
 };

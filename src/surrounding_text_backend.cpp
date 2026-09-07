@@ -22,8 +22,6 @@ ApplyStatus SurroundingTextBackend::apply(fcitx::InputContext &inputContext,
     return ApplyStatus::Failed;
   }
 
-  constexpr uint32_t kDefaultSurroundingWaitMs = 3;
-
   if (plan.backspaceCount) {
     inputContext.deleteSurroundingText(-static_cast<int>(plan.backspaceCount),
                                        plan.backspaceCount);
@@ -46,7 +44,7 @@ ApplyStatus SurroundingTextBackend::apply(fcitx::InputContext &inputContext,
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
-  waitMs_ = kDefaultSurroundingWaitMs;
+  waitMs_ = plan.surroundingWaitMs;
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
   commitText_ = plan.commitText;
 

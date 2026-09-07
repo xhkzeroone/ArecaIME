@@ -100,6 +100,17 @@ FCITX_CONFIGURATION(
         this, "DbusAfterUinputShiftSelectWaitMs",
         N_("Chờ sau phím uinput Shift+Left cuối DBus (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
+        this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
+        this, "SurroundingDeleteDelayMs",
+        N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 0,
+        fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> afterSurroundingDeleteWaitMs{
+        this, "AfterSurroundingDeleteWaitMs",
+        N_("Chờ sau lệnh xóa surrounding v2 cuối (ms)"), 3,
+        fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
@@ -110,7 +121,10 @@ FCITX_CONFIGURATION(
         false};
     fcitx::Option<bool> useUinputShiftSelectForBrowser{
         this, "UseUinputShiftSelectForBrowser",
-        N_("Ép uinput Shift+Left cho trình duyệt"), false};);
+        N_("Ép uinput Shift+Left cho trình duyệt"), false};
+    fcitx::Option<bool> useSurroundingV2ForBrowser{
+        this, "UseSurroundingV2ForBrowser",
+        N_("Ép surrounding text v2 cho trình duyệt"), false};);
 
 FCITX_CONFIGURATION(
     ArecaConfig,
