@@ -38,13 +38,13 @@ ApplyStatus SurroundingTextV2Backend::apply(fcitx::InputContext &inputContext,
   onDone_ = std::move(onDone);
   remainingDeletes_ = plan.backspaceCount;
   totalDeletes_ = plan.backspaceCount;
-  deleteDelayMs_ = plan.surroundingDeleteDelayMs;
+  const char *frontend = inputContext.frontend();
+  deleteDelayMs_ = resolveSurroundingDeleteDelayMs(frontend, plan);
   afterDeleteWaitMs_ = plan.afterSurroundingDeleteWaitMs;
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
   commitText_ = plan.commitText;
 
   if (debugProvider_()) {
-    const char *frontend = inputContext.frontend();
     FCITX_INFO() << "areca: surrounding-text-v2 start tx=" << transactionId_
                  << " total_deletes=" << totalDeletes_
                  << " delete_delay_ms=" << deleteDelayMs_

@@ -540,6 +540,8 @@ SchedulerTiming ArecaEngine::timing() const {
       static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingDeleteDelayMs.value()),
       static_cast<uint32_t>(
+          advancedConfig_.waylandSurroundingDeleteDelayMs.value()),
+      static_cast<uint32_t>(
           advancedConfig_.afterSurroundingDeleteWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};

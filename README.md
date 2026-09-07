@@ -273,6 +273,7 @@ Fcitx4AfterBackspaceWaitMs=10
 DbusAfterBackspaceWaitMs=5
 SurroundingWaitMs=3
 SurroundingDeleteDelayMs=10
+WaylandSurroundingDeleteDelayMs=0
 AfterSurroundingDeleteWaitMs=1
 PostCommitDelayMs=20
 BackspaceRecovery=True
@@ -301,6 +302,7 @@ UseSurroundingV2ForBrowser=False
 | Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 5 ms. |
 | Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
 | Nâng cao | `SurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2, mặc định 10 ms. |
+| Nâng cao | `WaylandSurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2 cho frontend Wayland, mặc định 0 ms. |
 | Nâng cao | `AfterSurroundingDeleteWaitMs` | Thời gian chờ sau lệnh xóa surrounding cuối trước khi commit của v2, mặc định 1 ms. |
 | Nâng cao | `PostCommitDelayMs` | Settling window độc lập sau mọi text commit. |
 | Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
