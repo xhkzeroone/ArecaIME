@@ -524,6 +524,7 @@ SchedulerTiming ArecaEngine::timing() const {
           advancedConfig_.fcitx4AfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.dbusAfterUinputShiftSelectWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }

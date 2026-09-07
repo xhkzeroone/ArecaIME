@@ -117,7 +117,7 @@ sequenceDiagram
     alt backspaceCount > 0
         B->>IC: deleteSurroundingText(-count, count)
         B->>B: updateSurroundingCacheAfterDelete(...)
-        B->>EL: addTimeEvent(DefaultWaitMs = 3ms)
+        B->>EL: addTimeEvent(SurroundingWaitMs = 3ms)
         Note over B,EL: Chờ event-loop settling delay
         EL-->>B: Timer callback
         B->>IC: commitString(commitText)
@@ -279,5 +279,6 @@ sequenceDiagram
 | `XimAfterUinputShiftSelectWaitMs` | Thời gian chờ sau phím uinput Shift+Left cuối XIM (ms) | `20 ms` |
 | `Fcitx4AfterUinputShiftSelectWaitMs` | Thời gian chờ sau phím uinput Shift+Left cuối Fcitx4 (ms) | `20 ms` |
 | `DbusAfterUinputShiftSelectWaitMs` | Thời gian chờ sau phím uinput Shift+Left cuối DBus (ms) | `20 ms` |
+| `SurroundingWaitMs` | Thời gian chờ sau xóa surrounding text | `3 ms` |
 | `PostCommitDelayMs` | Delay bảo vệ sau mỗi lượt commit (ms) | `20 ms` |
 | `PreciseTiming` | Sử dụng timer độ chính xác cao (1µs) | `True` |

@@ -92,6 +92,7 @@ int main() {
   using areca::resolveAfterBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;
   areca::RewritePlan plan;
+  assert(plan.surroundingWaitMs == 3);
   plan.afterBackspaceWaitMs = 10;
   plan.waylandAfterBackspaceWaitMs = 3;
   plan.ximAfterBackspaceWaitMs = 10;

@@ -209,7 +209,7 @@ sequenceDiagram
     alt backspaceCount > 0
         B->>IC: deleteSurroundingText(-count, count)
         B->>B: updateSurroundingCacheAfterDelete(...)
-        B->>EL: addTimeEvent(DefaultWaitMs = 3ms)
+        B->>EL: addTimeEvent(SurroundingWaitMs = 3ms)
         Note over B,EL: Chờ event-loop settling delay
         EL-->>B: Timer callback
         B->>IC: commitString(commitText)

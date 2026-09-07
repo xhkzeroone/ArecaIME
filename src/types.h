@@ -30,6 +30,7 @@ struct RewritePlan {
   uint32_t fcitx4AfterUinputShiftSelectWaitMs = 10;
   uint32_t dbusAfterUinputShiftSelectWaitMs = 20;
 
+  uint32_t surroundingWaitMs = 3;
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
 };

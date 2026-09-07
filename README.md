@@ -271,6 +271,7 @@ WaylandAfterBackspaceWaitMs=3
 XimAfterBackspaceWaitMs=10
 Fcitx4AfterBackspaceWaitMs=10
 DbusAfterBackspaceWaitMs=5
+SurroundingWaitMs=3
 PostCommitDelayMs=20
 BackspaceRecovery=True
 PreciseTiming=True
@@ -295,6 +296,7 @@ ForceUinput=False
 | Nâng cao | `XimAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend XIM, mặc định 10 ms. |
 | Nâng cao | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Fcitx4, mặc định 10 ms. |
 | Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 5 ms. |
+| Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
 | Nâng cao | `PostCommitDelayMs` | Settling window độc lập sau mọi text commit. |
 | Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
 | Nâng cao | `PreciseTiming` | Dùng accuracy `1µs` cho timer Backspace và post-commit; nếu tắt sẽ dùng timer coalescing mặc định của event loop. |

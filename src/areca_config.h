@@ -100,6 +100,9 @@ FCITX_CONFIGURATION(
         this, "DbusAfterUinputShiftSelectWaitMs",
         N_("Chờ sau phím uinput Shift+Left cuối DBus (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
+        this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
+        fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
