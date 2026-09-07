@@ -85,6 +85,7 @@ jobs:
             fcitx5-config-qt \
             fcitx5-frontend-gtk3 \
             fcitx5-frontend-qt5 \
+            libdbus-1-dev \
             libfcitx5core-dev \
             libfcitx5config-dev \
             libfcitx5utils-dev
@@ -166,7 +167,8 @@ jobs:
                 fcitx5 \
                 go \
                 ninja \
-                pkgconf
+                pkgconf \
+                dbus
               useradd --create-home builder
               chown -R builder:builder arch-pkg
               su builder -c \
@@ -213,6 +215,7 @@ jobs:
                 ruby \
                 ruby-devel \
                 rpm-build \
+                dbus-devel \
                 fcitx5 \
                 fcitx5-devel \
                 fcitx5-configtool
