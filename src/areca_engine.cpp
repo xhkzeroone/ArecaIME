@@ -1,5 +1,7 @@
 #include "areca_engine.h"
 
+#include <algorithm>
+#include <array>
 #include <exception>
 #include <utility>
 
@@ -16,12 +18,30 @@
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputcontextmanager.h>
+#include <fcitx/surroundingtext.h>
 
 #include "browser_autocomplete.h"
 #include "program_compatibility.h"
 
+#include "window_focus_tracker.h"
+
 namespace areca {
 namespace {
+
+using SurroundingRule = bool (*)(const fcitx::SurroundingText &);
+
+constexpr std::array<SurroundingRule, 4> kInvalidSurroundingRules = {
+    [](const auto &s) { return s.cursor() <= 0; },
+    [](const auto &s) { return s.anchor() <= 0; },
+    [](const auto &s) { return s.text().empty(); },
+    [](const auto &s) { return s.text() == "_"; },
+};
+
+bool isInvalidSurrounding(const fcitx::SurroundingText &surrounding) {
+  return std::any_of(kInvalidSurroundingRules.begin(),
+                     kInvalidSurroundingRules.end(),
+                     [&](auto rule) { return rule(surrounding); });
+}
 
 constexpr const char *kMacroConfigPath = "conf/areca-macro-table.conf";
 constexpr const char *kAdvancedConfigPath = "conf/areca-advanced.conf";
@@ -31,15 +51,6 @@ constexpr auto kPkgConfigPath = fcitx::StandardPathsType::PkgConfig;
 #else
 constexpr auto kPkgConfigPath = fcitx::StandardPath::Type::PkgConfig;
 #endif
-
-// Client qua frontend dbus co ten tien trinh rong thuong la terminal emulator khong the lay process name qua dbus credentials.
-bool isTerminal(const char *frontend, const std::string &program) {
-  if (frontend && std::string_view(frontend).starts_with("dbus") &&
-      (program.empty() || isTerminalProgram(program))) {
-    return true;
-  }
-  return isTerminalProgram(program);
-}
 
 } // namespace
 
@@ -106,9 +117,23 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       BambooEngineAdapter::charsetNames());
   reloadConfig();
   scheduleUinputWarmup();
+  focusTracker_ = std::make_unique<WindowFocusTracker>();
+  if (!focusTracker_->start() || !focusTracker_->isValid()) {
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: window focus tracker inactive, disabled";
+    }
+    focusTracker_->stop();
+    focusTracker_.reset();
+  }
+  inputTypeDetector_.setFocusTracker(focusTracker_.get());
 }
 
-ArecaEngine::~ArecaEngine() = default;
+ArecaEngine::~ArecaEngine() {
+  inputTypeDetector_.setFocusTracker(nullptr);
+  if (focusTracker_) {
+    focusTracker_->stop();
+  }
+}
 
 void ArecaEngine::protectBackendVerdict(fcitx::InputContext &inputContext,
                                         const char *reason) {
@@ -156,6 +181,32 @@ void ArecaEngine::clearBackendVerdictForLifecycle(
   }
 }
 
+std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
+                                        RewriteInputState *state) {
+  std::string program = inputContext.program();
+  if (!program.empty()) {
+    return program;
+  }
+  if (state && !state->resolvedProgram.empty()) {
+    return state->resolvedProgram;
+  }
+  if (focusTracker_ && focusTracker_->isValid()) {
+    program = focusTracker_->focusProgram();
+    if (!program.empty()) {
+      if (state) {
+        state->resolvedProgram = program;
+      }
+      if (debugEnabled()) {
+        FCITX_INFO()
+            << "areca: resolved and cached empty program via focus tracker: "
+            << program;
+      }
+      return program;
+    }
+  }
+  return {};
+}
+
 RewriteBackendSelection
 ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                                   const BambooResult &result) {
@@ -177,9 +228,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const char *frontend = inputContext.frontend();
-  const std::string &program = inputContext.program();
+  const std::string program = resolveProgram(inputContext, state);
+  const bool isTerminal = inputTypeDetector_.isTerminal(program, frontend);
 
-  if (isTerminal(frontend, program)) {
+  if (isTerminal) {
     if (uinputBackspaceBackend_.isAvailable()) {
       if (debugEnabled()) {
         FCITX_INFO() << "areca: terminal selected uinput backend"
@@ -188,11 +240,18 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       }
       return {&uinputBackspaceBackend_};
     }
+    if (debugEnabled()) {
+      FCITX_INFO()
+          << "areca: terminal fallback selected forward-backspace backend"
+          << " program=" << program
+          << " backend=" << forwardBackspaceBackend_.name();
+    }
+    return {&forwardBackspaceBackend_};
   }
 
   const auto capabilities = inputContext.capabilityFlags();
-  const auto decision = reliabilityChecker_.evaluate(
-      inputContext, result.currentText, backendVerdict_, debugEnabled());
+  const auto decision =
+      evaluateReliability(inputContext, result.currentText, program);
   const auto &surrounding = inputContext.surroundingText();
   const bool hasActiveSelection =
       surrounding.isValid() && surrounding.cursor() != surrounding.anchor();
@@ -211,8 +270,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const bool isBrowserForShiftSelect = !program.empty() &&
-                                       !isTerminalProgram(program) &&
-                                       isBrowserLikeProgram(program);
+                                       !isTerminal &&
+                                       inputTypeDetector_.isBrowser(program);
 
   if (decision.useSurrounding) {
     if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
@@ -229,11 +288,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     if (advancedConfig_.useSurroundingV2ForBrowser.value() &&
         isBrowserForShiftSelect) {
       if (debugEnabled()) {
-        FCITX_INFO()
-            << "areca: selected surrounding-text-v2 backend"
-            << " program=" << program
-            << " frontend=" << (frontend ? frontend : "")
-            << " backend=" << surroundingV2Backend_.name();
+        FCITX_INFO() << "areca: selected surrounding-text-v2 backend"
+                     << " program=" << program
+                     << " frontend=" << (frontend ? frontend : "")
+                     << " backend=" << surroundingV2Backend_.name();
       }
       return {&surroundingV2Backend_};
     }
@@ -278,6 +336,60 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   return {&forwardBackspaceBackend_};
+}
+
+ReliabilityDecision
+ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
+                                 const std::string &shownText,
+                                 const std::string &program) {
+  const auto &surrounding = inputContext.surroundingText();
+  const std::string &programName =
+      !program.empty() ? program : inputContext.program();
+
+  const bool browserAutocomplete =
+      inputTypeDetector_.isBrowser(programName) &&
+      isBrowserAutocomplete(surrounding.text(), surrounding.cursor(),
+                            surrounding.anchor(), shownText);
+
+  if (!backendVerdict_.known && !browserAutocomplete) {
+    backendVerdict_.reliable = !isInvalidSurrounding(surrounding);
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: reliability first-probe text="
+                   << surrounding.text() << " cursor=" << surrounding.cursor()
+                   << " anchor=" << surrounding.anchor()
+                   << " reliable=" << backendVerdict_.reliable;
+    }
+
+    backendVerdict_.forceForwardBackspace = false;
+    const bool atspiInactive = !focusTracker_ || !focusTracker_->isValid();
+    if (atspiInactive && backendVerdict_.reliable &&
+        isVSCodeFamilyProgram(programName)) {
+      const uint64_t capabilityMask =
+          inputContext.capabilityFlags().toInteger();
+      backendVerdict_.forceForwardBackspace = (capabilityMask == 0x72);
+      if (backendVerdict_.forceForwardBackspace && debugEnabled()) {
+        FCITX_INFO() << "areca: reliability first-probe force_forward=1"
+                     << " reason=program-compatibility-capability-mask-0x72"
+                     << " program=" << programName;
+      }
+    }
+    backendVerdict_.known = true;
+  }
+
+  if (debugEnabled()) {
+    FCITX_INFO() << "areca: reliability cached known=" << backendVerdict_.known
+                 << " reliable=" << backendVerdict_.reliable
+                 << " force_forward=" << backendVerdict_.forceForwardBackspace
+                 << " browser_autocomplete=" << browserAutocomplete
+                 << " program=" << programName;
+  }
+
+  ReliabilityDecision decision;
+  decision.browserAutocomplete = browserAutocomplete;
+  decision.useSurrounding = backendVerdict_.known && backendVerdict_.reliable &&
+                            !backendVerdict_.forceForwardBackspace &&
+                            !browserAutocomplete;
+  return decision;
 }
 
 bool ArecaEngine::backspaceRecoveryEnabled() const {
