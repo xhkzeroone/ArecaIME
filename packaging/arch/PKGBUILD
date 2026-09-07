@@ -12,6 +12,7 @@ makedepends=(
   'go'
   'ninja'
   'pkgconf'
+  'dbus'
 )
 source=("${pkgname}-${pkgver}.tar.gz")
 sha256sums=('SKIP')

@@ -13,6 +13,7 @@ makedepends=(
   'go'
   'ninja'
   'pkgconf'
+  'dbus'
 )
 optdepends=('fcitx5-configtool: graphical configuration tool')
 _bamboo_commit='b2e49a2b48c7d3772a3673142a7747eccd9d5f79'
