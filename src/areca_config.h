@@ -105,11 +105,11 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
         this, "SurroundingDeleteDelayMs",
-        N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 0,
+        N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 10,
         fcitx::IntConstrain(0, 1000)};
     fcitx::Option<int, fcitx::IntConstrain> afterSurroundingDeleteWaitMs{
         this, "AfterSurroundingDeleteWaitMs",
-        N_("Chờ sau lệnh xóa surrounding v2 cuối (ms)"), 3,
+        N_("Chờ sau lệnh xóa surrounding v2 cuối (ms)"), 1,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,

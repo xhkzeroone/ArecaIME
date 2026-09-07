@@ -31,8 +31,8 @@ struct RewritePlan {
   uint32_t dbusAfterUinputShiftSelectWaitMs = 20;
 
   uint32_t surroundingWaitMs = 3;
-  uint32_t surroundingDeleteDelayMs = 0;
-  uint32_t afterSurroundingDeleteWaitMs = 3;
+  uint32_t surroundingDeleteDelayMs = 10;
+  uint32_t afterSurroundingDeleteWaitMs = 1;
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
 };
