@@ -32,6 +32,15 @@ constexpr auto kPkgConfigPath = fcitx::StandardPathsType::PkgConfig;
 constexpr auto kPkgConfigPath = fcitx::StandardPath::Type::PkgConfig;
 #endif
 
+// Client qua frontend dbus co ten tien trinh rong thuong la terminal emulator khong the lay process name qua dbus credentials.
+bool isTerminal(const char *frontend, const std::string &program) {
+  if (frontend && std::string_view(frontend).starts_with("dbus") &&
+      (program.empty() || isTerminalProgram(program))) {
+    return true;
+  }
+  return isTerminalProgram(program);
+}
+
 } // namespace
 
 ArecaEngine::ArecaEngine(fcitx::Instance *instance)
@@ -170,17 +179,12 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const char *frontend = inputContext.frontend();
   const std::string &program = inputContext.program();
 
-  const bool isDbusTerminalOrUnknown =
-      frontend && std::string_view(frontend).starts_with("dbus") &&
-      (program.empty() || isTerminalProgram(program));
-
-  if (isDbusTerminalOrUnknown) {
+  if (isTerminal(frontend, program)) {
     if (uinputBackspaceBackend_.isAvailable()) {
       if (debugEnabled()) {
-        FCITX_INFO()
-            << "areca: DBus terminal/unknown program selected uinput backend"
-            << " program=" << program
-            << " backend=" << uinputBackspaceBackend_.name();
+        FCITX_INFO() << "areca: terminal selected uinput backend"
+                     << " program=" << program
+                     << " backend=" << uinputBackspaceBackend_.name();
       }
       return {&uinputBackspaceBackend_};
     }
