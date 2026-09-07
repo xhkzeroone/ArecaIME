@@ -91,9 +91,11 @@ int main() {
 
   using areca::resolveAfterBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;
+  using areca::resolveSurroundingDeleteDelayMs;
   areca::RewritePlan plan;
   assert(plan.surroundingWaitMs == 3);
   assert(plan.surroundingDeleteDelayMs == 10);
+  assert(plan.waylandSurroundingDeleteDelayMs == 0);
   assert(plan.afterSurroundingDeleteWaitMs == 1);
   plan.afterBackspaceWaitMs = 10;
   plan.waylandAfterBackspaceWaitMs = 3;
@@ -127,4 +129,14 @@ int main() {
   assert(resolveAfterUinputShiftSelectWaitMs("dbusfrontend", plan) == 15);
   assert(resolveAfterUinputShiftSelectWaitMs("unknown", plan) == 20);
   assert(resolveAfterUinputShiftSelectWaitMs(nullptr, plan) == 20);
+
+  assert(resolveSurroundingDeleteDelayMs("wayland", plan) == 0);
+  assert(resolveSurroundingDeleteDelayMs("wayland_v2", plan) == 0);
+  assert(resolveSurroundingDeleteDelayMs("waylandim", plan) == 0);
+  assert(resolveSurroundingDeleteDelayMs("waylandfrontend", plan) == 0);
+  assert(resolveSurroundingDeleteDelayMs("dbus", plan) == 10);
+  assert(resolveSurroundingDeleteDelayMs("xim", plan) == 10);
+  assert(resolveSurroundingDeleteDelayMs("fcitx4", plan) == 10);
+  assert(resolveSurroundingDeleteDelayMs("unknown", plan) == 10);
+  assert(resolveSurroundingDeleteDelayMs(nullptr, plan) == 10);
 }

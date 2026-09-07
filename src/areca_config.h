@@ -107,6 +107,10 @@ FCITX_CONFIGURATION(
         this, "SurroundingDeleteDelayMs",
         N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 10,
         fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> waylandSurroundingDeleteDelayMs{
+        this, "WaylandSurroundingDeleteDelayMs",
+        N_("Delay giữa các lệnh xóa surrounding v2 Wayland (ms)"), 0,
+        fcitx::IntConstrain(0, 1000)};
     fcitx::Option<int, fcitx::IntConstrain> afterSurroundingDeleteWaitMs{
         this, "AfterSurroundingDeleteWaitMs",
         N_("Chờ sau lệnh xóa surrounding v2 cuối (ms)"), 1,

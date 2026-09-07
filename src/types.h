@@ -32,6 +32,7 @@ struct RewritePlan {
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingDeleteDelayMs = 10;
+  uint32_t waylandSurroundingDeleteDelayMs = 0;
   uint32_t afterSurroundingDeleteWaitMs = 1;
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
@@ -77,6 +78,18 @@ inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
     return plan.dbusAfterUinputShiftSelectWaitMs;
   }
   return plan.afterUinputShiftSelectWaitMs;
+}
+
+inline uint32_t resolveSurroundingDeleteDelayMs(const char *frontendName,
+                                                const RewritePlan &plan) {
+  if (!frontendName) {
+    return plan.surroundingDeleteDelayMs;
+  }
+  const std::string_view fe(frontendName);
+  if (fe.starts_with("wayland")) {
+    return plan.waylandSurroundingDeleteDelayMs;
+  }
+  return plan.surroundingDeleteDelayMs;
 }
 
 } // namespace areca

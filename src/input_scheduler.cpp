@@ -173,6 +173,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
       timing.dbusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
   plan.surroundingDeleteDelayMs = timing.surroundingDeleteDelayMs;
+  plan.waylandSurroundingDeleteDelayMs = timing.waylandSurroundingDeleteDelayMs;
   plan.afterSurroundingDeleteWaitMs = timing.afterSurroundingDeleteWaitMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;

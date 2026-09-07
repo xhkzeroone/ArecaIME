@@ -16,6 +16,7 @@ int main() {
 
   areca::RewritePlan plan;
   assert(plan.surroundingDeleteDelayMs == 10);
+  assert(plan.waylandSurroundingDeleteDelayMs == 0);
   assert(plan.afterSurroundingDeleteWaitMs == 1);
 
   std::cout << "SurroundingTextV2Backend test passed\n";
