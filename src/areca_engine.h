@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <fcitx/inputcontext.h>
@@ -11,8 +12,8 @@
 #include "forward_backspace_backend.h"
 #include "input_scheduler.h"
 #include "preedit_mode.h"
+#include "input_type_detector.h"
 #include "redirect_mode.h"
-#include "reliability_checker.h"
 #include "rewrite_mode.h"
 #include "surrounding_text_backend.h"
 #include "surrounding_text_v2_backend.h"
@@ -21,6 +22,25 @@
 #include "uinput_shift_select_backend.h"
 
 namespace areca {
+
+struct SurroundingReliabilityState {
+  bool known = false;
+  bool reliable = false;
+  bool forceForwardBackspace = false;
+
+  void reset() {
+    known = false;
+    reliable = false;
+    forceForwardBackspace = false;
+  }
+};
+
+struct ReliabilityDecision {
+  bool useSurrounding = false;
+  bool browserAutocomplete = false;
+};
+
+class WindowFocusTracker;
 
 class ArecaEngine final : public fcitx::InputMethodEngineV2 {
 public:
@@ -60,6 +80,12 @@ private:
   RewriteBackendSelection
   selectRewriteBackend(fcitx::InputContext &inputContext,
                        const BambooResult &result);
+  ReliabilityDecision
+  evaluateReliability(fcitx::InputContext &inputContext,
+                      const std::string &shownText,
+                      const std::string &program);
+  std::string resolveProgram(fcitx::InputContext &inputContext,
+                             RewriteInputState *state);
   void protectBackendVerdict(fcitx::InputContext &inputContext,
                              const char *reason);
   void clearBackendVerdictForLifecycle(fcitx::InputContext &inputContext,
@@ -78,7 +104,6 @@ private:
   PresentationMode activePresentationMode_ = PresentationMode::Rewrite;
   fcitx::FactoryFor<RewriteInputState> rewriteStateFactory_;
   fcitx::FactoryFor<PreeditInputState> preeditStateFactory_;
-  ReliabilityChecker reliabilityChecker_;
   bool backendVerdictContextKnown_ = false;
   fcitx::ICUUID backendVerdictContextId_{};
   SurroundingReliabilityState backendVerdict_;
@@ -94,6 +119,8 @@ private:
   RewriteModeHandler rewriteHandler_;
   PreeditModeHandler preeditHandler_;
   RedirectModeHandler redirectHandler_;
+  std::unique_ptr<WindowFocusTracker> focusTracker_;
+  InputTypeDetector inputTypeDetector_;
 };
 
 } // namespace areca

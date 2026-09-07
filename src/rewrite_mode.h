@@ -15,7 +15,6 @@
 #include "bamboo_engine_adapter.h"
 #include "input_scheduler.h"
 #include "mode_handler.h"
-#include "reliability_checker.h"
 #include "sentence_capitalizer.h"
 
 namespace areca {
@@ -38,8 +37,8 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   uint64_t macroRevision;
   std::unique_ptr<VietnameseEngine> engine;
   SentenceCapitalizationState sentenceCapitalization;
-  SurroundingReliabilityState surroundingReliability;
   bool backspaceRecoveryAwaitingRelease = false;
+  std::string resolvedProgram;
 };
 
 class RewriteModeHandler final : public InputModeHandler {

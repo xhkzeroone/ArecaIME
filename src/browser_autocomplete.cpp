@@ -49,12 +49,10 @@ std::string normalizedProgramName(std::string program) {
 bool isBrowserLikeProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   if (program.empty()) {
-    // OpenKey deliberately assumes browser-like when the frontend does not
-    // expose a program name.
     return true;
   }
 
-  static constexpr std::array<const char *, 33> patterns = {"chrome",
+  static constexpr std::array<const char *, 45> patterns = {"chrome",
                                                             "google-chrome",
                                                             "chromium",
                                                             "chromium-browser",
@@ -86,6 +84,18 @@ bool isBrowserLikeProgram(const std::string &rawProgram) {
                                                             "arc",
                                                             "helium",
                                                             "mullvad",
+                                                            "thorium",
+                                                            "ladybird",
+                                                            "luakit",
+                                                            "surf",
+                                                            "min",
+                                                            "icecat",
+                                                            "seamonkey",
+                                                            "konqueror",
+                                                            "mercury",
+                                                            "angelfish",
+                                                            "vieb",
+                                                            "netsurf",
                                                             "window:"};
   return std::any_of(patterns.begin(), patterns.end(),
                      [&program](const char *pattern) {
@@ -93,9 +103,9 @@ bool isBrowserLikeProgram(const std::string &rawProgram) {
                      });
 }
 
-bool looksLikeBrowserAutocomplete(const std::string &text, unsigned int cursor,
-                                  unsigned int anchor,
-                                  const std::string &shownText) {
+bool isBrowserAutocomplete(const std::string &text, unsigned int cursor,
+                           unsigned int anchor,
+                           const std::string &shownText) {
   if (shownText.empty() || !fcitx::utf8::validate(text) ||
       !fcitx::utf8::validate(shownText)) {
     return false;

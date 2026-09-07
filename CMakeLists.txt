@@ -9,6 +9,8 @@ find_package(Fcitx5Core REQUIRED)
 find_package(Fcitx5Config REQUIRED)
 find_package(Fcitx5Utils REQUIRED)
 find_program(GO_EXECUTABLE go REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(DBUS REQUIRED dbus-1)
 
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
 set(BAMBOO_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/libareca-bamboo.a")
@@ -39,11 +41,11 @@ add_library(areca MODULE
     src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp
     src/input_scheduler.cpp
+    src/input_type_detector.cpp
     src/preedit_mode.cpp
     src/preedit_logic.cpp
     src/program_compatibility.cpp
     src/redirect_mode.cpp
-    src/reliability_checker.cpp
     src/rewrite_mode.cpp
     src/sentence_capitalizer.cpp
     src/surrounding_text_backend.cpp
@@ -52,16 +54,18 @@ add_library(areca MODULE
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
+    src/window_focus_tracker.cpp
     src/word_segment.cpp)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
 target_compile_features(areca PRIVATE cxx_std_20)
 target_compile_options(areca PRIVATE -Wall -Wextra -Wpedantic)
-target_include_directories(areca PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(areca PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" ${DBUS_INCLUDE_DIRS})
 target_link_libraries(areca PRIVATE
     areca-bamboo
     Fcitx5::Core
     Fcitx5::Config
     Fcitx5::Utils
+    ${DBUS_LIBRARIES}
     pthread dl m)
 
 configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
@@ -201,4 +205,19 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(areca-surrounding-text-v2-test PRIVATE Fcitx5::Core Fcitx5::Utils)
     add_test(NAME surrounding-text-v2 COMMAND areca-surrounding-text-v2-test)
+
+    add_executable(areca-input-type-detector-test
+        tests/input_type_detector_test.cpp
+        src/browser_autocomplete.cpp
+        src/input_type_detector.cpp
+        src/program_compatibility.cpp
+        src/window_focus_tracker.cpp)
+    target_compile_features(areca-input-type-detector-test PRIVATE cxx_std_20)
+    target_compile_options(areca-input-type-detector-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-input-type-detector-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src" ${DBUS_INCLUDE_DIRS})
+    target_link_libraries(areca-input-type-detector-test PRIVATE
+        Fcitx5::Utils ${DBUS_LIBRARIES} pthread dl m)
+    add_test(NAME input-type-detector COMMAND areca-input-type-detector-test)
 endif()
