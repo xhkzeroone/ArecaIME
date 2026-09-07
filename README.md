@@ -272,10 +272,13 @@ XimAfterBackspaceWaitMs=10
 Fcitx4AfterBackspaceWaitMs=10
 DbusAfterBackspaceWaitMs=5
 SurroundingWaitMs=3
+SurroundingDeleteDelayMs=0
+AfterSurroundingDeleteWaitMs=3
 PostCommitDelayMs=20
 BackspaceRecovery=True
 PreciseTiming=True
 ForceUinput=False
+UseSurroundingV2ForBrowser=False
 ```
 
 | Panel | Tuỳ chọn | Ý nghĩa |
@@ -297,10 +300,13 @@ ForceUinput=False
 | Nâng cao | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Fcitx4, mặc định 10 ms. |
 | Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 5 ms. |
 | Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
+| Nâng cao | `SurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2, mặc định 0 ms. |
+| Nâng cao | `AfterSurroundingDeleteWaitMs` | Thời gian chờ sau lệnh xóa surrounding cuối trước khi commit của v2, mặc định 3 ms. |
 | Nâng cao | `PostCommitDelayMs` | Settling window độc lập sau mọi text commit. |
 | Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
 | Nâng cao | `PreciseTiming` | Dùng accuracy `1µs` cho timer Backspace và post-commit; nếu tắt sẽ dùng timer coalescing mặc định của event loop. |
 | Nâng cao | `ForceUinput` | Ép dùng uinput thay cho forward Backspace khi khả dụng, mặc định `False`. |
+| Nâng cao | `UseSurroundingV2ForBrowser` | Ép dùng surrounding text v2 xóa từng ký tự khi ứng dụng là trình duyệt, mặc định `False`. |
 
 Lưu ý: đổi giá trị mặc định trong source không ghi đè file cấu hình đã tồn tại.
 Khi nâng cấp từ bản cũ, Areca tự đọc timing còn nằm trong `areca.conf`;

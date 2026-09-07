@@ -47,6 +47,7 @@ add_library(areca MODULE
     src/rewrite_mode.cpp
     src/sentence_capitalizer.cpp
     src/surrounding_text_backend.cpp
+    src/surrounding_text_v2_backend.cpp
     src/surrounding_text_cache.cpp
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
@@ -188,4 +189,16 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(areca-uinput-shift-select-test PRIVATE Fcitx5::Core Fcitx5::Utils)
     add_test(NAME uinput-shift-select COMMAND areca-uinput-shift-select-test)
+
+    add_executable(areca-surrounding-text-v2-test
+        tests/surrounding_text_v2_backend_test.cpp
+        src/surrounding_text_v2_backend.cpp
+        src/surrounding_text_cache.cpp)
+    target_compile_features(areca-surrounding-text-v2-test PRIVATE cxx_std_20)
+    target_compile_options(areca-surrounding-text-v2-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-surrounding-text-v2-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(areca-surrounding-text-v2-test PRIVATE Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME surrounding-text-v2 COMMAND areca-surrounding-text-v2-test)
 endif()

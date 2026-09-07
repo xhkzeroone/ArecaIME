@@ -172,6 +172,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.dbusAfterUinputShiftSelectWaitMs =
       timing.dbusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
+  plan.surroundingDeleteDelayMs = timing.surroundingDeleteDelayMs;
+  plan.afterSurroundingDeleteWaitMs = timing.afterSurroundingDeleteWaitMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;
 
