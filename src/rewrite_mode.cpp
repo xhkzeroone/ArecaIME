@@ -53,6 +53,16 @@ bool isSelectAllShortcut(const fcitx::Key &rawKey) {
          (rawKey.sym() == FcitxKey_a || rawKey.sym() == FcitxKey_A);
 }
 
+bool isBarClearingShortcut(const fcitx::Key &rawKey) {
+  if (!rawKey.states().test(fcitx::KeyState::Ctrl)) {
+    return false;
+  }
+  const auto sym = rawKey.sym();
+  return sym == FcitxKey_a || sym == FcitxKey_A ||
+         sym == FcitxKey_l || sym == FcitxKey_L ||
+         sym == FcitxKey_u || sym == FcitxKey_U;
+}
+
 } // namespace
 
 RewriteInputState::RewriteInputState(std::string inputMethod, bool spellCheck,
@@ -95,7 +105,10 @@ RewriteModeHandler::stateFor(fcitx::InputContext &inputContext) const {
 }
 
 void RewriteModeHandler::activate(fcitx::InputContext &inputContext) {
-  stateFor(inputContext);
+  if (auto *state = stateFor(inputContext)) {
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
+  }
 }
 
 void RewriteModeHandler::deactivate(fcitx::InputContext &inputContext) {
@@ -116,6 +129,10 @@ bool RewriteModeHandler::syncEngineBackspace(RewriteInputState &state) {
 void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
                                                 RewriteInputState &state) {
   syncEngineBackspace(state);
+  if (state.engine && state.engine->currentText().empty() &&
+      !state.addrBarHadSpace) {
+    state.addrBarIsFirstWord = true;
+  }
   event.forward();
 }
 
@@ -241,6 +258,11 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                              "selection-or-navigation-shortcut");
   }
 
+  if (isBarClearingShortcut(rawKey)) {
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
+  }
+
   const bool resetAndForward =
       key.isCursorMove() || rawSym == FcitxKey_Tab ||
       rawSym == FcitxKey_KP_Tab || rawSym == FcitxKey_ISO_Left_Tab ||
@@ -274,6 +296,10 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       return;
     }
     state->sentenceCapitalization.reset();
+    if (state->engine && state->engine->currentText().empty() &&
+        !state->addrBarHadSpace) {
+      state->addrBarIsFirstWord = true;
+    }
     if (state->backspaceRecoveryAwaitingRelease) {
       if (debugProvider_()) {
         const char *frontend = inputContext->frontend();
@@ -297,8 +323,15 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (isEnter) {
     state->sentenceCapitalization.reset();
     state->engine->reset();
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
     event.forward();
     return;
+  }
+
+  if (textSym == FcitxKey_space || rawSym == FcitxKey_space) {
+    state->addrBarIsFirstWord = false;
+    state->addrBarHadSpace = true;
   }
 
   auto effectiveTextSym = textSym;
@@ -334,6 +367,8 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
     state->sentenceCapitalization.reset();
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
   }
 }
 

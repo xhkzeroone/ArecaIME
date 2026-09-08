@@ -55,10 +55,9 @@ bool isProgrammingProgram(const std::string &program) {
 
        // Linux desktop editors and IDEs.
        "gnome-builder", "org.gnome.builder", "geany", "org.geany.geany",
-       "qtcreator",
-       "qt-creator", "org.qt-project.qtcreator", "codeblocks", "anjuta",
-       "org.gnome.anjuta", "bluefish", "nl.openoffice.bluefish", "cudatext",
-       "io.github.cudatext.cudatext", "liteide", "notepadqq",
+       "qtcreator", "qt-creator", "org.qt-project.qtcreator", "codeblocks",
+       "anjuta", "org.gnome.anjuta", "bluefish", "nl.openoffice.bluefish",
+       "cudatext", "io.github.cudatext.cudatext", "liteide", "notepadqq",
        "com.notepadqq.notepadqq", "juffed", "scite", "medit", "textadept",
 
        // Graphical Vim/Neovim and Emacs clients.
@@ -257,8 +256,8 @@ bool isTerminalProgram(const std::string &rawProgram) {
   static constexpr auto prefixes = std::to_array<std::string_view>(
       {"org.gnome.terminal.", "org.gnome.console.", "app.devsuite.ptyxis.",
        "org.xfce.terminal.", "org.mate.terminal.", "com.deepin.terminal.",
-       "io.elementary.terminal.", "com.system76.cosmicterm.",
-       "warp-terminal-", "dev.warp.warp-", "wezterm-", "kitty-"});
+       "io.elementary.terminal.", "com.system76.cosmicterm.", "warp-terminal-",
+       "dev.warp.warp-", "wezterm-", "kitty-"});
   return std::any_of(prefixes.begin(), prefixes.end(),
                      [&program](std::string_view prefix) {
                        return program.starts_with(prefix);
@@ -283,6 +282,20 @@ bool isVSCodeFamilyProgram(const std::string &rawProgram) {
       program.starts_with("void-");
   return isVSCodeFamily || isProgrammingProgram(program) ||
          isTerminalProgram(program);
+}
+
+bool isChromiumBrowser(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  if (program.empty()) {
+    return false;
+  }
+  static constexpr auto patterns = std::to_array<std::string_view>(
+      {"chrome", "chromium", "google-chrome", "brave", "vivaldi",
+       "microsoft-edge", "edge", "opera", "coccoc", "yandex", "thorium"});
+  return std::any_of(patterns.begin(), patterns.end(),
+                     [&program](std::string_view pattern) {
+                       return program.find(pattern) != std::string::npos;
+                     });
 }
 
 } // namespace areca

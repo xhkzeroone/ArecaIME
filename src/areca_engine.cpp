@@ -207,6 +207,14 @@ std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
   return {};
 }
 
+bool ArecaEngine::inChromiumAddressBar(fcitx::InputContext &inputContext,
+                                      const std::string &program,
+                                      RewriteInputState *state) {
+  uint64_t *verdictUsec = state ? &state->addrBarUiVerdictAtUsec : nullptr;
+  return inputTypeDetector_.inChromiumAddressBar(inputContext, program,
+                                                verdictUsec);
+}
+
 RewriteBackendSelection
 ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                                   const BambooResult &result) {
@@ -250,23 +258,38 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const auto capabilities = inputContext.capabilityFlags();
+  const auto &surrounding = inputContext.surroundingText();
+  const bool hasSurrounding =
+      capabilities.test(fcitx::CapabilityFlag::SurroundingText) &&
+      surrounding.isValid();
+  const bool inAddressBar =
+      !hasSurrounding && inChromiumAddressBar(inputContext, program, state);
+  const bool isUrl = capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar;
   const auto decision =
       evaluateReliability(inputContext, result.currentText, program);
-  const auto &surrounding = inputContext.surroundingText();
   const bool hasActiveSelection =
       surrounding.isValid() && surrounding.cursor() != surrounding.anchor();
 
-  if (decision.browserAutocomplete || hasActiveSelection) {
-    const bool isUrl = capabilities.test(fcitx::CapabilityFlag::Url);
+  if (decision.browserAutocomplete || hasActiveSelection || inAddressBar) {
+    uint32_t additional = 0;
+    if (hasActiveSelection || decision.browserAutocomplete) {
+      additional = 1;
+    } else if (inAddressBar) {
+      if (state && state->addrBarIsFirstWord && !state->addrBarHadSpace) {
+        additional = 1;
+        state->addrBarIsFirstWord = false;
+      }
+    }
     if (debugEnabled()) {
       FCITX_INFO()
-          << "areca: browser autocomplete or active selection strategy="
+          << "areca: browser autocomplete or address bar strategy="
           << forwardBackspaceBackend_.name() << " is_url=" << isUrl
+          << " in_address_bar=" << inAddressBar
           << " active_selection=" << hasActiveSelection
-          << " additional_backspaces=1"
+          << " additional_backspaces=" << additional
           << " bamboo_delete=" << result.deleteCount;
     }
-    return {&forwardBackspaceBackend_, 1};
+    return {&forwardBackspaceBackend_, additional};
   }
 
   const bool isBrowserForShiftSelect = !program.empty() &&

@@ -218,6 +218,6 @@ if(BUILD_TESTING)
     target_include_directories(areca-input-type-detector-test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src" ${DBUS_INCLUDE_DIRS})
     target_link_libraries(areca-input-type-detector-test PRIVATE
-        Fcitx5::Utils ${DBUS_LIBRARIES} pthread dl m)
+        Fcitx5::Core Fcitx5::Utils ${DBUS_LIBRARIES} pthread dl m)
     add_test(NAME input-type-detector COMMAND areca-input-type-detector-test)
 endif()

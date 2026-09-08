@@ -39,6 +39,9 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   SentenceCapitalizationState sentenceCapitalization;
   bool backspaceRecoveryAwaitingRelease = false;
   std::string resolvedProgram;
+  uint64_t addrBarUiVerdictAtUsec = 0;
+  bool addrBarIsFirstWord = true;
+  bool addrBarHadSpace = false;
 };
 
 class RewriteModeHandler final : public InputModeHandler {
