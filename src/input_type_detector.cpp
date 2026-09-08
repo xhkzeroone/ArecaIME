@@ -3,7 +3,7 @@
 #include <string_view>
 
 #include <fcitx-utils/capabilityflags.h>
-#include <fcitx-utils/eventloopinterface.h>
+#include <fcitx-utils/event.h>
 #include <fcitx/inputcontext.h>
 
 #include "browser_autocomplete.h"
