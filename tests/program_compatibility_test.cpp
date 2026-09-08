@@ -89,6 +89,32 @@ int main() {
   assert(!isTerminalProgram("firefox"));
   assert(!isTerminalProgram(""));
 
+  using areca::isChromiumBrowser;
+  assert(isChromiumBrowser("google-chrome"));
+  assert(isChromiumBrowser("google-chrome.desktop"));
+  assert(isChromiumBrowser("/usr/bin/google-chrome-stable"));
+  assert(isChromiumBrowser("chromium"));
+  assert(isChromiumBrowser("chromium-browser"));
+  assert(isChromiumBrowser("brave"));
+  assert(isChromiumBrowser("brave-browser"));
+  assert(isChromiumBrowser("microsoft-edge"));
+  assert(isChromiumBrowser("microsoft-edge-dev"));
+  assert(isChromiumBrowser("edge"));
+  assert(isChromiumBrowser("vivaldi"));
+  assert(isChromiumBrowser("opera"));
+  assert(isChromiumBrowser("coccoc"));
+  assert(isChromiumBrowser("coccoc-browser"));
+  assert(isChromiumBrowser("yandex"));
+  assert(isChromiumBrowser("thorium"));
+  assert(!isChromiumBrowser("firefox"));
+  assert(!isChromiumBrowser("firefox-esr"));
+  assert(!isChromiumBrowser("librewolf"));
+  assert(!isChromiumBrowser("code"));
+  assert(!isChromiumBrowser("vscode"));
+  assert(!isChromiumBrowser("slack"));
+  assert(!isChromiumBrowser("ghostty"));
+  assert(!isChromiumBrowser(""));
+
   using areca::resolveAfterBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;
   using areca::resolveSurroundingDeleteDelayMs;

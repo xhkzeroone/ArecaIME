@@ -11,4 +11,7 @@ bool isVSCodeFamilyProgram(const std::string &program);
 // Known Linux terminal applications, excluding KDE terminals.
 bool isTerminalProgram(const std::string &program);
 
+// Chromium-family browser applications.
+bool isChromiumBrowser(const std::string &program);
+
 } // namespace areca

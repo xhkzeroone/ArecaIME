@@ -53,6 +53,18 @@ bool isSelectAllShortcut(const fcitx::Key &rawKey) {
          (rawKey.sym() == FcitxKey_a || rawKey.sym() == FcitxKey_A);
 }
 
+// Bắt đầu: Phím tắt chọn hoặc xóa sạch toàn bộ thanh địa chỉ Ctrl+A, Ctrl+L, Ctrl+U
+bool isBarClearingShortcut(const fcitx::Key &rawKey) {
+  if (!rawKey.states().test(fcitx::KeyState::Ctrl)) {
+    return false;
+  }
+  const auto sym = rawKey.sym();
+  return sym == FcitxKey_a || sym == FcitxKey_A ||
+         sym == FcitxKey_l || sym == FcitxKey_L ||
+         sym == FcitxKey_u || sym == FcitxKey_U;
+}
+// Kết thúc: Phím tắt chọn hoặc xóa sạch toàn bộ thanh địa chỉ Ctrl+A, Ctrl+L, Ctrl+U
+
 } // namespace
 
 RewriteInputState::RewriteInputState(std::string inputMethod, bool spellCheck,
@@ -95,7 +107,12 @@ RewriteModeHandler::stateFor(fcitx::InputContext &inputContext) const {
 }
 
 void RewriteModeHandler::activate(fcitx::InputContext &inputContext) {
-  stateFor(inputContext);
+  if (auto *state = stateFor(inputContext)) {
+    // Bắt đầu: Khởi tạo trạng thái first word thanh địa chỉ khi kích hoạt ngữ cảnh
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
+    // Kết thúc: Khởi tạo trạng thái first word thanh địa chỉ khi kích hoạt ngữ cảnh
+  }
 }
 
 void RewriteModeHandler::deactivate(fcitx::InputContext &inputContext) {
@@ -116,6 +133,12 @@ bool RewriteModeHandler::syncEngineBackspace(RewriteInputState &state) {
 void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
                                                 RewriteInputState &state) {
   syncEngineBackspace(state);
+  // Bắt đầu: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
+  if (state.engine && state.engine->currentText().empty() &&
+      !state.addrBarHadSpace) {
+    state.addrBarIsFirstWord = true;
+  }
+  // Kết thúc: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
   event.forward();
 }
 
@@ -241,6 +264,13 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                              "selection-or-navigation-shortcut");
   }
 
+  // Bắt đầu: Phím tắt chọn hoặc xóa thanh địa chỉ tái kích hoạt trạng thái first word
+  if (isBarClearingShortcut(rawKey)) {
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
+  }
+  // Kết thúc: Phím tắt chọn hoặc xóa thanh địa chỉ tái kích hoạt trạng thái first word
+
   const bool resetAndForward =
       key.isCursorMove() || rawSym == FcitxKey_Tab ||
       rawSym == FcitxKey_KP_Tab || rawSym == FcitxKey_ISO_Left_Tab ||
@@ -274,6 +304,12 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       return;
     }
     state->sentenceCapitalization.reset();
+    // Bắt đầu: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
+    if (state->engine && state->engine->currentText().empty() &&
+        !state->addrBarHadSpace) {
+      state->addrBarIsFirstWord = true;
+    }
+    // Kết thúc: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
     if (state->backspaceRecoveryAwaitingRelease) {
       if (debugProvider_()) {
         const char *frontend = inputContext->frontend();
@@ -294,12 +330,23 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     forwardSyncedBackspace(event, *state);
     return;
   }
+  // Bắt đầu: Nhấn Enter kết thúc phiên gõ đặt lại trạng thái first word cho lượt gõ tiếp theo
   if (isEnter) {
     state->sentenceCapitalization.reset();
     state->engine->reset();
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
     event.forward();
     return;
   }
+  // Kết thúc: Nhấn Enter kết thúc phiên gõ đặt lại trạng thái first word cho lượt gõ tiếp theo
+
+  // Bắt đầu: Nhấn Space chuyển sang từ thứ hai trở đi trong thanh địa chỉ
+  if (textSym == FcitxKey_space || rawSym == FcitxKey_space) {
+    state->addrBarIsFirstWord = false;
+    state->addrBarHadSpace = true;
+  }
+  // Kết thúc: Nhấn Space chuyển sang từ thứ hai trở đi trong thanh địa chỉ
 
   auto effectiveTextSym = textSym;
   if (autoCapitalizeProvider_()) {
@@ -334,6 +381,10 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
     state->sentenceCapitalization.reset();
+    // Bắt đầu: Đặt lại trạng thái first word thanh địa chỉ khi đặt lại ngữ cảnh
+    state->addrBarIsFirstWord = true;
+    state->addrBarHadSpace = false;
+    // Kết thúc: Đặt lại trạng thái first word thanh địa chỉ khi đặt lại ngữ cảnh
   }
 }
 

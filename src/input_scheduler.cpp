@@ -4,6 +4,7 @@
 #include <utility>
 
 #include <fcitx-utils/log.h>
+#include <fcitx-utils/utf8.h>
 
 #include "surrounding_text_cache.h"
 
@@ -187,12 +188,22 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     return;
   }
   auto &backend = *selection.backend;
-  plan.backspaceCount = result.deleteCount + selection.additionalBackspaces;
+  // Bắt đầu: FullReplace xóa sạch từ cũ cùng gợi ý Omnibox và chèn lại toàn bộ từ mới
+  if (selection.fullReplace && !result.newText.empty()) {
+    const auto currentLen =
+        static_cast<uint32_t>(fcitx::utf8::length(result.currentText));
+    plan.backspaceCount = currentLen + selection.additionalBackspaces;
+    plan.commitText = result.newText;
+  } else {
+    plan.backspaceCount = result.deleteCount + selection.additionalBackspaces;
+  }
+  // Kết thúc: FullReplace xóa sạch từ cũ cùng gợi ý Omnibox và chèn lại toàn bộ từ mới
   if (debugProvider_()) {
     FCITX_INFO() << "areca: rewrite select backend=" << backend.name()
                  << " tx=" << plan.transactionId
                  << " bamboo_delete=" << result.deleteCount
                  << " additional_backspaces=" << selection.additionalBackspaces
+                 << " full_replace=" << selection.fullReplace
                  << " plan_backspaces=" << plan.backspaceCount;
   }
 

@@ -86,6 +86,9 @@ private:
                       const std::string &program);
   std::string resolveProgram(fcitx::InputContext &inputContext,
                              RewriteInputState *state);
+  bool inChromiumAddressBar(fcitx::InputContext &inputContext,
+                           const std::string &program,
+                           RewriteInputState *state);
   void protectBackendVerdict(fcitx::InputContext &inputContext,
                              const char *reason);
   void clearBackendVerdictForLifecycle(fcitx::InputContext &inputContext,
