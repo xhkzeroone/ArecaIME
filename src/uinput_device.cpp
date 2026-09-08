@@ -96,13 +96,17 @@ void UinputDevice::sendKeyEvent(uint16_t code, int value) {
   ev.type = EV_KEY;
   ev.code = code;
   ev.value = value;
-  (void)write(uinputFd_, &ev, sizeof(ev));
+  if (write(uinputFd_, &ev, sizeof(ev)) < 0) {
+    return;
+  }
 
   std::memset(&ev, 0, sizeof(ev));
   ev.type = EV_SYN;
   ev.code = SYN_REPORT;
   ev.value = 0;
-  (void)write(uinputFd_, &ev, sizeof(ev));
+  if (write(uinputFd_, &ev, sizeof(ev)) < 0) {
+    return;
+  }
 }
 
 } // namespace areca
