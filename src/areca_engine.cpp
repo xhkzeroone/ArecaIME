@@ -208,11 +208,11 @@ std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
 }
 
 bool ArecaEngine::inChromiumAddressBar(fcitx::InputContext &inputContext,
-                                      const std::string &program,
-                                      RewriteInputState *state) {
+                                       const std::string &program,
+                                       RewriteInputState *state) {
   uint64_t *verdictUsec = state ? &state->addrBarUiVerdictAtUsec : nullptr;
   return inputTypeDetector_.inChromiumAddressBar(inputContext, program,
-                                                verdictUsec);
+                                                 verdictUsec);
 }
 
 RewriteBackendSelection
@@ -262,9 +262,12 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const bool hasSurrounding =
       capabilities.test(fcitx::CapabilityFlag::SurroundingText) &&
       surrounding.isValid();
+  // Bắt đầu: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả dụng hoặc không hợp lệ
   const bool inAddressBar =
       !hasSurrounding && inChromiumAddressBar(inputContext, program, state);
-  const bool isUrl = capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar;
+  // Kết thúc: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả dụng hoặc không hợp lệ
+  const bool isUrl =
+      capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar;
   const auto decision =
       evaluateReliability(inputContext, result.currentText, program);
   const bool hasActiveSelection =
@@ -272,29 +275,30 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 
   if (decision.browserAutocomplete || hasActiveSelection || inAddressBar) {
     uint32_t additional = 0;
-    if (hasActiveSelection || decision.browserAutocomplete) {
+    bool fullReplace = false;
+    // Bắt đầu: FullReplace và 1 Backspace phụ cho từ đầu tiên trong thanh địa chỉ
+    if (inAddressBar && state && state->addrBarIsFirstWord &&
+        !state->addrBarHadSpace) {
       additional = 1;
-    } else if (inAddressBar) {
-      if (state && state->addrBarIsFirstWord && !state->addrBarHadSpace) {
-        additional = 1;
-        state->addrBarIsFirstWord = false;
-      }
+      fullReplace = true;
+    } else if (hasActiveSelection || decision.browserAutocomplete) {
+      additional = 1;
     }
+    // Kết thúc: FullReplace và 1 Backspace phụ cho từ đầu tiên trong thanh địa chỉ
     if (debugEnabled()) {
-      FCITX_INFO()
-          << "areca: browser autocomplete or address bar strategy="
-          << forwardBackspaceBackend_.name() << " is_url=" << isUrl
-          << " in_address_bar=" << inAddressBar
-          << " active_selection=" << hasActiveSelection
-          << " additional_backspaces=" << additional
-          << " bamboo_delete=" << result.deleteCount;
+      FCITX_INFO() << "areca: browser autocomplete or address bar strategy="
+                   << forwardBackspaceBackend_.name() << " is_url=" << isUrl
+                   << " in_address_bar=" << inAddressBar
+                   << " active_selection=" << hasActiveSelection
+                   << " full_replace=" << fullReplace
+                   << " additional_backspaces=" << additional
+                   << " bamboo_delete=" << result.deleteCount;
     }
-    return {&forwardBackspaceBackend_, additional};
+    return {&forwardBackspaceBackend_, additional, fullReplace};
   }
 
-  const bool isBrowserForShiftSelect = !program.empty() &&
-                                       !isTerminal &&
-                                       inputTypeDetector_.isBrowser(program);
+  const bool isBrowserForShiftSelect =
+      !program.empty() && !isTerminal && inputTypeDetector_.isBrowser(program);
 
   if (decision.useSurrounding) {
     if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
@@ -538,6 +542,12 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
+    // Bắt đầu: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
+    auto *state = inputContext->propertyFor(&rewriteStateFactory_);
+    const std::string program = resolveProgram(*inputContext, state);
+    inChromiumAddressBar(*inputContext, program, state);
+    // Kết thúc: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
+
     const auto key = event.key().normalize();
     if (key.sym() != FcitxKey_None &&
         key.checkKeyList(config_.switchModeKey.value())) {
