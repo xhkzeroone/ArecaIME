@@ -51,18 +51,15 @@ bool InputTypeDetector::isTerminal(const std::string &program,
     return true;
   }
   if (tracker_ && tracker_->isValid() && tracker_->isTerminalFocused()) {
-    return true;
+    const std::string trackedProgram = tracker_->focusProgram();
+    if (program.empty() || program == trackedProgram ||
+        (isVSCodeBasedProgram(program) &&
+         isVSCodeBasedProgram(trackedProgram))) {
+      return true;
+    }
   }
   return program.empty() && frontend &&
          std::string_view(frontend).starts_with("dbus");
-}
-
-bool InputTypeDetector::isBrowserUI() const {
-  return tracker_ && tracker_->isValid() && tracker_->isBrowserUIFocused();
-}
-
-bool InputTypeDetector::isWebContent() const {
-  return tracker_ && tracker_->isValid() && tracker_->isWebContentFocused();
 }
 
 bool InputTypeDetector::inChromiumAddressBar(

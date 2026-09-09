@@ -49,7 +49,7 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 | `RewriteBackend` | Interface trừu tượng định nghĩa phương thức thực thi một `RewritePlan`. |
 | `SurroundingTextBackend` | Thực thi xóa văn bản qua API Fcitx `deleteSurroundingText()` và chèn chữ mới qua `commitString()`. |
 | `UinputShiftSelectBackend` | Phát phím phần sống kernel `Shift + Left` qua `/dev/uinput` để bôi đen đoạn chữ cũ, sau đó commit từng ký tự mới cho ứng dụng trình duyệt web. |
-| `UinputBackspaceBackend` | Phát phím phần sống kernel `KEY_BACKSPACE` qua `/dev/uinput` cho terminal DBus và các ứng dụng không xác định. |
+| `UinputBackspaceBackend` | Phát phím phần sống kernel `KEY_BACKSPACE` qua `/dev/uinput` cho terminal DBus và các ứng dụng không xác định. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng delay thiết lập và commit chữ mới. |
 
 ---
@@ -80,7 +80,9 @@ sequenceDiagram
     R-->>E: ReliabilityDecision
     E->>IC: surroundingText() & check (cursor != anchor)
     
-    alt browserAutocomplete OR (surrounding.isValid & cursor != anchor)
+    alt VS Code embedded terminal
+        E-->>S: Return ForwardBackspaceBackend
+    else browserAutocomplete OR (surrounding.isValid & cursor != anchor)
         E-->>S: Return ForwardBackspaceBackend (+1 extra backspace)
     else decision.useSurrounding & UseUinputShiftSelectForBrowser & isBrowser & uinputAvailable
         E-->>S: Return UinputShiftSelectBackend

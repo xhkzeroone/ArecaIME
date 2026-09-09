@@ -20,8 +20,6 @@ public:
   bool isTerminal(const std::string &program, const char *frontend = nullptr) const;
   bool isBrowser(const std::string &program) const;
   bool isChromiumBrowser(const std::string &program) const;
-  bool isBrowserUI() const;
-  bool isWebContent() const;
 
   bool inChromiumAddressBar(const fcitx::InputContext &inputContext,
                            const std::string &program = "",

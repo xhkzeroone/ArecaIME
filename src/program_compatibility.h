@@ -4,6 +4,9 @@
 
 namespace areca {
 
+// VS Code and editors built from its codebase.
+bool isVSCodeBasedProgram(const std::string &program);
+
 // Programs that need the forward-Backspace compatibility path when they
 // expose the otherwise reliable 0x72 capability mask.
 bool isVSCodeFamilyProgram(const std::string &program);

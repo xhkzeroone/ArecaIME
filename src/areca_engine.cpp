@@ -240,6 +240,15 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const bool isTerminal = inputTypeDetector_.isTerminal(program, frontend);
 
   if (isTerminal) {
+    if (isVSCodeBasedProgram(program)) {
+      if (debugEnabled()) {
+        FCITX_INFO()
+            << "areca: VS Code embedded terminal selected forward-backspace"
+            << " program=" << program
+            << " backend=" << forwardBackspaceBackend_.name();
+      }
+      return {&forwardBackspaceBackend_};
+    }
     if (uinputBackspaceBackend_.isAvailable()) {
       if (debugEnabled()) {
         FCITX_INFO() << "areca: terminal selected uinput backend"

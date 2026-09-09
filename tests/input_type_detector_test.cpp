@@ -11,6 +11,38 @@
 #include "input_type_detector.h"
 #include "window_focus_tracker.h"
 
+namespace areca {
+
+struct WindowFocusTrackerTestAccess {
+  static void seedFocus(WindowFocusTracker &tracker, const std::string &bus,
+                        const std::string &path, const std::string &program,
+                        bool terminal) {
+    tracker.valid_.store(true);
+    tracker.focusBus_ = bus;
+    tracker.focusPath_ = path;
+    tracker.focusInTerminal_.store(terminal);
+    {
+      std::lock_guard<std::mutex> lock(tracker.focusProgramMutex_);
+      tracker.focusProgram_ = program;
+    }
+  }
+
+  static void loseFocus(WindowFocusTracker &tracker, const char *sender,
+                        const char *path = nullptr) {
+    tracker.loseFocus(sender, path);
+  }
+
+  static void connectionLost(WindowFocusTracker &tracker) {
+    tracker.connectionLost();
+  }
+
+  static void connectionEstablished(WindowFocusTracker &tracker) {
+    tracker.connectionEstablished();
+  }
+};
+
+} // namespace areca
+
 class TestInputContext : public fcitx::InputContext {
 public:
   TestInputContext(fcitx::InputContextManager &manager,
@@ -66,8 +98,6 @@ int main() {
     assert(!detector.isBrowser("redisinsight"));
     assert(!detector.isBrowser("slack"));
     assert(detector.isBrowser(""));
-    assert(!detector.isBrowserUI());
-    assert(!detector.isWebContent());
 
     // Chromium browser checks with null tracker
     assert(detector.isChromiumBrowser("google-chrome"));
@@ -91,8 +121,6 @@ int main() {
     assert(!detector.isBrowser("code"));
     assert(!detector.isBrowser("postman"));
     assert(detector.isBrowser(""));
-    assert(!detector.isBrowserUI());
-    assert(!detector.isWebContent());
 
     // Terminal checks with inactive tracker
     assert(!detector.isTerminal("firefox", nullptr));
@@ -109,10 +137,8 @@ int main() {
     WindowFocusTracker tracker;
 
     detector.setFocusTracker(&tracker);
-    assert(!detector.isBrowserUI());
 
     detector.setFocusTracker(nullptr);
-    assert(!detector.isBrowserUI());
   }
 
   // Case 4: Chromium address bar detection
@@ -236,6 +262,42 @@ int main() {
       assert(computeAdditional(true) == 1);
       assert(!addrBarIsFirstWord);
     }
+  }
+
+  // Case 5: Tracker focus must not leak to another application.
+  {
+    WindowFocusTracker tracker;
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.20", "/terminal", "ghostty", true);
+    InputTypeDetector detector(&tracker);
+
+    assert(detector.isTerminal("", "wayland"));
+    assert(!detector.isTerminal("firefox", "wayland"));
+
+    // Different VS Code executable and desktop IDs still refer to the same
+    // app whose embedded terminal owns the AT-SPI focus.
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.20", "/terminal", "code", true);
+    assert(detector.isTerminal("visual-studio-code", "wayland"));
+
+    // A delayed blur for the old node must not clear a newer focus.
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.21", "/new-entry", "firefox", false);
+    areca::WindowFocusTrackerTestAccess::loseFocus(tracker, ":1.20",
+                                                   "/terminal");
+    assert(tracker.focusProgram() == "firefox");
+
+    // Losing the active focus clears all public focus identity and flags.
+    areca::WindowFocusTrackerTestAccess::loseFocus(tracker, ":1.21",
+                                                   "/new-entry");
+    assert(tracker.focusProgram().empty());
+    assert(!tracker.isTerminalFocused());
+
+    // A recovered AT-SPI connection makes the tracker usable again.
+    areca::WindowFocusTrackerTestAccess::connectionLost(tracker);
+    assert(!tracker.isValid());
+    areca::WindowFocusTrackerTestAccess::connectionEstablished(tracker);
+    assert(tracker.isValid());
   }
 
   return 0;

@@ -26,7 +26,7 @@ Wayland và Fcitx5.
 | `RewriteBackend` | Interface chung cho thao tác apply một `RewritePlan`. |
 | `SurroundingTextBackend` | Gọi `deleteSurroundingText()` và `commitString()`. |
 | `ForwardBackspaceBackend` | Phát tuần tự Backspace press/release bằng `forwardKey()`, chờ settling delay rồi commit text và hoàn tất transaction. |
-| `UinputBackspaceBackend` | Gửi phím `KEY_BACKSPACE` qua `/dev/uinput` cho terminal DBus và ứng dụng không xác định. |
+| `UinputBackspaceBackend` | Gửi phím `KEY_BACKSPACE` qua `/dev/uinput` cho terminal DBus và ứng dụng không xác định. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `UinputShiftSelectBackend` | Gửi `Shift down`, `Left` × N, `Shift up` qua `/dev/uinput` để bôi đen, sau đó commit từng ký tự mới cho các ứng dụng trình duyệt web. |
 
 ## Phân tách cấu hình
@@ -180,7 +180,9 @@ sequenceDiagram
     R-->>E: ReliabilityDecision
     E->>IC: surroundingText() & check cursor/anchor
     
-    alt browserAutocomplete OR (surrounding.isValid & cursor != anchor)
+    alt VS Code embedded terminal
+        E-->>S: Return ForwardBackspaceBackend
+    else browserAutocomplete OR (surrounding.isValid & cursor != anchor)
         E-->>S: Return ForwardBackspaceBackend (+1 extra backspace)
     else decision.useSurrounding & UseUinputShiftSelectForBrowser & isBrowser & uinputAvailable
         E-->>S: Return UinputShiftSelectBackend

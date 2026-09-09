@@ -4,9 +4,19 @@
 #include <cassert>
 
 int main() {
+  using areca::isVSCodeBasedProgram;
   using areca::isVSCodeFamilyProgram;
 
   // Existing VS Code-family matching remains intact.
+  assert(isVSCodeBasedProgram("code"));
+  assert(isVSCodeBasedProgram("/usr/bin/code-insiders"));
+  assert(isVSCodeBasedProgram("VSCodium.desktop"));
+  assert(isVSCodeBasedProgram("cursor"));
+  assert(isVSCodeBasedProgram("windsurf"));
+  assert(!isVSCodeBasedProgram("gnome-terminal-server"));
+  assert(!isVSCodeBasedProgram("jetbrains-idea-ultimate.desktop"));
+  assert(!isVSCodeBasedProgram("firefox"));
+
   assert(isVSCodeFamilyProgram("code"));
   assert(isVSCodeFamilyProgram("/usr/bin/code-insiders"));
   assert(isVSCodeFamilyProgram("VSCodium.desktop"));
