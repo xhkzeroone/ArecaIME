@@ -101,7 +101,7 @@ Cơ chế bảo vệ: Nếu phát hiện trong ô nhập liệu đang có văn b
 
 ### Uinput Backspace
 
-Khi `/dev/uinput` khả dụng và ứng dụng cần phát Backspace ở mức phần cứng kernel (như terminal DBus hoặc ứng dụng chưa xác định), Areca tự động dùng `UinputBackspaceBackend` gửi sự kiện `KEY_BACKSPACE` trực tiếp qua thiết bị uinput kernel rồi commit text mới. Script cài đặt tự động tạo file rule `99-uinput-areca.rules` để phân quyền cho nhóm `uinput`.
+Khi `/dev/uinput` khả dụng và ứng dụng cần phát Backspace ở mức phần cứng kernel (như terminal DBus hoặc ứng dụng chưa xác định), Areca tự động dùng `UinputBackspaceBackend` gửi sự kiện `KEY_BACKSPACE` trực tiếp qua thiết bị uinput kernel rồi commit text mới. Terminal nhúng trong VS Code và các bản fork luôn dùng `ForwardBackspaceBackend`. Script cài đặt tự động tạo file rule `99-uinput-areca.rules` để phân quyền cho nhóm `uinput`.
 
 ### Forward Backspace
 

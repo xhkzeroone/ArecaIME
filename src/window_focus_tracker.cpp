@@ -14,10 +14,7 @@ namespace areca {
 static constexpr int ROLE_TERMINAL = 60;
 static constexpr int ROLE_DOCUMENT_WEB = 95;
 static constexpr int ROLE_DOCUMENT_FRAME = 82;
-static constexpr int ROLE_PASSWORD_TEXT = 40;
 static constexpr int MAX_ANCESTOR_DEPTH = 64;
-
-static thread_local const std::atomic<bool> *g_debugFlag = nullptr;
 
 static FILE *logFile() {
     static FILE *f = nullptr;
@@ -27,8 +24,7 @@ static FILE *logFile() {
 
 #define FOCUS_LOG(fmt, ...)                                                    \
     do {                                                                        \
-        if ((g_debugFlag && g_debugFlag->load(std::memory_order_relaxed)) ||   \
-            access("/tmp/areca_debug", F_OK) == 0) {                            \
+        if (access("/tmp/areca_debug", F_OK) == 0) {                            \
             FILE *f = logFile();                                                \
             if (f) {                                                            \
                 struct timespec ts;                                             \
@@ -276,66 +272,6 @@ static int queryRole(DBusConnection *bus, const char *sender,
     return role;
 }
 
-// ── Read the accessible text of the focused entry (snapshot polling) ──
-static std::string queryText(DBusConnection *bus, const char *sender,
-                             const char *path) {
-    dbus_int32_t start = 0, end = -1;
-    DBusMessage *reply = callMethodWithArgs(
-        bus, sender, path, "org.a11y.atspi.Text", "GetText",
-        [&](DBusMessage *msg) {
-            dbus_message_append_args(msg, DBUS_TYPE_INT32, &start, DBUS_TYPE_INT32,
-                                     &end, DBUS_TYPE_INVALID);
-        });
-    if (!reply) return {};
-    std::string text;
-    DBusMessageIter iter;
-    if (dbus_message_iter_init(reply, &iter) &&
-        dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING) {
-        const char *s = nullptr;
-        dbus_message_iter_get_basic(&iter, &s);
-        if (s) text = s;
-    }
-    dbus_message_unref(reply);
-    return text;
-}
-
-static bool querySelection(DBusConnection *bus, const char *sender,
-                           const char *path, int &selStart, int &selEnd) {
-    selStart = -1;
-    selEnd = -1;
-    dbus_int32_t selNum = 0;
-    DBusMessage *reply = callMethodWithArgs(
-        bus, sender, path, "org.a11y.atspi.Text", "GetSelection",
-        [&](DBusMessage *msg) {
-            dbus_message_append_args(msg, DBUS_TYPE_INT32, &selNum, DBUS_TYPE_INVALID);
-        });
-    if (!reply) return false;
-    DBusMessageIter rit, var, st;
-    DBusMessageIter *cur = &rit;
-    if (dbus_message_iter_init(reply, &rit)) {
-        if (dbus_message_iter_get_arg_type(cur) == DBUS_TYPE_VARIANT) {
-            dbus_message_iter_recurse(cur, &var);
-            cur = &var;
-        }
-        if (dbus_message_iter_get_arg_type(cur) == DBUS_TYPE_STRUCT) {
-            dbus_message_iter_recurse(cur, &st);
-            dbus_int32_t v1 = -1, v2 = -1;
-            if (dbus_message_iter_get_arg_type(&st) == DBUS_TYPE_INT32) {
-                dbus_message_iter_get_basic(&st, &v1);
-                dbus_message_iter_next(&st);
-                if (dbus_message_iter_get_arg_type(&st) == DBUS_TYPE_INT32)
-                    dbus_message_iter_get_basic(&st, &v2);
-            }
-            if (v1 >= 0 && v2 > v1) {
-                selStart = static_cast<int>(v1);
-                selEnd = static_cast<int>(v2);
-            }
-        }
-    }
-    dbus_message_unref(reply);
-    return true;
-}
-
 static bool queryParent(DBusConnection *bus, const char *sender,
                         const char *path,
                         std::string &outSender, std::string &outPath) {
@@ -425,57 +361,6 @@ static bool hasDocumentWebAncestor(DBusConnection *bus,
         curPath = parentPath;
     }
     return false;
-}
-
-// Query the focused node's state set.  org.a11y.atspi.Accessible.GetState
-// returns an array of two uint32 — low and high halves of the ATSPI_STATE_*
-// bitmask (atspi-constants.h).  Fills the interesting flags and a debug
-// string of the set states.
-static bool queryStates(DBusConnection *bus, const char *sender,
-                        const char *path, bool &editable, bool &multiline,
-                        bool &singleLine, std::string &outNames) {
-    editable = false;
-    multiline = false;
-    singleLine = false;
-    outNames.clear();
-
-    DBusMessage *reply = callMethod(bus, sender, path, "org.a11y.atspi.Accessible", "GetState");
-    if (!reply) return false;
-
-    uint64_t states = 0;
-    DBusMessageIter iter, arr;
-    if (dbus_message_iter_init(reply, &iter) &&
-        dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY) {
-        dbus_message_iter_recurse(&iter, &arr);
-        int shift = 0;
-        while (dbus_message_iter_get_arg_type(&arr) == DBUS_TYPE_UINT32 &&
-               shift < 64) {
-            dbus_uint32_t v = 0;
-            dbus_message_iter_get_basic(&arr, &v);
-            states |= static_cast<uint64_t>(v) << shift;
-            shift += 32;
-            dbus_message_iter_next(&arr);
-        }
-    }
-    dbus_message_unref(reply);
-
-    // ATSPI_STATE_* bit positions (see atspi-constants.h enum order).
-    static constexpr struct { int bit; const char *name; } kStateBits[] = {
-        {6, "editable"},  {7, "enabled"},   {10, "focusable"},
-        {11, "focused"},  {16, "multi-line"}, {17, "multiselectable"},
-        {23, "sensitive"}, {24, "showing"}, {25, "single-line"},
-        {30, "manages_descendants"},
-    };
-    for (const auto &sb : kStateBits) {
-        if (states & (1ULL << sb.bit)) {
-            if (!outNames.empty()) outNames += ",";
-            outNames += sb.name;
-            if (sb.bit == 6) editable = true;
-            if (sb.bit == 16) multiline = true;
-            if (sb.bit == 25) singleLine = true;
-        }
-    }
-    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -643,8 +528,6 @@ WindowFocusTracker::WindowFocusTracker() = default;
 
 WindowFocusTracker::~WindowFocusTracker() { stop(); }
 
-std::string WindowFocusTracker::atspiBusAddress() { return getAtspiBusAddress(); }
-
 bool WindowFocusTracker::isAvailable() {
     DBusConnection *bus = connectAtspiBus();
     if (!bus) return false;
@@ -652,42 +535,30 @@ bool WindowFocusTracker::isAvailable() {
     return true;
 }
 
-bool WindowFocusTracker::focusedTextEntry(std::string &busName, std::string &path,
-                                   uint64_t &snapshotUsec) const {
-    std::lock_guard<std::mutex> lock(focusEntryMutex_);
-    if (focusEntryBus_.empty() || focusEntryPath_.empty())
-        return false;
-    busName = focusEntryBus_;
-    path = focusEntryPath_;
-    snapshotUsec = focusEntrySnapshotUsec_.load(std::memory_order_relaxed);
-    return true;
+void WindowFocusTracker::connectionEstablished() {
+    valid_.store(true, std::memory_order_relaxed);
 }
 
-bool WindowFocusTracker::a11yState(std::string &text, int &selStart, int &selEnd,
-                            uint64_t maxAgeUsec) const {
-    std::lock_guard<std::mutex> lock(a11ySnapshotMutex_);
-    if (a11ySnapshotUsec_ == 0)
-        return false;
-    uint64_t nowUsec = static_cast<uint64_t>(
-        std::chrono::steady_clock::now().time_since_epoch().count() / 1000);
-    if (nowUsec - a11ySnapshotUsec_ > maxAgeUsec)
-        return false;
-    text = a11ySnapshotText_;
-    selStart = a11ySnapshotSelStart_;
-    selEnd = a11ySnapshotSelEnd_;
-    return true;
+void WindowFocusTracker::connectionLost() {
+    valid_.store(false, std::memory_order_relaxed);
+    clearFocus();
 }
 
-void WindowFocusTracker::waitForSnapshotUpdate(uint64_t timeoutUsec) const {
-    uint64_t snap;
+void WindowFocusTracker::clearFocus() {
+    focusBus_.clear();
+    focusPath_.clear();
+    browserUIFocused_.store(false);
+    focusInTerminal_.store(false);
     {
-        std::lock_guard<std::mutex> lock(a11ySnapshotMutex_);
-        snap = a11ySnapshotUsec_;
+        std::lock_guard<std::mutex> lock(focusProgramMutex_);
+        focusProgram_.clear();
     }
-    std::unique_lock<std::mutex> lock(a11ySnapshotMutex_);
-    snapshotCv_.wait_for(
-        lock, std::chrono::microseconds(timeoutUsec),
-        [&] { return a11ySnapshotUsec_ != snap; });
+}
+
+void WindowFocusTracker::loseFocus(const char *sender, const char *path) {
+    // A delayed blur from the previous node must not clear the new focus.
+    if (sender && focusBus_ == sender && (!path || focusPath_ == path))
+        clearFocus();
 }
 
 bool WindowFocusTracker::start() {
@@ -711,12 +582,12 @@ void WindowFocusTracker::stop() {
 
 void WindowFocusTracker::threadFunc() {
     running_.store(true);
-    g_debugFlag = &debug_;
 
     while (!stopRequested_.load()) {
+        clearFocus();
         DBusConnection *bus = connectAtspiBus();
         if (!bus) {
-            valid_.store(false);
+            connectionLost();
             for (int i = 0; i < 20 && !stopRequested_.load(); ++i) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
@@ -735,11 +606,19 @@ void WindowFocusTracker::threadFunc() {
                 dbus_message_append_args(msg, DBUS_TYPE_STRING, &eventName,
                                          DBUS_TYPE_INVALID);
             }, 2000);
+        const bool ok = reply != nullptr;
         if (reply) dbus_message_unref(reply);
+        return ok;
     };
 
-    registerEvent("object:state-changed:focused");
-    registerEvent("focus:");
+    if (!registerEvent("object:state-changed:focused") ||
+        !registerEvent("focus:")) {
+        connectionLost();
+        dbus_connection_unref(bus);
+        for (int i = 0; i < 20 && !stopRequested_.load(); ++i)
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        continue;
+    }
 
     dbus_bus_add_match(bus,
                        "type='signal',"
@@ -761,21 +640,7 @@ void WindowFocusTracker::threadFunc() {
                        "member='NameOwnerChanged'",
                        &err);
     dbus_error_free(&err);
-    // Text/selection events on the focused entry trigger an immediate
-    // snapshot re-poll (we don't parse the payloads — the signal only
-    // tells us "something changed, re-query now").
-    for (const char *member : {"TextChanged", "TextCaretMoved",
-                               "TextSelectionChanged"}) {
-        dbus_error_init(&err);
-        std::string match = std::string(
-                                "type='signal',"
-                                "interface='org.a11y.atspi.Event.Object',"
-                                "member='") +
-                            member + "'";
-        dbus_bus_add_match(bus, match.c_str(), &err);
-        dbus_error_free(&err);
-    }
-
+    connectionEstablished();
     FOCUS_LOG("WindowFocusTracker started");
 
     // Poke browsers already on the bus, then re-poke whenever a new app
@@ -794,7 +659,7 @@ void WindowFocusTracker::threadFunc() {
     // Poll loop
     while (!stopRequested_.load()) {
         if (!dbus_connection_read_write(bus, 30)) {
-            valid_.store(false);
+            connectionLost();
             break;
         }
 
@@ -822,6 +687,9 @@ void WindowFocusTracker::threadFunc() {
                             dbus_message_iter_get_basic(&iter, &d1);
                             if (d1 == 1)
                                 isFocusEvent = true;
+                            else if (d1 == 0)
+                                loseFocus(dbus_message_get_sender(msg),
+                                          dbus_message_get_path(msg));
                         }
                     }
                 }
@@ -830,21 +698,6 @@ void WindowFocusTracker::threadFunc() {
             if (iface && member &&
                 strcmp(iface, "org.a11y.atspi.Event.Focus") == 0)
                 isFocusEvent = true;
-
-            // Text/caret/selection changes on the tracked entry mark the
-            // snapshot dirty → re-poll immediately (payloads unparsed).
-            if (iface && member &&
-                strcmp(iface, "org.a11y.atspi.Event.Object") == 0 &&
-                (strcmp(member, "TextChanged") == 0 ||
-                 strcmp(member, "TextCaretMoved") == 0 ||
-                 strcmp(member, "TextSelectionChanged") == 0)) {
-                const char *sigPath = dbus_message_get_path(msg);
-                std::lock_guard<std::mutex> lock(focusEntryMutex_);
-                if (sigPath && !focusEntryPath_.empty() &&
-                    strcmp(sigPath, focusEntryPath_.c_str()) == 0) {
-                    a11yPollDirty_ = true;
-                }
-            }
 
             if (iface && member &&
                 strcmp(iface, "org.freedesktop.DBus") == 0 &&
@@ -858,11 +711,14 @@ void WindowFocusTracker::threadFunc() {
                                           DBUS_TYPE_STRING, &busName,
                                           DBUS_TYPE_STRING, &oldOwner,
                                           DBUS_TYPE_STRING, &newOwner,
-                                          DBUS_TYPE_INVALID) &&
-                    newOwner && newOwner[0]) {
-                    auto now = Clock::now();
-                    pokeAt = now + std::chrono::milliseconds(600);
-                    latePokeAt = now + std::chrono::milliseconds(3000);
+                                          DBUS_TYPE_INVALID)) {
+                    if (oldOwner && oldOwner[0] && newOwner && !newOwner[0])
+                        loseFocus(busName);
+                    if (newOwner && newOwner[0]) {
+                        auto now = Clock::now();
+                        pokeAt = now + std::chrono::milliseconds(600);
+                        latePokeAt = now + std::chrono::milliseconds(3000);
+                    }
                 }
                 dbus_error_free(&nerr);
             }
@@ -871,22 +727,17 @@ void WindowFocusTracker::threadFunc() {
                 const char *sender = dbus_message_get_sender(msg);
                 const char *path = dbus_message_get_path(msg);
                 if (sender && path) {
+                    clearFocus();
+                    focusBus_ = sender;
+                    focusPath_ = path;
                     int role = queryRole(bus, sender, path);
                     bool isTerm = isTerminalNode(bus, sender, path, role);
                     focusInTerminal_.store(isTerm,
                                            std::memory_order_relaxed);
                     bool hasDocWeb = !isTerm && hasDocumentWebAncestor(
                         bus, sender, path);
-                    // Only query the app directly for web content.
-                    // Browser-UI elements (the Chromium omnibox) can
-                    // stall AT-SPI calls, and on X11 the autosuggest
-                    // polling shares this monitor thread — a stuck reply
-                    // here delays the polling snapshot and breaks autofill
-                    // detection.  For everything else resolve the pid
-                    // through the a11y registry on the session bus (no app
-                    // round-trip, cannot stall) so the engine gets a
-                    // verified pid instead of falling back to full
-                    // /proc scans.
+                    // Resolve the PID through the a11y registry first. This
+                    // avoids a potentially blocking call to browser UI nodes.
                     int procId = queryConnectionPid(bus, sender);
                     if (procId <= 0 && hasDocWeb) {
                         procId = queryProcessId(bus, sender, path);
@@ -908,138 +759,27 @@ void WindowFocusTracker::threadFunc() {
                             std::string_view commView(commBuf);
                             if (commView == "plasmashell" || commView == "kwin_wayland" ||
                                 commView == "gnome-shell" || commView == "mutter") {
+                                clearFocus();
                                 dbus_message_unref(msg);
                                 continue;
                             }
-                            focusProcessId_.store(procId, std::memory_order_relaxed);
                             {
                                 std::lock_guard<std::mutex> lock(focusProgramMutex_);
                                 focusProgram_ = commBuf;
                             }
-                        } else {
-                            focusProcessId_.store(procId, std::memory_order_relaxed);
                         }
-                    } else {
-                        focusProcessId_.store(-1, std::memory_order_relaxed);
                     }
                     bool isUI = !hasDocWeb;
-                    // Track whether the focused element is a real text
-                    // entry (role TEXT / ENTRY / DOCUMENT_TEXT).  A
-                    // Chromium tab whose focus is NOT a text entry
-                    // (clicking a Google Sheets cell focuses the
-                    // document/combo box while caps still carry the
-                    // previous editor's hints) cannot receive
-                    // surrounding-text replacements — the engine routes
-                    // those to Uinput.
-                    textEntryFocused_.store(
-                        role == 61 /*TEXT*/ || role == 79 /*ENTRY*/ ||
-                            role == 94 /*DOCUMENT_TEXT*/,
-                        std::memory_order_relaxed);
-                    bool editable = false, multiline = false,
-                         singleLine = false;
-                    std::string states;
-                    queryStates(bus, sender, path, editable, multiline,
-                                singleLine, states);
                     browserUIFocused_.store(isUI,
                                            std::memory_order_relaxed);
-                    passwordFocused_.store(role == ROLE_PASSWORD_TEXT,
-                                          std::memory_order_relaxed);
-                    // Snapshot for the engine: role + text-entry states +
-                    // monotonic timestamp.  Taken AFTER the ancestor walk so
-                    // the snapshot reflects the completed analysis.
-                    focusRole_.store(role, std::memory_order_relaxed);
-                    focusEditable_.store(editable,
-                                         std::memory_order_relaxed);
-                    focusMultiline_.store(multiline,
-                                          std::memory_order_relaxed);
-                    focusSingleLine_.store(singleLine,
-                                           std::memory_order_relaxed);
-                    focusInWebDoc_.store(hasDocWeb,
-                                         std::memory_order_relaxed);
-                    focusSnapshotUsec_.store(
-                        static_cast<uint64_t>(
-                            std::chrono::steady_clock::now()
-                                .time_since_epoch()
-                                .count() /
-                            1000),
-                        std::memory_order_relaxed);
-                    FOCUS_LOG("Focus: terminal=%d webDoc=%d role=%d(%s) editable=%d "
-                             "multiline=%d singleLine=%d states=[%s] "
-                             "pid=%d path=%s",
-                             isTerm, hasDocWeb, role, roleName(role), editable,
-                             multiline, singleLine, states.c_str(), procId,
-                             path);
-                    // Track the focused text entry so the engine can
-                    // query its content directly at replacement time.
-                    static constexpr int ROLE_ENTRY = 79;
-                    static constexpr int ROLE_TEXT = 61;
-                    if (role == ROLE_ENTRY || role == ROLE_TEXT ||
-                        role == ROLE_PASSWORD_TEXT) {
-                        {
-                            std::lock_guard<std::mutex> lock(
-                                focusEntryMutex_);
-                            focusEntryBus_ = sender;
-                            focusEntryPath_ = path;
-                        }
-                        focusEntrySnapshotUsec_.store(
-                            static_cast<uint64_t>(
-                                std::chrono::steady_clock::now()
-                                    .time_since_epoch()
-                                    .count() /
-                                1000),
-                            std::memory_order_relaxed);
-                    }
+                    FOCUS_LOG("Focus: terminal=%d webDoc=%d role=%d(%s) "
+                              "pid=%d path=%s",
+                              isTerm, hasDocWeb, role, roleName(role), procId,
+                              path);
                 }
             }
 
             dbus_message_unref(msg);
-        }
-
-        // Poll the focused text entry's content + selection so the
-        // engine can compute exact BS counts without blocking the main
-        // thread.  Throttled; failures leave the previous snapshot (the
-        // engine treats stale snapshots as unavailable).
-        {
-            uint64_t nowUsec = static_cast<uint64_t>(
-                std::chrono::steady_clock::now().time_since_epoch().count() /
-                1000);
-            static constexpr uint64_t kSnapshotPollUsec = 150000;
-            if (pollEnabled_.load(std::memory_order_relaxed) &&
-                (a11yPollDirty_ ||
-                 nowUsec - lastA11yPollUsec_ >= kSnapshotPollUsec)) {
-                a11yPollDirty_ = false;
-                lastA11yPollUsec_ = nowUsec;
-                std::string busName, path;
-                uint64_t snapUsec = 0;
-                if (focusedTextEntry(busName, path, snapUsec)) {
-                    std::string txt =
-                        queryText(bus, busName.c_str(), path.c_str());
-                    int selStart = -1, selEnd = -1;
-                    if (querySelection(bus, busName.c_str(), path.c_str(),
-                                       selStart, selEnd)) {
-                        int oldSelStart, oldSelEnd;
-                        std::string oldText;
-                        {
-                            std::lock_guard<std::mutex> lock(
-                                a11ySnapshotMutex_);
-                            oldSelStart = a11ySnapshotSelStart_;
-                            oldSelEnd = a11ySnapshotSelEnd_;
-                            oldText = a11ySnapshotText_;
-                            a11ySnapshotText_ = txt;
-                            a11ySnapshotSelStart_ = selStart;
-                            a11ySnapshotSelEnd_ = selEnd;
-                            a11ySnapshotUsec_ = nowUsec;
-                        }
-                        if (selStart != oldSelStart ||
-                            selEnd != oldSelEnd || txt != oldText) {
-                            FOCUS_LOG("Snapshot: text='%s' sel=%d,%d",
-                                     txt.c_str(), selStart, selEnd);
-                        }
-                    }
-                }
-            }
-            // Wake any engine thread waiting on a fresh snapshot.
-            snapshotCv_.notify_all();
         }
 
         auto now = Clock::now();
@@ -1053,7 +793,7 @@ void WindowFocusTracker::threadFunc() {
     }
 
         dbus_connection_unref(bus);
-        valid_.store(false);
+        connectionLost();
 
         if (!stopRequested_.load()) {
             for (int i = 0; i < 10 && !stopRequested_.load(); ++i) {
@@ -1062,7 +802,7 @@ void WindowFocusTracker::threadFunc() {
         }
     }
 
-    valid_.store(false);
+    connectionLost();
     running_.store(false);
     FOCUS_LOG("WindowFocusTracker stopped");
 }

@@ -264,7 +264,7 @@ bool isTerminalProgram(const std::string &rawProgram) {
                      });
 }
 
-bool isVSCodeFamilyProgram(const std::string &rawProgram) {
+bool isVSCodeBasedProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   if (program == "code" || program.starts_with("code-")) {
     return true;
@@ -273,14 +273,17 @@ bool isVSCodeFamilyProgram(const std::string &rawProgram) {
   static constexpr std::array<std::string_view, 10> markers = {
       "visual-studio-code", "visualstudio.code", "vscode",   "codium", "cursor",
       "windsurf",           "antigravity",       "positron", "pearai", "trae"};
-  const bool isVSCodeFamily =
-      std::any_of(markers.begin(), markers.end(),
-                  [&program](std::string_view marker) {
-                    return program.find(marker) != std::string::npos;
-                  }) ||
-      program == "kiro" || program.starts_with("kiro-") || program == "void" ||
-      program.starts_with("void-");
-  return isVSCodeFamily || isProgrammingProgram(program) ||
+  return std::any_of(markers.begin(), markers.end(),
+                     [&program](std::string_view marker) {
+                       return program.find(marker) != std::string::npos;
+                     }) ||
+         program == "kiro" || program.starts_with("kiro-") ||
+         program == "void" || program.starts_with("void-");
+}
+
+bool isVSCodeFamilyProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  return isVSCodeBasedProgram(program) || isProgrammingProgram(program) ||
          isTerminalProgram(program);
 }
 
