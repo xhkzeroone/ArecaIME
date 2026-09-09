@@ -21,6 +21,9 @@ target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig:
 install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
 install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
 
+option(ARECA_BUILD_SETTINGS "Build the standalone Areca settings application" ON)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
 set(BAMBOO_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/libareca-bamboo.a")
 file(GLOB BAMBOO_CORE_SOURCES CONFIGURE_DEPENDS
@@ -81,10 +84,56 @@ target_link_libraries(areca PRIVATE
     ${DBUS_LIBRARIES}
     pthread dl m)
 
+if(ARECA_BUILD_SETTINGS)
+    find_package(SDL3 REQUIRED CONFIG)
+    pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+
+    set(ARECA_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/settings/imgui")
+    if(NOT EXISTS "${ARECA_IMGUI_DIR}/imgui.h")
+        message(FATAL_ERROR "Dear ImGui source was not found at settings/imgui.")
+    endif()
+
+    add_executable(areca-settings
+        settings/main.cpp
+        settings/config_store.cpp
+        settings/font_loader.cpp
+        settings/fcitx_dbus.cpp
+        settings/key_mapper.cpp
+        settings/ui_views.cpp
+        src/bamboo_engine_adapter.cpp
+        "${ARECA_IMGUI_DIR}/imgui.cpp"
+        "${ARECA_IMGUI_DIR}/imgui_draw.cpp"
+        "${ARECA_IMGUI_DIR}/imgui_tables.cpp"
+        "${ARECA_IMGUI_DIR}/imgui_widgets.cpp"
+        "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdl3.cpp"
+        "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdlrenderer3.cpp")
+    target_compile_features(areca-settings PRIVATE cxx_std_20)
+    target_compile_options(areca-settings PRIVATE -Wall -Wextra -Wpedantic)
+    target_include_directories(areca-settings PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${ARECA_IMGUI_DIR}"
+        "${ARECA_IMGUI_DIR}/backends"
+        ${DBUS_INCLUDE_DIRS})
+    target_link_libraries(areca-settings PRIVATE
+        areca-bamboo
+        Fcitx5::Config
+        Fcitx5::Utils
+        SDL3::SDL3
+        ${DBUS_LIBRARIES}
+        ${FONTCONFIG_LIBRARIES}
+        pthread dl m)
+    target_include_directories(areca-settings PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
+endif()
+
 configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
 configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)
 
 install(TARGETS areca DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
+if(ARECA_BUILD_SETTINGS)
+    install(TARGETS areca-settings DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(FILES "data/areca-settings.desktop"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+endif()
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-addon.conf"
         RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/addon")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-inputmethod.conf"
