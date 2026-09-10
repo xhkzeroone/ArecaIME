@@ -2,5 +2,6 @@
 /build-*/
 /.idea/
 .cache/
+.devenv/
 CMakeFiles/
 CMakeCache.txt
