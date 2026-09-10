@@ -11,6 +11,15 @@ find_package(Fcitx5Utils REQUIRED)
 find_program(GO_EXECUTABLE go REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DBUS REQUIRED dbus-1)
+pkg_check_modules(LIBINPUT REQUIRED IMPORTED_TARGET libinput)
+pkg_check_modules(UDEV REQUIRED IMPORTED_TARGET libudev)
+
+add_executable(areca-mouse-monitor tools/mouse_monitor.cpp)
+target_compile_features(areca-mouse-monitor PRIVATE cxx_std_20)
+target_compile_options(areca-mouse-monitor PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig::UDEV)
+install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
+install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
 
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
 set(BAMBOO_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/libareca-bamboo.a")
@@ -55,7 +64,11 @@ add_library(areca MODULE
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
     src/window_focus_tracker.cpp
+    src/mouse_click_tracker.cpp
     src/word_segment.cpp)
+target_compile_definitions(areca PRIVATE
+    ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor")
+add_dependencies(areca areca-mouse-monitor)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
 target_compile_features(areca PRIVATE cxx_std_20)
 target_compile_options(areca PRIVATE -Wall -Wextra -Wpedantic)
@@ -229,4 +242,19 @@ if(BUILD_TESTING)
     target_link_libraries(areca-input-type-detector-test PRIVATE
         Fcitx5::Core Fcitx5::Utils ${DBUS_LIBRARIES} pthread dl m)
     add_test(NAME input-type-detector COMMAND areca-input-type-detector-test)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(areca-mouse-test-helper tests/mouse_click_tracker_helper.cpp)
+    add_executable(areca-mouse-click-tracker-test
+        tests/mouse_click_tracker_test.cpp src/mouse_click_tracker.cpp)
+    target_compile_features(areca-mouse-click-tracker-test PRIVATE cxx_std_20)
+    target_compile_options(areca-mouse-click-tracker-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-mouse-click-tracker-test PRIVATE src)
+    target_compile_definitions(areca-mouse-click-tracker-test PRIVATE
+        ARECA_MOUSE_HELPER_PATH="$<TARGET_FILE:areca-mouse-test-helper>")
+    target_link_libraries(areca-mouse-click-tracker-test PRIVATE Fcitx5::Utils)
+    add_dependencies(areca-mouse-click-tracker-test areca-mouse-test-helper)
+    add_test(NAME mouse-click-tracker COMMAND areca-mouse-click-tracker-test)
 endif()

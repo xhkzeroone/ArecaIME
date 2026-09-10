@@ -24,6 +24,7 @@
 #include "program_compatibility.h"
 
 #include "window_focus_tracker.h"
+#include "mouse_click_tracker.h"
 
 namespace areca {
 namespace {
@@ -126,6 +127,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
     focusTracker_.reset();
   }
   inputTypeDetector_.setFocusTracker(focusTracker_.get());
+  mouseTracker_ = std::make_unique<MouseClickTracker>(
+      instance_->eventLoop(), [this]() { return debugEnabled(); });
+  if (!mouseTracker_->start()) FCITX_WARN() << "areca: mouse monitor unavailable";
 }
 
 ArecaEngine::~ArecaEngine() {
@@ -536,6 +540,10 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
   if (activePresentationMode_ == PresentationMode::Rewrite) {
     clearBackendVerdictForLifecycle(*inputContext, "activate");
   }
+  mouseTracker_->start();
+  if (mouseTracker_->hasPendingClick() && debugEnabled())
+    FCITX_INFO() << "areca: discard pending mouse click on activation";
+  mouseTracker_->clearPendingClick();
   activeHandler().activate(*inputContext);
   if (debugEnabled()) {
     FCITX_INFO() << "areca: activate presentation_mode="
@@ -551,6 +559,19 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
+    if (mouseTracker_->hasPendingClick()) {
+      if (scheduler_.shouldRejectReset()) {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: mouse reset deferred (rewrite protection)";
+      } else {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: applying mouse reset mode="
+                       << presentationModeName(activePresentationMode_);
+        activeHandler().resetContext(*inputContext);
+        clearBackendVerdictForLifecycle(*inputContext, "mouse-click");
+        mouseTracker_->clearPendingClick();
+      }
+    }
     // Bắt đầu: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     const std::string program = resolveProgram(*inputContext, state);

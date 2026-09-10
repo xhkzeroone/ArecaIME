@@ -386,3 +386,31 @@ Mọi đóng góp báo lỗi hoặc gửi Pull Request đều được hoan ngh�
 Areca được phát hành theo giấy phép [MIT](LICENSE). `bamboo-core` là một dự án
 độc lập và giữ license/copyright riêng tại
 [`bamboo/bamboo-core/LICENSE`](bamboo/bamboo-core/LICENSE).
+
+### Mouse click reset
+
+Areca starts `areca-mouse-monitor` from the configured libexec directory as a
+separate, unprivileged child process. It uses libinput/udev on `XDG_SEAT`
+(default `seat0`) and reports button presses, including touchpad taps, through a
+private pipe. Motion, scrolling and button releases do not request a reset.
+The addon reads the pipe on the Fcitx event loop and resets composition before
+the next key press once the rewrite scheduler permits it. A pending click stays
+pending during rewrite protection. Activation discards clicks from before the
+new input context was activated.
+
+Build dependencies include libinput and libudev development packages. Install
+with the intended `CMAKE_INSTALL_PREFIX`: the addon embeds the installed helper
+path. The installed `70-areca-pointer.rules` grants the active local session
+access to mouse/touchpad event devices through logind's `uaccess`; reload udev
+rules and reconnect the device or log out/in after first installation. This
+grants that session raw access to those devices, including any other events a
+combined device exposes. No root helper or membership in the `input` group is
+required on systems supporting these ACLs. A user-prefix installation needs the
+rule installed separately in the system udev rules directory. Without device
+permissions, click detection is unavailable; normal Fcitx input still works.
+
+The helper emits access errors to Fcitx's inherited stderr. An exited helper is
+restarted on the next Areca activation. The tracker terminates and reaps its
+child when destroyed. `mouse-click-tracker` tests exercise the pipe protocol,
+coalescing, deferred consumption, repeated start/stop and child cleanup without
+requiring physical input devices.

@@ -60,7 +60,7 @@ install_deps_debian() {
   echo "[areca] Installing build dependencies with apt"
   sudo apt-get update
   local common=(build-essential cmake ninja-build pkg-config extra-cmake-modules
-                golang-go)
+                golang-go libinput-dev libudev-dev)
   local fcitx=(fcitx5 fcitx5-config-qt libfcitx5core-dev
                libfcitx5config-dev libfcitx5utils-dev)
   if ! sudo apt-get install -y "${common[@]}" "${fcitx[@]}"; then
@@ -72,7 +72,7 @@ install_deps_debian() {
 install_deps_arch() {
   echo "[areca] Installing build dependencies with pacman"
   sudo pacman -Sy --needed --noconfirm \
-    base-devel cmake ninja pkgconf extra-cmake-modules go fcitx5 \
+    base-devel cmake ninja pkgconf extra-cmake-modules go libinput systemd-libs fcitx5 \
     fcitx5-configtool
 }
 
@@ -80,7 +80,7 @@ install_deps_fedora() {
   echo "[areca] Installing build dependencies with dnf"
   sudo dnf install -y \
     gcc-c++ cmake ninja-build pkgconf-pkg-config extra-cmake-modules go \
-    fcitx5 fcitx5-devel fcitx5-configtool
+    libinput-devel systemd-devel fcitx5 fcitx5-devel fcitx5-configtool
 }
 
 install_build_deps() {
