@@ -169,8 +169,10 @@ jobs:
                 extra-cmake-modules \
                 fcitx5 \
                 go \
+                libinput \
                 ninja \
                 pkgconf \
+                systemd-libs \
                 dbus
               useradd --create-home builder
               chown -R builder:builder arch-pkg
@@ -219,6 +221,8 @@ jobs:
                 ruby-devel \
                 rpm-build \
                 dbus-devel \
+                libinput-devel \
+                systemd-devel \
                 fcitx5 \
                 fcitx5-devel \
                 fcitx5-configtool
@@ -242,6 +246,8 @@ jobs:
                 --url "https://github.com/xhkzeroone/ArecaIME" \
                 --license MIT \
                 --depends fcitx5 \
+                --depends libinput \
+                --depends systemd-libs \
                 -C pkgroot-fedora \
                 -p "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
                 .
