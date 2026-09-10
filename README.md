@@ -123,6 +123,12 @@ forward Backspace × N
 Trong toàn bộ transaction, scheduler vẫn giữ `processing=true`, vì vậy key đến
 sau chỉ được append vào FIFO.
 
+`ForwardBackspaceBackend` và `UinputBackspaceBackend` tự theo dõi độ trễ của
+timer event loop. Mỗi callback trễ từ 5 ms làm thời gian chờ trước commit tăng
+thêm 5 ms, tối đa tổng cộng 50 ms. Mức tối thiểu là timing mặc định của frontend
+hiện tại. Sau 5 callback đúng giờ liên tiếp, thời gian chờ giảm 5 ms. Mức thích
+ứng được giữ riêng cho từng backend và được đặt lại khi addon khởi động lại.
+
 Areca lọc program trước: chỉ VS Code và các bản phân nhánh,
 IDE/code editor/developer tool, hoặc terminal Linux đã biết (terminal của
 distro/desktop environment và terminal bên thứ ba) mới được kiểm tra capability
@@ -270,7 +276,7 @@ AfterBackspaceWaitMs=10
 WaylandAfterBackspaceWaitMs=3
 XimAfterBackspaceWaitMs=10
 Fcitx4AfterBackspaceWaitMs=10
-DbusAfterBackspaceWaitMs=5
+DbusAfterBackspaceWaitMs=10
 SurroundingWaitMs=3
 SurroundingDeleteDelayMs=10
 WaylandSurroundingDeleteDelayMs=0
@@ -299,7 +305,7 @@ UseSurroundingV2ForBrowser=False
 | Nâng cao | `WaylandAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Wayland, mặc định 3 ms. |
 | Nâng cao | `XimAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend XIM, mặc định 10 ms. |
 | Nâng cao | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Fcitx4, mặc định 10 ms. |
-| Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 5 ms. |
+| Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 10 ms. |
 | Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
 | Nâng cao | `SurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2, mặc định 10 ms. |
 | Nâng cao | `WaylandSurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2 cho frontend Wayland, mặc định 0 ms. |

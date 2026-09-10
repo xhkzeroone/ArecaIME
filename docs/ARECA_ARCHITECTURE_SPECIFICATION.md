@@ -49,8 +49,8 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 | `RewriteBackend` | Interface trừu tượng định nghĩa phương thức thực thi một `RewritePlan`. |
 | `SurroundingTextBackend` | Thực thi xóa văn bản qua API Fcitx `deleteSurroundingText()` và chèn chữ mới qua `commitString()`. |
 | `UinputShiftSelectBackend` | Phát phím phần sống kernel `Shift + Left` qua `/dev/uinput` để bôi đen đoạn chữ cũ, sau đó commit từng ký tự mới cho ứng dụng trình duyệt web. |
-| `UinputBackspaceBackend` | Phát phím phần sống kernel `KEY_BACKSPACE` qua `/dev/uinput` cho terminal DBus và các ứng dụng không xác định. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
-| `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng delay thiết lập và commit chữ mới. |
+| `UinputBackspaceBackend` | Phát phím phần sống kernel `KEY_BACKSPACE` qua `/dev/uinput` và dùng settling delay thích ứng theo timer drift cho terminal DBus và các ứng dụng không xác định. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
+| `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng settling delay thích ứng theo timer drift và commit chữ mới. |
 
 ---
 
@@ -274,7 +274,7 @@ sequenceDiagram
 | `WaylandAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên Wayland (ms) | `3 ms` |
 | `XimAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên XIM (ms) | `10 ms` |
 | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên Fcitx4 (ms) | `10 ms` |
-| `DbusAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên DBus (ms) | `20 ms` |
+| `DbusAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên DBus (ms) | `10 ms` |
 | `UinputShiftSelectDelayMs` | Delay giữa các phím uinput Shift+Left (ms) | `1 ms` |
 | `AfterUinputShiftSelectWaitMs` | Thời gian chờ sau phím uinput Shift+Left cuối (ms) | `20 ms` |
 | `WaylandAfterUinputShiftSelectWaitMs` | Thời gian chờ sau phím uinput Shift+Left cuối Wayland (ms) | `10 ms` |

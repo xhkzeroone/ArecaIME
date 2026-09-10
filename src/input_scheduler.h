@@ -18,7 +18,7 @@ struct SchedulerTiming {
   uint32_t waylandAfterBackspaceWaitMs = 3;
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
-  uint32_t dbusAfterBackspaceWaitMs = 20;
+  uint32_t dbusAfterBackspaceWaitMs = 10;
 
   uint32_t uinputShiftSelectDelayMs = 1;
   uint32_t afterUinputShiftSelectWaitMs = 20;
