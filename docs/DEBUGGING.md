@@ -146,8 +146,9 @@ không chứng minh frontend/browser sẽ giao sự kiện phím theo cùng mộ
 
 ## Bật/tắt và xác nhận cấu hình
 
-`EnableMouseTracking` và `ForwardFirstCharacter` nằm trong cấu hình chính Areca,
-mặc định `True`. Tắt mouse tracking phải làm process `areca-mouse-monitor` biến
+`EnableMouseTracking` và `ForwardFirstCharacter` nằm trong **Cấu hình nâng cao**
+(`conf/areca-advanced.conf`), mặc định `False`. Hai khóa cũ trong
+`conf/areca.conf` không còn được đọc; muốn bật lại, đặt trong cấu hình nâng cao. Tắt mouse tracking phải làm process `areca-mouse-monitor` biến
 mất; bật lại phải tạo helper mới. Tắt chuyển tiếp phím đầu phải không còn log
 `idle key route=...` và text key đi qua queue. Đổi qua giao diện có hiệu lực ngay;
 sửa file bằng tay cần reload cấu hình.

@@ -87,6 +87,8 @@ jobs:
             fcitx5-frontend-gtk3 \
             fcitx5-frontend-qt5 \
             libdbus-1-dev \
+            libinput-dev \
+            libudev-dev \
             libfcitx5core-dev \
             libfcitx5config-dev \
             libfcitx5utils-dev

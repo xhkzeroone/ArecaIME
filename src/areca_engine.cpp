@@ -104,7 +104,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             protectBackendVerdict(inputContext, reason);
           },
           [this]() { return backspaceRecoveryEnabled(); },
-          [this]() { return config_.forwardFirstCharacter.value(); }),
+          [this]() { return advancedConfig_.forwardFirstCharacter.value(); }),
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
@@ -725,7 +725,7 @@ SchedulerTiming ArecaEngine::timing() const {
 void ArecaEngine::applyConfig() {
   // Tắt là hủy cả watcher, pipe, cờ click và process con; không chỉ bỏ qua reset.
   // Khi bật lại, tạo tracker mới để không xử lý click tồn đọng từ trước.
-  if (config_.enableMouseTracking.value()) {
+  if (advancedConfig_.enableMouseTracking.value()) {
     if (!mouseTracker_) {
       mouseTracker_ = std::make_unique<MouseClickTracker>(
           instance_->eventLoop(), [this]() { return debugEnabled(); });
@@ -737,8 +737,8 @@ void ArecaEngine::applyConfig() {
   }
   if (debugEnabled())
     FCITX_INFO() << "areca: input options mouse_tracking="
-                 << config_.enableMouseTracking.value()
-                 << " forward_first_character=" << config_.forwardFirstCharacter.value();
+                 << advancedConfig_.enableMouseTracking.value()
+                 << " forward_first_character=" << advancedConfig_.forwardFirstCharacter.value();
 
   if (scheduler_.rewritePending()) {
     return;

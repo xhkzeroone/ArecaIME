@@ -55,6 +55,10 @@ FCITX_CONFIGURATION(
 
 FCITX_CONFIGURATION(
     AdvancedConfig,
+    fcitx::Option<bool> enableMouseTracking{
+        this, "EnableMouseTracking", N_("Theo dõi click chuột để reset bộ gõ"), false};
+    fcitx::Option<bool> forwardFirstCharacter{
+        this, "ForwardFirstCharacter", N_("Chuyển tiếp phím đầu khi bộ gõ rảnh"), false};
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
@@ -132,10 +136,6 @@ FCITX_CONFIGURATION(
 
 FCITX_CONFIGURATION(
     ArecaConfig,
-    fcitx::Option<bool> enableMouseTracking{
-        this, "EnableMouseTracking", N_("Theo dõi click chuột để reset bộ gõ"), true};
-    fcitx::Option<bool> forwardFirstCharacter{
-        this, "ForwardFirstCharacter", N_("Chuyển tiếp phím đầu khi bộ gõ rảnh"), true};
     fcitx::OptionWithAnnotation<PresentationMode,
                                 PresentationModeI18NAnnotation>
         presentationMode{this, "PresentationMode", N_("Chế độ hiển thị"),
