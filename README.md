@@ -15,7 +15,7 @@ editor web nhận sự kiện phím để mở chế độ soạn thảo. Bamboo
 
 ### Bật/tắt tính năng tương thích
 
-Hai tùy chọn trong cấu hình chính Areca (`conf/areca.conf`) mặc định bật:
+Hai tùy chọn trong **Cấu hình nâng cao** (`conf/areca-advanced.conf`) mặc định tắt:
 
 | Khóa | Nhãn giao diện | Khi tắt |
 | --- | --- | --- |
