@@ -8,6 +8,7 @@
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/trackableobject.h>
 
+#include "adaptive_wait.h"
 #include "rewrite_backend.h"
 
 namespace areca {
@@ -30,6 +31,7 @@ private:
   void sendNextBackspace();
   void scheduleNextBackspace();
   void scheduleCommit();
+  void commitAfterAdaptiveWait(uint32_t appliedExtraWaitMs);
   void commitAndComplete();
   void completeWithoutCommit();
   void schedule(uint32_t delayMs, std::function<void()> callback);
@@ -47,6 +49,7 @@ private:
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
   std::string commitText_;
+  AdaptiveWait adaptiveWait_;
 };
 
 } // namespace areca

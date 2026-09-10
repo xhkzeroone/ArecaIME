@@ -103,6 +103,15 @@ install(FILES "data/99-uinput-areca.rules"
         DESTINATION "lib/udev/rules.d")
 
 if(BUILD_TESTING)
+    add_executable(areca-adaptive-wait-test
+        tests/adaptive_wait_test.cpp)
+    target_compile_features(areca-adaptive-wait-test PRIVATE cxx_std_20)
+    target_compile_options(areca-adaptive-wait-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-adaptive-wait-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    add_test(NAME adaptive-wait COMMAND areca-adaptive-wait-test)
+
     add_executable(areca-bamboo-test
         tests/bamboo_engine_adapter_test.cpp
         src/bamboo_engine_adapter.cpp)

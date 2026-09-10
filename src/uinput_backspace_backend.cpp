@@ -40,6 +40,8 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
                  << " backspaces=" << remainingBackspaces_
                  << " delay_ms=" << backspaceDelayMs_
                  << " after_wait_ms=" << afterBackspaceWaitMs_
+                 << " adaptive_extra_ms="
+                 << adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_)
                  << " frontend=" << (frontend ? frontend : "")
                  << " accuracy_us=" << timerAccuracyUsec_;
   }
@@ -83,7 +85,38 @@ void UinputBackspaceBackend::scheduleNextBackspace() {
 }
 
 void UinputBackspaceBackend::scheduleCommit() {
-  schedule(afterBackspaceWaitMs_, [this]() { commitAndComplete(); });
+  const uint32_t extraWaitMs =
+      adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
+  const uint32_t effectiveWaitMs =
+      adaptiveWait_.effectiveWaitMs(afterBackspaceWaitMs_);
+  if (debugProvider_() && extraWaitMs > 0) {
+    FCITX_INFO() << "areca: uinput-backspace adaptive commit wait tx="
+                 << transactionId_ << " base_ms=" << afterBackspaceWaitMs_
+                 << " extra_ms=" << extraWaitMs
+                 << " effective_ms=" << effectiveWaitMs;
+  }
+  schedule(effectiveWaitMs,
+           [this, extraWaitMs]() { commitAfterAdaptiveWait(extraWaitMs); });
+}
+
+void UinputBackspaceBackend::commitAfterAdaptiveWait(
+    uint32_t appliedExtraWaitMs) {
+  const uint32_t currentExtraWaitMs =
+      adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
+  if (currentExtraWaitMs > appliedExtraWaitMs) {
+    const uint32_t additionalWaitMs =
+        currentExtraWaitMs - appliedExtraWaitMs;
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: uinput-backspace lag before commit tx="
+                   << transactionId_ << " additional_wait_ms="
+                   << additionalWaitMs;
+    }
+    schedule(additionalWaitMs, [this, currentExtraWaitMs]() {
+      commitAfterAdaptiveWait(currentExtraWaitMs);
+    });
+    return;
+  }
+  commitAndComplete();
 }
 
 void UinputBackspaceBackend::commitAndComplete() {
@@ -129,9 +162,28 @@ void UinputBackspaceBackend::schedule(uint32_t delayMs,
       fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(delayMs) * 1000;
   timer_ =
       eventLoop_.addTimeEvent(CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
-                              [this, callback = std::move(callback)](
+                              [this, deadline, callback = std::move(callback)](
                                   fcitx::EventSourceTime *, uint64_t) mutable {
                                 auto completedTimer = std::move(timer_);
+                                const uint64_t firedAtUsec =
+                                    fcitx::now(CLOCK_MONOTONIC);
+                                const auto adjustment =
+                                    adaptiveWait_.observeTimer(deadline,
+                                                               firedAtUsec);
+                                if (debugProvider_() &&
+                                    adjustment !=
+                                        AdaptiveWait::Adjustment::None) {
+                                  FCITX_INFO()
+                                      << "areca: uinput-backspace adaptive "
+                                         "wait changed tx="
+                                      << transactionId_ << " lateness_us="
+                                      << (firedAtUsec > deadline
+                                              ? firedAtUsec - deadline
+                                              : 0)
+                                      << " extra_ms="
+                                      << adaptiveWait_.effectiveExtraWaitMs(
+                                             afterBackspaceWaitMs_);
+                                }
                                 callback();
                                 return false;
                               });

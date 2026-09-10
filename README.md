@@ -123,6 +123,12 @@ forward Backspace × N
 Trong toàn bộ transaction, scheduler vẫn giữ `processing=true`, vì vậy key đến
 sau chỉ được append vào FIFO.
 
+`ForwardBackspaceBackend` và `UinputBackspaceBackend` tự theo dõi độ trễ của
+timer event loop. Mỗi callback trễ từ 5 ms làm thời gian chờ trước commit tăng
+thêm 5 ms, tối đa tổng cộng 50 ms. Mức tối thiểu là timing mặc định của frontend
+hiện tại. Sau 5 callback đúng giờ liên tiếp, thời gian chờ giảm 5 ms. Mức thích
+ứng được giữ riêng cho từng backend và được đặt lại khi addon khởi động lại.
+
 Areca lọc program trước: chỉ VS Code và các bản phân nhánh,
 IDE/code editor/developer tool, hoặc terminal Linux đã biết (terminal của
 distro/desktop environment và terminal bên thứ ba) mới được kiểm tra capability
