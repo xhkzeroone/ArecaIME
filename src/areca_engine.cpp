@@ -24,6 +24,7 @@
 #include "program_compatibility.h"
 
 #include "window_focus_tracker.h"
+#include "mouse_click_tracker.h"
 
 namespace areca {
 namespace {
@@ -102,7 +103,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           [this](fcitx::InputContext &inputContext, const char *reason) {
             protectBackendVerdict(inputContext, reason);
           },
-          [this]() { return backspaceRecoveryEnabled(); }),
+          [this]() { return backspaceRecoveryEnabled(); },
+          [this]() { return config_.forwardFirstCharacter.value(); }),
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
@@ -240,15 +242,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   const bool isTerminal = inputTypeDetector_.isTerminal(program, frontend);
 
   if (isTerminal) {
-    if (isVSCodeBasedProgram(program)) {
-      if (debugEnabled()) {
-        FCITX_INFO()
-            << "areca: VS Code embedded terminal selected forward-backspace"
-            << " program=" << program
-            << " backend=" << forwardBackspaceBackend_.name();
-      }
-      return {&forwardBackspaceBackend_};
-    }
     if (uinputBackspaceBackend_.isAvailable()) {
       if (debugEnabled()) {
         FCITX_INFO() << "areca: terminal selected uinput backend"
@@ -536,6 +529,14 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
   if (activePresentationMode_ == PresentationMode::Rewrite) {
     clearBackendVerdictForLifecycle(*inputContext, "activate");
   }
+  // Thử lại nếu helper đã mất kết nối. Bỏ click đã nhận trước activation để
+  // thao tác ở context cũ không làm reset trạng thái của context vừa kích hoạt.
+  if (mouseTracker_) {
+    mouseTracker_->start();
+    if (mouseTracker_->hasPendingClick() && debugEnabled())
+      FCITX_INFO() << "areca: discard pending mouse click on activation";
+    mouseTracker_->clearPendingClick();
+  }
   activeHandler().activate(*inputContext);
   if (debugEnabled()) {
     FCITX_INFO() << "areca: activate presentation_mode="
@@ -551,6 +552,22 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
+    // Reset trước phím nhấn tiếp theo vì click có thể đã đổi vị trí con trỏ.
+    // Nếu rewrite còn được bảo vệ, giữ cờ click cho lần sau thay vì làm mất nó
+    // hoặc xóa trạng thái giữa một chuỗi thao tác xóa/chèn đang chạy.
+    if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
+      if (scheduler_.shouldRejectReset()) {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: mouse reset deferred (rewrite protection)";
+      } else {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: applying mouse reset mode="
+                       << presentationModeName(activePresentationMode_);
+        activeHandler().resetContext(*inputContext);
+        clearBackendVerdictForLifecycle(*inputContext, "mouse-click");
+        mouseTracker_->clearPendingClick();
+      }
+    }
     // Bắt đầu: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     const std::string program = resolveProgram(*inputContext, state);
@@ -706,6 +723,23 @@ SchedulerTiming ArecaEngine::timing() const {
 }
 
 void ArecaEngine::applyConfig() {
+  // Tắt là hủy cả watcher, pipe, cờ click và process con; không chỉ bỏ qua reset.
+  // Khi bật lại, tạo tracker mới để không xử lý click tồn đọng từ trước.
+  if (config_.enableMouseTracking.value()) {
+    if (!mouseTracker_) {
+      mouseTracker_ = std::make_unique<MouseClickTracker>(
+          instance_->eventLoop(), [this]() { return debugEnabled(); });
+      if (!mouseTracker_->start())
+        FCITX_WARN() << "areca: mouse monitor unavailable";
+    }
+  } else {
+    mouseTracker_.reset();
+  }
+  if (debugEnabled())
+    FCITX_INFO() << "areca: input options mouse_tracking="
+                 << config_.enableMouseTracking.value()
+                 << " forward_first_character=" << config_.forwardFirstCharacter.value();
+
   if (scheduler_.rewritePending()) {
     return;
   }

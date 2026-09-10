@@ -123,3 +123,88 @@ nâng cao chưa có. Sau khi mở và lưu panel **Cấu hình nâng cao**, hãy
 file mới ở trên.
 
 Sau khi sửa config, reload/restart Fcitx rồi kiểm tra log timing thực tế.
+
+## Phím đầu đi tiếp khi engine rảnh
+
+Bật `Debug=True` trong cấu hình Areca và tìm:
+
+```text
+areca: idle key route=forward reason=unchanged-output
+areca: idle key route=commit reason=transformed-output
+```
+
+`forward` nghĩa là addon giữ event chưa filter/accept và không commit thêm;
+`commit` nghĩa là Bamboo biến đổi đầu ra nên addon phải chặn phím gốc. Khi đã có
+composition, queue, rewrite, barrier, chờ Backspace release hoặc tự viết hoa đổi
+ký tự, phím đi theo luồng cũ nên không nhất thiết xuất hiện hai dòng trên.
+
+Test tự động `idle-key-forward` kiểm tra phím đầu không bị commit lặp, Bamboo
+vẫn giữ trạng thái, output biến đổi được commit và rewrite/queue chặn đường tắt.
+Trên web thực tế, thử click vào editor chưa mở chế độ nhập, gõ phím đầu rồi
+`a` + `s`; kiểm tra editor mở, không mất/lặp ký tự và ghép dấu đúng. Unit test
+không chứng minh frontend/browser sẽ giao sự kiện phím theo cùng một cách.
+
+## Bật/tắt và xác nhận cấu hình
+
+`EnableMouseTracking` và `ForwardFirstCharacter` nằm trong cấu hình chính Areca,
+mặc định `True`. Tắt mouse tracking phải làm process `areca-mouse-monitor` biến
+mất; bật lại phải tạo helper mới. Tắt chuyển tiếp phím đầu phải không còn log
+`idle key route=...` và text key đi qua queue. Đổi qua giao diện có hiệu lực ngay;
+sửa file bằng tay cần reload cấu hình.
+
+Khi bật debug, mỗi lần áp dụng cấu hình có dòng:
+
+```text
+areca: input options mouse_tracking=... forward_first_character=...
+```
+
+Thử bật/tắt riêng từng tùy chọn, cả khi đang có click pending. Khi bật lại mouse
+tracking, click từ trước lúc tắt không được làm reset lần gõ mới.
+
+## Mouse tracker
+
+Với prefix `/usr` và libexec mặc định, helper nằm ở
+`/usr/libexec/areca-mouse-monitor`; nếu đổi prefix/libexec, kiểm tra giá trị trong
+`build/CMakeCache.txt`. Cần cài cả addon và helper rồi restart Fcitx để nạp bản mới.
+
+```bash
+pgrep -af areca-mouse-monitor
+ls -l /usr/libexec/areca-mouse-monitor
+```
+
+Helper là process con của Fcitx, không có systemd service riêng. Log đi vào
+stderr kế thừa từ Fcitx; dùng journal nếu phiên desktop thu stderr vào journal,
+hoặc xem nơi launcher Fcitx ghi log. Với `Debug=True`, luồng thường thấy là:
+
+```text
+areca: mouse helper started pid=
+areca: mouse helper ready pid=
+areca: mouse click received; reset pending
+areca: mouse reset deferred (rewrite protection)
+areca: applying mouse reset mode=
+areca: discard pending mouse click on activation
+areca: mouse helper cleanup pid=
+```
+
+Dòng `deferred` chỉ có khi một phím đến trong khoảng bảo vệ; pending click vẫn
+được giữ. `ready` chỉ xác nhận libinput khởi tạo, không xác nhận quyền đọc thiết
+bị. WARN về spawn/pipe/read/disconnect luôn hiện kể cả khi tắt debug. Helper
+báo `access denied` hoặc `cannot initialize libinput seat` trên stderr.
+
+Nếu spawn thất bại, kiểm tra đường dẫn helper và quyền thực thi. Nếu thiếu quyền
+thiết bị, kiểm tra rule `70-areca-pointer.rules` ở thư mục udev hệ thống, ACL của
+thiết bị event tương ứng và phiên local đang active. Rule phải chạy trước
+`73-seat-late.rules` để logind áp dụng `uaccess`. Sau khi cài rule:
+
+```bash
+sudo udevadm control --reload-rules
+```
+
+Kết nối lại chuột/touchpad hoặc đăng xuất/đăng nhập để áp dụng; chỉ reload không
+cập nhật ACL cho thiết bị đã tồn tại. Helper thoát sẽ được thử chạy lại vào lần
+Areca activation tiếp theo. Không có quyền đọc thiết bị chỉ làm mất tính năng
+reset theo click, không ngăn luồng nhập liệu thông thường.
+
+Test `mouse-click-tracker` dùng helper giả, kiểm tra protocol, gộp click, giữ cờ
+cho reset bị hoãn, start/stop nhiều lần và thu hồi process con. Cần thử riêng
+click thật, tap touchpad và mất kết nối helper trên phiên desktop có libinput.

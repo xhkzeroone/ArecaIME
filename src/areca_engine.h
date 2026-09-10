@@ -41,6 +41,7 @@ struct ReliabilityDecision {
 };
 
 class WindowFocusTracker;
+class MouseClickTracker;
 
 class ArecaEngine final : public fcitx::InputMethodEngineV2 {
 public:
@@ -124,6 +125,7 @@ private:
   RedirectModeHandler redirectHandler_;
   std::unique_ptr<WindowFocusTracker> focusTracker_;
   InputTypeDetector inputTypeDetector_;
+  std::unique_ptr<MouseClickTracker> mouseTracker_;
 };
 
 } // namespace areca

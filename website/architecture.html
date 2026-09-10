@@ -4078,7 +4078,8 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <h2 id="1-t%E1%BB%95ng-quan-h%E1%BB%87-th%E1%BB%91ng" tabindex="-1">1. Tổng quan hệ thống</h2>
 <p>Areca IME là bộ gõ tiếng Việt dành cho Linux dưới dạng mô-đun mở rộng (addon) của <strong>Fcitx5</strong>, được viết bằng <strong>C++20</strong>. Areca tích hợp trực tiếp thư viện core <code>bamboo-core</code> để xử lý quy tắc gõ tiếng Việt (Telex, VNI, VIQR, v.v.), đồng thời tự quản lý luồng sự kiện phím bất đồng bộ và cơ chế chỉnh sửa lại văn bản đã hiển thị.</p>
 <pre class="hljs"><code><div>Fcitx5 Key Event
-       │ (Filter Text Key)
+       ├──► Idle first key: Bamboo → unchanged → event chưa accept
+       │ (Các text key còn lại: filterAndAccept)
        ▼
   KeyQueue (FIFO Queue)
        │ (Single-flight processing)
@@ -4167,7 +4168,7 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 <hr>
 <h2 id="3-quy-t%E1%BA%AFc-invariant-c%E1%BB%91t-l%C3%B5i" tabindex="-1">3. Quy tắc Invariant cốt lõi</h2>
 <ol>
-<li><strong>Thứ tự FIFO bảo toàn</strong>: Sự kiện phím đầu vào luôn được xếp hàng và xử lý đúng thứ tự thời gian.</li>
+<li><strong>Thứ tự FIFO bảo toàn</strong>: Phím đi qua queue giữ thứ tự FIFO. Phím đầu chỉ được xử lý trực tiếp khi scheduler rảnh và không còn barrier bảo vệ.</li>
 <li><strong>Xử lý đơn luồng (Single-flight)</strong>: Chỉ một phím duy nhất được Bamboo xử lý tại một thời điểm. Phím mới đến trong lúc pipeline đang bận sẽ chờ ở <code>KeyQueue</code>.</li>
 <li><strong>Ranh giới giao dịch (Transaction Barrier)</strong>: Khi một Backend Rewrite đang chạy (xóa/bôi đen/commit), scheduler giữ trạng thái bận và không cho phím sau chen ngang.</li>
 <li><strong>Không sleep trên Main Thread</strong>: Mọi khoảng chờ (delay) giữa các phím bấm ảo và post-commit đều sử dụng timer bất đồng bộ trên EventLoop của Fcitx.</li>
@@ -4429,6 +4430,60 @@ Nếu phát hiện trong ô nhập liệu đang có văn bản bôi đen sẵn (
 </tbody>
 </table>
 
+<h2>Tùy chọn tương thích</h2>
+<p>Trong cấu hình chính <code>conf/areca.conf</code>, <code>EnableMouseTracking</code>
+và <code>ForwardFirstCharacter</code> đều mặc định <code>True</code>. Thay đổi qua
+giao diện có hiệu lực ngay; sửa file bằng tay cần reload cấu hình.</p>
+<ul><li>Tắt <code>EnableMouseTracking</code>: hủy watcher, pipe, pending click và
+process helper. Bật lại tạo tracker mới.</li>
+<li>Tắt <code>ForwardFirstCharacter</code>: bỏ qua <code>handleIdleKey()</code>,
+text key dùng luồng accept/enqueue cũ. Tính năng này không tạo thread/process riêng.</li></ul>
+<p>Chưa có benchmark so sánh hiệu năng hai chế độ.</p>
+<h2>Phím đầu khi Rewrite đang rảnh</h2>
+<p>Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo.
+Khi <code>ForwardFirstCharacter=True</code>, trước <code>filterAndAccept()</code>, <code>RewriteModeHandler</code> thử
+<code>InputScheduler::handleIdleKey()</code> khi không chờ Backspace release và phím không
+bị đổi bởi tự viết hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text,
+không processing, không rewrite pending, queue rỗng, không stalled và đã qua
+khoảng bảo vệ reset sau commit (hiện là 20 ms).</p>
+<p>Bamboo vẫn xử lý phím đúng một lần. Nếu <code>deleteCount == 0</code>, <code>commitText</code> bằng
+UTF-8 đầu vào và không mở rộng macro, addon để event chưa filter/accept cho
+frontend xử lý. Trạng thái Bamboo được giữ để phím sau vẫn ghép dấu, ví dụ
+<code>a</code> rồi <code>s</code> thành <code>á</code>. Nhánh này không gọi <code>commitString()</code>, không phát cặp
+<code>forwardKey()</code> giả, không tự cập nhật surrounding cache và không tạo barrier
+sau commit vì addon chưa thực hiện commit.</p>
+<p><code>KeyEvent::forward()</code> trong API Fcitx đang dùng là getter; việc để event chưa
+filter/accept mới là điều cho phép phím đi tiếp. Cách frontend giao event đến
+trang web vẫn cần kiểm tra trên từng môi trường thực tế.</p>
+<p>Nếu Bamboo đổi đầu ra, scheduler accept event và áp dụng ngay kết quả đã tính,
+không enqueue lại để tránh xử lý cùng phím hai lần. Nếu chưa đủ điều kiện,
+<code>handleIdleKey()</code> trả false mà không sửa engine/event; caller dùng FIFO như cũ.
+Phím bị tự viết hoa cũng dùng luồng commit để giữ ký tự đã biến đổi.</p>
+<h2>Theo dõi click và reset composition</h2>
+<p><code>WindowFocusTracker</code> là thread đọc AT-SPI trong Fcitx. <code>MouseClickTracker</code>
+quản lý process con riêng <code>areca-mouse-monitor</code>; helper dùng libinput/udev trên
+<code>XDG_SEAT</code> (mặc định <code>seat0</code>) và cùng quyền user với Fcitx. Không cần socket
+server hoặc thread nhận chuột trong addon.</p>
+<pre><code>libinput/udev → areca-mouse-monitor → stdout pipe riêng (R/C)
+             → MouseClickTracker trên event loop Fcitx → pending click
+             → ArecaEngine::keyEvent → kiểm tra scheduler → reset handler</code></pre>
+<ul><li><code>R</code> báo context libinput đã khởi tạo, không đảm bảo có thiết bị đọc được.</li><li><code>C</code> báo nút chuột được nhấn, không phân biệt nút trái/phải/giữa. Helper bật
+  tap-to-click trong context libinput riêng; di chuyển, cuộn và nhả nút không
+  gửi reset. udev hỗ trợ thiết bị được cắm thêm sau khi helper chạy.</li><li>Pipe nonblocking tránh chặn event loop/dispatch; nhiều click gộp thành một
+  cờ reset. stderr dành cho log, không lẫn vào protocol stdout.</li><li>Callback pipe chỉ đánh dấu. Trước phím nhấn tiếp theo, addon đọc thêm pipe để
+  lấy click đã đến nhưng callback chưa chạy. Nếu scheduler đang bảo vệ rewrite,
+  cờ vẫn được giữ cho phím sau; nếu được phép thì reset handler đang active,
+  xử lý cache verdict theo lifecycle và xóa cờ. Redirect không có composition
+  để reset. Đây không phải reset tức thời ngay khi click.</li><li>Activation thử khởi động lại helper đã mất kết nối và bỏ click cũ đã nhận.
+  Khi pipe đóng, watcher bị tắt; pending click đã nhận vẫn được giữ. Hủy tracker
+  sẽ đóng pipe, kết thúc và thu hồi process con bằng <code>waitpid()</code>. Helper cũng
+  theo dõi pipe để thoát khi Fcitx mất kết nối, kể cả không có click mới.</li></ul>
+<p>Helper được cài vào <code>CMAKE_INSTALL_LIBEXECDIR</code>; addon nhúng đường dẫn tuyệt đối
+ứng với <code>CMAKE_INSTALL_PREFIX</code>. Build cần libinput và libudev. Rule
+<code>70-areca-pointer.rules</code> cấp <code>uaccess</code> cho chuột/touchpad của phiên local đang
+active, trước <code>73-seat-late.rules</code>. Không có ACL/quyền đọc thiết bị thì tính năng
+click không hoạt động; nhập liệu Fcitx bình thường vẫn hoạt động. Xem
+<a href="../docs/DEBUGGING.md#mouse-tracker">Debug mouse tracker</a> để kiểm tra cài đặt và log.</p>
 </main>
 </body>
 </html>

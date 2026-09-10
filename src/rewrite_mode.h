@@ -59,7 +59,8 @@ public:
                      BoolProvider autoCapitalizeProvider,
                      BoolProvider debugProvider,
                      BackendVerdictProtector backendVerdictProtector,
-                     BackspaceRecoveryProvider backspaceRecoveryProvider);
+                     BackspaceRecoveryProvider backspaceRecoveryProvider,
+                     BoolProvider forwardFirstCharacterProvider);
   ~RewriteModeHandler();
 
   RewriteInputState *stateFor(fcitx::InputContext &inputContext) const;
@@ -88,6 +89,7 @@ private:
   BoolProvider debugProvider_;
   BackendVerdictProtector backendVerdictProtector_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
+  BoolProvider forwardFirstCharacterProvider_;
 };
 
 } // namespace areca

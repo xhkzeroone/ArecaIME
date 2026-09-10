@@ -58,6 +58,12 @@ public:
 
   void enqueue(fcitx::InputContext &inputContext, uint32_t codepoint,
                std::string utf8Text);
+  // Cho editor web nhận phím đầu qua frontend thay vì commitString để mở chế độ
+  // soạn thảo. Vẫn xử lý Bamboo một lần để giữ trạng thái ghép dấu cho phím sau.
+  // false: chưa sửa engine/event, caller có thể enqueue theo luồng thông thường.
+  // true: đã xử lý xong hoặc bắt đầu applyResult, caller không enqueue lần nữa.
+  bool handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
+                     const std::string &utf8Text);
   void enqueueBackspace(fcitx::InputContext &inputContext);
   void resetContext(fcitx::InputContext &inputContext);
 

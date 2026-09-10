@@ -4,13 +4,54 @@ Areca là bộ gõ tiếng Việt cho Linux dưới dạng addon Fcitx5, viết 
 chạy chủ yếu trên Wayland. Areca dùng trực tiếp `bamboo-core` để xử lý tiếng
 Việt, nhưng tự quản lý thời điểm xử lý phím và cách sửa nội dung đã hiển thị.
 
-Điểm khác biệt chính của Areca là mọi **text key do addon xử lý** đều đi qua
-hàng đợi FIFO. Khi pipeline rảnh, key đầu được pump ngay trong callback;
-scheduler vẫn tuần tự hoá toàn bộ pipeline và không cho phím sau chen vào một
-rewrite đang phát Backspace hoặc barrier sau commit.
+Areca tuần tự hóa text key bằng scheduler và FIFO để không cho phím sau chen
+vào rewrite hoặc barrier sau commit. Khi Bamboo không giữ text và scheduler
+rảnh, phím đầu có đầu ra không đổi được để nguyên cho frontend xử lý, giúp
+editor web nhận sự kiện phím để mở chế độ soạn thảo. Bamboo vẫn nhớ phím đó
+để phím sau ghép dấu đúng.
 
 > Areca hiện là dự án thử nghiệm. Backend fallback phát Backspace qua
 > `InputContext::forwardKey()`; hãy bật debug khi thử trên frontend mới.
+
+### Bật/tắt tính năng tương thích
+
+Hai tùy chọn trong cấu hình chính Areca (`conf/areca.conf`) mặc định bật:
+
+| Khóa | Nhãn giao diện | Khi tắt |
+| --- | --- | --- |
+| `EnableMouseTracking` | Theo dõi click chuột để reset bộ gõ | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
+| `ForwardFirstCharacter` | Chuyển tiếp phím đầu khi bộ gõ rảnh | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
+
+Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
+reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
+Tắt cả hai bằng:
+
+```ini
+EnableMouseTracking=False
+ForwardFirstCharacter=False
+```
+
+Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Chuyển tiếp phím
+đầu không tạo thread/process riêng. Chưa có benchmark so sánh hiệu năng hai chế
+độ; các tùy chọn này cho phép kiểm tra trên ứng dụng và môi trường thực tế.
+
+## Reset khi click chuột
+
+Khi `EnableMouseTracking=True`, Areca chạy helper riêng `areca-mouse-monitor` dùng **libinput + udev**, báo nhấn
+chuột và tap touchpad qua pipe vào event loop Fcitx. Trước phím nhấn tiếp theo,
+engine reset composition nếu scheduler cho phép; nếu rewrite đang được bảo vệ,
+cờ click được giữ cho lần sau. Di chuyển, cuộn và nhả chuột không yêu cầu reset.
+
+Build cần gói phát triển libinput/libudev. Helper được cài vào libexec theo
+`CMAKE_INSTALL_PREFIX`; rule `70-areca-pointer.rules` cấp quyền đọc chuột/touchpad
+cho phiên desktop local đang active qua `uaccess`. Quyền này cho phiên đó đọc
+sự kiện thô của thiết bị, kể cả sự kiện khác trên thiết bị kết hợp. Không cần
+helper root hoặc thêm user vào nhóm `input` khi hệ thống hỗ trợ ACL này.
+Cài với prefix user cần cài rule riêng vào thư mục udev hệ thống. Sau lần cài
+đầu, reload rule và kết nối lại thiết bị hoặc đăng xuất/đăng nhập.
+
+Xem [kiến trúc](docs/ARCHITECTURE.md#theo-dõi-click-và-reset-composition) và
+[hướng dẫn debug](docs/DEBUGGING.md#mouse-tracker) để kiểm tra helper, quyền và log.
 
 ## Lời cảm ơn
 
@@ -40,7 +81,8 @@ hiện, ví dụ `a` + `w` biến thành `ă`. Areca giải quyết bài toán n
 
 ```text
 Fcitx5 keyEvent
-       │ filter text key
+       ├──► phím đầu, engine rảnh: Bamboo → không đổi → event chưa accept
+       │ các text key còn lại: filterAndAccept
        ▼
  KeyQueue (FIFO)
        │ pump ngay nếu pipeline đang rảnh
