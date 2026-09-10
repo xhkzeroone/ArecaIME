@@ -36,6 +36,53 @@ void InputScheduler::enqueue(fcitx::InputContext &inputContext,
   scheduleNext();
 }
 
+bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
+                                    const std::string &utf8Text) {
+  auto *inputContext = event.inputContext();
+  // Không cho phím vượt qua công việc đang chờ hoặc khoảng ổn định sau commit:
+  // editor phải nhận đủ kết quả rewrite trước khi nhận phím mới. Khi stalled,
+  // trạng thái editor chưa chắc đồng bộ nên cũng không được đi đường tắt này.
+  if (!inputContext || processing_ || rewritePending() || !queue_.empty() ||
+      stalled_ || shouldRejectReset()) {
+    return false;
+  }
+  auto *engine = engineResolver_(*inputContext);
+  // Chỉ áp dụng lúc chưa có từ đang ghép; phím trong từ vẫn cần luồng rewrite.
+  if (!engine || !engine->currentText().empty()) return false;
+
+  // Khóa scheduler trong lúc xử lý đồng bộ để tránh công việc khác chen vào.
+  processing_ = true;
+  try {
+    // Engine rỗng chưa đảm bảo đầu ra giống phím gốc (bảng mã/macro có thể đổi
+    // ký tự). Phải xem kết quả Bamboo trước khi quyết định bỏ filterAndAccept.
+    const auto result = engine->process(codepoint, utf8Text);
+    if (result.deleteCount == 0 && result.commitText == utf8Text &&
+        !result.macroExpanded) {
+      if (debugProvider_())
+        FCITX_INFO() << "areca: idle key route=forward reason=unchanged-output";
+      // Giữ trạng thái mới của Bamboo để a rồi s vẫn ghép thành á. Không commit
+      // thêm hoặc tự cập nhật surrounding cache vì frontend sẽ giao phím gốc.
+      // forward() của Fcitx là getter; chính việc không filter/accept event mới
+      // cho phím đi tiếp. Không tạo cặp phím giả bằng forwardKey ở đây.
+      event.forward();
+      finishKey();
+    } else {
+      if (debugProvider_())
+        FCITX_INFO() << "areca: idle key route=commit reason=transformed-output";
+      // Đầu ra đã đổi: chặn phím gốc và áp dụng chính kết quả vừa tính. Không
+      // enqueue lại vì như vậy Bamboo sẽ xử lý cùng một phím hai lần.
+      event.filterAndAccept();
+      applyResult(*inputContext, *engine, result, utf8Text);
+    }
+  } catch (const std::exception &error) {
+    FCITX_ERROR() << "areca: idle key processing failed: " << error.what();
+    engine->reset();
+    event.forward();
+    finishKey();
+  }
+  return true;
+}
+
 void InputScheduler::enqueueBackspace(fcitx::InputContext &inputContext) {
   QueuedKey key;
   key.sequence = nextSequence_++;

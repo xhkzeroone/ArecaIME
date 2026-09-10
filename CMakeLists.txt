@@ -258,3 +258,29 @@ if(BUILD_TESTING)
     add_dependencies(areca-mouse-click-tracker-test areca-mouse-test-helper)
     add_test(NAME mouse-click-tracker COMMAND areca-mouse-click-tracker-test)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(areca-idle-key-forward-test
+        tests/idle_key_forward_test.cpp src/input_scheduler.cpp
+        src/surrounding_text_cache.cpp)
+    target_compile_features(areca-idle-key-forward-test PRIVATE cxx_std_20)
+    target_compile_options(areca-idle-key-forward-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-idle-key-forward-test PRIVATE src)
+    target_link_libraries(areca-idle-key-forward-test PRIVATE Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME idle-key-forward COMMAND areca-idle-key-forward-test)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(areca-rewrite-feature-toggle-test
+        tests/rewrite_feature_toggle_test.cpp src/rewrite_mode.cpp
+        src/input_scheduler.cpp src/surrounding_text_cache.cpp
+        src/bamboo_engine_adapter.cpp src/sentence_capitalizer.cpp)
+    target_compile_features(areca-rewrite-feature-toggle-test PRIVATE cxx_std_20)
+    target_compile_options(areca-rewrite-feature-toggle-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-rewrite-feature-toggle-test PRIVATE src)
+    target_link_libraries(areca-rewrite-feature-toggle-test PRIVATE
+        areca-bamboo Fcitx5::Core Fcitx5::Utils pthread dl m)
+    add_test(NAME rewrite-feature-toggle COMMAND areca-rewrite-feature-toggle-test)
+endif()

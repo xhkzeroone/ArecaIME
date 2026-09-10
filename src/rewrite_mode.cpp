@@ -92,12 +92,14 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                        BackendVerdictProtector
                                            backendVerdictProtector,
                                        BackspaceRecoveryProvider
-                                           backspaceRecoveryProvider)
+                                           backspaceRecoveryProvider,
+                                       BoolProvider forwardFirstCharacterProvider)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
       backendVerdictProtector_(std::move(backendVerdictProtector)),
-      backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)) {}
+      backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
+      forwardFirstCharacterProvider_(std::move(forwardFirstCharacterProvider)) {}
 
 RewriteModeHandler::~RewriteModeHandler() {}
 
@@ -359,6 +361,16 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   const auto utf8Text = fcitx::Key::keySymToUTF8(effectiveTextSym);
   if (!codepoint || utf8Text.empty()) {
     event.forward();
+    return;
+  }
+  // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
+  // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
+  // đổi ký tự thì phải commit ký tự mới, vì phím gốc vẫn mang ký tự chưa đổi.
+  // Đọc cấu hình hiện tại mỗi lần để bật/tắt có hiệu lực mà không tạo lại handler.
+  if (forwardFirstCharacterProvider_() &&
+      !state->backspaceRecoveryAwaitingRelease &&
+      effectiveTextSym == textSym &&
+      scheduler_.handleIdleKey(event, codepoint, utf8Text)) {
     return;
   }
   event.filterAndAccept();

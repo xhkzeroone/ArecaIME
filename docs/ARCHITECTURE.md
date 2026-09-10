@@ -16,10 +16,12 @@ Wayland và Fcitx5.
 | `InputModeHandler` | Interface lifecycle/KeyEvent không chứa state; engine gọi handler đang active qua interface này. |
 | `RewriteInputState` | Bamboo, auto-capitalization và reset timer riêng của Rewrite. |
 | `PreeditInputState` | Bamboo, composition, auto-capitalization và reset timer riêng của Preedit. |
-| `RewriteModeHandler` | Toàn bộ policy KeyEvent/reset của Rewrite; enqueue trực tiếp vào `InputScheduler`. |
+| `RewriteModeHandler` | Policy KeyEvent/reset của Rewrite; thử phím đầu khi rảnh trước khi enqueue vào `InputScheduler`. |
 | `PreeditModeHandler` | Xử lý Bamboo đồng bộ và quản lý UI preedit; không gọi scheduler hay rewrite backend. |
 | `RedirectModeHandler` | Forward KeyEvent nguyên bản như password field; không có Bamboo, queue, timer hay mutable state. |
 | `KeyQueue` | FIFO chứa key gốc, Unicode codepoint, UTF-8, sequence và reference tới input context. |
+| `MouseClickTracker` | Quản lý helper chuột và cờ click trên event loop Fcitx. |
+| `areca-mouse-monitor` | Process con libinput/udev gửi thông báo click qua pipe riêng. |
 | `InputScheduler` | FIFO single-flight, backend selection, transaction barrier và timer riêng sau commit. |
 | `BambooEngineAdapter` | Bridge C++/Go gọi trực tiếp `bamboo-core` và biến chuỗi kết quả thành `BambooResult`. |
 | `ReliabilityChecker` | Probe SurroundingText lần đầu và cache verdict theo input context. |
@@ -44,8 +46,8 @@ file nâng cao, nếu có, luôn được load sau và được ưu tiên.
 1. Fcitx5 gọi `ArecaEngine::keyEvent()`.
 2. Release event bình thường không bị giữ lại. Modifier-only key được bỏ qua.
 3. Password input được forward thẳng và state cũ của context bị xoá.
-4. Special key đi theo policy riêng; text key hợp lệ được `filterAndAccept()`.
-5. Areca huỷ delayed reset đang chờ rồi đẩy key vào `KeyQueue`.
+4. Special key đi theo policy riêng; text key thử nhánh phím đầu khi engine rảnh.
+5. Nếu nhánh đó không xử lý, text key được `filterAndAccept()` rồi đẩy vào `KeyQueue`.
 6. Nếu pipeline đang rảnh, scheduler pop ngay đúng một key và gọi Bamboo.
 7. Scheduler apply `BambooResult`; trong lúc apply/commit/rewrite, key mới chỉ
    được nối vào cuối FIFO.
@@ -59,6 +61,89 @@ Scheduler không dùng timer trước Bamboo và không dùng vòng lặp hút h
 Key đầu được xử lý inline trong callback Fcitx; queue chỉ giữ các key đến trong
 lúc pipeline đang bận. `PostCommitDelayMs` bắt đầu sau khi backend đã commit và
 báo hoàn tất.
+
+### Bật/tắt tính năng tương thích
+
+Hai tùy chọn trong cấu hình chính Areca (`conf/areca.conf`) mặc định bật:
+
+| Khóa | Nhãn giao diện | Khi tắt |
+| --- | --- | --- |
+| `EnableMouseTracking` | Theo dõi click chuột để reset bộ gõ | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
+| `ForwardFirstCharacter` | Chuyển tiếp phím đầu khi bộ gõ rảnh | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
+
+Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
+reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
+Tắt cả hai bằng:
+
+```ini
+EnableMouseTracking=False
+ForwardFirstCharacter=False
+```
+
+Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Chuyển tiếp phím
+đầu không tạo thread/process riêng. Chưa có benchmark so sánh hiệu năng hai chế
+độ; các tùy chọn này cho phép kiểm tra trên ứng dụng và môi trường thực tế.
+
+## Phím đầu khi Rewrite đang rảnh
+
+Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo.
+Khi `ForwardFirstCharacter=True`, trước `filterAndAccept()`, `RewriteModeHandler` thử
+`InputScheduler::handleIdleKey()` khi không chờ Backspace release và phím không
+bị đổi bởi tự viết hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text,
+không processing, không rewrite pending, queue rỗng, không stalled và đã qua
+khoảng bảo vệ reset sau commit (hiện là 20 ms).
+
+Bamboo vẫn xử lý phím đúng một lần. Nếu `deleteCount == 0`, `commitText` bằng
+UTF-8 đầu vào và không mở rộng macro, addon để event chưa filter/accept cho
+frontend xử lý. Trạng thái Bamboo được giữ để phím sau vẫn ghép dấu, ví dụ
+`a` rồi `s` thành `á`. Nhánh này không gọi `commitString()`, không phát cặp
+`forwardKey()` giả, không tự cập nhật surrounding cache và không tạo barrier
+sau commit vì addon chưa thực hiện commit.
+
+`KeyEvent::forward()` trong API Fcitx đang dùng là getter; việc để event chưa
+filter/accept mới là điều cho phép phím đi tiếp. Cách frontend giao event đến
+trang web vẫn cần kiểm tra trên từng môi trường thực tế.
+
+Nếu Bamboo đổi đầu ra, scheduler accept event và áp dụng ngay kết quả đã tính,
+không enqueue lại để tránh xử lý cùng phím hai lần. Nếu chưa đủ điều kiện,
+`handleIdleKey()` trả false mà không sửa engine/event; caller dùng FIFO như cũ.
+Phím bị tự viết hoa cũng dùng luồng commit để giữ ký tự đã biến đổi.
+
+## Theo dõi click và reset composition
+
+`WindowFocusTracker` là thread đọc AT-SPI trong Fcitx. `MouseClickTracker`
+quản lý process con riêng `areca-mouse-monitor`; helper dùng libinput/udev trên
+`XDG_SEAT` (mặc định `seat0`) và cùng quyền user với Fcitx. Không cần socket
+server hoặc thread nhận chuột trong addon.
+
+```text
+libinput/udev → areca-mouse-monitor → stdout pipe riêng (R/C)
+             → MouseClickTracker trên event loop Fcitx → pending click
+             → ArecaEngine::keyEvent → kiểm tra scheduler → reset handler
+```
+
+- `R` báo context libinput đã khởi tạo, không đảm bảo có thiết bị đọc được.
+- `C` báo nút chuột được nhấn, không phân biệt nút trái/phải/giữa. Helper bật
+  tap-to-click trong context libinput riêng; di chuyển, cuộn và nhả nút không
+  gửi reset. udev hỗ trợ thiết bị được cắm thêm sau khi helper chạy.
+- Pipe nonblocking tránh chặn event loop/dispatch; nhiều click gộp thành một
+  cờ reset. stderr dành cho log, không lẫn vào protocol stdout.
+- Callback pipe chỉ đánh dấu. Trước phím nhấn tiếp theo, addon đọc thêm pipe để
+  lấy click đã đến nhưng callback chưa chạy. Nếu scheduler đang bảo vệ rewrite,
+  cờ vẫn được giữ cho phím sau; nếu được phép thì reset handler đang active,
+  xử lý cache verdict theo lifecycle và xóa cờ. Redirect không có composition
+  để reset. Đây không phải reset tức thời ngay khi click.
+- Activation thử khởi động lại helper đã mất kết nối và bỏ click cũ đã nhận.
+  Khi pipe đóng, watcher bị tắt; pending click đã nhận vẫn được giữ. Hủy tracker
+  sẽ đóng pipe, kết thúc và thu hồi process con bằng `waitpid()`. Helper cũng
+  theo dõi pipe để thoát khi Fcitx mất kết nối, kể cả không có click mới.
+
+Helper được cài vào `CMAKE_INSTALL_LIBEXECDIR`; addon nhúng đường dẫn tuyệt đối
+ứng với `CMAKE_INSTALL_PREFIX`. Build cần libinput và libudev. Rule
+`70-areca-pointer.rules` cấp `uaccess` cho chuột/touchpad của phiên local đang
+active, trước `73-seat-late.rules`. Không có ACL/quyền đọc thiết bị thì tính năng
+click không hoạt động; nhập liệu Fcitx bình thường vẫn hoạt động. Xem
+[Debug mouse tracker](DEBUGGING.md#mouse-tracker) để kiểm tra cài đặt và log.
 
 ## BambooResult và diff
 
@@ -126,10 +211,9 @@ không có đường commit đặc biệt và vẫn tuân thủ mọi queue/pend
 Nếu `AutoCapitalizeAfterPunctuation` bật, state theo từng input context theo dõi
 `.`, `!`, `?` rồi khoảng trắng. Chữ ASCII thường kế tiếp được đổi thành keysym
 hoa trước khi enqueue và trước khi Bamboo xử lý. Phím đã đổi hoa vẫn đi qua
-scheduler như mọi text key khác và mang cờ buộc `commitString`, vì replay phím
+scheduler qua FIFO và bỏ qua nhánh phím đầu đi tiếp, vì replay phím
 vật lý không có Shift có thể vẫn tạo chữ thường. `Enter`, reset, Backspace, di
 chuyển con trỏ và shortcut sẽ xoá trạng thái chờ để tránh viết hoa nhầm.
-git
 Sau khi finalize một từ, adapter giữ composition Bamboo của từ đó và đếm các
 dấu cách/dấu câu đã commit phía sau. Backspace đi ngược qua các boundary này;
 khi boundary cuối bị xoá, composition vừa finalize được phục hồi để lần gõ kế
@@ -138,7 +222,7 @@ người dùng bắt đầu một từ mới hoặc khi protected reset thực s
 
 ## Backend selection
 
-Khi `deleteCount == 0`:
+Với kết quả đi qua `applyResult()` (phím đã được accept), khi `deleteCount == 0`:
 
 - Nếu `commitText` giống text của phím gốc, scheduler dùng `commitString()`.
   Phím gốc đã bị accept trước khi vào queue nên không replay bất đồng bộ bằng
@@ -146,7 +230,8 @@ Khi `deleteCount == 0`:
   IBus Wayland có thể không chuyển loại forwarded key này tới text-input client.
 - Nếu Bamboo đã biến đổi output dù không cần xoá, scheduler commit
   `commitText`. Trường hợp điển hình là dấu của `Unicode tổ hợp`.
-- Cả hai nhánh vẫn đi qua queue và settling barrier.
+- Cả hai nhánh đều qua barrier sau commit; kết quả từ `handleIdleKey()` đã biến
+  đổi được áp dụng trực tiếp, không cần enqueue lại.
 
 Khi `deleteCount > 0`:
 
