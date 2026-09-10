@@ -74,7 +74,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterBackspaceWaitMs{
         this, "DbusAfterBackspaceWaitMs",
-        N_("Chờ sau Backspace cuối DBus (ms)"), 20,
+        N_("Chờ sau Backspace cuối DBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectDelayMs{
         this, "UinputShiftSelectDelayMs",

@@ -133,6 +133,7 @@ int main() {
   assert(plan.surroundingDeleteDelayMs == 10);
   assert(plan.waylandSurroundingDeleteDelayMs == 0);
   assert(plan.afterSurroundingDeleteWaitMs == 1);
+  assert(plan.dbusAfterBackspaceWaitMs == 10);
   plan.afterBackspaceWaitMs = 10;
   plan.waylandAfterBackspaceWaitMs = 3;
   plan.ximAfterBackspaceWaitMs = 10;

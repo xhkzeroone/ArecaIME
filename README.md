@@ -276,7 +276,7 @@ AfterBackspaceWaitMs=10
 WaylandAfterBackspaceWaitMs=3
 XimAfterBackspaceWaitMs=10
 Fcitx4AfterBackspaceWaitMs=10
-DbusAfterBackspaceWaitMs=5
+DbusAfterBackspaceWaitMs=10
 SurroundingWaitMs=3
 SurroundingDeleteDelayMs=10
 WaylandSurroundingDeleteDelayMs=0
@@ -305,7 +305,7 @@ UseSurroundingV2ForBrowser=False
 | Nâng cao | `WaylandAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Wayland, mặc định 3 ms. |
 | Nâng cao | `XimAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend XIM, mặc định 10 ms. |
 | Nâng cao | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Fcitx4, mặc định 10 ms. |
-| Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 5 ms. |
+| Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 10 ms. |
 | Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
 | Nâng cao | `SurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2, mặc định 10 ms. |
 | Nâng cao | `WaylandSurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2 cho frontend Wayland, mặc định 0 ms. |
