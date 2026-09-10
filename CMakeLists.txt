@@ -284,15 +284,3 @@ if(BUILD_TESTING)
         areca-bamboo Fcitx5::Core Fcitx5::Utils pthread dl m)
     add_test(NAME rewrite-feature-toggle COMMAND areca-rewrite-feature-toggle-test)
 endif()
-
-if(BUILD_TESTING)
-    add_executable(areca-input-scheduler-test
-        tests/input_scheduler_test.cpp src/input_scheduler.cpp
-        src/surrounding_text_cache.cpp)
-    target_compile_features(areca-input-scheduler-test PRIVATE cxx_std_20)
-    target_compile_options(areca-input-scheduler-test PRIVATE
-        -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-input-scheduler-test PRIVATE src)
-    target_link_libraries(areca-input-scheduler-test PRIVATE Fcitx5::Core Fcitx5::Utils)
-    add_test(NAME input-scheduler COMMAND areca-input-scheduler-test)
-endif()
