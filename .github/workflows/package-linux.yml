@@ -57,13 +57,19 @@ jobs:
             runner: ubuntu-24.04
             package_suffix: ubuntu24
             artifact_name: fcitx5-areca-ubuntu24-deb
+            # Ubuntu 24.04 (Noble) has no libsdl3-dev in its repos yet
+            # (SDL3 only landed from 24.10 onward), so we build it from
+            # source and bundle the resulting .so with the package.
+            bundle_sdl3: true
           - version: "26.04"
             runner: ubuntu-26.04
             package_suffix: ubuntu26
             artifact_name: fcitx5-areca-ubuntu26-deb
+            bundle_sdl3: false
     env:
       VERSION: ${{ needs.version.outputs.value }}
       DEBIAN_FRONTEND: noninteractive
+      SDL3_PREFIX: /opt/sdl3-local
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,17 +98,67 @@ jobs:
             libfcitx5core-dev \
             libfcitx5config-dev \
             libfcitx5utils-dev \
-            libsdl3-dev \
-            libfontconfig-dev
+            libfontconfig-dev \
+            patchelf
           sudo gem install --no-document fpm
+
+      - name: Install libsdl3-dev from repos (Ubuntu 26.04+)
+        if: ${{ matrix.bundle_sdl3 == false }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y libsdl3-dev
+
+      - name: Install X11/Wayland dev libraries for building SDL3
+        if: ${{ matrix.bundle_sdl3 == true }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y \
+            libx11-dev \
+            libxext-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxfixes-dev \
+            libxi-dev \
+            libxss-dev \
+            libxtst-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            wayland-protocols \
+            libdecor-0-dev \
+            libdrm-dev \
+            libgbm-dev \
+            libgl1-mesa-dev \
+            libegl1-mesa-dev \
+            libibus-1.0-dev \
+            libpulse-dev \
+            libasound2-dev
+
+      - name: Build SDL3 from source (Ubuntu 24.04, no repo package)
+        if: ${{ matrix.bundle_sdl3 == true }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch release-3.2.x \
+            https://github.com/libsdl-org/SDL.git /tmp/sdl3-src
+          cmake -S /tmp/sdl3-src -B /tmp/sdl3-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DSDL_SHARED=ON \
+            -DSDL_STATIC=OFF
+          cmake --build /tmp/sdl3-build --parallel
+          sudo cmake --install /tmp/sdl3-build
 
       - name: Build and test
         run: |
           set -euo pipefail
+          extra_prefix_path=""
+          if [[ "${{ matrix.bundle_sdl3 }}" == "true" ]]; then
+            extra_prefix_path="-DCMAKE_PREFIX_PATH=$SDL3_PREFIX"
+          fi
           cmake -S . -B build-pkg -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
-            -DBUILD_TESTING=ON
+            -DBUILD_TESTING=ON \
+            $extra_prefix_path
           cmake --build build-pkg --parallel
           ctest --test-dir build-pkg --output-on-failure
 
@@ -111,6 +167,26 @@ jobs:
           set -euo pipefail
           mkdir -p pkgroot dist
           DESTDIR="$PWD/pkgroot" cmake --install build-pkg --strip
+
+          sdl3_depend_args=()
+          if [[ "${{ matrix.bundle_sdl3 }}" == "true" ]]; then
+            # Bundle the self-built libSDL3 alongside the app instead of
+            # depending on a system package that doesn't exist on 24.04.
+            bundle_dir="pkgroot/usr/lib/fcitx5-areca"
+            mkdir -p "$bundle_dir"
+            cp -a "$SDL3_PREFIX"/lib/libSDL3.so* "$bundle_dir/"
+
+            # Point every ELF binary/library we installed at the bundled dir.
+            while IFS= read -r -d '' f; do
+              if patchelf --print-rpath "$f" >/dev/null 2>&1; then
+                patchelf --set-rpath '$ORIGIN/../lib/fcitx5-areca' "$f" || true
+              fi
+            done < <(find pkgroot/usr/bin pkgroot/usr/lib \
+                       -maxdepth 2 -type f -print0 2>/dev/null)
+          else
+            sdl3_depend_args+=(--depends libsdl3-0)
+          fi
+
           fpm -s dir -t deb \
             -n fcitx5-areca \
             -v "$VERSION" \
@@ -121,6 +197,8 @@ jobs:
             --depends fcitx5 \
             --depends fcitx5-frontend-gtk3 \
             --depends fcitx5-frontend-qt5 \
+            --depends libfontconfig1 \
+            "${sdl3_depend_args[@]}" \
             -C pkgroot \
             -p "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb" \
             .
@@ -177,8 +255,7 @@ jobs:
                 fontconfig \
                 systemd-libs \
                 dbus \
-                sdl3 \
-                fontconfig
+                sdl3
               useradd --create-home builder
               chown -R builder:builder arch-pkg
               su builder -c \
@@ -257,6 +334,8 @@ jobs:
                 --depends fcitx5 \
                 --depends libinput \
                 --depends systemd-libs \
+                --depends SDL3 \
+                --depends fontconfig \
                 -C pkgroot-fedora \
                 -p "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
                 .
