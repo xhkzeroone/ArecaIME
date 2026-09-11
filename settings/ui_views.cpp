@@ -90,6 +90,7 @@ namespace areca::settings {
         checkbox("Đặt dấu kiểu mới (oà, uý)", config.main.modernStyle);
         checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);
         checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
+        checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
         checkbox("Bật macro", config.main.enableMacro);
         checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);
 
@@ -180,7 +181,7 @@ namespace areca::settings {
             "Các giá trị này chỉ cần thay đổi khi một ứng dụng hoặc "
             "frontend cụ thể gặp lỗi timing."
         );
-        ImGui::SeparatorText("Backspace");
+        ImGui::SeparatorText("uinput Backspace");
         inputInt("Delay giữa Backspace (ms)", config.advanced.backspaceDelayMs);
         inputInt("Chờ sau Backspace (ms)", config.advanced.afterBackspaceWaitMs);
         inputInt("Chờ sau Backspace Wayland (ms)", config.advanced.waylandAfterBackspaceWaitMs);
@@ -204,13 +205,16 @@ namespace areca::settings {
         );
         inputInt("Chờ sau lệnh xóa surrounding v2 cuối (ms)", config.advanced.afterSurroundingDeleteWaitMs);
 
-        ImGui::SeparatorText("Timing chung và tương thích");
+        ImGui::SeparatorText("Timing chung");
         inputInt("Delay sau commit (ms)", config.advanced.postCommitDelayMs);
+
+        ImGui::Separator();
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Ép dùng uinput thay cho forward Backspace", config.advanced.forceUinput);
         checkbox("Ép uinput Shift+Left cho trình duyệt", config.advanced.useUinputShiftSelectForBrowser);
-        checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
         checkbox("Ép surrounding text v2 cho trình duyệt", config.advanced.useSurroundingV2ForBrowser);
+        checkbox("Theo dõi click chuột để reset bộ gõ", config.advanced.enableMouseTracking);
+        checkbox("Chuyển tiếp phím đầu khi bộ gõ rảnh", config.advanced.forwardFirstCharacter);
     }
 
     void drawWindow(
