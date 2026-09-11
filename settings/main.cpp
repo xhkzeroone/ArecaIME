@@ -2,6 +2,7 @@
 #include "config_store.h"
 #include "font_loader.h"
 #include "key_mapper.h"
+#include "ui_theme.h"
 #include "ui_views.h"
 
 #include <SDL3/SDL.h>
@@ -22,7 +23,7 @@ int main() {
         return 1;
     }
     SDL_Window* window =
-        SDL_CreateWindow("Areca Settings", 960, 680, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+        SDL_CreateWindow("Areca Settings", 1152, 816, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) {
         SDL_Log("Không thể tạo cửa sổ: %s", SDL_GetError());
         SDL_Quit();
@@ -43,7 +44,7 @@ int main() {
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     areca::settings::loadVietnameseFont();
-    ImGui::StyleColorsDark();
+    areca::settings::applyArecaTheme();
     if (!ImGui_ImplSDL3_InitForSDLRenderer(window, renderer) || !ImGui_ImplSDLRenderer3_Init(renderer)) {
         SDL_Log("Không thể khởi tạo Dear ImGui: %s", SDL_GetError());
         ImGui::DestroyContext();
@@ -89,7 +90,8 @@ int main() {
         areca::settings::drawWindow(config, inputMethods, charsets, listeningShortcut, status, running);
         ImGui::Render();
 
-        SDL_SetRenderDrawColorFloat(renderer, 0.08F, 0.09F, 0.11F, 1.0F);
+        const ImVec4 clearColor = areca::settings::arecaThemeBackground();
+        SDL_SetRenderDrawColorFloat(renderer, clearColor.x, clearColor.y, clearColor.z, clearColor.w);
         SDL_RenderClear(renderer);
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
         SDL_RenderPresent(renderer);

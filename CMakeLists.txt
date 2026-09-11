@@ -100,6 +100,7 @@ if(ARECA_BUILD_SETTINGS)
         settings/font_loader.cpp
         settings/fcitx_dbus.cpp
         settings/key_mapper.cpp
+        settings/ui_theme.cpp
         settings/ui_views.cpp
         src/bamboo_engine_adapter.cpp
         "${ARECA_IMGUI_DIR}/imgui.cpp"

@@ -15,10 +15,145 @@ namespace areca::settings {
 
     constexpr float comboWidth = 280.0F;
 
+    static void pushPrimaryButtonColors() {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0F, 0.996F, 0.973F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.08F, 0.60F, 0.34F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.04F, 0.48F, 0.27F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.04F, 0.37F, 0.23F, 1.0F));
+    }
+
+    static void pushAttentionButtonColors() {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.95F, 0.66F, 0.23F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98F, 0.73F, 0.34F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.84F, 0.51F, 0.10F, 1.0F));
+    }
+
+    static void pushDangerButtonColors() {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0F, 0.996F, 0.973F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.70F, 0.20F, 0.16F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.78F, 0.25F, 0.20F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.58F, 0.14F, 0.12F, 1.0F));
+    }
+
+    static void drawArecaIcon(ImDrawList* drawList, const ImVec2 origin, const float size) {
+        // Same paths and colors as icons/hicolor/scalable/apps/fcitx-areca.svg.
+        const float scale = size / 256.0F;
+        const auto point = [origin, scale](const float x, const float y) {
+            return ImVec2(origin.x + x * scale, origin.y + y * scale);
+        };
+        const ImU32 green = IM_COL32(21, 153, 87, 255);
+        const ImU32 orange = IM_COL32(242, 169, 59, 255);
+
+        drawList->PathLineTo(point(42.0F, 222.0F));
+        drawList->PathLineTo(point(108.0F, 76.0F));
+        drawList->PathBezierCubicCurveTo(
+            point(113.0F, 64.0F), point(120.0F, 58.0F), point(128.0F, 58.0F)
+        );
+        drawList->PathBezierCubicCurveTo(
+            point(136.0F, 58.0F), point(143.0F, 64.0F), point(148.0F, 76.0F)
+        );
+        drawList->PathLineTo(point(214.0F, 222.0F));
+        drawList->PathStroke(green, 32.0F * scale);
+        drawList->AddCircleFilled(point(42.0F, 222.0F), 16.0F * scale, green);
+        drawList->AddCircleFilled(point(214.0F, 222.0F), 16.0F * scale, green);
+
+        drawList->AddLine(point(78.0F, 164.0F), point(178.0F, 164.0F), green, 28.0F * scale);
+        drawList->AddCircleFilled(point(78.0F, 164.0F), 14.0F * scale, green);
+        drawList->AddCircleFilled(point(178.0F, 164.0F), 14.0F * scale, green);
+
+        drawList->PathLineTo(point(91.0F, 25.0F));
+        drawList->PathBezierCubicCurveTo(
+            point(101.0F, 44.0F), point(113.0F, 53.0F), point(128.0F, 53.0F)
+        );
+        drawList->PathBezierCubicCurveTo(
+            point(143.0F, 53.0F), point(155.0F, 44.0F), point(165.0F, 25.0F)
+        );
+        drawList->PathStroke(orange, 17.0F * scale);
+        drawList->AddCircleFilled(point(91.0F, 25.0F), 8.5F * scale, orange);
+        drawList->AddCircleFilled(point(165.0F, 25.0F), 8.5F * scale, orange);
+    }
+
+    static void drawBrandHeader() {
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.925F, 0.957F, 0.925F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.063F, 0.129F, 0.110F, 0.12F));
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 14.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0F, 11.0F));
+        ImGui::BeginChild(
+            "BrandHeader", ImVec2(0.0F, 76.0F),
+            ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
+        );
+
+        const ImVec2 iconPosition = ImGui::GetCursorScreenPos();
+        constexpr float iconSize = 52.0F;
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        drawArecaIcon(drawList, iconPosition, iconSize);
+        ImGui::Dummy(ImVec2(iconSize, iconSize));
+        ImGui::SameLine(0.0F, 14.0F);
+        ImGui::BeginGroup();
+        ImGui::PushFont(nullptr, 24.0F);
+        ImGui::TextUnformatted("Areca Settings");
+        ImGui::PopFont();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.373F, 0.439F, 0.416F, 1.0F));
+        ImGui::TextUnformatted("Bộ gõ tiếng Việt gọn, nhanh và tự nhiên");
+        ImGui::PopStyleColor();
+        ImGui::EndGroup();
+
+        ImGui::EndChild();
+        ImGui::PopStyleVar(3);
+        ImGui::PopStyleColor(2);
+        ImGui::Dummy(ImVec2(0.0F, 4.0F));
+    }
+
+    static void drawPageIntro(const char* title, const char* description) {
+        ImGui::PushFont(nullptr, 22.0F);
+        ImGui::TextUnformatted(title);
+        ImGui::PopFont();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.373F, 0.439F, 0.416F, 1.0F));
+        ImGui::TextWrapped("%s", description);
+        ImGui::PopStyleColor();
+        ImGui::Dummy(ImVec2(0.0F, 4.0F));
+    }
+
+    static void beginSettingsCard(const char* id, const char* title, const char* description = nullptr) {
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0F, 0.996F, 0.973F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.063F, 0.129F, 0.110F, 0.14F));
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 12.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0F, 14.0F));
+        ImGui::BeginChild(
+            id, ImVec2(0.0F, 0.0F),
+            ImGuiChildFlags_Borders
+                | ImGuiChildFlags_AlwaysUseWindowPadding
+                | ImGuiChildFlags_AutoResizeY
+                | ImGuiChildFlags_AlwaysAutoResize
+        );
+        ImGui::PushFont(nullptr, 19.0F);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.043F, 0.373F, 0.227F, 1.0F));
+        ImGui::TextUnformatted(title);
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+        if (description != nullptr) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.373F, 0.439F, 0.416F, 1.0F));
+            ImGui::TextWrapped("%s", description);
+            ImGui::PopStyleColor();
+        }
+        ImGui::Dummy(ImVec2(0.0F, 3.0F));
+    }
+
+    static void endSettingsCard() {
+        ImGui::EndChild();
+        ImGui::PopStyleVar(3);
+        ImGui::PopStyleColor(2);
+        ImGui::Dummy(ImVec2(0.0F, 8.0F));
+    }
+
     void drawBasic(
         ConfigStore& config, const std::vector<std::string>& inputMethods, const std::vector<std::string>& charsets,
         bool& listeningShortcut
     ) {
+        drawPageIntro("Thiết lập bộ gõ", "Điều chỉnh cách Areca nhận phím và hiển thị tiếng Việt.");
+
         const float labelWidth = std::max({
                                      ImGui::CalcTextSize("Kiểu gõ").x,
                                      ImGui::CalcTextSize("Bảng mã đầu ra").x,
@@ -28,6 +163,7 @@ namespace areca::settings {
                                  })
             + ImGui::GetStyle().ItemSpacing.x * 2.0F;
 
+        beginSettingsCard("InputSettingsCard", "Phương thức nhập");
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Kiểu gõ");
         ImGui::SameLine(labelWidth);
@@ -74,33 +210,54 @@ namespace areca::settings {
         }
 
         if (listeningShortcut) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7F, 0.2F, 0.2F, 1.0F));
+            pushAttentionButtonColors();
             if (ImGui::Button("Đang chờ bấm phím... (Esc để hủy)")) {
                 listeningShortcut = false;
             }
-            ImGui::PopStyleColor();
+            ImGui::PopStyleColor(3);
         } else {
             std::string buttonLabel = currentShortcut + "  [Đổi phím]";
             if (ImGui::Button(buttonLabel.c_str())) {
                 listeningShortcut = true;
             }
         }
+        endSettingsCard();
 
-        ImGui::Separator();
-        checkbox("Đặt dấu kiểu mới (oà, uý)", config.main.modernStyle);
-        checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);
-        checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
-        checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
-        checkbox("Bật macro", config.main.enableMacro);
-        checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);
+        beginSettingsCard(
+            "TypingBehaviorCard", "Hành vi khi gõ",
+            "Bật các tiện ích tự động và lựa chọn tương thích ứng dụng."
+        );
+        const int behaviorColumns = ImGui::GetContentRegionAvail().x >= 760.0F ? 2 : 1;
+        if (ImGui::BeginTable("TypingBehaviorGrid", behaviorColumns, ImGuiTableFlags_SizingStretchSame)) {
+            ImGui::TableNextColumn();
+            checkbox("Đặt dấu kiểu mới (oà, uý)", config.main.modernStyle);
+            ImGui::TableNextColumn();
+            checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);
+            ImGui::TableNextColumn();
+            checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
+            ImGui::TableNextColumn();
+            checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
+            ImGui::TableNextColumn();
+            checkbox("Bật macro", config.main.enableMacro);
+            ImGui::TableNextColumn();
+            checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);
+            ImGui::EndTable();
+        }
+        endSettingsCard();
 
-        ImGui::SeparatorText("Debug");
+        beginSettingsCard("DiagnosticsCard", "Chẩn đoán");
         checkbox("Bật log debug Areca", config.main.debug);
+        ImGui::SameLine();
         ImGui::TextWrapped("Log xuất hiện trong journal của tiến trình fcitx5.");
+        endSettingsCard();
     }
 
     void drawMacros(ConfigStore& config, size_t& pendingDeleteIndex) {
-        ImGui::TextWrapped("Macro được lưu cùng cấu hình Fcitx5.");
+        drawPageIntro("Macro", "Mở rộng từ viết tắt thành nội dung thường dùng khi đang gõ.");
+        beginSettingsCard(
+            "MacroListCard", "Danh sách macro",
+            "Các mục bên dưới được lưu cùng cấu hình Fcitx5."
+        );
         auto& entries = *config.macros.macros.mutableValue();
         int invalidCount = 0;
         for (const auto& e : entries) {
@@ -108,13 +265,15 @@ namespace areca::settings {
                 ++invalidCount;
             }
         }
-        if (ImGui::Button("Thêm macro")) {
+        pushPrimaryButtonColors();
+        if (ImGui::Button("+  Thêm macro")) {
             areca::MacroEntry entry;
             entries.push_back(std::move(entry));
         }
+        ImGui::PopStyleColor(4);
         ImGui::SameLine();
         if (invalidCount > 0) {
-            ImGui::TextColored(ImVec4(0.9F, 0.3F, 0.3F, 1.0F), "%zu macro, %d tên rỗng", entries.size(), invalidCount);
+            ImGui::TextColored(ImVec4(0.70F, 0.20F, 0.16F, 1.0F), "%zu macro, %d tên rỗng", entries.size(), invalidCount);
         } else {
             ImGui::TextDisabled("%zu macro", entries.size());
         }
@@ -136,7 +295,7 @@ namespace areca::settings {
                 ImGui::TableSetColumnIndex(0);
                 bool emptyKey = entries[index].key.value().empty();
                 if (emptyKey) {
-                    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4F, 0.1F, 0.1F, 1.0F));
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.99F, 0.89F, 0.87F, 1.0F));
                 }
                 inputText("##key", entries[index].key);
                 if (emptyKey) {
@@ -149,12 +308,12 @@ namespace areca::settings {
                 inputText("##value", entries[index].value);
                 ImGui::TableSetColumnIndex(2);
                 if (pendingDeleteIndex == index) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7F, 0.2F, 0.2F, 1.0F));
+                    pushDangerButtonColors();
                     if (ImGui::SmallButton("Xác nhận")) {
                         removeIndex = index;
                         pendingDeleteIndex = SIZE_MAX;
                     }
-                    ImGui::PopStyleColor();
+                    ImGui::PopStyleColor(4);
                     ImGui::SameLine();
                     if (ImGui::SmallButton("Hủy")) {
                         pendingDeleteIndex = SIZE_MAX;
@@ -174,47 +333,61 @@ namespace areca::settings {
                 pendingDeleteIndex = SIZE_MAX;
             }
         }
+        endSettingsCard();
     }
 
     void drawAdvanced(ConfigStore& config) {
-        ImGui::TextWrapped(
-            "Các giá trị này chỉ cần thay đổi khi một ứng dụng hoặc "
-            "frontend cụ thể gặp lỗi timing."
+        drawPageIntro(
+            "Thiết lập nâng cao",
+            "Chỉ thay đổi các giá trị này khi một ứng dụng hoặc frontend cụ thể gặp lỗi timing."
         );
-        ImGui::SeparatorText("uinput Backspace");
+
+        beginSettingsCard("BackspaceTimingCard", "uinput Backspace", "Độ trễ khi mô phỏng thao tác xoá ký tự.");
         inputInt("Delay giữa Backspace (ms)", config.advanced.backspaceDelayMs);
         inputInt("Chờ sau Backspace (ms)", config.advanced.afterBackspaceWaitMs);
         inputInt("Chờ sau Backspace Wayland (ms)", config.advanced.waylandAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace XIM (ms)", config.advanced.ximAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace Fcitx4 (ms)", config.advanced.fcitx4AfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace DBus (ms)", config.advanced.dbusAfterBackspaceWaitMs);
+        endSettingsCard();
 
-        ImGui::SeparatorText("uinput Shift+Left");
+        beginSettingsCard(
+            "ShiftSelectTimingCard", "uinput Shift+Left", "Độ trễ khi chọn lại phần văn bản cần thay thế."
+        );
         inputInt("Delay giữa uinput Shift+Left (ms)", config.advanced.uinputShiftSelectDelayMs);
         inputInt("Chờ sau uinput Shift+Left (ms)", config.advanced.afterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left Wayland (ms)", config.advanced.waylandAfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left XIM (ms)", config.advanced.ximAfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left Fcitx4 (ms)", config.advanced.fcitx4AfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left DBus (ms)", config.advanced.dbusAfterUinputShiftSelectWaitMs);
+        endSettingsCard();
 
-        ImGui::SeparatorText("Surrounding text");
+        beginSettingsCard(
+            "SurroundingTextCard", "Surrounding text", "Timing cho backend xử lý văn bản xung quanh con trỏ."
+        );
         inputInt("Chờ sau xóa surrounding text (ms)", config.advanced.surroundingWaitMs);
         inputInt("Delay giữa các lệnh xóa surrounding v2 (ms)", config.advanced.surroundingDeleteDelayMs);
         inputInt(
             "Delay giữa các lệnh xóa surrounding v2 Wayland (ms)", config.advanced.waylandSurroundingDeleteDelayMs
         );
         inputInt("Chờ sau lệnh xóa surrounding v2 cuối (ms)", config.advanced.afterSurroundingDeleteWaitMs);
+        endSettingsCard();
 
-        ImGui::SeparatorText("Timing chung");
+        beginSettingsCard("GeneralTimingCard", "Timing chung");
         inputInt("Delay sau commit (ms)", config.advanced.postCommitDelayMs);
+        endSettingsCard();
 
-        ImGui::Separator();
+        beginSettingsCard(
+            "CompatibilityCard", "Tương thích",
+            "Các cơ chế fallback dành cho ứng dụng có hành vi nhập liệu đặc biệt."
+        );
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Ép dùng uinput thay cho forward Backspace", config.advanced.forceUinput);
         checkbox("Ép uinput Shift+Left cho trình duyệt", config.advanced.useUinputShiftSelectForBrowser);
         checkbox("Ép surrounding text v2 cho trình duyệt", config.advanced.useSurroundingV2ForBrowser);
         checkbox("Tự reset bộ gõ sau khi click chuột trong trình duyệt", config.advanced.enableMouseTracking);
         checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
+        endSettingsCard();
     }
 
     void drawWindow(
@@ -232,7 +405,7 @@ namespace areca::settings {
                 | ImGuiWindowFlags_NoTitleBar
         );
 
-        const float footerHeight = ImGui::GetFrameHeightWithSpacing() * 2.8F;
+        const float footerHeight = ImGui::GetFrameHeightWithSpacing() * (status.empty() ? 2.7F : 3.5F);
         static bool confirmReset = false;
         static int activeTab = 0;
         static int prevTab = 0;
@@ -245,11 +418,14 @@ namespace areca::settings {
         }
         int newActiveTab = activeTab;
 
+        drawBrandHeader();
+
         if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None)) {
             if (ImGui::BeginTabItem("Bộ gõ")) {
                 newActiveTab = 0;
                 ImGui::BeginChild(
-                    "BasicScroll", ImVec2(0.0F, -footerHeight), false, ImGuiWindowFlags_HorizontalScrollbar
+                    "BasicScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
+                    ImGuiWindowFlags_HorizontalScrollbar
                 );
                 drawBasic(config, inputMethods, charsets, listeningShortcut);
                 ImGui::EndChild();
@@ -258,7 +434,8 @@ namespace areca::settings {
             if (ImGui::BeginTabItem("Macro")) {
                 newActiveTab = 1;
                 ImGui::BeginChild(
-                    "MacroScroll", ImVec2(0.0F, -footerHeight), false, ImGuiWindowFlags_HorizontalScrollbar
+                    "MacroScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
+                    ImGuiWindowFlags_HorizontalScrollbar
                 );
                 drawMacros(config, pendingDeleteIndex);
                 ImGui::EndChild();
@@ -267,7 +444,8 @@ namespace areca::settings {
             if (ImGui::BeginTabItem("Nâng cao")) {
                 newActiveTab = 2;
                 ImGui::BeginChild(
-                    "AdvancedScroll", ImVec2(0.0F, -footerHeight), false, ImGuiWindowFlags_HorizontalScrollbar
+                    "AdvancedScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
+                    ImGuiWindowFlags_HorizontalScrollbar
                 );
                 drawAdvanced(config);
                 ImGui::EndChild();
@@ -318,8 +496,17 @@ namespace areca::settings {
             : (activeTab == 1)                            ? tab1IsDefault
                                                           : tab2IsDefault;
 
-        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0F, 0.996F, 0.973F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.063F, 0.129F, 0.110F, 0.14F));
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 11.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0F);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0F, 10.0F));
+        ImGui::BeginChild(
+            "ActionBar", ImVec2(0.0F, 0.0F),
+            ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
+        );
         ImGui::BeginDisabled(!currentTabDirty);
+        pushPrimaryButtonColors();
         if (ImGui::Button("Lưu và áp dụng", ImVec2(150.0F, 0.0F))) {
             config.save();
             savedConfig = config;
@@ -328,6 +515,7 @@ namespace areca::settings {
                                                    : "Đã lưu file, nhưng Areca chưa áp dụng: " + reloadError;
             confirmReset = false;
         }
+        ImGui::PopStyleColor(4);
         ImGui::SameLine();
         if (ImGui::Button("Huỷ các thay đổi")) {
             if (activeTab == 0) {
@@ -356,7 +544,7 @@ namespace areca::settings {
             }
             ImGui::EndDisabled();
         } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7F, 0.2F, 0.2F, 1.0F));
+            pushDangerButtonColors();
             if (ImGui::Button("Xác nhận khôi phục?")) {
                 if (activeTab == 0) {
                     const bool currentFallback = config.main.shiftSelectFallbackForBrowser.value();
@@ -379,7 +567,7 @@ namespace areca::settings {
                     : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 confirmReset = false;
             }
-            ImGui::PopStyleColor();
+            ImGui::PopStyleColor(4);
             ImGui::SameLine();
             if (ImGui::Button("Hủy")) {
                 confirmReset = false;
@@ -391,8 +579,15 @@ namespace areca::settings {
             running = false;
         }
         if (!status.empty()) {
-            ImGui::TextWrapped("%s", status.c_str());
+            const bool warning = status.find("nhưng") != std::string::npos;
+            ImGui::TextColored(
+                warning ? ImVec4(0.60F, 0.36F, 0.05F, 1.0F) : ImVec4(0.04F, 0.37F, 0.23F, 1.0F),
+                "%s", status.c_str()
+            );
         }
+        ImGui::EndChild();
+        ImGui::PopStyleVar(3);
+        ImGui::PopStyleColor(2);
         ImGui::End();
     }
 

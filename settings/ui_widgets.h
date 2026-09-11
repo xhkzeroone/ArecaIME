@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <string>
 #include <vector>
@@ -20,8 +21,16 @@ template <typename Option> bool checkbox(const char *label, Option &option) {
 
 template <typename Option> bool inputInt(const char *label, Option &option) {
     int value = option.value();
+    const float rowStart = ImGui::GetCursorPosX();
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
+    constexpr float inputWidth = 140.0F;
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(rowStart + std::max(220.0F, availableWidth - inputWidth));
     ImGui::SetNextItemWidth(140.0F);
-    if (!ImGui::InputInt(label, &value)) {
+    const std::string inputId = std::string("##") + label;
+    if (!ImGui::InputInt(inputId.c_str(), &value)) {
         return false;
     }
     option.setValue(value);
