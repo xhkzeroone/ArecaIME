@@ -213,8 +213,8 @@ namespace areca::settings {
         checkbox("Ép dùng uinput thay cho forward Backspace", config.advanced.forceUinput);
         checkbox("Ép uinput Shift+Left cho trình duyệt", config.advanced.useUinputShiftSelectForBrowser);
         checkbox("Ép surrounding text v2 cho trình duyệt", config.advanced.useSurroundingV2ForBrowser);
-        checkbox("Theo dõi click chuột để reset bộ gõ", config.advanced.enableMouseTracking);
-        checkbox("Chuyển tiếp phím đầu khi bộ gõ rảnh", config.advanced.forwardFirstCharacter);
+        checkbox("Tự reset bộ gõ sau khi click chuột trong trình duyệt", config.advanced.enableMouseTracking);
+        checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
     }
 
     void drawWindow(
