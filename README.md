@@ -271,6 +271,7 @@ Yêu cầu:
 - Go.
 - Fcitx5 Core, Config và Utils development packages.
 - Ninja hoặc Make.
+- SDL3, fontconfig
 
 ```bash
 git submodule update --init

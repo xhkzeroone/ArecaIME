@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Areca Settings
+Name[vi]=Cài đặt Areca
+Comment=Configure the Areca Vietnamese input method
+Comment[vi]=Cấu hình bộ gõ tiếng Việt Areca
+Exec=areca-settings
+Icon=fcitx-areca
+Terminal=false
+Categories=Settings;Utility;
+Keywords=fcitx;ime;input method;vietnamese;areca;

@@ -14,10 +14,12 @@
 #else
 #include <fcitx-utils/standardpath.h>
 #endif
+#include <fcitx-utils/misc.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputcontextmanager.h>
+#include <fcitx/statusarea.h>
 #include <fcitx/surroundingtext.h>
 
 #include "browser_autocomplete.h"
@@ -135,6 +137,15 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
     focusTracker_.reset();
   }
   inputTypeDetector_.setFocusTracker(focusTracker_.get());
+
+  settingsAction_ = std::make_unique<fcitx::SimpleAction>();
+  settingsAction_->setShortText("Areca Settings");
+  settingsAction_->setIcon("configure");
+  settingsAction_->connect<fcitx::SimpleAction::Activated>([](fcitx::InputContext *) {
+    fcitx::startProcess({ARECA_SETTINGS_PATH});
+  });
+  settingsAction_->registerAction("areca-settings",
+                                  &instance_->userInterfaceManager());
 }
 
 ArecaEngine::~ArecaEngine() {
@@ -550,6 +561,8 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
                  << presentationModeName(activePresentationMode_)
                  << " program=" << inputContext->program();
   }
+  auto &statusArea = inputContext->statusArea();
+  statusArea.addAction(fcitx::StatusGroup::InputMethod, settingsAction_.get());
 }
 
 void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
