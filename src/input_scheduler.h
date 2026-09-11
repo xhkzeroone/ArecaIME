@@ -78,6 +78,7 @@ private:
   void applyResult(fcitx::InputContext &inputContext, VietnameseEngine &engine,
                    const BambooResult &result, const std::string &rawText);
   void finishKey();
+  void finishKeyAfterDelay();
   void finishKeyAfterCommit();
   void rewriteDone(uint64_t transactionId);
 

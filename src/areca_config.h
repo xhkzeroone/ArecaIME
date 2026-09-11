@@ -55,10 +55,6 @@ FCITX_CONFIGURATION(
 
 FCITX_CONFIGURATION(
     AdvancedConfig,
-    fcitx::Option<bool> enableMouseTracking{
-        this, "EnableMouseTracking", N_("Theo dõi click chuột để reset bộ gõ"), false};
-    fcitx::Option<bool> forwardFirstCharacter{
-        this, "ForwardFirstCharacter", N_("Chuyển tiếp phím đầu khi bộ gõ rảnh"), false};
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
@@ -132,7 +128,13 @@ FCITX_CONFIGURATION(
         N_("Ép uinput Shift+Left cho trình duyệt"), false};
     fcitx::Option<bool> useSurroundingV2ForBrowser{
         this, "UseSurroundingV2ForBrowser",
-        N_("Ép surrounding text v2 cho trình duyệt"), false};);
+        N_("Ép surrounding text v2 cho trình duyệt"), false};
+    fcitx::Option<bool> enableMouseTracking{
+        this, "EnableMouseTracking",
+        N_("Tự reset bộ gõ sau khi click chuột trong trình duyệt"), true};
+    fcitx::Option<bool> forwardFirstCharacter{
+        this, "ForwardFirstCharacter",
+        N_("Chuyển tiếp phím đầu để tương thích trình duyệt"), true};);
 
 FCITX_CONFIGURATION(
     ArecaConfig,

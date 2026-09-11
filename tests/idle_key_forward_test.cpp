@@ -1,4 +1,6 @@
 #include <cassert>
+#include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -22,6 +24,8 @@ public:
 
   void commitStringImpl(const std::string &text) override {
     events.push_back("commit:" + text);
+    commitTimesUsec.push_back(fcitx::now(CLOCK_MONOTONIC));
+    if (onCommit) onCommit();
   }
   void deleteSurroundingTextImpl(int, unsigned int) override {}
   void forwardKeyImpl(const fcitx::ForwardKeyEvent &event) override {
@@ -31,6 +35,8 @@ public:
   void updatePreeditImpl() override {}
 
   std::vector<std::string> events;
+  std::vector<uint64_t> commitTimesUsec;
+  std::function<void()> onCommit;
 };
 
 class TestEngine final : public areca::VietnameseEngine {
@@ -133,4 +139,48 @@ int main() {
   assert(!scheduler.handleIdleKey(pending, 'a', "a"));
   backend.complete();
   assert(inputContext.events == std::vector<std::string>{"commit:a"});
+
+  // Một phím được forward trực tiếp vẫn phải giữ single-flight barrier. Phím
+  // kế tiếp đến sớm nằm trong queue và chỉ được commit sau đủ 20 ms.
+  fcitx::EventLoop barrierEventLoop;
+  TestInputContext barrierInputContext(manager);
+  TestEngine barrierEngine;
+  PendingBackend barrierBackend;
+  areca::InputScheduler barrierScheduler(
+      barrierEventLoop,
+      [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
+        return &barrierEngine;
+      },
+      [] {
+        areca::SchedulerTiming timing;
+        timing.postCommitDelayMs = 20;
+        timing.timerAccuracyUsec = 1;
+        return timing;
+      },
+      [] { return false; },
+      [&](fcitx::InputContext &, const areca::BambooResult &result) {
+        return areca::RewriteBackendSelection{
+            result.deleteCount ? &barrierBackend : nullptr};
+      });
+
+  const uint64_t forwardStartUsec = fcitx::now(CLOCK_MONOTONIC);
+  fcitx::KeyEvent barrierFirst(&barrierInputContext,
+                               fcitx::Key(FcitxKey_a));
+  assert(barrierScheduler.handleIdleKey(barrierFirst, 'a', "a"));
+  assert(!barrierFirst.accepted());
+
+  fcitx::KeyEvent barrierSecond(&barrierInputContext,
+                                fcitx::Key(FcitxKey_s));
+  assert(!barrierScheduler.handleIdleKey(barrierSecond, 's', "s"));
+  barrierScheduler.enqueue(barrierInputContext, 's', "s");
+  assert(barrierScheduler.queuedKeyCount() == 1);
+  assert(barrierInputContext.events.empty());
+
+  barrierInputContext.onCommit = [&] { barrierEventLoop.exit(); };
+  assert(barrierEventLoop.exec());
+  assert(barrierInputContext.events ==
+         std::vector<std::string>{"commit:s"});
+  assert(barrierInputContext.commitTimesUsec.size() == 1);
+  assert(barrierInputContext.commitTimesUsec.front() - forwardStartUsec >=
+         20000);
 }

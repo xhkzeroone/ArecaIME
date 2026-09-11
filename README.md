@@ -15,12 +15,13 @@ editor web nhận sự kiện phím để mở chế độ soạn thảo. Bamboo
 
 ### Bật/tắt tính năng tương thích
 
-Hai tùy chọn trong **Cấu hình nâng cao** (`conf/areca-advanced.conf`) mặc định tắt:
+Hai tùy chọn tương thích trình duyệt trong **Cấu hình nâng cao**
+(`conf/areca-advanced.conf`) mặc định bật:
 
 | Khóa | Nhãn giao diện | Khi tắt |
 | --- | --- | --- |
-| `EnableMouseTracking` | Theo dõi click chuột để reset bộ gõ | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
-| `ForwardFirstCharacter` | Chuyển tiếp phím đầu khi bộ gõ rảnh | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
+| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong trình duyệt | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
+| `ForwardFirstCharacter` | Chuyển tiếp phím đầu để tương thích trình duyệt | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
 
 Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
 reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
@@ -31,16 +32,18 @@ EnableMouseTracking=False
 ForwardFirstCharacter=False
 ```
 
-Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Chuyển tiếp phím
-đầu không tạo thread/process riêng. Chưa có benchmark so sánh hiệu năng hai chế
-độ; các tùy chọn này cho phép kiểm tra trên ứng dụng và môi trường thực tế.
+Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click chỉ reset
+composition khi input context hiện tại là trình duyệt; click chờ ở ứng dụng khác
+được bỏ qua. Chuyển tiếp phím đầu cũng chỉ áp dụng cho trình duyệt và không tạo
+thread/process riêng.
 
 ## Reset khi click chuột
 
 Khi `EnableMouseTracking=True`, Areca chạy helper riêng `areca-mouse-monitor` dùng **libinput + udev**, báo nhấn
-chuột và tap touchpad qua pipe vào event loop Fcitx. Trước phím nhấn tiếp theo,
-engine reset composition nếu scheduler cho phép; nếu rewrite đang được bảo vệ,
-cờ click được giữ cho lần sau. Di chuyển, cuộn và nhả chuột không yêu cầu reset.
+chuột và tap touchpad qua pipe vào event loop Fcitx. Trước phím nhấn tiếp theo
+trong trình duyệt, engine reset composition nếu scheduler cho phép; nếu rewrite
+đang được bảo vệ, cờ click được giữ cho lần sau. Di chuyển, cuộn và nhả chuột
+không yêu cầu reset.
 
 Build cần gói phát triển libinput/libudev. Helper được cài vào libexec theo
 `CMAKE_INSTALL_PREFIX`; rule `70-areca-pointer.rules` cấp quyền đọc chuột/touchpad
