@@ -11,6 +11,12 @@
 #include <string>
 
 int main() {
+    // Khớp với areca-settings.desktop để Wayland compositor tìm đúng icon.
+    if (!SDL_SetHint(SDL_HINT_APP_ID, "areca-settings")) {
+        SDL_Log("Không thể đặt application ID: %s", SDL_GetError());
+    }
+    SDL_SetHint(SDL_HINT_APP_NAME, "Areca Settings");
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Không thể khởi tạo SDL: %s", SDL_GetError());
         return 1;

@@ -56,6 +56,27 @@ update_icon_cache() {
   fi
 }
 
+update_desktop_cache() {
+  local applications_dir="$ARECA_PREFIX/share/applications"
+  if [[ -d "$applications_dir" ]] && \
+     command -v update-desktop-database >/dev/null 2>&1; then
+    echo "[areca] Updating desktop application cache (optional)"
+    if is_user_prefix; then
+      update-desktop-database "$applications_dir" >/dev/null 2>&1 || true
+    else
+      sudo update-desktop-database "$applications_dir" >/dev/null 2>&1 || true
+    fi
+  fi
+
+  if command -v kbuildsycoca6 >/dev/null 2>&1; then
+    echo "[areca] Refreshing KDE application cache (optional)"
+    run_as_target_user kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+  elif command -v kbuildsycoca5 >/dev/null 2>&1; then
+    echo "[areca] Refreshing KDE application cache (optional)"
+    run_as_target_user kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
+  fi
+}
+
 install_deps_debian() {
   echo "[areca] Installing build dependencies with apt"
   sudo apt-get update
@@ -249,6 +270,7 @@ else
 fi
 
 update_icon_cache
+update_desktop_cache
 
 if [[ "$ARECA_RESTART_FCITX" == 1 ]]; then
   echo "[areca] Restarting Fcitx5 (best effort)"
