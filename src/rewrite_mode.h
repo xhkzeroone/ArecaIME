@@ -50,6 +50,7 @@ class RewriteModeHandler final : public InputModeHandler {
 public:
   using StateFactory = fcitx::FactoryFor<RewriteInputState>;
   using BoolProvider = std::function<bool()>;
+  using ContextBoolProvider = std::function<bool(fcitx::InputContext &)>;
   using BackendVerdictProtector =
       std::function<void(fcitx::InputContext &, const char *)>;
   using BackspaceRecoveryProvider = std::function<bool()>;
@@ -60,7 +61,7 @@ public:
                      BoolProvider debugProvider,
                      BackendVerdictProtector backendVerdictProtector,
                      BackspaceRecoveryProvider backspaceRecoveryProvider,
-                     BoolProvider forwardFirstCharacterProvider);
+                     ContextBoolProvider forwardFirstCharacterProvider);
   ~RewriteModeHandler();
 
   RewriteInputState *stateFor(fcitx::InputContext &inputContext) const;
@@ -89,7 +90,7 @@ private:
   BoolProvider debugProvider_;
   BackendVerdictProtector backendVerdictProtector_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
-  BoolProvider forwardFirstCharacterProvider_;
+  ContextBoolProvider forwardFirstCharacterProvider_;
 };
 
 } // namespace areca

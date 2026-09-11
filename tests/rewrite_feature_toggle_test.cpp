@@ -15,8 +15,9 @@ namespace {
 
 class TestInputContext final : public fcitx::InputContext {
 public:
-  explicit TestInputContext(fcitx::InputContextManager &manager)
-      : fcitx::InputContext(manager, "google-chrome") {}
+  explicit TestInputContext(fcitx::InputContextManager &manager,
+                            const char *program = "google-chrome")
+      : fcitx::InputContext(manager, program) {}
   ~TestInputContext() override { destroy(); }
 
   const char *frontend() const override { return "wayland"; }
@@ -81,7 +82,9 @@ int main() {
     areca::RewriteModeHandler handler(loop, factory, scheduler,
         [] { return false; }, [] { return false; },
         [](fcitx::InputContext &, const char *) {}, [] { return false; },
-        [&] { return enabled; });
+        [&](fcitx::InputContext &ic) {
+          return enabled && ic.program() == "google-chrome";
+        });
     if (enabled) {
       fcitx::KeyEvent first(&context, fcitx::Key(FcitxKey_a));
       handler.handleKeyEvent(first);
@@ -114,5 +117,15 @@ int main() {
     assert(context.events == legacyContext.events);
     assert(key.accepted() == legacyKey.accepted());
     assert(context.propertyFor(&factory)->engine->currentText() == legacyEngine.currentText());
+
+    // Bật option không được forward phím đầu trong ứng dụng ngoài trình duyệt.
+    enabled = true;
+    TestInputContext nonBrowserContext(manager, "org.gnome.TextEditor");
+    fcitx::KeyEvent nonBrowserKey(&nonBrowserContext,
+                                  fcitx::Key(FcitxKey_a));
+    handler.handleKeyEvent(nonBrowserKey);
+    assert(nonBrowserKey.accepted());
+    assert(nonBrowserContext.events ==
+           std::vector<std::string>{"commit:a"});
   }
 }

@@ -64,12 +64,13 @@ báo hoàn tất.
 
 ### Bật/tắt tính năng tương thích
 
-Hai tùy chọn trong **Cấu hình nâng cao** (`conf/areca-advanced.conf`) mặc định tắt:
+Hai tùy chọn tương thích trình duyệt trong **Cấu hình nâng cao**
+(`conf/areca-advanced.conf`) mặc định bật:
 
 | Khóa | Nhãn giao diện | Khi tắt |
 | --- | --- | --- |
-| `EnableMouseTracking` | Theo dõi click chuột để reset bộ gõ | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
-| `ForwardFirstCharacter` | Chuyển tiếp phím đầu khi bộ gõ rảnh | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
+| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong trình duyệt | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
+| `ForwardFirstCharacter` | Chuyển tiếp phím đầu để tương thích trình duyệt | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
 
 Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
 reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
@@ -80,25 +81,28 @@ EnableMouseTracking=False
 ForwardFirstCharacter=False
 ```
 
-Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Chuyển tiếp phím
-đầu không tạo thread/process riêng. Chưa có benchmark so sánh hiệu năng hai chế
-độ; các tùy chọn này cho phép kiểm tra trên ứng dụng và môi trường thực tế.
+Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click chỉ reset
+composition khi input context hiện tại là trình duyệt; click chờ ở ứng dụng khác
+được bỏ qua. Chuyển tiếp phím đầu cũng chỉ áp dụng cho trình duyệt và không tạo
+thread/process riêng.
 
 ## Phím đầu khi Rewrite đang rảnh
 
 Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo.
-Khi `ForwardFirstCharacter=True`, trước `filterAndAccept()`, `RewriteModeHandler` thử
-`InputScheduler::handleIdleKey()` khi không chờ Backspace release và phím không
-bị đổi bởi tự viết hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text,
-không processing, không rewrite pending, queue rỗng, không stalled và đã qua
-khoảng bảo vệ reset sau commit (hiện là 20 ms).
+Khi `ForwardFirstCharacter=True`, trước `filterAndAccept()`,
+`RewriteModeHandler` chỉ thử `InputScheduler::handleIdleKey()` cho input context
+trình duyệt, khi không chờ Backspace release và phím không bị đổi bởi tự viết
+hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text, không processing,
+không rewrite pending, queue rỗng, không stalled và đã qua khoảng bảo vệ reset
+sau commit (hiện là 20 ms).
 
 Bamboo vẫn xử lý phím đúng một lần. Nếu `deleteCount == 0`, `commitText` bằng
 UTF-8 đầu vào và không mở rộng macro, addon để event chưa filter/accept cho
 frontend xử lý. Trạng thái Bamboo được giữ để phím sau vẫn ghép dấu, ví dụ
 `a` rồi `s` thành `á`. Nhánh này không gọi `commitString()`, không phát cặp
-`forwardKey()` giả, không tự cập nhật surrounding cache và không tạo barrier
-sau commit vì addon chưa thực hiện commit.
+`forwardKey()` giả và không tự cập nhật surrounding cache. Scheduler vẫn giữ
+barrier `PostCommitDelayMs` trước khi xử lý phím kế tiếp để frontend kịp nhận
+phím vừa chuyển tiếp.
 
 `KeyEvent::forward()` trong API Fcitx đang dùng là getter; việc để event chưa
 filter/accept mới là điều cho phép phím đi tiếp. Cách frontend giao event đến

@@ -65,7 +65,10 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
       // forward() của Fcitx là getter; chính việc không filter/accept event mới
       // cho phím đi tiếp. Không tạo cặp phím giả bằng forwardKey ở đây.
       event.forward();
-      finishKey();
+      // Dù không gọi commitString(), frontend vẫn sắp nhận một ký tự mới từ
+      // phím gốc. Giữ single-flight barrier như nhánh commit để phím kế tiếp
+      // không bắt đầu rewrite trước khi editor kịp nhận ký tự vừa forward.
+      finishKeyAfterDelay();
     } else {
       if (debugProvider_())
         FCITX_INFO() << "areca: idle key route=commit reason=transformed-output";
@@ -296,6 +299,10 @@ void InputScheduler::finishKey() {
 
 void InputScheduler::finishKeyAfterCommit() {
   lastRewriteCompletionTimeUsec_ = fcitx::now(CLOCK_MONOTONIC);
+  finishKeyAfterDelay();
+}
+
+void InputScheduler::finishKeyAfterDelay() {
   const auto timing = timingProvider_();
   const uint64_t delayUsec =
       static_cast<uint64_t>(timing.postCommitDelayMs) * 1000;

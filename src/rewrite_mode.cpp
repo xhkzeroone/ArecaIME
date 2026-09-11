@@ -93,7 +93,8 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                            backendVerdictProtector,
                                        BackspaceRecoveryProvider
                                            backspaceRecoveryProvider,
-                                       BoolProvider forwardFirstCharacterProvider)
+                                       ContextBoolProvider
+                                           forwardFirstCharacterProvider)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
@@ -367,7 +368,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
   // đổi ký tự thì phải commit ký tự mới, vì phím gốc vẫn mang ký tự chưa đổi.
   // Đọc cấu hình hiện tại mỗi lần để bật/tắt có hiệu lực mà không tạo lại handler.
-  if (forwardFirstCharacterProvider_() &&
+  if (forwardFirstCharacterProvider_(*inputContext) &&
       !state->backspaceRecoveryAwaitingRelease &&
       effectiveTextSym == textSym &&
       scheduler_.handleIdleKey(event, codepoint, utf8Text)) {

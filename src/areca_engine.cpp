@@ -104,7 +104,14 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             protectBackendVerdict(inputContext, reason);
           },
           [this]() { return backspaceRecoveryEnabled(); },
-          [this]() { return advancedConfig_.forwardFirstCharacter.value(); }),
+          [this](fcitx::InputContext &inputContext) {
+            if (!advancedConfig_.forwardFirstCharacter.value()) {
+              return false;
+            }
+            auto *state = inputContext.propertyFor(&rewriteStateFactory_);
+            return inputTypeDetector_.isBrowser(
+                resolveProgram(inputContext, state));
+          }),
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
@@ -552,11 +559,22 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
+    // Hai tính năng tương thích mặc định chỉ tác động đến trình duyệt. Resolve
+    // program một lần để mouse reset và nhận diện address bar dùng cùng verdict.
+    auto *state = inputContext->propertyFor(&rewriteStateFactory_);
+    const std::string program = resolveProgram(*inputContext, state);
+    const bool isBrowser = inputTypeDetector_.isBrowser(program);
+
     // Reset trước phím nhấn tiếp theo vì click có thể đã đổi vị trí con trỏ.
     // Nếu rewrite còn được bảo vệ, giữ cờ click cho lần sau thay vì làm mất nó
     // hoặc xóa trạng thái giữa một chuỗi thao tác xóa/chèn đang chạy.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
-      if (scheduler_.shouldRejectReset()) {
+      if (!isBrowser) {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: discard mouse reset outside browser"
+                       << " program=" << program;
+        mouseTracker_->clearPendingClick();
+      } else if (scheduler_.shouldRejectReset()) {
         if (debugEnabled())
           FCITX_INFO() << "areca: mouse reset deferred (rewrite protection)";
       } else {
@@ -569,8 +587,6 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
       }
     }
     // Bắt đầu: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
-    auto *state = inputContext->propertyFor(&rewriteStateFactory_);
-    const std::string program = resolveProgram(*inputContext, state);
     inChromiumAddressBar(*inputContext, program, state);
     // Kết thúc: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay từ ký tự đầu tiên
 
