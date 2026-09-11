@@ -78,6 +78,7 @@ jobs:
             cmake \
             ninja-build \
             pkg-config \
+            fontconfig \
             extra-cmake-modules \
             golang-go \
             ruby \
@@ -91,7 +92,8 @@ jobs:
             libudev-dev \
             libfcitx5core-dev \
             libfcitx5config-dev \
-            libfcitx5utils-dev
+            libfcitx5utils-dev \
+            libsdl3-dev
           sudo gem install --no-document fpm
 
       - name: Build and test
@@ -172,8 +174,10 @@ jobs:
                 libinput \
                 ninja \
                 pkgconf \
+                fontconfig \
                 systemd-libs \
-                dbus
+                dbus \
+                sdl3 \
               useradd --create-home builder
               chown -R builder:builder arch-pkg
               su builder -c \
@@ -215,6 +219,7 @@ jobs:
                 cmake \
                 ninja-build \
                 pkgconf-pkg-config \
+                fontconfig \
                 extra-cmake-modules \
                 golang \
                 ruby \
@@ -223,6 +228,8 @@ jobs:
                 dbus-devel \
                 libinput-devel \
                 systemd-devel \
+                SDL3 \
+                SDL3-devel \
                 fcitx5 \
                 fcitx5-devel \
                 fcitx5-configtool
