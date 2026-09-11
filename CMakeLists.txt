@@ -70,7 +70,8 @@ add_library(areca MODULE
     src/mouse_click_tracker.cpp
     src/word_segment.cpp)
 target_compile_definitions(areca PRIVATE
-    ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor")
+    ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor"
+    ARECA_SETTINGS_PATH="${CMAKE_INSTALL_FULL_BINDIR}/areca-settings")
 add_dependencies(areca areca-mouse-monitor)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
 target_compile_features(areca PRIVATE cxx_std_20)

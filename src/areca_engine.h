@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include <fcitx/action.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
@@ -126,6 +127,7 @@ private:
   std::unique_ptr<WindowFocusTracker> focusTracker_;
   InputTypeDetector inputTypeDetector_;
   std::unique_ptr<MouseClickTracker> mouseTracker_;
+  std::unique_ptr<fcitx::SimpleAction> settingsAction_;
 };
 
 } // namespace areca
