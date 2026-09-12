@@ -50,6 +50,13 @@ public:
   areca::BambooResult processBackspace() override { return {}; }
   void backspace() override {}
   void reset() override { current_.clear(); }
+  bool restoreFromRenderedText(const std::string &text) override {
+    if (text != "nh") {
+      return false;
+    }
+    current_ = text;
+    return true;
+  }
   const std::string &currentText() const override { return current_; }
 
 private:
@@ -84,7 +91,8 @@ int main() {
         [](fcitx::InputContext &, const char *) {}, [] { return false; },
         [&](fcitx::InputContext &ic) {
           return enabled && ic.program() == "google-chrome";
-        });
+        },
+        [] { return false; });
     if (enabled) {
       fcitx::KeyEvent first(&context, fcitx::Key(FcitxKey_a));
       handler.handleKeyEvent(first);
@@ -128,4 +136,46 @@ int main() {
     assert(nonBrowserContext.events ==
            std::vector<std::string>{"commit:a"});
   }
+
+  // Restore được gọi đúng một lần trước phím text đầu tiên và phần text đã
+  // commit trở thành prefix của composition, nên chỉ ký tự mới được commit.
+  fcitx::EventLoop restoreLoop;
+  fcitx::InputContextManager restoreManager;
+  areca::RewriteModeHandler::StateFactory restoreFactory(
+      [](fcitx::InputContext &) {
+        auto *state = new areca::RewriteInputState(
+            "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+        state->engine = std::make_unique<TestEngine>();
+        return state;
+      });
+  restoreManager.registerProperty("rewrite-restore-test", &restoreFactory);
+  TestInputContext restoreContext(restoreManager, "org.gnome.TextEditor");
+  restoreContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  restoreContext.surroundingText().setText("nh", 2, 2);
+  areca::InputScheduler restoreScheduler(
+      restoreLoop,
+      [&](fcitx::InputContext &ic) {
+        return ic.propertyFor(&restoreFactory)->engine.get();
+      },
+      [] {
+        areca::SchedulerTiming timing;
+        timing.postCommitDelayMs = 0;
+        return timing;
+      },
+      [] { return false; },
+      [](fcitx::InputContext &, const areca::BambooResult &) {
+        return areca::RewriteBackendSelection{};
+      });
+  areca::RewriteModeHandler restoreHandler(
+      restoreLoop, restoreFactory, restoreScheduler, [] { return false; },
+      [] { return false; }, [](fcitx::InputContext &, const char *) {},
+      [] { return false; }, [](fcitx::InputContext &) { return false; },
+      [] { return true; });
+  restoreHandler.activate(restoreContext);
+  fcitx::KeyEvent restoreKey(&restoreContext, fcitx::Key(FcitxKey_a));
+  restoreHandler.handleKeyEvent(restoreKey);
+  assert(restoreKey.accepted());
+  assert(restoreContext.events == std::vector<std::string>{"commit:a"});
+  assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
+         "nha");
 }

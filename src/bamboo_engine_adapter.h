@@ -22,6 +22,9 @@ public:
   virtual void backspace() = 0;
   virtual void reset() = 0;
   virtual const std::string &currentText() const = 0;
+  // Nạp lại text đã có trước con trỏ. Implement mặc định từ chối để các engine
+  // giả trong test và engine khác không vô tình nhận một trạng thái không hỗ trợ.
+  virtual bool restoreFromRenderedText(const std::string &) { return false; }
 };
 
 class BambooEngineAdapter final : public VietnameseEngine {
@@ -44,6 +47,7 @@ public:
   BambooResult processBackspace() override;
   void backspace() override;
   void reset() override;
+  bool restoreFromRenderedText(const std::string &text) override;
   const std::string &currentText() const override { return renderedText_; }
   bool valid() const { return handle_ != 0; }
   static std::vector<std::string> inputMethodNames();

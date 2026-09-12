@@ -113,7 +113,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             auto *state = inputContext.propertyFor(&rewriteStateFactory_);
             return inputTypeDetector_.isBrowser(
                 resolveProgram(inputContext, state));
-          }),
+          },
+          [this]() { return config_.restoreSurroundingText.value(); }),
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
@@ -122,6 +123,21 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                                     &rewriteStateFactory_);
   instance_->inputContextManager().registerProperty("arecaPreeditState",
                                                     &preeditStateFactory_);
+  surroundingTextWatcher_ = instance_->watchEvent(
+      fcitx::EventType::InputContextSurroundingTextUpdated,
+      fcitx::EventWatcherPhase::PostInputMethod, [this](fcitx::Event &event) {
+        auto &contextEvent = static_cast<fcitx::InputContextEvent &>(event);
+        auto *inputContext = contextEvent.inputContext();
+        if (!inputContext) {
+          return;
+        }
+        // Callback chỉ ghi nhận rằng frontend đã đổi text hoặc cursor. Việc đọc
+        // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
+        // lifecycle và để nhận snapshot surrounding mới nhất.
+        if (auto *state = rewriteHandler_.stateFor(*inputContext)) {
+          state->surroundingRestoreArmed = true;
+        }
+      });
   config_.bambooInputMethod.annotation().setList(
       BambooEngineAdapter::inputMethodNames());
   config_.outputCharset.annotation().setList(

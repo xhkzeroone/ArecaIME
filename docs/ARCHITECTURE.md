@@ -475,6 +475,24 @@ completion callback đúng một lần sau commit.
 Areca không tự chỉnh object `surroundingText()` mà Fcitx đang cache sau delete,
 selection delete hoặc commit. Addon chờ frontend gửi snapshot mới từ ứng dụng.
 
+## Khôi phục Bamboo state từ surrounding text
+
+`InputContextSurroundingTextUpdated` chỉ arm một lần thử cho `RewriteInputState`.
+Ở phím text hợp lệ kế tiếp, `RewriteModeHandler` chỉ đọc từ đứng ngay trước con
+trỏ khi `RestoreSurroundingText=True`, charset là `Unicode`, không có
+selection/password và scheduler không có transaction đang chạy.
+
+Extractor lấy tối đa 16 chữ cái Latin/tiếng Việt Unicode dựng sẵn. Chuỗi UTF-8
+lỗi, dấu tổ hợp và từ bị cắt bởi giới hạn đều bị từ chối. Khi option tắt,
+handler bỏ qua toàn bộ bước đọc và phục hồi.
+
+Bridge không đoán rồi sửa trực tiếp engine đang hoạt động. Nó tách chữ gốc và
+các hiệu ứng dấu, thử một tập phím hữu hạn theo input method hiện tại trên
+engine tạm, và yêu cầu output khớp chính xác từ trên màn hình. Chỉ khi xác minh
+thành công, cùng chuỗi phím mới được nạp vào engine thật. Adapter đồng bộ
+`renderedText_`, nên delta do phím kế tiếp tạo ra đi qua scheduler và backend
+rewrite hiện có; không có đường xóa/commit riêng cho tính năng này.
+
 ## Reset barrier
 
 `ArecaEngine::reset()` chỉ arm timer của mode đang hoạt động, không reset ngay.

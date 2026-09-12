@@ -15,6 +15,7 @@ char *ArecaBambooProcess(uint64_t id, uint32_t key, int spellCheck);
 char *ArecaBambooFinalizeWord(uint64_t id, int spellCheck);
 char *ArecaBambooBackspace(uint64_t id);
 char *ArecaBambooRecoverBackspace(uint64_t id);
+int ArecaBambooRestore(uint64_t id, char *visibleText);
 void ArecaBambooReset(uint64_t id);
 char *ArecaBambooInputMethodNames();
 char *ArecaBambooCharsetNames();
@@ -211,6 +212,22 @@ void BambooEngineAdapter::reset() {
   finalizedRenderedText_.clear();
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
+}
+
+bool BambooEngineAdapter::restoreFromRenderedText(const std::string &text) {
+  if (text.empty() ||
+      !ArecaBambooRestore(handle_, const_cast<char *>(text.c_str()))) {
+    return false;
+  }
+
+  // Bridge đã dựng lại composition Bamboo sao cho đầu ra khớp text đang hiện.
+  // Đồng bộ renderedText_ để lần process kế tiếp tính deleteCount trực tiếp với
+  // từ cũ và tái sử dụng toàn bộ backend rewrite hiện có.
+  renderedText_ = text;
+  finalizedRenderedText_.clear();
+  finalizedWordAvailable_ = false;
+  trailingBoundaryCount_ = 0;
+  return true;
 }
 
 void BambooEngineAdapter::backspace() {

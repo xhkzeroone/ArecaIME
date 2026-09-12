@@ -7,6 +7,7 @@
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
+#include <fcitx/surroundingtext.h>
 
 namespace areca {
 namespace {
@@ -94,13 +95,17 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                        BackspaceRecoveryProvider
                                            backspaceRecoveryProvider,
                                        ContextBoolProvider
-                                           forwardFirstCharacterProvider)
+                                           forwardFirstCharacterProvider,
+                                       BoolProvider
+                                           restoreSurroundingTextProvider)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
       backendVerdictProtector_(std::move(backendVerdictProtector)),
       backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
-      forwardFirstCharacterProvider_(std::move(forwardFirstCharacterProvider)) {}
+      forwardFirstCharacterProvider_(std::move(forwardFirstCharacterProvider)),
+      restoreSurroundingTextProvider_(
+          std::move(restoreSurroundingTextProvider)) {}
 
 RewriteModeHandler::~RewriteModeHandler() {}
 
@@ -111,10 +116,73 @@ RewriteModeHandler::stateFor(fcitx::InputContext &inputContext) const {
 
 void RewriteModeHandler::activate(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
+    // Focus có thể đi vào giữa một từ đã commit. Phím text đầu tiên sau focus
+    // được phép đọc surrounding text một lần để phục hồi trạng thái Bamboo.
+    state->surroundingRestoreArmed = true;
     // Bắt đầu: Khởi tạo trạng thái first word thanh địa chỉ khi kích hoạt ngữ cảnh
     state->addrBarIsFirstWord = true;
     state->addrBarHadSpace = false;
     // Kết thúc: Khởi tạo trạng thái first word thanh địa chỉ khi kích hoạt ngữ cảnh
+  }
+}
+
+void RewriteModeHandler::tryRestoreFromSurroundingText(
+    fcitx::InputContext &inputContext, RewriteInputState &state) {
+  if (!state.surroundingRestoreArmed) {
+    return;
+  }
+  state.surroundingRestoreArmed = false;
+
+  const bool enabled = restoreSurroundingTextProvider_();
+  const bool supported = enabled && state.outputCharset == "Unicode" &&
+                         state.engine &&
+                         state.engine->currentText().empty() &&
+                         !scheduler_.rewritePending() &&
+                         scheduler_.queuedKeyCount() == 0 &&
+                         !scheduler_.shouldRejectReset() &&
+                         !inputContext.capabilityFlags().test(
+                             fcitx::CapabilityFlag::Password) &&
+                         inputContext.capabilityFlags().test(
+                             fcitx::CapabilityFlag::SurroundingText);
+  if (!supported) {
+    if (debugProvider_() && enabled) {
+      FCITX_INFO() << "areca: surrounding restore rejected"
+                   << " reason=unsupported-state"
+                   << " charset=" << state.outputCharset
+                   << " pending=" << scheduler_.rewritePending()
+                   << " queue=" << scheduler_.queuedKeyCount();
+    }
+    return;
+  }
+
+  const auto &surrounding = inputContext.surroundingText();
+  if (!surrounding.isValid()) {
+    if (debugProvider_())
+      FCITX_INFO() << "areca: surrounding restore rejected reason=invalid";
+    return;
+  }
+
+  const auto candidate = extractSurroundingRestoreCandidate(
+      surrounding.text(), surrounding.cursor(), surrounding.anchor());
+  if (!candidate) {
+    if (debugProvider_())
+      FCITX_INFO() << "areca: surrounding restore rejected reason=no-word";
+    return;
+  }
+
+  if (!state.engine->restoreFromRenderedText(candidate->text)) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: surrounding restore rejected"
+                   << " reason=bamboo-cannot-rebuild"
+                   << " text=" << candidate->text;
+    }
+    return;
+  }
+
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: surrounding restore applied"
+                 << " text=" << candidate->text
+                 << " chars=" << candidate->characterCount;
   }
 }
 
@@ -364,6 +432,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     event.forward();
     return;
   }
+  // Chỉ phục hồi ngay trước một phím text hợp lệ. Shortcut, phím điều hướng và
+  // lifecycle event không được phép hút từ cũ vào Bamboo rồi để trạng thái treo.
+  tryRestoreFromSurroundingText(*inputContext, *state);
   // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
   // đổi ký tự thì phải commit ký tự mới, vì phím gốc vẫn mang ký tự chưa đổi.
@@ -394,6 +465,9 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
     state->sentenceCapitalization.reset();
+    // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái
+    // tạo trạng thái từ vị trí con trỏ mới nếu người dùng bật tính năng.
+    state->surroundingRestoreArmed = true;
     // Bắt đầu: Đặt lại trạng thái first word thanh địa chỉ khi đặt lại ngữ cảnh
     state->addrBarIsFirstWord = true;
     state->addrBarHadSpace = false;

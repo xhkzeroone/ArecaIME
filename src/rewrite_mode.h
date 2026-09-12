@@ -16,6 +16,7 @@
 #include "input_scheduler.h"
 #include "mode_handler.h"
 #include "sentence_capitalizer.h"
+#include "surrounding_text_restore.h"
 
 namespace areca {
 
@@ -38,6 +39,9 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   std::unique_ptr<VietnameseEngine> engine;
   SentenceCapitalizationState sentenceCapitalization;
   bool backspaceRecoveryAwaitingRelease = false;
+  // Frontend hoặc lifecycle reset đã thay đổi text/vị trí quanh con trỏ. Cờ
+  // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một lần.
+  bool surroundingRestoreArmed = false;
   std::string resolvedProgram;
   // Bắt đầu: Theo dõi trạng thái thanh địa chỉ Chromium và từ đầu tiên
   uint64_t addrBarUiVerdictAtUsec = 0;
@@ -54,14 +58,14 @@ public:
   using BackendVerdictProtector =
       std::function<void(fcitx::InputContext &, const char *)>;
   using BackspaceRecoveryProvider = std::function<bool()>;
-
   RewriteModeHandler(fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
                      InputScheduler &scheduler,
                      BoolProvider autoCapitalizeProvider,
                      BoolProvider debugProvider,
                      BackendVerdictProtector backendVerdictProtector,
                      BackspaceRecoveryProvider backspaceRecoveryProvider,
-                     ContextBoolProvider forwardFirstCharacterProvider);
+                     ContextBoolProvider forwardFirstCharacterProvider,
+                     BoolProvider restoreSurroundingTextProvider);
   ~RewriteModeHandler();
 
   RewriteInputState *stateFor(fcitx::InputContext &inputContext) const;
@@ -82,6 +86,8 @@ private:
   void runDeferredBackspaceRecovery(fcitx::InputContext &inputContext,
                                     fcitx::KeyEvent &event,
                                     RewriteInputState &state);
+  void tryRestoreFromSurroundingText(fcitx::InputContext &inputContext,
+                                     RewriteInputState &state);
 
   fcitx::EventLoop &eventLoop_;
   StateFactory &stateFactory_;
@@ -91,6 +97,7 @@ private:
   BackendVerdictProtector backendVerdictProtector_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
   ContextBoolProvider forwardFirstCharacterProvider_;
+  BoolProvider restoreSurroundingTextProvider_;
 };
 
 } // namespace areca

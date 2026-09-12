@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"unicode"
+	"unicode/utf8"
 
 	bamboo "github.com/BambooEngine/bamboo-core"
 )
@@ -178,22 +179,170 @@ func ArecaBambooProcess(id C.uint64_t, key C.uint32_t, spellCheck C.int) *C.char
 	prevText := engine.GetProcessedString(bamboo.VietnameseMode)
 
 	engine.ProcessKey(rune(key), bamboo.VietnameseMode)
-	
+
 	text := engine.GetProcessedString(bamboo.VietnameseMode)
 	if spellCheck != 0 && bamboo.HasAnyVietnameseRune(text) && !engine.IsValid(false) {
 		if !bamboo.HasAnyVietnameseRune(prevText) {
 			for engine.GetProcessedString(bamboo.VietnameseMode) != "" {
 				engine.RemoveLastChar(true)
 			}
-			engine.ProcessString(prevText + string(key), bamboo.EnglishMode)
+			engine.ProcessString(prevText+string(rune(key)), bamboo.EnglishMode)
 			text = engine.GetProcessedString(bamboo.VietnameseMode)
 		} else {
 			engine.RestoreLastWord(false)
 			text = engine.GetProcessedString(bamboo.EnglishMode)
 		}
 	}
-	
+
 	return C.CString(text)
+}
+
+func renderKeys(inputMethod bamboo.InputMethod, flags uint, keys string) string {
+	engine := bamboo.NewEngine(inputMethod, flags)
+	engine.ProcessString(keys, bamboo.VietnameseMode)
+	return engine.GetProcessedString(bamboo.VietnameseMode)
+}
+
+func engineFlags(engine bamboo.IEngine) uint {
+	// bamboo-core hiện có GetFlag trên concrete engine nhưng chưa đưa method này
+	// vào IEngine. Type assertion giữ bridge tương thích mà không phải sửa API của
+	// submodule; fallback dùng đúng cờ mặc định lúc Areca tạo engine.
+	if reader, ok := engine.(interface{ GetFlag(uint) uint }); ok {
+		return reader.GetFlag(0)
+	}
+	return bamboo.EstdFlags
+}
+
+func baseWordAndEffects(target string) (string, map[uint8]bool, map[uint8]bool) {
+	var base strings.Builder
+	marks := make(map[uint8]bool)
+	tones := make(map[uint8]bool)
+	for _, char := range target {
+		tone := bamboo.FindToneFromChar(char)
+		if tone != bamboo.ToneNone {
+			tones[uint8(tone)] = true
+		}
+		toneless := bamboo.AddToneToChar(char, uint8(bamboo.ToneNone))
+		if mark, found := bamboo.FindMarkFromChar(toneless); found && mark != bamboo.MarkNone {
+			marks[uint8(mark)] = true
+			toneless = bamboo.AddMarkToChar(toneless, uint8(bamboo.MarkNone))
+		}
+		base.WriteRune(toneless)
+	}
+	return base.String(), marks, tones
+}
+
+func directWord(inputMethod bamboo.InputMethod, target string) string {
+	var direct strings.Builder
+	for _, char := range target {
+		toneless := bamboo.AddToneToChar(char, uint8(bamboo.ToneNone))
+		key := rune(0)
+		for _, rule := range inputMethod.Rules {
+			if rule.EffectType == bamboo.Appending && rule.EffectOn == toneless {
+				key = rule.Key
+				break
+			}
+		}
+		if key == 0 {
+			markless := bamboo.AddMarkToChar(toneless, uint8(bamboo.MarkNone))
+			direct.WriteRune(markless)
+		} else {
+			direct.WriteRune(key)
+		}
+	}
+	return direct.String()
+}
+
+func restorationEffectKeys(inputMethod bamboo.InputMethod, marks, tones map[uint8]bool) []rune {
+	seen := make(map[rune]bool)
+	var keys []rune
+	for _, rule := range inputMethod.Rules {
+		wanted := rule.EffectType == bamboo.MarkTransformation && marks[rule.Effect]
+		wanted = wanted || rule.EffectType == bamboo.ToneTransformation && tones[rule.Effect]
+		if wanted && !seen[rule.Key] {
+			seen[rule.Key] = true
+			keys = append(keys, rule.Key)
+		}
+	}
+	return keys
+}
+
+func findRenderedRestoreKeys(engine bamboo.IEngine, target string) (string, bool) {
+	inputMethod := engine.GetInputMethod()
+	flags := engineFlags(engine)
+	base, marks, tones := baseWordAndEffects(target)
+	effectKeys := restorationEffectKeys(inputMethod, marks, tones)
+	targetLength := utf8.RuneCountInString(target)
+	seeds := []string{base}
+	if direct := directWord(inputMethod, target); direct != base {
+		// Một số layout như Microsoft Vietnamese có phím nhập trực tiếp ă/â/đ
+		// thay vì biến đổi chữ cái đứng trước. Seed thứ hai phục hồi đúng các
+		// layout đó mà không làm nhánh phổ biến Telex/VNI chậm hơn.
+		seeds = append(seeds, direct)
+	}
+
+	for _, seed := range seeds {
+		if renderKeys(inputMethod, flags, seed) == target {
+			return seed, true
+		}
+		if len(effectKeys) == 0 {
+			continue
+		}
+
+		// Chỉ thử các phím tạo đúng loại dấu xuất hiện trong từ đích. Mỗi nhánh
+		// phải giữ nguyên số ký tự; phím dấu nào rơi xuống thành ký tự thường sẽ
+		// làm chuỗi dài hơn và bị loại ngay, tránh tìm kiếm tổ hợp vô hạn.
+		maxDepth := len(marks) + len(tones) + 1
+		if maxDepth > 4 {
+			maxDepth = 4
+		}
+		frontier := []string{seed}
+		for depth := 0; depth < maxDepth; depth++ {
+			var nextFrontier []string
+			for _, prefix := range frontier {
+				for _, key := range effectKeys {
+					candidate := prefix + string(key)
+					rendered := renderKeys(inputMethod, flags, candidate)
+					if utf8.RuneCountInString(rendered) != targetLength {
+						continue
+					}
+					if rendered == target {
+						return candidate, true
+					}
+					nextFrontier = append(nextFrontier, candidate)
+				}
+			}
+			frontier = nextFrontier
+		}
+	}
+	return "", false
+}
+
+//export ArecaBambooRestore
+func ArecaBambooRestore(id C.uint64_t, visibleText *C.char) C.int {
+	engine := engineFor(id)
+	if engine == nil || visibleText == nil {
+		return 0
+	}
+	target := C.GoString(visibleText)
+	if target == "" || !utf8.ValidString(target) {
+		return 0
+	}
+
+	keys, found := findRenderedRestoreKeys(engine, target)
+	if !found {
+		return 0
+	}
+
+	// Chỉ thay trạng thái thật sau khi một engine tạm đã chứng minh chuỗi phím
+	// phục hồi hiển thị đúng target. Nếu kiểm tra thất bại, composition hiện tại
+	// của người dùng được giữ nguyên.
+	if renderKeys(engine.GetInputMethod(), engineFlags(engine), keys) != target {
+		return 0
+	}
+	engine.Reset()
+	engine.ProcessString(keys, bamboo.VietnameseMode)
+	return 1
 }
 
 //export ArecaBambooFinalizeWord

@@ -127,6 +127,8 @@ private:
   std::unique_ptr<WindowFocusTracker> focusTracker_;
   InputTypeDetector inputTypeDetector_;
   std::unique_ptr<MouseClickTracker> mouseTracker_;
+  std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
+      surroundingTextWatcher_;
   std::unique_ptr<fcitx::SimpleAction> settingsAction_;
 };
 

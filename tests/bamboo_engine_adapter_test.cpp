@@ -153,6 +153,35 @@ int main() {
   assert(uncheckedBoundary.deleteCount == 0);
   assert(uncheckedBoundary.commitText == " ");
 
+  // Khôi phục toàn bộ từ đã commit phải dựng lại cả các phím tạo dấu. Nhờ đó
+  // nhấn lại đúng phím dấu vẫn giữ hành vi toggle tự nhiên của Bamboo.
+  engine.reset();
+  assert(engine.restoreFromRenderedText("Chào"));
+  display = "Chào";
+  const auto restoredTone = type(engine, 'f');
+  applyToDisplay(display, restoredTone);
+  assert(display == "Chaof");
+
+  engine.reset();
+  assert(engine.restoreFromRenderedText("tưởng"));
+  display = "tưởng";
+  applyToDisplay(display, type(engine, 's'));
+  assert(display == "tướng");
+
+  // Input rỗng bị từ chối và không được làm mất composition đang hoạt động.
+  const auto beforeRejectedRestore = engine.currentText();
+  assert(!engine.restoreFromRenderedText(""));
+  assert(engine.currentText() == beforeRejectedRestore);
+
+  for (const auto &[method, word] :
+       std::vector<std::pair<std::string, std::string>>{
+           {"Telex", "đúng"}, {"VNI", "tưởng"}, {"VIQR", "Chào"},
+           {"Microsoft layout", "đấ"}}) {
+    areca::BambooEngineAdapter restoredEngine(method);
+    assert(restoredEngine.restoreFromRenderedText(word));
+    assert(restoredEngine.currentText() == word);
+  }
+
   areca::BambooEngineAdapter basicSpellcheckEngine("Telex 2", true, false);
   for (char key : std::string("awbc")) {
     type(basicSpellcheckEngine, key);
