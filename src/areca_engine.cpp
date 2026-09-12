@@ -572,22 +572,16 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
-    // Hai tính năng tương thích mặc định chỉ tác động đến trình duyệt. Resolve
-    // program một lần để mouse reset và nhận diện address bar dùng cùng verdict.
+    // Resolve program một lần để nhận diện address bar dùng cùng verdict trong
+    // toàn bộ lượt xử lý phím.
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     const std::string program = resolveProgram(*inputContext, state);
-    const bool isBrowser = inputTypeDetector_.isBrowser(program);
 
     // Reset trước phím nhấn tiếp theo vì click có thể đã đổi vị trí con trỏ.
     // Nếu rewrite còn được bảo vệ, giữ cờ click cho lần sau thay vì làm mất nó
     // hoặc xóa trạng thái giữa một chuỗi thao tác xóa/chèn đang chạy.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
-      if (!isBrowser) {
-        if (debugEnabled())
-          FCITX_INFO() << "areca: discard mouse reset outside browser"
-                       << " program=" << program;
-        mouseTracker_->clearPendingClick();
-      } else if (scheduler_.shouldRejectReset()) {
+      if (scheduler_.shouldRejectReset()) {
         if (debugEnabled())
           FCITX_INFO() << "areca: mouse reset deferred (rewrite protection)";
       } else {

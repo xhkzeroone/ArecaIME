@@ -131,7 +131,7 @@ FCITX_CONFIGURATION(
         N_("Ép surrounding text v2 cho trình duyệt"), false};
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking",
-        N_("Tự reset bộ gõ sau khi click chuột trong trình duyệt"), true};
+        N_("Tự reset bộ gõ sau khi click chuột"), true};
     fcitx::Option<bool> forwardFirstCharacter{
         this, "ForwardFirstCharacter",
         N_("Chuyển tiếp phím đầu để tương thích trình duyệt"), true};);

@@ -13,14 +13,14 @@ editor web nhận sự kiện phím để mở chế độ soạn thảo. Bamboo
 > Areca hiện là dự án thử nghiệm. Backend fallback phát Backspace qua
 > `InputContext::forwardKey()`; hãy bật debug khi thử trên frontend mới.
 
-### Bật/tắt tính năng tương thích
+### Bật/tắt tính năng nhập liệu
 
-Hai tùy chọn tương thích trình duyệt trong **Cấu hình nâng cao**
+Hai tùy chọn nhập liệu trong **Cấu hình nâng cao**
 (`conf/areca-advanced.conf`) mặc định bật:
 
 | Khóa | Nhãn giao diện | Khi tắt |
 | --- | --- | --- |
-| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong trình duyệt | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
+| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong mọi ứng dụng | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
 | `ForwardFirstCharacter` | Chuyển tiếp phím đầu để tương thích trình duyệt | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
 
 Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
@@ -32,16 +32,15 @@ EnableMouseTracking=False
 ForwardFirstCharacter=False
 ```
 
-Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click chỉ reset
-composition khi input context hiện tại là trình duyệt; click chờ ở ứng dụng khác
-được bỏ qua. Chuyển tiếp phím đầu cũng chỉ áp dụng cho trình duyệt và không tạo
-thread/process riêng.
+Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click reset
+composition của input context hiện tại trong mọi ứng dụng. Chuyển tiếp phím đầu
+chỉ áp dụng cho trình duyệt và không tạo thread/process riêng.
 
 ## Reset khi click chuột
 
 Khi `EnableMouseTracking=True`, Areca chạy helper riêng `areca-mouse-monitor` dùng **libinput + udev**, báo nhấn
 chuột và tap touchpad qua pipe vào event loop Fcitx. Trước phím nhấn tiếp theo
-trong trình duyệt, engine reset composition nếu scheduler cho phép; nếu rewrite
+trong ứng dụng hiện tại, engine reset composition nếu scheduler cho phép; nếu rewrite
 đang được bảo vệ, cờ click được giữ cho lần sau. Di chuyển, cuộn và nhả chuột
 không yêu cầu reset.
 
