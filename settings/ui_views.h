@@ -15,7 +15,7 @@ void drawBasic(
     bool& listeningShortcut
 );
 
-void drawMacros(ConfigStore& config, size_t& pendingDeleteIndex);
+bool drawMacros(ConfigStore& config, size_t& pendingDeleteIndex);
 
 void drawAdvanced(ConfigStore& config);
 

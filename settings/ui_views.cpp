@@ -259,29 +259,59 @@ namespace areca::settings {
         endSettingsCard();
     }
 
-    void drawMacros(ConfigStore& config, size_t& pendingDeleteIndex) {
+    bool drawMacros(ConfigStore& config, size_t& pendingDeleteIndex) {
         drawPageIntro("Macro", "Mở rộng từ viết tắt thành nội dung thường dùng khi đang gõ.");
         beginSettingsCard("MacroListCard", "Danh sách macro", "Các mục bên dưới được lưu cùng cấu hình Fcitx5.");
         auto& entries = *config.macros.macros.mutableValue();
+
+        pushPrimaryButtonColors();
+        static bool focusNewMacro = false;
+        static char searchQuery[256] = "";
+        if (ImGui::Button("+  Thêm macro")) {
+            areca::MacroEntry entry;
+            entries.insert(entries.begin(), std::move(entry));
+            focusNewMacro = true;
+            searchQuery[0] = '\0';
+        }
+        ImGui::PopStyleColor(4);
+        
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(200.0F);
+        ImGui::InputTextWithHint("##search", "Tìm kiếm (Ctrl+F)...", searchQuery, sizeof(searchQuery));
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+            ImGui::SetKeyboardFocusHere(-1);
+        }
+        std::string query(searchQuery);
+        auto to_lower = [](char c) { return c >= 'A' && c <= 'Z' ? static_cast<char>(c + ('a' - 'A')) : c; };
+        std::transform(query.begin(), query.end(), query.begin(), to_lower);
+
+        std::vector<size_t> visibleIndices;
+        visibleIndices.reserve(entries.size());
         int invalidCount = 0;
-        for (const auto& e : entries) {
-            if (e.key.value().empty()) {
+
+        for (size_t index = 0; index < entries.size(); ++index) {
+            if (!query.empty()) {
+                std::string key = entries[index].key.value();
+                std::string val = entries[index].value.value();
+                std::transform(key.begin(), key.end(), key.begin(), to_lower);
+                std::transform(val.begin(), val.end(), val.begin(), to_lower);
+                if (key.find(query) == std::string::npos && val.find(query) == std::string::npos) {
+                    continue;
+                }
+            }
+            visibleIndices.push_back(index);
+            if (entries[index].key.value().empty() || entries[index].value.value().empty()) {
                 ++invalidCount;
             }
         }
-        pushPrimaryButtonColors();
-        if (ImGui::Button("+  Thêm macro")) {
-            areca::MacroEntry entry;
-            entries.push_back(std::move(entry));
-        }
-        ImGui::PopStyleColor(4);
+
         ImGui::SameLine();
         if (invalidCount > 0) {
             ImGui::TextColored(
-                ImVec4(0.70F, 0.20F, 0.16F, 1.0F), "%zu macro, %d tên rỗng", entries.size(), invalidCount
+                ImVec4(0.70F, 0.20F, 0.16F, 1.0F), "%zu macro, %d dòng lỗi", visibleIndices.size(), invalidCount
             );
         } else {
-            ImGui::TextDisabled("%zu macro", entries.size());
+            ImGui::TextDisabled("%zu macro", visibleIndices.size());
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -296,7 +326,8 @@ namespace areca::settings {
             ImGui::TableSetupColumn("Nội dung thay thế", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 120.0F);
             ImGui::TableHeadersRow();
-            for (size_t index = 0; index < entries.size(); ++index) {
+            for (size_t index : visibleIndices) {
+
                 ImGui::PushID(static_cast<int>(index));
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -304,6 +335,12 @@ namespace areca::settings {
                 if (emptyKey) {
                     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.99F, 0.89F, 0.87F, 1.0F));
                 }
+
+                if (index == 0 && focusNewMacro) {
+                    ImGui::SetKeyboardFocusHere(0);
+                    focusNewMacro = false;
+                }
+
                 inputText("##key", entries[index].key);
                 if (emptyKey) {
                     ImGui::PopStyleColor();
@@ -312,7 +349,17 @@ namespace areca::settings {
                     }
                 }
                 ImGui::TableSetColumnIndex(1);
+                bool emptyVal = entries[index].value.value().empty();
+                if (emptyVal) {
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.99F, 0.89F, 0.87F, 1.0F));
+                }
                 inputText("##value", entries[index].value);
+                if (emptyVal) {
+                    ImGui::PopStyleColor();
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("Nội dung thay thế không được rỗng");
+                    }
+                }
                 ImGui::TableSetColumnIndex(2);
 
                 const float btnWidth = 64.0F;
@@ -370,13 +417,16 @@ namespace areca::settings {
             }
             ImGui::EndPopup();
         }
+        bool macroDeleted = false;
         if (removeIndex != entries.size()) {
             entries.erase(entries.begin() + static_cast<std::ptrdiff_t>(removeIndex));
             if (pendingDeleteIndex == entries.size()) {
                 pendingDeleteIndex = SIZE_MAX;
             }
+            macroDeleted = true;
         }
         endSettingsCard();
+        return macroDeleted;
     }
 
     void drawAdvanced(ConfigStore& config) {
@@ -510,6 +560,7 @@ namespace areca::settings {
 
         drawBrandHeader();
 
+        bool triggerAutoSave = false;
         if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None)) {
             if (ImGui::BeginTabItem("Bộ gõ")) {
                 newActiveTab = 0;
@@ -527,7 +578,9 @@ namespace areca::settings {
                     "MacroScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
                     ImGuiWindowFlags_HorizontalScrollbar
                 );
-                drawMacros(config, pendingDeleteIndex);
+                if (drawMacros(config, pendingDeleteIndex)) {
+                    triggerAutoSave = true;
+                }
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
@@ -552,6 +605,26 @@ namespace areca::settings {
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
+        }
+
+        bool hasInvalidMacros = false;
+        for (const auto& e : *config.macros.macros.mutableValue()) {
+            if (e.key.value().empty() || e.value.value().empty()) {
+                hasInvalidMacros = true;
+                break;
+            }
+        }
+
+        if (triggerAutoSave) {
+            if (hasInvalidMacros) {
+                status = "Đã xóa macro, nhưng chưa lưu vì có macro bị rỗng thông tin.";
+            } else {
+                config.save();
+                savedConfig = config;
+                std::string reloadError;
+                status = reloadArecaAddon(reloadError) ? "Đã xóa macro thành công."
+                                                       : "Đã xóa macro, nhưng Areca chưa áp dụng: " + reloadError;
+            }
         }
 
         if (newActiveTab != prevTab) {
@@ -619,7 +692,8 @@ namespace areca::settings {
         ImGui::BeginChild(
             "ActionBar", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
         );
-        ImGui::BeginDisabled(!currentTabDirty);
+        
+        ImGui::BeginDisabled(!currentTabDirty || hasInvalidMacros);
         pushPrimaryButtonColors();
         if (ImGui::Button("Lưu và áp dụng", ImVec2(150.0F, 0.0F))) {
             if (activeTab == 3) {
@@ -638,7 +712,14 @@ namespace areca::settings {
             confirmReset = false;
         }
         ImGui::PopStyleColor(4);
+        ImGui::EndDisabled();
+
+        if (hasInvalidMacros && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Vui lòng xóa hoặc điền đầy đủ từ viết tắt và nội dung thay thế cho các macro trước khi lưu.");
+        }
+
         ImGui::SameLine();
+        ImGui::BeginDisabled(!currentTabDirty);
         if (ImGui::Button("Huỷ các thay đổi")) {
             if (activeTab == 0) {
                 const bool currentFallback = config.main.shiftSelectFallbackForBrowser.value();
