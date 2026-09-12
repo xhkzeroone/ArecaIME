@@ -11026,6 +11026,12 @@ void ImGui::TabItemLabelAndCloseButton(ImDrawList* draw_list, const ImRect& bb, 
         }
     }
     LogSetNextTextDecoration("/", "\\");
+    
+    // Custom: Center align tab text
+    float available_width = text_ellipsis_clip_bb.Max.x - text_ellipsis_clip_bb.Min.x;
+    if (available_width > label_size.x)
+        text_ellipsis_clip_bb.Min.x += IM_TRUNC((available_width - label_size.x) * 0.5f);
+
     RenderTextEllipsis(draw_list, text_ellipsis_clip_bb.Min, text_ellipsis_clip_bb.Max, ellipsis_max_x, label, label_end, &label_size);
 
 #if 0

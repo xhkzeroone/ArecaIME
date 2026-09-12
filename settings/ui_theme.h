@@ -1,13 +1,15 @@
 #pragma once
 
+#include "app_config.h"
+
 #include <imgui.h>
 
 namespace areca::settings {
 
-// Apply the same paper, green, and orange visual language used by the website.
-void applyArecaTheme();
+// Apply theme tương ứng với AppTheme.
+void applyTheme(AppTheme theme);
 
-// SDL clear color shown around/between Dear ImGui draw calls.
-ImVec4 arecaThemeBackground();
+// SDL clear color phù hợp với theme đang dùng.
+ImVec4 themeBackground(AppTheme theme);
 
 } // namespace areca::settings

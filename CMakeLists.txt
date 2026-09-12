@@ -96,6 +96,7 @@ if(ARECA_BUILD_SETTINGS)
 
     add_executable(areca-settings
         settings/main.cpp
+        settings/app_config.cpp
         settings/config_store.cpp
         settings/font_loader.cpp
         settings/fcitx_dbus.cpp
