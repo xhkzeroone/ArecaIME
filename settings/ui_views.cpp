@@ -23,17 +23,16 @@ namespace areca::settings {
 
         // Bright accent (e.g. Gruvbox yellow): dùng nền tối hơn + chữ tối
         // Dark accent (e.g. xanh lá, xanh dương, tím): nền accent + chữ trắng
-        const float btnScale  = brightAccent ? 0.55F : 1.10F;
-        const float hovScale  = brightAccent ? 0.45F : 0.90F;
-        const float actScale  = brightAccent ? 0.35F : 0.72F;
-        const ImVec4 textColor = brightAccent
-            ? ImVec4(0.95F, 0.95F, 0.92F, 1.0F)   // off-white trên nền tối
-            : ImVec4(1.0F,  1.0F,  1.0F,  0.95F);  // trắng trên nền accent
+        const float btnScale = brightAccent ? 0.55F : 1.10F;
+        const float hovScale = brightAccent ? 0.45F : 0.90F;
+        const float actScale = brightAccent ? 0.35F : 0.72F;
+        const ImVec4 textColor = brightAccent ? ImVec4(0.95F, 0.95F, 0.92F, 1.0F) // off-white trên nền tối
+                                              : ImVec4(1.0F, 1.0F, 1.0F, 0.95F);  // trắng trên nền accent
 
-        ImGui::PushStyleColor(ImGuiCol_Text,          textColor);
-        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(a.x * btnScale, a.y * btnScale, a.z * btnScale, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(a.x * btnScale, a.y * btnScale, a.z * btnScale, 1.0F));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(a.x * hovScale, a.y * hovScale, a.z * hovScale, 1.0F));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(a.x * actScale, a.y * actScale, a.z * actScale, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(a.x * actScale, a.y * actScale, a.z * actScale, 1.0F));
     }
 
     static void pushAttentionButtonColors() {
@@ -60,12 +59,8 @@ namespace areca::settings {
 
         drawList->PathLineTo(point(42.0F, 222.0F));
         drawList->PathLineTo(point(108.0F, 76.0F));
-        drawList->PathBezierCubicCurveTo(
-            point(113.0F, 64.0F), point(120.0F, 58.0F), point(128.0F, 58.0F)
-        );
-        drawList->PathBezierCubicCurveTo(
-            point(136.0F, 58.0F), point(143.0F, 64.0F), point(148.0F, 76.0F)
-        );
+        drawList->PathBezierCubicCurveTo(point(113.0F, 64.0F), point(120.0F, 58.0F), point(128.0F, 58.0F));
+        drawList->PathBezierCubicCurveTo(point(136.0F, 58.0F), point(143.0F, 64.0F), point(148.0F, 76.0F));
         drawList->PathLineTo(point(214.0F, 222.0F));
         drawList->PathStroke(green, 32.0F * scale);
         drawList->AddCircleFilled(point(42.0F, 222.0F), 16.0F * scale, green);
@@ -76,12 +71,8 @@ namespace areca::settings {
         drawList->AddCircleFilled(point(178.0F, 164.0F), 14.0F * scale, green);
 
         drawList->PathLineTo(point(91.0F, 25.0F));
-        drawList->PathBezierCubicCurveTo(
-            point(101.0F, 44.0F), point(113.0F, 53.0F), point(128.0F, 53.0F)
-        );
-        drawList->PathBezierCubicCurveTo(
-            point(143.0F, 53.0F), point(155.0F, 44.0F), point(165.0F, 25.0F)
-        );
+        drawList->PathBezierCubicCurveTo(point(101.0F, 44.0F), point(113.0F, 53.0F), point(128.0F, 53.0F));
+        drawList->PathBezierCubicCurveTo(point(143.0F, 53.0F), point(155.0F, 44.0F), point(165.0F, 25.0F));
         drawList->PathStroke(orange, 17.0F * scale);
         drawList->AddCircleFilled(point(91.0F, 25.0F), 8.5F * scale, orange);
         drawList->AddCircleFilled(point(165.0F, 25.0F), 8.5F * scale, orange);
@@ -97,8 +88,7 @@ namespace areca::settings {
         ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0F);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0F, 11.0F));
         ImGui::BeginChild(
-            "BrandHeader", ImVec2(0.0F, 76.0F),
-            ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
+            "BrandHeader", ImVec2(0.0F, 76.0F), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
         );
 
         const ImVec2 iconPosition = ImGui::GetCursorScreenPos();
@@ -242,8 +232,7 @@ namespace areca::settings {
         endSettingsCard();
 
         beginSettingsCard(
-            "TypingBehaviorCard", "Hành vi khi gõ",
-            "Bật các tiện ích tự động và lựa chọn tương thích ứng dụng."
+            "TypingBehaviorCard", "Hành vi khi gõ", "Bật các tiện ích tự động và lựa chọn tương thích ứng dụng."
         );
         const int behaviorColumns = ImGui::GetContentRegionAvail().x >= 760.0F ? 2 : 1;
         if (ImGui::BeginTable("TypingBehaviorGrid", behaviorColumns, ImGuiTableFlags_SizingStretchSame)) {
@@ -272,10 +261,7 @@ namespace areca::settings {
 
     void drawMacros(ConfigStore& config, size_t& pendingDeleteIndex) {
         drawPageIntro("Macro", "Mở rộng từ viết tắt thành nội dung thường dùng khi đang gõ.");
-        beginSettingsCard(
-            "MacroListCard", "Danh sách macro",
-            "Các mục bên dưới được lưu cùng cấu hình Fcitx5."
-        );
+        beginSettingsCard("MacroListCard", "Danh sách macro", "Các mục bên dưới được lưu cùng cấu hình Fcitx5.");
         auto& entries = *config.macros.macros.mutableValue();
         int invalidCount = 0;
         for (const auto& e : entries) {
@@ -291,7 +277,9 @@ namespace areca::settings {
         ImGui::PopStyleColor(4);
         ImGui::SameLine();
         if (invalidCount > 0) {
-            ImGui::TextColored(ImVec4(0.70F, 0.20F, 0.16F, 1.0F), "%zu macro, %d tên rỗng", entries.size(), invalidCount);
+            ImGui::TextColored(
+                ImVec4(0.70F, 0.20F, 0.16F, 1.0F), "%zu macro, %d tên rỗng", entries.size(), invalidCount
+            );
         } else {
             ImGui::TextDisabled("%zu macro", entries.size());
         }
@@ -300,6 +288,7 @@ namespace areca::settings {
             pendingDeleteIndex = SIZE_MAX;
         }
         size_t removeIndex = entries.size();
+        bool shouldOpenDeletePopup = false;
         if (ImGui::BeginTable(
                 "macro-table", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
             )) {
@@ -325,25 +314,61 @@ namespace areca::settings {
                 ImGui::TableSetColumnIndex(1);
                 inputText("##value", entries[index].value);
                 ImGui::TableSetColumnIndex(2);
-                if (pendingDeleteIndex == index) {
-                    pushDangerButtonColors();
-                    if (ImGui::SmallButton("Xác nhận")) {
-                        removeIndex = index;
-                        pendingDeleteIndex = SIZE_MAX;
-                    }
-                    ImGui::PopStyleColor(4);
-                    ImGui::SameLine();
-                    if (ImGui::SmallButton("Hủy")) {
-                        pendingDeleteIndex = SIZE_MAX;
-                    }
-                } else {
-                    if (ImGui::SmallButton("Xóa")) {
-                        pendingDeleteIndex = index;
-                    }
+
+                const float btnWidth = 64.0F;
+                const float columnWidth = ImGui::GetContentRegionAvail().x;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0F, (columnWidth - btnWidth) * 0.5F));
+
+                if (ImGui::Button("Xóa", ImVec2(btnWidth, 0.0F))) {
+                    pendingDeleteIndex = index;
+                    shouldOpenDeletePopup = true;
                 }
                 ImGui::PopID();
             }
             ImGui::EndTable();
+        }
+
+        if (shouldOpenDeletePopup) {
+            ImGui::OpenPopup("Xác nhận xóa macro");
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5F, 0.5F));
+        if (ImGui::BeginPopupModal("Xác nhận xóa macro", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            if (pendingDeleteIndex < entries.size()) {
+                const std::string& key = entries[pendingDeleteIndex].key.value();
+                if (key.empty()) {
+                    ImGui::TextUnformatted("Bạn có chắc chắn muốn xóa macro này không?");
+                } else {
+                    ImGui::Text("Bạn có chắc chắn muốn xóa macro \"%s\" không?", key.c_str());
+                }
+                ImGui::Dummy(ImVec2(0.0F, 12.0F));
+
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(16.0F, 6.0F));
+
+                const float btnWidth = 76.0F;
+                const float totalWidth = btnWidth * 2.0F + ImGui::GetStyle().ItemSpacing.x;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - totalWidth);
+
+                pushDangerButtonColors();
+                if (ImGui::Button("Xóa", ImVec2(btnWidth, 0.0F))) {
+                    removeIndex = pendingDeleteIndex;
+                    ImGui::CloseCurrentPopup();
+                    pendingDeleteIndex = SIZE_MAX;
+                }
+                ImGui::PopStyleColor(4);
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("Hủy", ImVec2(btnWidth, 0.0F))) {
+                    ImGui::CloseCurrentPopup();
+                    pendingDeleteIndex = SIZE_MAX;
+                }
+                ImGui::PopStyleVar();
+            } else {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
         if (removeIndex != entries.size()) {
             entries.erase(entries.begin() + static_cast<std::ptrdiff_t>(removeIndex));
@@ -356,8 +381,7 @@ namespace areca::settings {
 
     void drawAdvanced(ConfigStore& config) {
         drawPageIntro(
-            "Thiết lập nâng cao",
-            "Chỉ thay đổi các giá trị này khi một ứng dụng hoặc frontend cụ thể gặp lỗi timing."
+            "Thiết lập nâng cao", "Chỉ thay đổi các giá trị này khi một ứng dụng hoặc frontend cụ thể gặp lỗi timing."
         );
 
         beginSettingsCard("BackspaceTimingCard", "uinput Backspace", "Độ trễ khi mô phỏng thao tác xoá ký tự.");
@@ -396,8 +420,7 @@ namespace areca::settings {
         endSettingsCard();
 
         beginSettingsCard(
-            "CompatibilityCard", "Tương thích",
-            "Các cơ chế fallback dành cho ứng dụng có hành vi nhập liệu đặc biệt."
+            "CompatibilityCard", "Tương thích", "Các cơ chế fallback dành cho ứng dụng có hành vi nhập liệu đặc biệt."
         );
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Ép dùng uinput thay cho forward Backspace", config.advanced.forceUinput);
@@ -423,8 +446,8 @@ namespace areca::settings {
         ImGui::SameLine(labelWidth);
 
         constexpr std::array<const char*, 9> themeDisplayNames = {
-            "Light", "Dark", "Areca Dark", "Gruvbox", "Catppuccin Mocha",
-            "Catppuccin Latte", "Dracula", "One Dark", "Tokyo Night"
+            "Light",   "Dark",     "Areca Dark", "Gruvbox", "Catppuccin Mocha", "Catppuccin Latte",
+            "Dracula", "One Dark", "Tokyo Night"
         };
         int currentThemeIdx = static_cast<int>(appConfig.theme);
         ImGui::SetNextItemWidth(comboWidth);
@@ -438,8 +461,7 @@ namespace areca::settings {
         endSettingsCard();
 
         beginSettingsCard(
-            "FontCard", "Kích thước phông chữ",
-            "Thay đổi cỡ chữ sẽ có hiệu lực sau khi khởi động lại ứng dụng."
+            "FontCard", "Kích thước phông chữ", "Thay đổi cỡ chữ sẽ có hiệu lực sau khi khởi động lại ứng dụng."
         );
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Cỡ chữ (Font size)");
@@ -448,8 +470,8 @@ namespace areca::settings {
         int currentFontSize = static_cast<int>(appConfig.fontSize);
         ImGui::SetNextItemWidth(comboWidth);
         ImGui::SliderInt(
-            "##AppFontSizeSlider", &currentFontSize, static_cast<int>(kMinFontSize),
-            static_cast<int>(kMaxFontSize), "%d px"
+            "##AppFontSizeSlider", &currentFontSize, static_cast<int>(kMinFontSize), static_cast<int>(kMaxFontSize),
+            "%d px"
         );
         appConfig.fontSize = static_cast<float>(currentFontSize);
         endSettingsCard();
@@ -559,7 +581,8 @@ namespace areca::settings {
             return !(config.advanced == savedConfig.advanced) || fallbackDirty;
         }();
 
-        const bool tab3Dirty = (appConfig.theme != savedAppConfig.theme) || (appConfig.fontSize != savedAppConfig.fontSize);
+        const bool tab3Dirty =
+            (appConfig.theme != savedAppConfig.theme) || (appConfig.fontSize != savedAppConfig.fontSize);
 
         const bool currentTabDirty = (activeTab == 0) ? tab0Dirty
             : (activeTab == 1)                        ? tab1Dirty
@@ -575,7 +598,8 @@ namespace areca::settings {
 
         const bool tab2IsDefault = [&] {
             const bool fallbackIsDefault =
-                (config.main.shiftSelectFallbackForBrowser.value() == defaultMain.shiftSelectFallbackForBrowser.value());
+                (config.main.shiftSelectFallbackForBrowser.value()
+                 == defaultMain.shiftSelectFallbackForBrowser.value());
             return (config.advanced == areca::AdvancedConfig{}) && fallbackIsDefault;
         }();
 
@@ -593,8 +617,7 @@ namespace areca::settings {
         ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0F);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0F, 10.0F));
         ImGui::BeginChild(
-            "ActionBar", ImVec2(0.0F, 0.0F),
-            ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
+            "ActionBar", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
         );
         ImGui::BeginDisabled(!currentTabDirty);
         pushPrimaryButtonColors();
@@ -603,8 +626,8 @@ namespace areca::settings {
                 const bool fontChanged = (appConfig.fontSize != savedAppConfig.fontSize);
                 appConfig.save();
                 savedAppConfig = appConfig;
-                status = fontChanged ? "Đã lưu. Khởi động lại ứng dụng để áp dụng cỡ chữ mới."
-                                     : "Đã lưu cài đặt giao diện.";
+                status =
+                    fontChanged ? "Đã lưu. Khởi động lại ứng dụng để áp dụng cỡ chữ mới." : "Đã lưu cài đặt giao diện.";
             } else {
                 config.save();
                 savedConfig = config;
@@ -701,19 +724,16 @@ namespace areca::settings {
         const float exitButtonWidth = 90.0F;
         ImGui::SameLine(ImGui::GetWindowWidth() - exitButtonWidth - ImGui::GetStyle().WindowPadding.x);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.78F, 0.25F, 0.20F, 1.0F));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.58F, 0.14F, 0.12F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.58F, 0.14F, 0.12F, 1.0F));
         if (ImGui::Button("Thoát", ImVec2(exitButtonWidth, 0.0F))) {
             running = false;
         }
         ImGui::PopStyleColor(2);
         if (!status.empty()) {
-            const bool warning = status.find("nhưng") != std::string::npos
-                || status.find("Khởi động lại") != std::string::npos;
+            const bool warning =
+                status.find("nhưng") != std::string::npos || status.find("Khởi động lại") != std::string::npos;
             const ImVec4* tc = ImGui::GetStyle().Colors;
-            ImGui::TextColored(
-                warning ? tc[ImGuiCol_UnsavedMarker] : tc[ImGuiCol_SliderGrab],
-                "%s", status.c_str()
-            );
+            ImGui::TextColored(warning ? tc[ImGuiCol_UnsavedMarker] : tc[ImGuiCol_SliderGrab], "%s", status.c_str());
         }
         ImGui::EndChild();
         ImGui::PopStyleVar(3);
