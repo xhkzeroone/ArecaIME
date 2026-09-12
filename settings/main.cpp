@@ -1,3 +1,4 @@
+#include "app_config.h"
 #include "bamboo_engine_adapter.h"
 #include "config_store.h"
 #include "font_loader.h"
@@ -39,12 +40,15 @@ int main() {
     }
     SDL_SetRenderVSync(renderer, 1);
 
+    areca::settings::AppConfig appConfig;
+    appConfig.load();
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-    areca::settings::loadVietnameseFont();
-    areca::settings::applyArecaTheme();
+    areca::settings::loadVietnameseFont(appConfig.fontSize);
+    areca::settings::applyTheme(appConfig.theme);
     if (!ImGui_ImplSDL3_InitForSDLRenderer(window, renderer) || !ImGui_ImplSDLRenderer3_Init(renderer)) {
         SDL_Log("Không thể khởi tạo Dear ImGui: %s", SDL_GetError());
         ImGui::DestroyContext();
@@ -61,6 +65,8 @@ int main() {
     bool listeningShortcut = false;
     std::string status;
     bool running = true;
+    bool needReapplyTheme = false;
+
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -84,13 +90,22 @@ int main() {
                 running = false;
             }
         }
+
+        if (needReapplyTheme) {
+            areca::settings::applyTheme(appConfig.theme);
+            needReapplyTheme = false;
+        }
+
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
-        areca::settings::drawWindow(config, inputMethods, charsets, listeningShortcut, status, running);
+        areca::settings::drawWindow(
+            config, appConfig, inputMethods, charsets, listeningShortcut, status, running,
+            needReapplyTheme
+        );
         ImGui::Render();
 
-        const ImVec4 clearColor = areca::settings::arecaThemeBackground();
+        const ImVec4 clearColor = areca::settings::themeBackground(appConfig.theme);
         SDL_SetRenderDrawColorFloat(renderer, clearColor.x, clearColor.y, clearColor.z, clearColor.w);
         SDL_RenderClear(renderer);
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
