@@ -47,11 +47,13 @@ public:
   using StateFactory = fcitx::FactoryFor<PreeditInputState>;
   using DebugProvider = std::function<bool()>;
   using AutoCapitalizeProvider = std::function<bool()>;
+  using BackspaceRecoveryProvider = std::function<bool()>;
   using RestoreSurroundingTextProvider = std::function<bool()>;
 
   PreeditModeHandler(fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
                      DebugProvider debugProvider,
                      AutoCapitalizeProvider autoCapitalizeProvider,
+                     BackspaceRecoveryProvider backspaceRecoveryProvider,
                      RestoreSurroundingTextProvider
                          restoreSurroundingTextProvider);
   ~PreeditModeHandler();
@@ -74,11 +76,14 @@ private:
                          PreeditInputState &state);
   bool tryRestoreFromSurroundingText(fcitx::InputContext &inputContext,
                                      PreeditInputState &state);
+  bool moveFinalizedWordIntoPreedit(fcitx::InputContext &inputContext,
+                                    PreeditInputState &state);
 
   fcitx::EventLoop &eventLoop_;
   StateFactory &stateFactory_;
   DebugProvider debugProvider_;
   AutoCapitalizeProvider autoCapitalizeProvider_;
+  BackspaceRecoveryProvider backspaceRecoveryProvider_;
   RestoreSurroundingTextProvider restoreSurroundingTextProvider_;
   std::shared_ptr<void> lifetime_ = std::make_shared<int>(0);
 };

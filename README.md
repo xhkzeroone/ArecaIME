@@ -358,7 +358,7 @@ UseSurroundingV2ForBrowser=False
 | Nâng cao | `WaylandSurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2 cho frontend Wayland, mặc định 0 ms. |
 | Nâng cao | `AfterSurroundingDeleteWaitMs` | Thời gian chờ sau lệnh xóa surrounding cuối trước khi commit của v2, mặc định 1 ms. |
 | Nâng cao | `PostCommitDelayMs` | Settling window độc lập sau mọi text commit. |
-| Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
+| Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition ở cả `Rewrite` và `Preedit`, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
 | Nâng cao | `PreciseTiming` | Dùng accuracy `1µs` cho timer Backspace và post-commit; nếu tắt sẽ dùng timer coalescing mặc định của event loop. |
 | Nâng cao | `ForceUinput` | Ép dùng uinput thay cho forward Backspace khi khả dụng, mặc định `False`. |
 | Nâng cao | `UseSurroundingV2ForBrowser` | Ép dùng surrounding text v2 xóa từng ký tự khi ứng dụng là trình duyệt, mặc định `False`. |
@@ -388,6 +388,14 @@ nếu chuỗi render khớp chính xác văn bản trên màn hình. UTF-8 lỗi
 tổ hợp, từ dài quá 16 ký tự hoặc ứng dụng không quảng bá `SurroundingText` đều
 bị bỏ qua. Tính năng mặc định tắt vì chất lượng snapshot và thao tác xóa
 surrounding text phụ thuộc frontend.
+
+Trong `Preedit`, `từ + word boundary` vẫn được commit ngay để không tạo độ trễ
+khi gõ. Adapter giữ snapshot của từ vừa hoàn tất và đếm các boundary theo sau.
+Backspace đi ngược từng Space; khi chạm snapshot, Areca xóa boundary cuối cùng
+cùng từ đã commit rồi đưa riêng từ trở lại preedit để phím dấu tiếp theo có thể
+sửa nó. Việc kéo từ chỉ diễn ra khi app hỗ trợ `SurroundingText` và snapshot
+khớp chính xác; nếu không, Areca để app xử lý Backspace bình thường. Hành vi này
+độc lập với checkbox `RestoreSurroundingText`.
 
 ## Macro
 

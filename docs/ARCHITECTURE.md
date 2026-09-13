@@ -402,7 +402,7 @@ sequenceDiagram
 ## Preedit mode
 
 `PresentationMode=Preedit` không dùng `InputScheduler`, `RewriteBackend`,
-`ReliabilityChecker`, SurroundingText hay forward-Backspace. Nó có riêng:
+`ReliabilityChecker` hay forward-Backspace backend. Nó có riêng:
 
 - `PreeditInputState` cho từng input context;
 - một `BambooEngineAdapter` riêng;
@@ -411,10 +411,19 @@ sequenceDiagram
 
 Text key được xử lý tuần tự rồi hiển thị bằng client preedit nếu app khai báo
 `CapabilityFlag::Preedit`; nếu không thì dùng server-side preedit của Fcitx.
-Backspace chỉ sửa composition khi composition còn tồn tại. Space/dấu câu chạy
-macro và spell-check qua Bamboo rồi commit toàn bộ từ. Enter, Tab, Delete và
-phím di chuyển commit composition trước khi được forward. Escape và shortcut
-cũng commit composition trước, sau đó Fcitx forward nguyên `KeyEvent` gốc.
+Khi composition còn tồn tại, Backspace gọi `processBackspace()` nếu
+`BackspaceRecovery=True`, cho phép Bamboo dựng lại chuỗi spell-check như
+`nhanhsh` thành `nhánh`; khi option tắt nó chỉ xóa một ký tự. Space/dấu câu chạy
+macro và spell-check qua Bamboo rồi được commit ngay. Adapter vẫn giữ finalized
+snapshot của từ và số boundary liên tiếp. Backspace qua boundary trung gian được
+forward nguyên bản; khi chạm tới từ, handler xóa `từ + boundary cuối` bằng
+`deleteSurroundingText()` rồi đưa từ lên preedit, nhưng chỉ khi app hỗ trợ
+`SurroundingText` và snapshot khớp chính xác. Nếu không, handler reset finalized
+state và forward Backspace gốc. Phím text mới làm adapter bỏ finalized snapshot
+cũ và bắt đầu composition mới.
+Enter, Tab, Delete và phím di chuyển commit composition trước khi được forward.
+Escape và shortcut cũng commit composition trước, sau đó Fcitx forward nguyên
+`KeyEvent` gốc.
 
 Hai mode xử lý tiếng Việt chỉ dùng chung cấu hình bất biến và lớp adapter; chúng
 không dùng chung engine instance hoặc mutable input state. `RedirectModeHandler`

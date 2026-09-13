@@ -119,6 +119,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
+          [this]() { return backspaceRecoveryEnabled(); },
           [this]() { return config_.restoreSurroundingText.value(); }) {
   instance_->inputContextManager().registerProperty("arecaRewriteState",
                                                     &rewriteStateFactory_);

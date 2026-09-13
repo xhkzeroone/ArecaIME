@@ -77,10 +77,12 @@ PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
 PreeditModeHandler::PreeditModeHandler(
     fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
     DebugProvider debugProvider, AutoCapitalizeProvider autoCapitalizeProvider,
+    BackspaceRecoveryProvider backspaceRecoveryProvider,
     RestoreSurroundingTextProvider restoreSurroundingTextProvider)
     : eventLoop_(eventLoop), stateFactory_(stateFactory),
       debugProvider_(std::move(debugProvider)),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
+      backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
       restoreSurroundingTextProvider_(
           std::move(restoreSurroundingTextProvider)) {}
 
@@ -148,13 +150,35 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (isBackspace) {
     state->sentenceCapitalization.reset();
     if (state->composing.empty()) {
-      state->engine->reset();
-      event.forward();
+      try {
+        // Adapter đếm các boundary đã commit. Backspace qua boundary trung gian
+        // chỉ được forward; khi chạm tới snapshot từ, handler kéo từ lên preedit.
+        state->engine->backspace();
+        if (state->engine->currentText().empty()) {
+          event.forward();
+        } else if (moveFinalizedWordIntoPreedit(*inputContext, *state)) {
+          event.filterAndAccept();
+        } else {
+          state->engine->reset();
+          event.forward();
+        }
+      } catch (const std::exception &error) {
+        FCITX_ERROR() << "areca: preedit finalized-word Backspace failed: "
+                      << error.what();
+        clearComposition(*inputContext, *state);
+        event.forward();
+      }
       return;
     }
     try {
-      state->engine->backspace();
-      state->composing = state->engine->currentText();
+      if (backspaceRecoveryProvider_()) {
+        // Recovery tái chạy chuỗi phím Latin còn lại qua Bamboo sau khi xóa;
+        // đây là nhánh biến `nhanhsh` + Backspace thành `nhánh`.
+        state->composing = state->engine->processBackspace().newText;
+      } else {
+        state->engine->backspace();
+        state->composing = state->engine->currentText();
+      }
       updatePreedit(*inputContext, *state);
       event.filterAndAccept();
     } catch (const std::exception &error) {
@@ -211,7 +235,6 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     const bool nativeBoundary =
         result.currentText.empty() && committed == utf8Text;
     if (nativeBoundary) {
-      state->engine->reset();
       state->composing.clear();
       updatePreedit(*inputContext, *state);
       event.forward();
@@ -220,8 +243,10 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
 
     if (!committed.empty()) {
       inputContext->commitString(committed);
+      updateSurroundingCacheAfterCommit(*inputContext, committed);
     }
-    state->engine->reset();
+    // Không reset ở boundary: adapter giữ snapshot của từ và số boundary đã
+    // commit để Backspace có thể đi ngược nhiều Space giống mode Rewrite.
     state->composing.clear();
     updatePreedit(*inputContext, *state);
     event.filterAndAccept();
@@ -237,6 +262,51 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     event.forward();
   }
+}
+
+bool PreeditModeHandler::moveFinalizedWordIntoPreedit(
+    fcitx::InputContext &inputContext, PreeditInputState &state) {
+  const auto &word = state.engine->currentText();
+  if (word.empty() || !fcitx::utf8::validate(word) ||
+      !inputContext.capabilityFlags().test(
+          fcitx::CapabilityFlag::SurroundingText)) {
+    return false;
+  }
+  const auto wordLength = static_cast<uint32_t>(fcitx::utf8::length(word));
+  if (!wordLength) {
+    return false;
+  }
+
+  auto &surrounding = inputContext.surroundingText();
+  if (!surrounding.isValid() || surrounding.cursor() != surrounding.anchor() ||
+      !surrounding.cursor() ||
+      extractSurroundingRestoreCandidate(
+          surrounding.text(), surrounding.cursor(), surrounding.cursor())) {
+    return false;
+  }
+
+  const auto candidate = extractSurroundingRestoreCandidate(
+      surrounding.text(), surrounding.cursor() - 1,
+      surrounding.cursor() - 1);
+  if (!candidate || candidate->text != word) {
+    return false;
+  }
+
+  // Chỉ xóa khi snapshot chứng minh ngay trước con trỏ là đúng `từ + boundary`.
+  // Không có SurroundingText hoặc snapshot lệch thì để app xử lý Backspace gốc.
+  const uint32_t deleteCount = wordLength + 1;
+  inputContext.deleteSurroundingText(-static_cast<int>(deleteCount),
+                                     deleteCount);
+  updateSurroundingCacheAfterDelete(inputContext,
+                                    -static_cast<int>(deleteCount),
+                                    deleteCount);
+  state.composing = word;
+  updatePreedit(inputContext, state);
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: preedit restored finalized word"
+                 << " text=" << word << " erase=surrounding";
+  }
+  return true;
 }
 
 bool PreeditModeHandler::tryRestoreFromSurroundingText(
@@ -315,6 +385,7 @@ void PreeditModeHandler::commitComposition(fcitx::InputContext &inputContext,
                                            PreeditInputState &state) {
   if (!state.composing.empty()) {
     inputContext.commitString(state.composing);
+    updateSurroundingCacheAfterCommit(inputContext, state.composing);
   }
   state.engine->reset();
   state.composing.clear();
