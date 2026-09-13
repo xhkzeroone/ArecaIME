@@ -36,6 +36,9 @@ struct PreeditInputState final : public fcitx::InputContextProperty {
   std::unique_ptr<VietnameseEngine> engine;
   std::string composing;
   SentenceCapitalizationState sentenceCapitalization;
+  // Frontend vừa đổi text hoặc vị trí con trỏ. Phím text kế tiếp được phép thử
+  // chuyển từ đã commit trước con trỏ trở lại thành preedit đúng một lần.
+  bool surroundingRestoreArmed = false;
   std::unique_ptr<fcitx::EventSourceTime> delayedResetTimer;
 };
 
@@ -44,10 +47,13 @@ public:
   using StateFactory = fcitx::FactoryFor<PreeditInputState>;
   using DebugProvider = std::function<bool()>;
   using AutoCapitalizeProvider = std::function<bool()>;
+  using RestoreSurroundingTextProvider = std::function<bool()>;
 
   PreeditModeHandler(fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
                      DebugProvider debugProvider,
-                     AutoCapitalizeProvider autoCapitalizeProvider);
+                     AutoCapitalizeProvider autoCapitalizeProvider,
+                     RestoreSurroundingTextProvider
+                         restoreSurroundingTextProvider);
   ~PreeditModeHandler();
 
   void activate(fcitx::InputContext &inputContext) override;
@@ -66,11 +72,14 @@ private:
                         PreeditInputState &state);
   void commitComposition(fcitx::InputContext &inputContext,
                          PreeditInputState &state);
+  bool tryRestoreFromSurroundingText(fcitx::InputContext &inputContext,
+                                     PreeditInputState &state);
 
   fcitx::EventLoop &eventLoop_;
   StateFactory &stateFactory_;
   DebugProvider debugProvider_;
   AutoCapitalizeProvider autoCapitalizeProvider_;
+  RestoreSurroundingTextProvider restoreSurroundingTextProvider_;
   std::shared_ptr<void> lifetime_ = std::make_shared<int>(0);
 };
 

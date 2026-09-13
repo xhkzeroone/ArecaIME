@@ -9,8 +9,11 @@
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/inputpanel.h>
+#include <fcitx/surroundingtext.h>
 
 #include "preedit_logic.h"
+#include "surrounding_text_cache.h"
+#include "surrounding_text_restore.h"
 
 namespace areca {
 namespace {
@@ -73,10 +76,13 @@ PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
 
 PreeditModeHandler::PreeditModeHandler(
     fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
-    DebugProvider debugProvider, AutoCapitalizeProvider autoCapitalizeProvider)
+    DebugProvider debugProvider, AutoCapitalizeProvider autoCapitalizeProvider,
+    RestoreSurroundingTextProvider restoreSurroundingTextProvider)
     : eventLoop_(eventLoop), stateFactory_(stateFactory),
       debugProvider_(std::move(debugProvider)),
-      autoCapitalizeProvider_(std::move(autoCapitalizeProvider)) {}
+      autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
+      restoreSurroundingTextProvider_(
+          std::move(restoreSurroundingTextProvider)) {}
 
 PreeditModeHandler::~PreeditModeHandler() { lifetime_.reset(); }
 
@@ -187,6 +193,8 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
 
+  const bool restoredBeforeKey =
+      tryRestoreFromSurroundingText(*inputContext, *state);
   try {
     const auto result = state->engine->process(codepoint, utf8Text);
     if (!result.newText.empty()) {
@@ -220,9 +228,60 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   } catch (const std::exception &error) {
     FCITX_ERROR() << "areca: preedit Bamboo processing failed: "
                   << error.what();
-    clearComposition(*inputContext, *state);
+    // Nếu từ cũ đã bị kéo khỏi ứng dụng vào preedit, commit nó trả lại trước
+    // khi forward phím lỗi để không làm mất nội dung của người dùng.
+    if (restoredBeforeKey) {
+      commitComposition(*inputContext, *state);
+    } else {
+      clearComposition(*inputContext, *state);
+    }
     event.forward();
   }
+}
+
+bool PreeditModeHandler::tryRestoreFromSurroundingText(
+    fcitx::InputContext &inputContext, PreeditInputState &state) {
+  if (!state.surroundingRestoreArmed) {
+    return false;
+  }
+  state.surroundingRestoreArmed = false;
+
+  const bool supported =
+      restoreSurroundingTextProvider_() && state.outputCharset == "Unicode" &&
+      state.engine && state.composing.empty() &&
+      state.engine->currentText().empty() &&
+      !inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Password) &&
+      inputContext.capabilityFlags().test(
+          fcitx::CapabilityFlag::SurroundingText);
+  if (!supported) {
+    return false;
+  }
+
+  const auto &surrounding = inputContext.surroundingText();
+  if (!surrounding.isValid()) {
+    return false;
+  }
+  const auto candidate = extractSurroundingRestoreCandidate(
+      surrounding.text(), surrounding.cursor(), surrounding.anchor());
+  if (!candidate ||
+      !state.engine->restoreFromRenderedText(candidate->text)) {
+    return false;
+  }
+
+  // Preedit sẽ tự hiển thị và commit lại cả từ. Xóa bản đã commit trước khi đưa
+  // nó vào composition để frontend không hiển thị hai bản giống nhau.
+  inputContext.deleteSurroundingText(
+      -static_cast<int>(candidate->characterCount), candidate->characterCount);
+  updateSurroundingCacheAfterDelete(
+      inputContext, -static_cast<int>(candidate->characterCount),
+      candidate->characterCount);
+  state.composing = candidate->text;
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: preedit surrounding restore applied"
+                 << " text=" << candidate->text
+                 << " chars=" << candidate->characterCount;
+  }
+  return true;
 }
 
 void PreeditModeHandler::updatePreedit(fcitx::InputContext &inputContext,
@@ -278,6 +337,9 @@ void PreeditModeHandler::resetContext(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
     state->delayedResetTimer.reset();
     clearComposition(inputContext, *state);
+    // Reset/focus/click có thể đặt con trỏ vào một từ đã commit. Cho phép phím
+    // text kế tiếp thử chuyển từ đó vào preedit nếu người dùng bật tính năng.
+    state->surroundingRestoreArmed = true;
   }
 }
 

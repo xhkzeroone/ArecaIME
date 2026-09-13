@@ -472,15 +472,17 @@ completion callback đúng một lần sau commit.
 
 ## Surrounding cache
 
-Areca không tự chỉnh object `surroundingText()` mà Fcitx đang cache sau delete,
-selection delete hoặc commit. Addon chờ frontend gửi snapshot mới từ ứng dụng.
+Các backend/helper cập nhật object `surroundingText()` mà Fcitx đang cache ngay
+sau delete hoặc commit để những thao tác kế tiếp không đọc snapshot cũ. Frontend
+vẫn là nguồn dữ liệu chính và snapshot mới của ứng dụng sẽ thay thế cache này.
 
 ## Khôi phục Bamboo state từ surrounding text
 
-`InputContextSurroundingTextUpdated` chỉ arm một lần thử cho `RewriteInputState`.
-Ở phím text hợp lệ kế tiếp, `RewriteModeHandler` chỉ đọc từ đứng ngay trước con
-trỏ khi `RestoreSurroundingText=True`, charset là `Unicode`, không có
-selection/password và scheduler không có transaction đang chạy.
+`InputContextSurroundingTextUpdated` arm một lần thử cho cả `RewriteInputState`
+và `PreeditInputState`. Ở phím text hợp lệ kế tiếp, handler đang hoạt động chỉ
+đọc từ đứng ngay trước con trỏ khi `RestoreSurroundingText=True`, charset là
+`Unicode` và không có selection/password. `RewriteModeHandler` còn yêu cầu
+scheduler không có transaction đang chạy.
 
 Extractor lấy tối đa 16 chữ cái Latin/tiếng Việt Unicode dựng sẵn. Chuỗi UTF-8
 lỗi, dấu tổ hợp và từ bị cắt bởi giới hạn đều bị từ chối. Khi option tắt,
@@ -492,6 +494,13 @@ engine tạm, và yêu cầu output khớp chính xác từ trên màn hình. Ch
 thành công, cùng chuỗi phím mới được nạp vào engine thật. Adapter đồng bộ
 `renderedText_`, nên delta do phím kế tiếp tạo ra đi qua scheduler và backend
 rewrite hiện có; không có đường xóa/commit riêng cho tính năng này.
+
+`PreeditModeHandler` không thể giữ nguyên bản text đã commit vì composition mới
+sẽ hiển thị trùng ngay sau nó. Sau khi bridge xác minh state, handler gọi
+`deleteSurroundingText(-N, N)`, cập nhật surrounding cache rồi đặt từ cũ vào
+`state.composing`. Phím hiện tại tiếp tục xử lý trên state đó và toàn bộ từ được
+hiển thị dưới dạng preedit. Nếu Bamboo ném lỗi sau khi xóa, handler commit bản
+từ cũ trở lại trước khi forward phím để tránh mất dữ liệu.
 
 ## Reset barrier
 

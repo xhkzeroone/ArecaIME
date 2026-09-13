@@ -338,6 +338,20 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(areca-preedit-surrounding-restore-test
+        tests/preedit_surrounding_restore_test.cpp src/preedit_mode.cpp
+        src/preedit_logic.cpp src/bamboo_engine_adapter.cpp
+        src/sentence_capitalizer.cpp src/surrounding_text_cache.cpp
+        src/surrounding_text_restore.cpp)
+    target_compile_features(areca-preedit-surrounding-restore-test PRIVATE cxx_std_20)
+    target_compile_options(areca-preedit-surrounding-restore-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-preedit-surrounding-restore-test PRIVATE src)
+    target_link_libraries(areca-preedit-surrounding-restore-test PRIVATE
+        areca-bamboo Fcitx5::Core Fcitx5::Utils pthread dl m)
+    add_test(NAME preedit-surrounding-restore
+        COMMAND areca-preedit-surrounding-restore-test)
+
     add_executable(areca-rewrite-feature-toggle-test
         tests/rewrite_feature_toggle_test.cpp src/rewrite_mode.cpp
         src/input_scheduler.cpp src/surrounding_text_cache.cpp

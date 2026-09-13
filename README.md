@@ -341,7 +341,7 @@ UseSurroundingV2ForBrowser=False
 | Chính | `BambooInputMethod` | Tên input method được định nghĩa bởi Bamboo, mặc định `Telex 2`. |
 | Chính | `OutputCharset` | Bảng mã do Bamboo cung cấp, mặc định `Unicode`; gồm Unicode dựng sẵn/tổ hợp cùng các bảng mã tương thích cũ như TCVN3, VNI Windows, VIQR… |
 | Chính | `SpellcheckMode` | Chế độ kiểm tra cấu trúc âm tiết của Bamboo; có ba mức: `"Không kiểm tra (Tắt)"` – tắt hoàn toàn; `"Khôi phục từ sau khi gõ xong"` – tại word boundary, tự khôi phục từ tiếng Việt không hợp lệ về chuỗi phím Latin ban đầu; `"Khôi phục từ ngay trong lúc gõ"` – như mode 2 nhưng khôi phục trong khi gõ từng ký tự. Mặc định `"Khôi phục từ ngay trong lúc gõ"`. |
-| Chính | `RestoreSurroundingText` | Cho phép nạp lại và sửa từ đã commit ngay trước con trỏ trong mode `Rewrite`. Đây là tính năng thử nghiệm và mặc định `False`. |
+| Chính | `RestoreSurroundingText` | Cho phép nạp lại và sửa từ đã commit ngay trước con trỏ trong mode `Rewrite` và `Preedit`. Đây là tính năng thử nghiệm và mặc định `False`. |
 | Chính | `ModernStyle` | `True` đặt dấu kiểu `hoà`, `thuý`; `False` dùng kiểu `hòa`, `thúy`. |
 | Chính | `AutoCapitalizeAfterPunctuation` | Tự viết hoa chữ ASCII đầu tiên sau `.`, `!`, `?` và khoảng trắng. Nhiều khoảng trắng vẫn giữ trạng thái chờ; `Enter` không kích hoạt. |
 | Chính | `EnableMacro` | Bật thay thế từ viết tắt tại dấu cách hoặc dấu câu. |
@@ -374,17 +374,19 @@ từ `bamboo-core`, không được hard-code trong addon.
 
 Checkbox `RestoreSurroundingText` cho phép tiếp tục sửa từ đã được ứng dụng
 commit, tương tự cơ chế surrounding text của UniKey. Khi bật, Areca nạp lại từ
-tiếng Việt Unicode dựng sẵn ngay trước con trỏ; phím dấu tiếp theo có thể khiến
-scheduler xóa từ cũ và commit từ mới, ví dụ `tưởng` + `s` thành `tướng`. Khi
-tắt, Areca không đọc lại hoặc sửa từ cũ.
+tiếng Việt Unicode dựng sẵn ngay trước con trỏ; phím dấu tiếp theo có thể đổi
+`tưởng` + `s` thành `tướng`. Trong `Rewrite`, thay đổi đi qua scheduler và
+rewrite backend hiện có. Trong `Preedit`, Areca xóa bản đã commit rồi chuyển cả
+từ vào composition để không hiển thị trùng; từ được commit lại khi preedit kết
+thúc. Khi tắt, Areca không đọc lại hoặc sửa từ cũ.
 
 Areca chỉ thử khôi phục một lần sau khi frontend cập nhật surrounding text và
-chỉ khi đang dùng `Rewrite`, bảng mã `Unicode`, con trỏ không có selection,
-field không phải password và queue rewrite đang rảnh. Bridge dựng lại state
-Bamboo bằng kiểu gõ hiện tại trong một engine tạm, rồi chỉ nhận kết quả nếu
-chuỗi render khớp chính xác văn bản trên màn hình. UTF-8 lỗi, Unicode dấu tổ
-hợp, từ dài quá 16 ký tự hoặc ứng dụng không quảng bá `SurroundingText` đều bị
-bỏ qua. Tính năng mặc định tắt vì chất lượng snapshot và thao tác xóa
+chỉ khi đang dùng bảng mã `Unicode`, con trỏ không có selection và field không
+phải password; riêng `Rewrite` còn yêu cầu queue đang rảnh. Bridge dựng lại
+state Bamboo bằng kiểu gõ hiện tại trong một engine tạm, rồi chỉ nhận kết quả
+nếu chuỗi render khớp chính xác văn bản trên màn hình. UTF-8 lỗi, Unicode dấu
+tổ hợp, từ dài quá 16 ký tự hoặc ứng dụng không quảng bá `SurroundingText` đều
+bị bỏ qua. Tính năng mặc định tắt vì chất lượng snapshot và thao tác xóa
 surrounding text phụ thuộc frontend.
 
 ## Macro

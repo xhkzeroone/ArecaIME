@@ -118,7 +118,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       preeditHandler_(
           instance_->eventLoop(), preeditStateFactory_,
           [this]() { return debugEnabled(); },
-          [this]() { return config_.autoCapitalizeAfterPunctuation.value(); }) {
+          [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
+          [this]() { return config_.restoreSurroundingText.value(); }) {
   instance_->inputContextManager().registerProperty("arecaRewriteState",
                                                     &rewriteStateFactory_);
   instance_->inputContextManager().registerProperty("arecaPreeditState",
@@ -135,6 +136,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
         // lifecycle và để nhận snapshot surrounding mới nhất.
         if (auto *state = rewriteHandler_.stateFor(*inputContext)) {
+          state->surroundingRestoreArmed = true;
+        }
+        if (auto *state = preeditHandler_.stateFor(*inputContext)) {
           state->surroundingRestoreArmed = true;
         }
       });
