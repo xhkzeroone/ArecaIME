@@ -223,8 +223,8 @@ int main() {
               ->surroundingRestoreArmed);
   fcitx::KeyEvent nextLetter(&boundaryContext, fcitx::Key(FcitxKey_a));
   boundaryHandler.handleKeyEvent(nextLetter);
-  assert(boundaryContext.events ==
-         std::vector<std::string>{"commit: ", "commit:a"});
+  assert((boundaryContext.events ==
+          std::vector<std::string>{"commit: ", "commit:a"}));
   assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
          " a");
 }
