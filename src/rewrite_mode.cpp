@@ -12,6 +12,12 @@
 namespace areca {
 namespace {
 
+bool isWordRestoreTrigger(uint32_t codepoint) {
+  return (codepoint >= 'A' && codepoint <= 'Z') ||
+         (codepoint >= 'a' && codepoint <= 'z') ||
+         (codepoint >= 0x00C0 && codepoint <= 0x024F);
+}
+
 fcitx::KeySym normalizeRewriteKeypadSym(fcitx::KeySym sym) {
   if (sym >= FcitxKey_KP_0 && sym <= FcitxKey_KP_9) {
     return static_cast<fcitx::KeySym>(FcitxKey_0 + (sym - FcitxKey_KP_0));
@@ -434,7 +440,11 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   // Chỉ phục hồi ngay trước một phím text hợp lệ. Shortcut, phím điều hướng và
   // lifecycle event không được phép hút từ cũ vào Bamboo rồi để trạng thái treo.
-  tryRestoreFromSurroundingText(*inputContext, *state);
+  if (isWordRestoreTrigger(codepoint)) {
+    tryRestoreFromSurroundingText(*inputContext, *state);
+  } else {
+    state->surroundingRestoreArmed = false;
+  }
   // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
   // đổi ký tự thì phải commit ký tự mới, vì phím gốc vẫn mang ký tự chưa đổi.

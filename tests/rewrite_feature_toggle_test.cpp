@@ -178,4 +178,45 @@ int main() {
   assert(restoreContext.events == std::vector<std::string>{"commit:a"});
   assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
          "nha");
+
+  fcitx::InputContextManager boundaryManager;
+  areca::RewriteModeHandler::StateFactory boundaryFactory(
+      [](fcitx::InputContext &) {
+        auto *state = new areca::RewriteInputState(
+            "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+        state->engine = std::make_unique<TestEngine>();
+        return state;
+      });
+  boundaryManager.registerProperty("rewrite-boundary-test", &boundaryFactory);
+  TestInputContext boundaryContext(boundaryManager, "org.gnome.TextEditor");
+  boundaryContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  boundaryContext.surroundingText().setText("nh", 2, 2);
+  areca::InputScheduler boundaryScheduler(
+      restoreLoop,
+      [&](fcitx::InputContext &ic) {
+        return ic.propertyFor(&boundaryFactory)->engine.get();
+      },
+      [] {
+        areca::SchedulerTiming timing;
+        timing.postCommitDelayMs = 0;
+        return timing;
+      },
+      [] { return false; },
+      [](fcitx::InputContext &, const areca::BambooResult &) {
+        return areca::RewriteBackendSelection{};
+      });
+  areca::RewriteModeHandler boundaryHandler(
+      restoreLoop, boundaryFactory, boundaryScheduler, [] { return false; },
+      [] { return false; }, [](fcitx::InputContext &, const char *) {},
+      [] { return false; }, [](fcitx::InputContext &) { return false; },
+      [] { return true; });
+  boundaryHandler.activate(boundaryContext);
+  fcitx::KeyEvent punctuation(&boundaryContext, fcitx::Key(FcitxKey_period));
+  boundaryHandler.handleKeyEvent(punctuation);
+  fcitx::KeyEvent nextLetter(&boundaryContext, fcitx::Key(FcitxKey_a));
+  boundaryHandler.handleKeyEvent(nextLetter);
+  assert(boundaryContext.events ==
+         std::vector<std::string>{"commit:.", "commit:a"});
+  assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
+         ".a");
 }
