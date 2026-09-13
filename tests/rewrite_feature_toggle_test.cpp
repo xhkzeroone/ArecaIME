@@ -37,6 +37,10 @@ public:
 
 class TestEngine final : public areca::VietnameseEngine {
 public:
+  bool canProcessKey(uint32_t codepoint) const override {
+    return codepoint != ' ' && codepoint != '.';
+  }
+
   areca::BambooResult process(uint32_t, const std::string &text) override {
     areca::BambooResult result;
     result.currentText = current_;
@@ -51,7 +55,7 @@ public:
   void backspace() override {}
   void reset() override { current_.clear(); }
   bool restoreFromRenderedText(const std::string &text) override {
-    if (text != "nh") {
+    if (text.empty()) {
       return false;
     }
     current_ = text;
@@ -190,7 +194,9 @@ int main() {
   boundaryManager.registerProperty("rewrite-boundary-test", &boundaryFactory);
   TestInputContext boundaryContext(boundaryManager, "org.gnome.TextEditor");
   boundaryContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  boundaryContext.surroundingText().setText("nh", 2, 2);
+  // Mô phỏng snapshot cũ sau khi macro `k → không` đã được commit bởi dấu
+  // chấm nhưng frontend chưa kịp trả snapshot chứa dấu chấm.
+  boundaryContext.surroundingText().setText("không", 5, 5);
   areca::InputScheduler boundaryScheduler(
       restoreLoop,
       [&](fcitx::InputContext &ic) {
@@ -211,12 +217,14 @@ int main() {
       [] { return false; }, [](fcitx::InputContext &) { return false; },
       [] { return true; });
   boundaryHandler.activate(boundaryContext);
-  fcitx::KeyEvent punctuation(&boundaryContext, fcitx::Key(FcitxKey_period));
-  boundaryHandler.handleKeyEvent(punctuation);
+  fcitx::KeyEvent trailingSpace(&boundaryContext, fcitx::Key(FcitxKey_space));
+  boundaryHandler.handleKeyEvent(trailingSpace);
+  assert(!boundaryContext.propertyFor(&boundaryFactory)
+              ->surroundingRestoreArmed);
   fcitx::KeyEvent nextLetter(&boundaryContext, fcitx::Key(FcitxKey_a));
   boundaryHandler.handleKeyEvent(nextLetter);
   assert(boundaryContext.events ==
-         std::vector<std::string>{"commit:.", "commit:a"});
+         std::vector<std::string>{"commit: ", "commit:a"});
   assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
-         ".a");
+         " a");
 }

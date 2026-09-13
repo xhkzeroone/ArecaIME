@@ -5,6 +5,7 @@
 
 int main() {
   using areca::isBrowserAutocomplete;
+  using areca::isSelectionImmediatelyAfterText;
 
   assert(areca::isBrowserLikeProgram("google-chrome"));
   assert(areca::isBrowserLikeProgram("/usr/bin/firefox.desktop"));
@@ -36,6 +37,17 @@ int main() {
 
   // Autocomplete never spans a newline.
   assert(!isBrowserAutocomplete("go\nogle", 2, 7, "go"));
+
+  // Hyprland/Niri có thể tạm báo cursor/anchor lệch vào giữa composition sau
+  // rewrite. Selection stale này không được làm tăng số Backspace từ 3 lên 4,
+  // nếu không `dựng` có thể mất chữ `d` khi người dùng đổi dấu liên tục.
+  assert(!isSelectionImmediatelyAfterText("dựng", 3, 4, "dựng"));
+  assert(!isSelectionImmediatelyAfterText("dựng", 4, 3, "dựng"));
+
+  // Selection thật bắt đầu ngay sau toàn bộ composition vẫn cần một Backspace
+  // phụ để xóa selection trước khi backend sửa phần text đã gõ.
+  assert(isSelectionImmediatelyAfterText("dựngx", 4, 5, "dựng"));
+  assert(isSelectionImmediatelyAfterText("dựngx", 5, 4, "dựng"));
 
   std::cout << "Browser autocomplete tests passed\n";
   return 0;

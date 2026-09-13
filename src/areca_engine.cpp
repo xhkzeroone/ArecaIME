@@ -313,6 +313,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       evaluateReliability(inputContext, result.currentText, program);
   const bool hasActiveSelection =
       surrounding.isValid() && surrounding.cursor() != surrounding.anchor();
+  const bool selectionMatchesCurrentText =
+      hasActiveSelection && isSelectionImmediatelyAfterText(
+                                surrounding.text(), surrounding.cursor(),
+                                surrounding.anchor(), result.currentText);
 
   if (decision.browserAutocomplete || hasActiveSelection || inAddressBar) {
     uint32_t additional = 0;
@@ -322,7 +326,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         !state->addrBarHadSpace) {
       additional = 1;
       fullReplace = true;
-    } else if (hasActiveSelection || decision.browserAutocomplete) {
+    } else if (selectionMatchesCurrentText || decision.browserAutocomplete) {
       additional = 1;
     }
     // Kết thúc: FullReplace và 1 Backspace phụ cho từ đầu tiên trong thanh địa chỉ
@@ -331,6 +335,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << forwardBackspaceBackend_.name() << " is_url=" << isUrl
                    << " in_address_bar=" << inAddressBar
                    << " active_selection=" << hasActiveSelection
+                   << " selection_matches_current="
+                   << selectionMatchesCurrentText
                    << " full_replace=" << fullReplace
                    << " additional_backspaces=" << additional
                    << " bamboo_delete=" << result.deleteCount;

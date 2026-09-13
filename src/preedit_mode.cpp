@@ -217,8 +217,14 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
 
-  const bool restoredBeforeKey =
-      tryRestoreFromSurroundingText(*inputContext, *state);
+  // Dùng rule của input method thay vì tự phân loại chữ/dấu. Boundary kết thúc
+  // macro phải đi thẳng vào Bamboo; VNI/VIQR vẫn được restore bằng phím riêng.
+  bool restoredBeforeKey = false;
+  if (state->engine->canProcessKey(codepoint)) {
+    restoredBeforeKey = tryRestoreFromSurroundingText(*inputContext, *state);
+  } else {
+    state->surroundingRestoreArmed = false;
+  }
   try {
     const auto result = state->engine->process(codepoint, utf8Text);
     if (!result.newText.empty()) {

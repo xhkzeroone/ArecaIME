@@ -16,6 +16,7 @@ struct MacroDefinition {
 class VietnameseEngine {
 public:
   virtual ~VietnameseEngine() = default;
+  virtual bool canProcessKey(uint32_t codepoint) const = 0;
   virtual BambooResult process(uint32_t codepoint,
                                const std::string &utf8Text) = 0;
   virtual BambooResult processBackspace() = 0;
@@ -42,6 +43,7 @@ public:
   BambooEngineAdapter(const BambooEngineAdapter &) = delete;
   BambooEngineAdapter &operator=(const BambooEngineAdapter &) = delete;
 
+  bool canProcessKey(uint32_t codepoint) const override;
   BambooResult process(uint32_t codepoint,
                        const std::string &utf8Text) override;
   BambooResult processBackspace() override;

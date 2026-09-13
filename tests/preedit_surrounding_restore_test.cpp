@@ -108,6 +108,24 @@ int main() {
   assert(disabledContext.deletes.empty());
   assert(disabledContext.propertyFor(&factory)->composing == "a");
 
+  // Regression macro `k → không`: snapshot thiếu dấu chấm có thể tới trễ sau
+  // khi macro đã commit. Space là boundary nên không được hút "không" vào
+  // Bamboo; nếu restore nhầm sẽ xóa từ và tạo kết quả lặp kiểu "không.hông ".
+  enabled = true;
+  TestInputContext macroBoundaryContext(manager);
+  macroBoundaryContext.setCapabilityFlags(
+      fcitx::CapabilityFlag::SurroundingText);
+  macroBoundaryContext.surroundingText().setText("không", 5, 5);
+  handler.activate(macroBoundaryContext);
+  fcitx::KeyEvent macroSpace(&macroBoundaryContext,
+                             fcitx::Key(FcitxKey_space));
+  handler.handleKeyEvent(macroSpace);
+  assert(!macroSpace.accepted());
+  assert(macroBoundaryContext.deletes.empty());
+  assert(macroBoundaryContext.propertyFor(&factory)->composing.empty());
+  assert(!macroBoundaryContext.propertyFor(&factory)
+              ->surroundingRestoreArmed);
+
   // App không có SurroundingText không bị xóa text phỏng đoán: kể cả adapter
   // còn snapshot, handler reset nó và forward Backspace gốc cho ứng dụng.
   TestInputContext noSurroundingContext(manager);

@@ -28,6 +28,14 @@ void applyToDisplay(std::string &display,
 int main() {
   areca::BambooEngineAdapter engine("Telex 2");
 
+  // Handler phải hỏi đúng rule Bamboo thay vì đoán theo nhóm Unicode: dấu câu
+  // là boundary trong Telex 2, còn phím ngoặc vẫn là phím tạo ơ/ư.
+  assert(engine.canProcessKey('a'));
+  assert(engine.canProcessKey('['));
+  assert(!engine.canProcessKey(' '));
+  assert(!engine.canProcessKey('.'));
+  assert(!engine.canProcessKey(0x00D7));
+
   auto a = type(engine, 'a');
   assert(a.currentText.empty());
   assert(a.newText == "a");
@@ -223,11 +231,16 @@ int main() {
   }
 
   areca::BambooEngineAdapter vniEngine("VNI");
+  assert(vniEngine.canProcessKey('1'));
+  assert(!vniEngine.canProcessKey(' '));
   areca::BambooResult vniResult;
   for (char key : std::string("a61")) {
     vniResult = type(vniEngine, key);
   }
   assert(vniResult.newText == "ấ");
+
+  areca::BambooEngineAdapter viqrEngine("VIQR");
+  assert(viqrEngine.canProcessKey('.'));
 
   areca::BambooEngineAdapter combiningEngine(
       "Telex 2", true, true, true, "Unicode tổ hợp");

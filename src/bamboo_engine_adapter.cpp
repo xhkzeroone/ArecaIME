@@ -94,6 +94,10 @@ BambooEngineAdapter::~BambooEngineAdapter() {
   }
 }
 
+bool BambooEngineAdapter::canProcessKey(uint32_t codepoint) const {
+  return ArecaBambooCanProcess(handle_, codepoint) != 0;
+}
+
 BambooResult BambooEngineAdapter::process(uint32_t codepoint,
                                           const std::string &utf8Text) {
   BambooResult result;
@@ -102,7 +106,7 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
   // Finalize the current word before committing a boundary. With spell check
   // enabled, Bamboo restores an invalid Vietnamese-looking word to the raw
   // Latin keystrokes that produced it.
-  if (!ArecaBambooCanProcess(handle_, codepoint)) {
+  if (!canProcessKey(codepoint)) {
     if (finalizedWordAvailable_) {
       ++trailingBoundaryCount_;
       result.commitText = encode(utf8Text);

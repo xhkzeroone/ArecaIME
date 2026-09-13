@@ -103,78 +103,54 @@ bool isBrowserLikeProgram(const std::string &rawProgram) {
                      });
 }
 
-bool isBrowserAutocomplete(const std::string &text, unsigned int cursor,
-                           unsigned int anchor,
-                           const std::string &shownText) {
-  if (shownText.empty() || !fcitx::utf8::validate(text) ||
+bool isSelectionImmediatelyAfterText(const std::string &text,
+                                     unsigned int cursor,
+                                     unsigned int anchor,
+                                     const std::string &shownText) {
+  if (cursor == anchor || shownText.empty() || !fcitx::utf8::validate(text) ||
       !fcitx::utf8::validate(shownText)) {
     return false;
   }
 
   const size_t textLength = fcitx::utf8::length(text);
   const size_t shownLength = fcitx::utf8::length(shownText);
-  if (cursor > textLength || anchor > textLength || shownLength == 0 ||
-      shownLength > textLength) {
+  const size_t selectionStart = std::min(cursor, anchor);
+  if (cursor > textLength || anchor > textLength ||
+      shownLength > selectionStart) {
     return false;
   }
 
-  unsigned int prefixCursor = cursor;
-  if (cursor != anchor) {
-    const unsigned int selectionStart = std::min(cursor, anchor);
-    const unsigned int selectionEnd = std::max(cursor, anchor);
-    if (selectionEnd == cursor) {
-      prefixCursor = selectionStart;
-    }
-  }
+  const size_t shownStart = selectionStart - shownLength;
+  const size_t beginByte = utf8ByteOffsetForCharIndex(text, shownStart);
+  const size_t endByte = utf8ByteOffsetForCharIndex(text, selectionStart);
+  return text.compare(beginByte, endByte - beginByte, shownText) == 0;
+}
 
-  const size_t rangeStart =
-      prefixCursor >= shownLength ? prefixCursor - shownLength : 0;
-  bool samePrefix = false;
-  for (size_t byte = text.find(shownText); byte != std::string::npos;
-       byte = text.find(shownText, byte + 1)) {
-    const size_t charIndex = utf8CharIndexForByteOffset(text, byte);
-    if (charIndex >= rangeStart && charIndex + shownLength == prefixCursor) {
-      samePrefix = true;
-      break;
-    }
-  }
-  if (!samePrefix) {
+bool isBrowserAutocomplete(const std::string &text, unsigned int cursor,
+                           unsigned int anchor,
+                           const std::string &shownText) {
+  if (!isSelectionImmediatelyAfterText(text, cursor, anchor, shownText)) {
     return false;
   }
 
-  const auto hasNewlineBetween = [&text](size_t from, size_t to) {
-    if (from > to) {
-      std::swap(from, to);
-    }
-    const size_t fromByte = utf8ByteOffsetForCharIndex(text, from);
-    const size_t toByte = utf8ByteOffsetForCharIndex(text, to);
-    const size_t newline = text.find('\n', fromByte);
-    return newline != std::string::npos && newline < toByte;
-  };
+  // Autocomplete hợp lệ phải chọn phần suffix ngay sau composition cho tới hết
+  // dòng; selection đi qua newline hoặc dừng giữa dòng là selection thông thường.
+  const size_t textLength = fcitx::utf8::length(text);
+  const unsigned int selectionStart = std::min(cursor, anchor);
+  const unsigned int selectionEnd = std::max(cursor, anchor);
+  const size_t selectionStartByte =
+      utf8ByteOffsetForCharIndex(text, selectionStart);
+  const size_t selectionEndByte =
+      utf8ByteOffsetForCharIndex(text, selectionEnd);
+  const size_t nextLineBreak = text.find('\n', selectionStartByte);
+  const size_t lineEnd =
+      nextLineBreak == std::string::npos
+          ? textLength
+          : utf8CharIndexForByteOffset(text, nextLineBreak);
+  const bool crossesNewline = nextLineBreak != std::string::npos &&
+                              nextLineBreak < selectionEndByte;
 
-  // Case 1: omnibox/autocomplete selects the suffix through line end.
-  if (cursor != anchor) {
-    const unsigned int selectionStart = std::min(cursor, anchor);
-    const unsigned int selectionEnd = std::max(cursor, anchor);
-
-    const bool selectionTouchesCursor =
-        selectionStart == cursor || selectionEnd == cursor ||
-        (selectionStart < cursor && selectionEnd > cursor);
-
-    const size_t selectionStartByte =
-        utf8ByteOffsetForCharIndex(text, selectionStart);
-    const size_t nextLineBreak = text.find('\n', selectionStartByte);
-    const size_t lineEnd =
-        nextLineBreak == std::string::npos
-            ? textLength
-            : utf8CharIndexForByteOffset(text, nextLineBreak);
-    const bool selectionGoesToLineEnd = selectionEnd == lineEnd;
-
-    return selectionTouchesCursor && selectionGoesToLineEnd &&
-           !hasNewlineBetween(selectionStart, selectionEnd);
-  }
-
-  return false;
+  return selectionEnd == lineEnd && !crossesNewline;
 }
 
 } // namespace areca

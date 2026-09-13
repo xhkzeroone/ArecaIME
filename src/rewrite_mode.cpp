@@ -12,12 +12,6 @@
 namespace areca {
 namespace {
 
-bool isWordRestoreTrigger(uint32_t codepoint) {
-  return (codepoint >= 'A' && codepoint <= 'Z') ||
-         (codepoint >= 'a' && codepoint <= 'z') ||
-         (codepoint >= 0x00C0 && codepoint <= 0x024F);
-}
-
 fcitx::KeySym normalizeRewriteKeypadSym(fcitx::KeySym sym) {
   if (sym >= FcitxKey_KP_0 && sym <= FcitxKey_KP_9) {
     return static_cast<fcitx::KeySym>(FcitxKey_0 + (sym - FcitxKey_KP_0));
@@ -438,9 +432,10 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     event.forward();
     return;
   }
-  // Chỉ phục hồi ngay trước một phím text hợp lệ. Shortcut, phím điều hướng và
-  // lifecycle event không được phép hút từ cũ vào Bamboo rồi để trạng thái treo.
-  if (isWordRestoreTrigger(codepoint)) {
+  // Chỉ phục hồi nếu chính kiểu gõ Bamboo hiện tại xử lý phím này. Vì vậy Space
+  // và dấu câu kết thúc macro không hút snapshot cũ vào engine, trong khi số của
+  // VNI hoặc ký hiệu của VIQR/Telex 2 vẫn có thể sửa từ đã commit.
+  if (state->engine->canProcessKey(codepoint)) {
     tryRestoreFromSurroundingText(*inputContext, *state);
   } else {
     state->surroundingRestoreArmed = false;

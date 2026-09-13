@@ -41,6 +41,8 @@ public:
 
 class TestEngine final : public areca::VietnameseEngine {
 public:
+  bool canProcessKey(uint32_t) const override { return true; }
+
   areca::BambooResult process(uint32_t, const std::string &text) override {
     areca::BambooResult result;
     result.currentText = current_;
