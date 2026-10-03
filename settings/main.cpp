@@ -39,13 +39,6 @@ int main() {
         return 1;
     }
     SDL_SetRenderVSync(renderer, 1);
-    // Trên Wayland HiDPI/fractional scaling, SDL renderer tự scale theo pixel density.
-    // ImGui đã tự handle qua DisplayFramebufferScale — disable SDL renderer scale để tránh double-scaling làm bể UI.
-    {
-        int px_w = 0, px_h = 0;
-        SDL_GetWindowSizeInPixels(window, &px_w, &px_h);
-        SDL_SetRenderLogicalPresentation(renderer, px_w, px_h, SDL_LOGICAL_PRESENTATION_DISABLED);
-    }
 
     areca::settings::AppConfig appConfig;
     appConfig.load();
@@ -96,12 +89,6 @@ int main() {
             if (event.type == SDL_EVENT_QUIT) {
                 running = false;
             }
-            if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-                // Cập nhật logical presentation khi pixel size thay đổi (resize, display scale đổi).
-                SDL_SetRenderLogicalPresentation(
-                    renderer, event.window.data1, event.window.data2, SDL_LOGICAL_PRESENTATION_DISABLED
-                );
-            }
         }
 
         if (needReapplyTheme) {
@@ -111,6 +98,9 @@ int main() {
 
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
+        
+        ImGui::GetIO().DisplayFramebufferScale = ImVec2(1.0F, 1.0F);
+
         ImGui::NewFrame();
         areca::settings::drawWindow(
             config, appConfig, inputMethods, charsets, listeningShortcut, status, running,
