@@ -81,6 +81,9 @@ add_library(areca MODULE
 target_compile_definitions(areca PRIVATE
     ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor"
     ARECA_SETTINGS_PATH="${CMAKE_INSTALL_FULL_BINDIR}/areca-settings")
+if(Fcitx5Core_VERSION VERSION_GREATER_EQUAL "5.1.11")
+    target_compile_definitions(areca PRIVATE ARECA_HAVE_SHOW_CUSTOM_INFO=1)
+endif()
 if(LIBEI_FOUND AND LIBPORTAL_FOUND)
     message(STATUS "Native Wayland backend enabled (libei ${LIBEI_VERSION}, libportal ${LIBPORTAL_VERSION})")
     target_compile_definitions(areca PRIVATE ARECA_HAVE_LIBEI=1)

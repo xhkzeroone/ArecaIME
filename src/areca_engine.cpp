@@ -889,7 +889,11 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
   }
 
   const std::string infoMsg = appName + " -> " + modeDesc;
+#ifdef ARECA_HAVE_SHOW_CUSTOM_INFO
   instance_->showCustomInputMethodInformation(&inputContext, infoMsg);
+#else
+  instance_->showInputMethodInformation(&inputContext);
+#endif
 }
 
 bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
