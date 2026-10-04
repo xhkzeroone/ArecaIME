@@ -356,8 +356,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&forwardBackspaceBackend_};
   }
 
-
-
   if (isPlasmashellProgram(program)) {
     if (debugEnabled()) {
       FCITX_INFO() << "areca: plasmashell forced forward-backspace backend"
@@ -492,6 +490,14 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                          << " program=" << program;
           }
           return {&xtestBackspaceBackend_};
+        }
+        if (uinputBackspaceBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO() << "areca: app-override native/xtest unavailable, "
+                            "fallback to uinput backend"
+                         << " program=" << program;
+          }
+          return {&uinputBackspaceBackend_};
         }
         break;
       case AppBackendMode::UinputBackspace:
@@ -1006,10 +1012,11 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   }
   if (isBackendSelecting(*inputContext)) {
     const auto normKey = event.key().normalize();
-    if (!event.isRelease() && normKey.checkKeyList(config_.selectBackendKey.value())) {
+    if (!event.isRelease() &&
+        normKey.checkKeyList(config_.selectBackendKey.value())) {
       inputContext->inputPanel().reset();
-      inputContext->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
-                                       true);
+      inputContext->updateUserInterface(
+          fcitx::UserInterfaceComponent::InputPanel, true);
       event.forward();
       return;
     }
