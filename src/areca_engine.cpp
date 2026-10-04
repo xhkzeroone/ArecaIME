@@ -468,14 +468,37 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         it->second != AppBackendMode::Auto) {
       switch (it->second) {
       case AppBackendMode::SurroundingText:
-        if (hasSurrounding) {
+        if (decision.useSurrounding) {
+          if (advancedConfig_.useUinputShiftSelectForSurrounding.value() &&
+              !isTerminal && uinputShiftSelectBackend_.isAvailable()) {
+            if (debugEnabled()) {
+              FCITX_INFO()
+                  << "areca: forced uinput-shift-select backend instead of "
+                     "surrounding"
+                  << " program=" << program
+                  << " frontend=" << (frontend ? frontend : "")
+                  << " backend=" << uinputShiftSelectBackend_.name();
+            }
+            return {&uinputShiftSelectBackend_};
+          }
+          if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
+              !isTerminal && uinputShiftSelectBackend_.isAvailable()) {
+            if (debugEnabled()) {
+              FCITX_INFO()
+                  << "areca: selected uinput-shift-select backend for browser"
+                  << " program=" << program
+                  << " frontend=" << (frontend ? frontend : "")
+                  << " backend=" << uinputShiftSelectBackend_.name();
+            }
+            return {&uinputShiftSelectBackend_};
+          }
           if (debugEnabled()) {
             FCITX_INFO() << "areca: app-override selected surrounding backend"
                          << " program=" << program;
           }
           return {&surroundingBackend_};
         }
-        if (uinputShiftSelectBackend_.isAvailable()) {
+        if (uinputShiftSelectBackend_.isAvailable() && !isTerminal) {
           if (debugEnabled()) {
             FCITX_INFO()
                 << "areca: app-override surrounding unsupported, fallback to "
@@ -486,7 +509,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         }
         break;
       case AppBackendMode::UinputShiftSelect:
-        if (uinputShiftSelectBackend_.isAvailable()) {
+        if (uinputShiftSelectBackend_.isAvailable() && !isTerminal) {
           if (debugEnabled()) {
             FCITX_INFO()
                 << "areca: app-override selected uinput-shift-select backend"
