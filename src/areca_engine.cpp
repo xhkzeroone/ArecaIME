@@ -356,57 +356,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&forwardBackspaceBackend_};
   }
 
-  if (!program.empty()) {
-    auto it = appBackendOverridesMap_.find(program);
-    if (it != appBackendOverridesMap_.end() &&
-        it->second != AppBackendMode::Auto) {
-      switch (it->second) {
-      case AppBackendMode::SurroundingText:
-        if (debugEnabled()) {
-          FCITX_INFO() << "areca: app-override selected surrounding backend"
-                       << " program=" << program;
-        }
-        return {&surroundingBackend_};
-      case AppBackendMode::UinputShiftSelect:
-        if (uinputShiftSelectBackend_.isAvailable()) {
-          if (debugEnabled()) {
-            FCITX_INFO()
-                << "areca: app-override selected uinput-shift-select backend"
-                << " program=" << program;
-          }
-          return {&uinputShiftSelectBackend_};
-        }
-        break;
-      case AppBackendMode::NativeXTest:
-        if (xtestBackspaceBackend_.isAvailable()) {
-          if (debugEnabled()) {
-            FCITX_INFO() << "areca: app-override selected native/xtest backend"
-                         << " program=" << program;
-          }
-          return {&xtestBackspaceBackend_};
-        }
-        break;
-      case AppBackendMode::UinputBackspace:
-        if (uinputBackspaceBackend_.isAvailable()) {
-          if (debugEnabled()) {
-            FCITX_INFO()
-                << "areca: app-override selected uinput-backspace backend"
-                << " program=" << program;
-          }
-          return {&uinputBackspaceBackend_};
-        }
-        break;
-      case AppBackendMode::ForwardKey:
-        if (debugEnabled()) {
-          FCITX_INFO() << "areca: app-override selected forward-key backend"
-                       << " program=" << program;
-        }
-        return {&forwardBackspaceBackend_};
-      case AppBackendMode::Auto:
-        break;
-      }
-    }
-  }
+
 
   if (isPlasmashellProgram(program)) {
     if (debugEnabled()) {
@@ -512,6 +462,58 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << " bamboo_delete=" << result.deleteCount;
     }
     return {backend, additional, fullReplace};
+  }
+
+  if (!program.empty()) {
+    auto it = appBackendOverridesMap_.find(program);
+    if (it != appBackendOverridesMap_.end() &&
+        it->second != AppBackendMode::Auto) {
+      switch (it->second) {
+      case AppBackendMode::SurroundingText:
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: app-override selected surrounding backend"
+                       << " program=" << program;
+        }
+        return {&surroundingBackend_};
+      case AppBackendMode::UinputShiftSelect:
+        if (uinputShiftSelectBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO()
+                << "areca: app-override selected uinput-shift-select backend"
+                << " program=" << program;
+          }
+          return {&uinputShiftSelectBackend_};
+        }
+        break;
+      case AppBackendMode::NativeXTest:
+        if (xtestBackspaceBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO() << "areca: app-override selected native/xtest backend"
+                         << " program=" << program;
+          }
+          return {&xtestBackspaceBackend_};
+        }
+        break;
+      case AppBackendMode::UinputBackspace:
+        if (uinputBackspaceBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO()
+                << "areca: app-override selected uinput-backspace backend"
+                << " program=" << program;
+          }
+          return {&uinputBackspaceBackend_};
+        }
+        break;
+      case AppBackendMode::ForwardKey:
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: app-override selected forward-key backend"
+                       << " program=" << program;
+        }
+        return {&forwardBackspaceBackend_};
+      case AppBackendMode::Auto:
+        break;
+      }
+    }
   }
 
   const bool isBrowserForShiftSelect =
