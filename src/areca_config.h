@@ -159,6 +159,9 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useUinputShiftSelectForLibreOffice{
         this, "UseUinputShiftSelectForLibreOffice",
         N_("Bật mode Shift Left cho LibreOffice/ONLYOFFICE"), false};
+    fcitx::Option<bool> useUinputShiftSelectForDiscordAndSignal{
+        this, "UseUinputShiftSelectForDiscordAndSignal",
+        N_("Bật mode Shift Left cho Discord/Signal"), false};
     fcitx::Option<bool> useSurroundingV2ForBrowser{
         this, "UseSurroundingV2ForBrowser",
         N_("Ép surrounding text v2 cho trình duyệt"), false};

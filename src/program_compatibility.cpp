@@ -295,6 +295,14 @@ bool requiresForwardBackspaceBackend(const std::string &rawProgram) {
   return std::find(programs.begin(), programs.end(), program) != programs.end();
 }
 
+bool requiresShiftSelectBackend(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  static constexpr auto programs = std::to_array<std::string_view>(
+      {"discord", "discordcanary", "discordptb", "com.discordapp.discord",
+       "signal", "signal-desktop", "signal-desktop-beta", "org.signal.signal"});
+  return std::find(programs.begin(), programs.end(), program) != programs.end();
+}
+
 bool isChromiumBrowser(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   if (program.empty()) {

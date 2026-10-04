@@ -15,6 +15,9 @@ bool isVSCodeFamilyProgram(const std::string &program);
 // forward-Backspace compatibility path.
 bool requiresForwardBackspaceBackend(const std::string &program);
 
+// Chat applications that need Shift+Left selection for rewrites.
+bool requiresShiftSelectBackend(const std::string &program);
+
 // Known Linux terminal applications, excluding KDE terminals.
 bool isTerminalProgram(const std::string &program);
 
