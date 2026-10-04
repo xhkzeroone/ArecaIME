@@ -86,7 +86,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> waylandAfterUinputShiftSelectWaitMs{
         this, "WaylandAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput Wayland (ms)"), 20,
+        N_("Chờ sau khi thả Shift uinput Wayland (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> ximAfterUinputShiftSelectWaitMs{
         this, "XimAfterUinputShiftSelectWaitMs",
@@ -98,7 +98,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterUinputShiftSelectWaitMs{
         this, "DbusAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 20,
+        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
@@ -143,7 +143,7 @@ FCITX_CONFIGURATION(
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
-        N_("Dùng timer độ chính xác cao"), true};
+                                      N_("Dùng timer độ chính xác cao"), true};
     fcitx::Option<bool> forceUinput{
         this, "ForceUinput", N_("Ép dùng uinput thay cho forward Backspace"),
         false};
@@ -162,12 +162,15 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useUinputShiftSelectForDiscordAndSignal{
         this, "UseUinputShiftSelectForDiscordAndSignal",
         N_("Bật mode Shift Left cho Discord/Signal"), false};
+    fcitx::Option<bool> useUinputShiftSelectForSurrounding{
+        this, "UseUinputShiftSelectForSurrounding",
+        N_("Bật mode Shift Left thay cho surrounding text"), false};
     fcitx::Option<bool> useSurroundingV2ForBrowser{
         this, "UseSurroundingV2ForBrowser",
         N_("Ép surrounding text v2 cho trình duyệt"), false};
     fcitx::Option<bool> enableMouseTracking{
-        this, "EnableMouseTracking",
-        N_("Tự reset bộ gõ sau khi click chuột"), true};
+        this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
+        true};
     fcitx::Option<bool> forwardFirstCharacter{
         this, "ForwardFirstCharacter",
         N_("Chuyển tiếp phím đầu để tương thích trình duyệt"), true};);

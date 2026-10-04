@@ -492,6 +492,7 @@ namespace areca::settings {
         checkbox("Ép uinput Shift+Left cho trình duyệt", config.advanced.useUinputShiftSelectForBrowser);
         checkbox("Bật mode Shift Left cho LibreOffice/ONLYOFFICE", config.advanced.useUinputShiftSelectForLibreOffice);
         checkbox("Bật mode Shift Left cho Discord/Signal", config.advanced.useUinputShiftSelectForDiscordAndSignal);
+        checkbox("Bật mode Shift Left thay cho surrounding text", config.advanced.useUinputShiftSelectForSurrounding);
         checkbox("Ép surrounding text v2 cho trình duyệt", config.advanced.useSurroundingV2ForBrowser);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
         checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);

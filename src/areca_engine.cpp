@@ -440,6 +440,17 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       !program.empty() && !isTerminal && inputTypeDetector_.isBrowser(program);
 
   if (decision.useSurrounding) {
+    if (advancedConfig_.useUinputShiftSelectForSurrounding.value() &&
+        uinputShiftSelectBackend_.isAvailable()) {
+      if (debugEnabled()) {
+        FCITX_INFO()
+            << "areca: forced uinput-shift-select backend instead of surrounding"
+            << " program=" << program
+            << " frontend=" << (frontend ? frontend : "")
+            << " backend=" << uinputShiftSelectBackend_.name();
+      }
+      return {&uinputShiftSelectBackend_};
+    }
     if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
         isBrowserForShiftSelect && uinputShiftSelectBackend_.isAvailable()) {
       if (debugEnabled()) {
