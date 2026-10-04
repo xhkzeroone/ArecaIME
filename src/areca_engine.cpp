@@ -49,6 +49,17 @@ bool isInvalidSurrounding(const fcitx::SurroundingText &surrounding) {
                      [&](auto rule) { return rule(surrounding); });
 }
 
+std::string icUuidToHex(const fcitx::ICUUID &uuid) {
+  static constexpr char hexChars[] = "0123456789abcdef";
+  std::string result;
+  result.reserve(32);
+  for (uint8_t byte : uuid) {
+    result.push_back(hexChars[(byte >> 4) & 0x0f]);
+    result.push_back(hexChars[byte & 0x0f]);
+  }
+  return result;
+}
+
 constexpr const char *kMacroConfigPath = "conf/areca-macro-table.conf";
 constexpr const char *kAppsConfigPath = "conf/areca-apps.conf";
 constexpr const char *kAdvancedConfigPath = "conf/areca-advanced.conf";
@@ -481,6 +492,29 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
             }
             return {&uinputShiftSelectBackend_};
           }
+          if (advancedConfig_.useUinputShiftSelectForLibreOffice.value() &&
+              requiresForwardBackspaceBackend(program) && !isTerminal &&
+              uinputShiftSelectBackend_.isAvailable()) {
+            if (debugEnabled()) {
+              FCITX_INFO()
+                  << "areca: office compatibility selected uinput-shift-select "
+                     "backend"
+                  << " program=" << program
+                  << " backend=" << uinputShiftSelectBackend_.name();
+            }
+            return {&uinputShiftSelectBackend_};
+          }
+          if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
+              requiresShiftSelectBackend(program) && !isTerminal &&
+              uinputShiftSelectBackend_.isAvailable()) {
+            if (debugEnabled()) {
+              FCITX_INFO() << "areca: chat compatibility forced "
+                              "uinput-shift-select backend"
+                           << " program=" << program
+                           << " backend=" << uinputShiftSelectBackend_.name();
+            }
+            return {&uinputShiftSelectBackend_};
+          }
           if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
               !isTerminal && uinputShiftSelectBackend_.isAvailable()) {
             if (debugEnabled()) {
@@ -534,7 +568,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {&uinputBackspaceBackend_};
         }
-        break;
+        return {&forwardBackspaceBackend_};
       case AppBackendMode::UinputBackspace:
         if (uinputBackspaceBackend_.isAvailable()) {
           if (debugEnabled()) {
@@ -544,7 +578,16 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {&uinputBackspaceBackend_};
         }
-        break;
+        if (xtestBackspaceBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO()
+                << "areca: app-override uinput-backspace unavailable, fallback "
+                   "to xtest backend"
+                << " program=" << program;
+          }
+          return {&xtestBackspaceBackend_};
+        }
+        return {&forwardBackspaceBackend_};
       case AppBackendMode::ForwardKey:
         if (debugEnabled()) {
           FCITX_INFO() << "areca: app-override selected forward-key backend"
@@ -832,9 +875,12 @@ bool ArecaEngine::isBackendSelecting(fcitx::InputContext &inputContext) const {
 
 void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
   auto *rewriteState = inputContext.propertyFor(&rewriteStateFactory_);
-  const std::string appName = resolveProgram(inputContext, rewriteState);
+  std::string appName = resolveProgram(inputContext, rewriteState);
   if (appName.empty()) {
-    return;
+    appName = "context-" + icUuidToHex(inputContext.uuid()).substr(0, 8);
+    if (rewriteState) {
+      rewriteState->resolvedProgram = appName;
+    }
   }
 
   auto currentIt = appBackendOverridesMap_.find(appName);

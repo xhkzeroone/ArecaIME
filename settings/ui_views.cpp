@@ -276,7 +276,7 @@ namespace areca::settings {
             searchQuery[0] = '\0';
         }
         ImGui::PopStyleColor(4);
-        
+
         ImGui::SameLine();
         ImGui::SetNextItemWidth(200.0F);
         ImGui::InputTextWithHint("##search", "Tìm kiếm (Ctrl+F)...", searchQuery, sizeof(searchQuery));
@@ -488,7 +488,9 @@ namespace areca::settings {
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Ép dùng uinput thay cho forward Backspace", config.advanced.forceUinput);
         checkbox("Dùng Native (Libei, fallback XTest) thay thế uinput", config.advanced.useXTestInsteadOfUinput);
-        checkbox("Dùng Native (Libei, fallback XTest) thay thế ForwardKey", config.advanced.useXTestInsteadOfForwardKey);
+        checkbox(
+            "Dùng Native (Libei, fallback XTest) thay thế ForwardKey", config.advanced.useXTestInsteadOfForwardKey
+        );
         checkbox("Ép uinput Shift+Left cho trình duyệt", config.advanced.useUinputShiftSelectForBrowser);
         checkbox("Bật mode Shift Left cho LibreOffice/ONLYOFFICE", config.advanced.useUinputShiftSelectForLibreOffice);
         checkbox("Bật mode Shift Left cho Discord/Signal", config.advanced.useUinputShiftSelectForDiscordAndSignal);
@@ -500,9 +502,14 @@ namespace areca::settings {
     }
 
     void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut) {
-        drawPageIntro("Ứng dụng", "Cấu hình backend xóa phím cố định cho từng ứng dụng và phím tắt mở menu chọn backend.");
+        drawPageIntro(
+            "Ứng dụng", "Cấu hình backend xóa phím cố định cho từng ứng dụng và phím tắt mở menu chọn backend."
+        );
 
-        beginSettingsCard("BackendShortcutCard", "Phím tắt chọn nhanh backend", "Nhấn phím tắt này khi đang ở trong ứng dụng bất kỳ để mở danh sách chọn backend.");
+        beginSettingsCard(
+            "BackendShortcutCard", "Phím tắt chọn nhanh backend",
+            "Nhấn phím tắt này khi đang ở trong ứng dụng bất kỳ để mở danh sách chọn backend."
+        );
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Phím tắt chọn backend:");
         ImGui::SameLine();
@@ -550,12 +557,8 @@ namespace areca::settings {
                 ImGui::TableHeadersRow();
 
                 const char* modeNames[] = {
-                    "Tự động",
-                    "Surrounding Text",
-                    "Shift+Left (uinput)",
-                    "Native (Libei/XTest)",
-                    "Uinput Backspace",
-                    "ForwardKey"
+                    "Tự động",          "Surrounding Text", "Shift+Left (uinput)", "Native (Libei/XTest)",
+                    "Uinput Backspace", "ForwardKey"
                 };
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
@@ -777,7 +780,8 @@ namespace areca::settings {
 
         const bool tab1Dirty = !(config.macros == savedConfig.macros);
 
-        const bool tab2Dirty = !(config.apps == savedConfig.apps) || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
+        const bool tab2Dirty =
+            !(config.apps == savedConfig.apps) || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
 
         const bool tab3Dirty = !(config.advanced == savedConfig.advanced);
 
@@ -795,7 +799,8 @@ namespace areca::settings {
 
         const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{});
 
-        const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{}) && (config.main.selectBackendKey == defaultMain.selectBackendKey);
+        const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{})
+            && (config.main.selectBackendKey == defaultMain.selectBackendKey);
 
         const bool tab3IsDefault = (config.advanced == areca::AdvancedConfig{});
 
@@ -816,7 +821,7 @@ namespace areca::settings {
         ImGui::BeginChild(
             "ActionBar", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
         );
-        
+
         ImGui::BeginDisabled(!currentTabDirty || hasInvalidMacros);
         pushPrimaryButtonColors();
         if (ImGui::Button("Lưu và áp dụng", ImVec2(150.0F, 0.0F))) {
@@ -839,7 +844,9 @@ namespace areca::settings {
         ImGui::EndDisabled();
 
         if (hasInvalidMacros && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Vui lòng xóa hoặc điền đầy đủ từ viết tắt và nội dung thay thế cho các macro trước khi lưu.");
+            ImGui::SetTooltip(
+                "Vui lòng xóa hoặc điền đầy đủ từ viết tắt và nội dung thay thế cho các macro trước khi lưu."
+            );
         }
 
         ImGui::SameLine();
@@ -951,9 +958,8 @@ namespace areca::settings {
         constexpr double kToastDuration = 3.0;
         const double elapsed = ImGui::GetTime() - toastShownAt;
         if (elapsed < kToastDuration && !status.empty()) {
-            const float alpha = static_cast<float>(
-                elapsed < kToastDuration - 0.4 ? 1.0 : (kToastDuration - elapsed) / 0.4
-            );
+            const float alpha =
+                static_cast<float>(elapsed < kToastDuration - 0.4 ? 1.0 : (kToastDuration - elapsed) / 0.4);
             const bool warning =
                 status.find("nhưng") != std::string::npos || status.find("Khởi động lại") != std::string::npos;
 
@@ -962,29 +968,27 @@ namespace areca::settings {
 
             constexpr float kPadX = 16.0F, kPadY = 10.0F, kRound = 10.0F, kMargin = 20.0F;
             const ImVec2 textSize = ImGui::CalcTextSize(status.c_str());
-            const ImVec2 workPos  = ImGui::GetMainViewport()->WorkPos;
-            const ImVec2 workEnd  = ImVec2(
-                workPos.x + ImGui::GetMainViewport()->WorkSize.x,
-                workPos.y + ImGui::GetMainViewport()->WorkSize.y
+            const ImVec2 workPos = ImGui::GetMainViewport()->WorkPos;
+            const ImVec2 workEnd = ImVec2(
+                workPos.x + ImGui::GetMainViewport()->WorkSize.x, workPos.y + ImGui::GetMainViewport()->WorkSize.y
             );
             // Góc trên-phải
-            const ImVec2 boxMin = ImVec2(workEnd.x - kMargin - textSize.x - kPadX * 2.0F,
-                                          workPos.y + kMargin);
-            const ImVec2 boxMax = ImVec2(workEnd.x - kMargin,
-                                          workPos.y + kMargin + textSize.y + kPadY * 2.0F);
+            const ImVec2 boxMin = ImVec2(workEnd.x - kMargin - textSize.x - kPadX * 2.0F, workPos.y + kMargin);
+            const ImVec2 boxMax = ImVec2(workEnd.x - kMargin, workPos.y + kMargin + textSize.y + kPadY * 2.0F);
 
             ImDrawList* dl = ImGui::GetForegroundDrawList();
             // Nền accent
             dl->AddRectFilled(
                 boxMin, boxMax,
-                IM_COL32(static_cast<int>(accentRaw.x * 255), static_cast<int>(accentRaw.y * 255),
-                          static_cast<int>(accentRaw.z * 255), static_cast<int>(alpha * 255)),
+                IM_COL32(
+                    static_cast<int>(accentRaw.x * 255), static_cast<int>(accentRaw.y * 255),
+                    static_cast<int>(accentRaw.z * 255), static_cast<int>(alpha * 255)
+                ),
                 kRound
             );
             // Text trắng
             dl->AddText(
-                ImVec2(boxMin.x + kPadX, boxMin.y + kPadY),
-                IM_COL32(255, 255, 255, static_cast<int>(alpha * 255)),
+                ImVec2(boxMin.x + kPadX, boxMin.y + kPadY), IM_COL32(255, 255, 255, static_cast<int>(alpha * 255)),
                 status.c_str()
             );
         } else if (elapsed >= kToastDuration) {

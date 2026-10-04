@@ -43,18 +43,17 @@ enum class AppBackendMode {
   UinputBackspace = 4,
   ForwardKey = 5
 };
-FCITX_CONFIG_ENUM_NAME_WITH_I18N(
-    AppBackendMode, N_("Tự động"), N_("Surrounding Text"),
-    N_("Shift+Left (uinput)"), N_("Native (Libei/XTest)"),
-    N_("Uinput Backspace"), N_("ForwardKey"));
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
+                                 N_("Surrounding Text"),
+                                 N_("Shift+Left (uinput)"),
+                                 N_("Native (Libei/XTest)"),
+                                 N_("Uinput Backspace"), N_("ForwardKey"));
 
-FCITX_CONFIGURATION(AppBackendOverrideEntry,
-                    fcitx::Option<std::string> appName{this, "AppName",
-                                                       N_("Tên ứng dụng"), ""};
-                    fcitx::OptionWithAnnotation<AppBackendMode,
-                                                fcitx::EnumAnnotation>
-                        mode{this, "Mode", N_("Backend"),
-                             AppBackendMode::Auto};);
+FCITX_CONFIGURATION(
+    AppBackendOverrideEntry,
+    fcitx::Option<std::string> appName{this, "AppName", N_("Tên ứng dụng"), ""};
+    fcitx::OptionWithAnnotation<AppBackendMode, fcitx::EnumAnnotation> mode{
+        this, "Mode", N_("Backend"), AppBackendMode::Auto};);
 
 FCITX_CONFIGURATION(MacroEntry,
                     fcitx::Option<std::string> key{this, "Key",
@@ -66,8 +65,13 @@ FCITX_CONFIGURATION(
     AppProfilesConfig,
     fcitx::OptionWithAnnotation<std::vector<AppBackendOverrideEntry>,
                                 fcitx::ListDisplayOptionAnnotation>
-        appOverrides{this, "AppOverrides", N_("Cấu hình backend theo ứng dụng"),
-                     {}, {}, {}, fcitx::ListDisplayOptionAnnotation("AppName")};);
+        appOverrides{this,
+                     "AppOverrides",
+                     N_("Cấu hình backend theo ứng dụng"),
+                     {},
+                     {},
+                     {},
+                     fcitx::ListDisplayOptionAnnotation("AppName")};);
 
 FCITX_CONFIGURATION(
     MacroTableConfig,
@@ -126,7 +130,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterUinputShiftSelectWaitMs{
         this, "DbusAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
@@ -238,7 +242,7 @@ FCITX_CONFIGURATION(
         outputCharset{this, "OutputCharset", N_("Bảng mã đầu ra"), "Unicode"};
     fcitx::OptionWithAnnotation<SpellcheckMode, fcitx::EnumAnnotation>
         spellcheckMode{this, "SpellcheckMode", N_("Chế độ kiểm tra chính tả"),
-                        SpellcheckMode::Realtime};
+                       SpellcheckMode::Realtime};
     fcitx::Option<bool> modernStyle{
         this, "ModernStyle", N_("Đặt dấu kiểu oà, uý thay cho òa, úy"), true};
     fcitx::Option<bool> autoCapitalizeAfterPunctuation{
