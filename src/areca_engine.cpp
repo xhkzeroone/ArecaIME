@@ -468,11 +468,23 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         it->second != AppBackendMode::Auto) {
       switch (it->second) {
       case AppBackendMode::SurroundingText:
-        if (debugEnabled()) {
-          FCITX_INFO() << "areca: app-override selected surrounding backend"
-                       << " program=" << program;
+        if (hasSurrounding) {
+          if (debugEnabled()) {
+            FCITX_INFO() << "areca: app-override selected surrounding backend"
+                         << " program=" << program;
+          }
+          return {&surroundingBackend_};
         }
-        return {&surroundingBackend_};
+        if (uinputShiftSelectBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO()
+                << "areca: app-override surrounding unsupported, fallback to "
+                   "shift-select backend"
+                << " program=" << program;
+          }
+          return {&uinputShiftSelectBackend_};
+        }
+        break;
       case AppBackendMode::UinputShiftSelect:
         if (uinputShiftSelectBackend_.isAvailable()) {
           if (debugEnabled()) {
