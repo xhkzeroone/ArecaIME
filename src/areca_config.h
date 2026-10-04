@@ -35,11 +35,39 @@ private:
   std::vector<std::string> list_;
 };
 
+enum class AppBackendMode {
+  Auto = 0,
+  SurroundingText = 1,
+  UinputShiftSelect = 2,
+  NativeXTest = 3,
+  UinputBackspace = 4,
+  ForwardKey = 5
+};
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(
+    AppBackendMode, N_("Tự động"), N_("Surrounding Text"),
+    N_("Shift+Left (uinput)"), N_("Native (Libei/XTest)"),
+    N_("Uinput Backspace"), N_("ForwardKey"));
+
+FCITX_CONFIGURATION(AppBackendOverrideEntry,
+                    fcitx::Option<std::string> appName{this, "AppName",
+                                                       N_("Tên ứng dụng"), ""};
+                    fcitx::OptionWithAnnotation<AppBackendMode,
+                                                fcitx::EnumAnnotation>
+                        mode{this, "Mode", N_("Backend"),
+                             AppBackendMode::Auto};);
+
 FCITX_CONFIGURATION(MacroEntry,
                     fcitx::Option<std::string> key{this, "Key",
                                                    N_("Từ viết tắt"), ""};
                     fcitx::Option<std::string> value{
                         this, "Value", N_("Nội dung thay thế"), ""};);
+
+FCITX_CONFIGURATION(
+    AppProfilesConfig,
+    fcitx::OptionWithAnnotation<std::vector<AppBackendOverrideEntry>,
+                                fcitx::ListDisplayOptionAnnotation>
+        appOverrides{this, "AppOverrides", N_("Cấu hình backend theo ứng dụng"),
+                     {}, {}, {}, fcitx::ListDisplayOptionAnnotation("AppName")};);
 
 FCITX_CONFIGURATION(
     MacroTableConfig,
@@ -187,6 +215,12 @@ FCITX_CONFIGURATION(
         N_("Phím tắt chuyển chế độ gõ"),
         {fcitx::Key("Alt+space")},
         fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
+    fcitx::KeyListOption selectBackendKey{
+        this,
+        "SelectBackendKey",
+        N_("Phím tắt chọn backend cho ứng dụng"),
+        {fcitx::Key("grave")},
+        fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
     fcitx::HiddenOption<int, fcitx::IntConstrain> legacyBackspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
@@ -204,7 +238,7 @@ FCITX_CONFIGURATION(
         outputCharset{this, "OutputCharset", N_("Bảng mã đầu ra"), "Unicode"};
     fcitx::OptionWithAnnotation<SpellcheckMode, fcitx::EnumAnnotation>
         spellcheckMode{this, "SpellcheckMode", N_("Chế độ kiểm tra chính tả"),
-                       SpellcheckMode::Realtime};
+                        SpellcheckMode::Realtime};
     fcitx::Option<bool> modernStyle{
         this, "ModernStyle", N_("Đặt dấu kiểu oà, uý thay cho òa, úy"), true};
     fcitx::Option<bool> autoCapitalizeAfterPunctuation{
@@ -217,6 +251,9 @@ FCITX_CONFIGURATION(
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};
+    fcitx::SubConfigOption appOverridesEditor{
+        this, "AppOverridesEditor", N_("Cấu hình backend theo ứng dụng"),
+        "fcitx://config/addon/areca/apps"};
     fcitx::Option<bool> backspaceRecovery{
         this, "BackspaceRecovery",
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};

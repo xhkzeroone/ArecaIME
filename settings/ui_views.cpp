@@ -499,6 +499,110 @@ namespace areca::settings {
         endSettingsCard();
     }
 
+    void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut) {
+        drawPageIntro("Ứng dụng", "Cấu hình backend xóa phím cố định cho từng ứng dụng và phím tắt mở menu chọn backend.");
+
+        beginSettingsCard("BackendShortcutCard", "Phím tắt chọn nhanh backend", "Nhấn phím tắt này khi đang ở trong ứng dụng bất kỳ để mở danh sách chọn backend.");
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Phím tắt chọn backend:");
+        ImGui::SameLine();
+        std::string currentShortcut = formatKeyList(config.main.selectBackendKey.value());
+        if (currentShortcut.empty()) {
+            currentShortcut = "Chưa gán";
+        }
+
+        if (listeningBackendShortcut) {
+            pushAttentionButtonColors();
+            if (ImGui::Button("Đang chờ bấm phím... (Esc để hủy)")) {
+                listeningBackendShortcut = false;
+            }
+            ImGui::PopStyleColor(3);
+        } else {
+            std::string buttonLabel = currentShortcut + "  [Đổi phím]";
+            if (ImGui::Button(buttonLabel.c_str())) {
+                listeningBackendShortcut = true;
+            }
+        }
+        endSettingsCard();
+
+        beginSettingsCard(
+            "AppOverridesCard", "Danh sách ứng dụng đã cấu hình",
+            "Chỉ định backend cố định cho từng ứng dụng cụ thể. Ứng dụng để Tự động sẽ do hệ thống tự nhận diện."
+        );
+        auto& overrides = *config.apps.appOverrides.mutableValue();
+
+        pushPrimaryButtonColors();
+        if (ImGui::Button("+  Thêm ứng dụng")) {
+            areca::AppBackendOverrideEntry entry;
+            overrides.push_back(std::move(entry));
+        }
+        ImGui::PopStyleColor(4);
+
+        if (!overrides.empty()) {
+            size_t removeIndex = overrides.size();
+            if (ImGui::BeginTable(
+                    "app-overrides-table", 3,
+                    ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
+                )) {
+                ImGui::TableSetupColumn("Tên ứng dụng", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Backend", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0F);
+                ImGui::TableHeadersRow();
+
+                const char* modeNames[] = {
+                    "Tự động",
+                    "Surrounding Text",
+                    "Shift+Left (uinput)",
+                    "Native (Libei/XTest)",
+                    "Uinput Backspace",
+                    "ForwardKey"
+                };
+
+                for (size_t i = 0; i < overrides.size(); ++i) {
+                    ImGui::PushID(static_cast<int>(i));
+                    ImGui::TableNextRow();
+
+                    ImGui::TableSetColumnIndex(0);
+                    char buf[128];
+                    std::string currentName = overrides[i].appName.value();
+                    strncpy(buf, currentName.c_str(), sizeof(buf));
+                    buf[sizeof(buf) - 1] = '\0';
+                    ImGui::SetNextItemWidth(-1.0F);
+                    if (ImGui::InputTextWithHint("##app", "vd: discord, code, google-chrome...", buf, sizeof(buf))) {
+                        overrides[i].appName.setValue(std::string(buf));
+                    }
+
+                    ImGui::TableSetColumnIndex(1);
+                    int currentMode = static_cast<int>(overrides[i].mode.value());
+                    if (currentMode < 0 || currentMode > 5) {
+                        currentMode = 0;
+                    }
+                    ImGui::SetNextItemWidth(-1.0F);
+                    if (ImGui::Combo("##mode", &currentMode, modeNames, IM_ARRAYSIZE(modeNames))) {
+                        overrides[i].mode.setValue(static_cast<areca::AppBackendMode>(currentMode));
+                    }
+
+                    ImGui::TableSetColumnIndex(2);
+                    pushDangerButtonColors();
+                    if (ImGui::Button("Xóa")) {
+                        removeIndex = i;
+                    }
+                    ImGui::PopStyleColor(4);
+
+                    ImGui::PopID();
+                }
+                ImGui::EndTable();
+            }
+
+            if (removeIndex < overrides.size()) {
+                overrides.erase(overrides.begin() + removeIndex);
+            }
+        } else {
+            ImGui::TextDisabled("Chưa có ứng dụng nào được cấu hình riêng.");
+        }
+        endSettingsCard();
+    }
+
     void drawAppearance(AppConfig& appConfig, bool& needReapplyTheme) {
         drawPageIntro("Giao diện", "Tuỳ chỉnh chủ đề màu sắc và cỡ chữ của bảng thiết lập Areca.");
 
@@ -547,8 +651,8 @@ namespace areca::settings {
 
     void drawWindow(
         ConfigStore& config, AppConfig& appConfig, const std::vector<std::string>& inputMethods,
-        const std::vector<std::string>& charsets, bool& listeningShortcut, std::string& status, bool& running,
-        bool& needReapplyTheme
+        const std::vector<std::string>& charsets, bool& listeningShortcut, bool& listeningBackendShortcut,
+        std::string& status, bool& running, bool& needReapplyTheme
     ) {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -604,8 +708,18 @@ namespace areca::settings {
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Nâng cao")) {
+            if (ImGui::BeginTabItem("Ứng dụng")) {
                 newActiveTab = 2;
+                ImGui::BeginChild(
+                    "AppsScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
+                    ImGuiWindowFlags_HorizontalScrollbar
+                );
+                drawAppOverrides(config, listeningBackendShortcut);
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Nâng cao")) {
+                newActiveTab = 3;
                 ImGui::BeginChild(
                     "AdvancedScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
                     ImGuiWindowFlags_HorizontalScrollbar
@@ -615,7 +729,7 @@ namespace areca::settings {
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Giao diện")) {
-                newActiveTab = 3;
+                newActiveTab = 4;
                 ImGui::BeginChild(
                     "AppearanceScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
                     ImGuiWindowFlags_HorizontalScrollbar
@@ -663,29 +777,35 @@ namespace areca::settings {
 
         const bool tab1Dirty = !(config.macros == savedConfig.macros);
 
-        const bool tab2Dirty = !(config.advanced == savedConfig.advanced);
+        const bool tab2Dirty = !(config.apps == savedConfig.apps) || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
 
-        const bool tab3Dirty =
+        const bool tab3Dirty = !(config.advanced == savedConfig.advanced);
+
+        const bool tab4Dirty =
             (appConfig.theme != savedAppConfig.theme) || (appConfig.fontSize != savedAppConfig.fontSize);
 
         const bool currentTabDirty = (activeTab == 0) ? tab0Dirty
             : (activeTab == 1)                        ? tab1Dirty
             : (activeTab == 2)                        ? tab2Dirty
-                                                      : tab3Dirty;
+            : (activeTab == 3)                        ? tab3Dirty
+                                                      : tab4Dirty;
 
         const areca::ArecaConfig defaultMain{};
         const bool tab0IsDefault = (config.main == defaultMain);
 
         const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{});
 
-        const bool tab2IsDefault = (config.advanced == areca::AdvancedConfig{});
+        const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{}) && (config.main.selectBackendKey == defaultMain.selectBackendKey);
 
-        const bool tab3IsDefault = (appConfig.theme == AppTheme::Light) && (appConfig.fontSize == kDefaultFontSize);
+        const bool tab3IsDefault = (config.advanced == areca::AdvancedConfig{});
+
+        const bool tab4IsDefault = (appConfig.theme == AppTheme::Light) && (appConfig.fontSize == kDefaultFontSize);
 
         const bool currentTabIsDefault = (activeTab == 0) ? tab0IsDefault
             : (activeTab == 1)                            ? tab1IsDefault
             : (activeTab == 2)                            ? tab2IsDefault
-                                                          : tab3IsDefault;
+            : (activeTab == 3)                            ? tab3IsDefault
+                                                          : tab4IsDefault;
 
         const ImGuiStyle& style = ImGui::GetStyle();
         ImGui::PushStyleColor(ImGuiCol_ChildBg, style.Colors[ImGuiCol_PopupBg]);
@@ -700,7 +820,7 @@ namespace areca::settings {
         ImGui::BeginDisabled(!currentTabDirty || hasInvalidMacros);
         pushPrimaryButtonColors();
         if (ImGui::Button("Lưu và áp dụng", ImVec2(150.0F, 0.0F))) {
-            if (activeTab == 3) {
+            if (activeTab == 4) {
                 const bool fontChanged = (appConfig.fontSize != savedAppConfig.fontSize);
                 appConfig.save();
                 savedAppConfig = appConfig;
@@ -732,6 +852,10 @@ namespace areca::settings {
                 config.macros = savedConfig.macros;
                 pendingDeleteIndex = SIZE_MAX;
             } else if (activeTab == 2) {
+                config.apps = savedConfig.apps;
+                config.main.selectBackendKey = savedConfig.main.selectBackendKey;
+                listeningBackendShortcut = false;
+            } else if (activeTab == 3) {
                 config.advanced = savedConfig.advanced;
             } else {
                 if (appConfig.theme != savedAppConfig.theme) {
@@ -771,6 +895,16 @@ namespace areca::settings {
                         ? "Đã khôi phục và áp dụng."
                         : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 } else if (activeTab == 2) {
+                    config.apps = areca::AppProfilesConfig{};
+                    config.main.selectBackendKey = defaultMain.selectBackendKey;
+                    listeningBackendShortcut = false;
+                    config.save();
+                    savedConfig = config;
+                    std::string reloadError;
+                    status = reloadArecaAddon(reloadError)
+                        ? "Đã khôi phục và áp dụng."
+                        : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
+                } else if (activeTab == 3) {
                     config.advanced = areca::AdvancedConfig{};
                     config.save();
                     savedConfig = config;

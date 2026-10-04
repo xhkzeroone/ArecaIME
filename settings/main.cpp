@@ -63,6 +63,7 @@ int main() {
     const auto inputMethods = areca::BambooEngineAdapter::inputMethodNames();
     const auto charsets = areca::BambooEngineAdapter::charsetNames();
     bool listeningShortcut = false;
+    bool listeningBackendShortcut = false;
     std::string status;
     bool running = true;
     bool needReapplyTheme = false;
@@ -80,6 +81,21 @@ int main() {
                         if (key.isValid()) {
                             config.main.switchModeKey.setValue(fcitx::KeyList{key});
                             listeningShortcut = false;
+                        }
+                    }
+                }
+                continue;
+            }
+            if (listeningBackendShortcut && event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                if (event.key.key == SDLK_ESCAPE) {
+                    listeningBackendShortcut = false;
+                } else {
+                    const std::string fcitxKeyName = areca::settings::sdlToFcitx(event.key.key, event.key.mod);
+                    if (!fcitxKeyName.empty()) {
+                        fcitx::Key key(fcitxKeyName);
+                        if (key.isValid()) {
+                            config.main.selectBackendKey.setValue(fcitx::KeyList{key});
+                            listeningBackendShortcut = false;
                         }
                     }
                 }
@@ -103,7 +119,7 @@ int main() {
 
         ImGui::NewFrame();
         areca::settings::drawWindow(
-            config, appConfig, inputMethods, charsets, listeningShortcut, status, running,
+            config, appConfig, inputMethods, charsets, listeningShortcut, listeningBackendShortcut, status, running,
             needReapplyTheme
         );
         ImGui::Render();

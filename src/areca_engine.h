@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include <fcitx/action.h>
 #include <fcitx/inputcontext.h>
@@ -104,11 +105,21 @@ private:
   void applyConfig();
   std::vector<MacroDefinition> macroDefinitions() const;
 
+  void showBackendSelectionMenu(fcitx::InputContext &inputContext);
+  void selectBackendForApp(fcitx::InputContext &inputContext,
+                           const std::string &appName, AppBackendMode mode);
+  bool isBackendSelecting(fcitx::InputContext &inputContext) const;
+  bool handleBackendSelectionKey(fcitx::InputContext &inputContext,
+                                 fcitx::KeyEvent &event);
+
   fcitx::Instance *instance_;
   ArecaConfig config_;
   AdvancedConfig advancedConfig_;
   MacroTableConfig macroTable_;
+  AppProfilesConfig appProfiles_;
   uint64_t macroRevision_ = 1;
+  std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
+  void rebuildAppBackendOverridesMap();
   PresentationMode activePresentationMode_ = PresentationMode::Rewrite;
   fcitx::FactoryFor<RewriteInputState> rewriteStateFactory_;
   fcitx::FactoryFor<PreeditInputState> preeditStateFactory_;

@@ -339,7 +339,8 @@ export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu
 cmake -S "$ARECA_ROOT_DIR" -B "$ARECA_BUILD_DIR" \
   "${ARECA_GENERATOR_ARGS[@]}" \
   -DCMAKE_BUILD_TYPE="$ARECA_BUILD_TYPE" \
-  -DCMAKE_INSTALL_PREFIX="$ARECA_PREFIX"
+  -DCMAKE_INSTALL_PREFIX="$ARECA_PREFIX" \
+  -DARECA_BUILD_SETTINGS=ON
 
 echo "[areca] Building"
 cmake --build "$ARECA_BUILD_DIR" -j

@@ -13,6 +13,7 @@ class ConfigStore {
 
     ArecaConfig main;
     MacroTableConfig macros;
+    AppProfilesConfig apps;
     AdvancedConfig advanced;
 };
 

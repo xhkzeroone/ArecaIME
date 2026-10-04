@@ -8,6 +8,7 @@
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputcontextmanager.h>
 
+#include "areca_config.h"
 #include "input_scheduler.h"
 #include "rewrite_mode.h"
 
@@ -227,4 +228,15 @@ int main() {
           std::vector<std::string>{"commit: ", "commit:a"}));
   assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
          " a");
+
+  areca::AppProfilesConfig appProfiles;
+  assert(appProfiles.appOverrides.value().empty());
+  areca::AppBackendOverrideEntry overrideEntry;
+  overrideEntry.appName.setValue("discord");
+  overrideEntry.mode.setValue(areca::AppBackendMode::UinputShiftSelect);
+  appProfiles.appOverrides.mutableValue()->push_back(std::move(overrideEntry));
+  assert(appProfiles.appOverrides.value().size() == 1);
+  assert(appProfiles.appOverrides.value()[0].appName.value() == "discord");
+  assert(appProfiles.appOverrides.value()[0].mode.value() ==
+         areca::AppBackendMode::UinputShiftSelect);
 }

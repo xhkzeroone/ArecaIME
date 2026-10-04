@@ -17,12 +17,14 @@ void drawBasic(
 
 bool drawMacros(ConfigStore& config, size_t& pendingDeleteIndex);
 
+void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut);
+
 void drawAdvanced(ConfigStore& config);
 
 void drawWindow(
     ConfigStore& config, AppConfig& appConfig, const std::vector<std::string>& inputMethods,
-    const std::vector<std::string>& charsets, bool& listeningShortcut, std::string& status, bool& running,
-    bool& needReapplyTheme
+    const std::vector<std::string>& charsets, bool& listeningShortcut, bool& listeningBackendShortcut,
+    std::string& status, bool& running, bool& needReapplyTheme
 );
 
 } // namespace areca::settings

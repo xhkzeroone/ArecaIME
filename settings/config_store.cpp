@@ -17,6 +17,7 @@ namespace areca::settings {
 #endif
         constexpr const char* kMainConfigPath = "conf/areca.conf";
         constexpr const char* kMacroConfigPath = "conf/areca-macro-table.conf";
+        constexpr const char* kAppsConfigPath = "conf/areca-apps.conf";
         constexpr const char* kAdvancedConfigPath = "conf/areca-advanced.conf";
     } // namespace
 
@@ -29,11 +30,13 @@ namespace areca::settings {
         advanced.postCommitDelayMs.setValue(main.legacyPostCommitDelayMs.value());
         fcitx::readAsIni(advanced, kPkgConfigPath, kAdvancedConfigPath);
         fcitx::readAsIni(macros, kPkgConfigPath, kMacroConfigPath);
+        fcitx::readAsIni(apps, kPkgConfigPath, kAppsConfigPath);
     }
 
     void ConfigStore::save() const {
         fcitx::safeSaveAsIni(main, kPkgConfigPath, kMainConfigPath);
         fcitx::safeSaveAsIni(macros, kPkgConfigPath, kMacroConfigPath);
+        fcitx::safeSaveAsIni(apps, kPkgConfigPath, kAppsConfigPath);
         fcitx::safeSaveAsIni(advanced, kPkgConfigPath, kAdvancedConfigPath);
     }
 
