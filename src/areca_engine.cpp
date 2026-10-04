@@ -279,17 +279,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&forwardBackspaceBackend_};
   }
 
-  if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
-      requiresShiftSelectBackend(program) &&
-      uinputShiftSelectBackend_.isAvailable()) {
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: chat compatibility forced uinput-shift-select backend"
-                   << " program=" << program
-                   << " backend=" << uinputShiftSelectBackend_.name();
-    }
-    return {&uinputShiftSelectBackend_};
-  }
-
   if (!state) {
     if (advancedConfig_.useXTestInsteadOfUinput.value() &&
         xtestBackspaceBackend_.isAvailable()) {
@@ -311,6 +300,17 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   }
 
   const char *frontend = inputContext.frontend();
+
+  if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
+      requiresShiftSelectBackend(program) &&
+      uinputShiftSelectBackend_.isAvailable()) {
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: chat compatibility forced uinput-shift-select backend"
+                   << " program=" << program
+                   << " backend=" << uinputShiftSelectBackend_.name();
+    }
+    return {&uinputShiftSelectBackend_};
+  }
 
   if (requiresForwardBackspaceBackend(program)) {
     if (advancedConfig_.useUinputShiftSelectForLibreOffice.value() &&
