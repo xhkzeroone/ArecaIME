@@ -657,20 +657,11 @@ namespace areca::settings {
             pendingDeleteIndex = SIZE_MAX;
         }
 
-        areca::ArecaConfig mainWithoutFallback = config.main;
-        mainWithoutFallback.shiftSelectFallbackForBrowser.setValue(
-            savedConfig.main.shiftSelectFallbackForBrowser.value()
-        );
-        const bool tab0Dirty = !(mainWithoutFallback == savedConfig.main);
+        const bool tab0Dirty = !(config.main == savedConfig.main);
 
         const bool tab1Dirty = !(config.macros == savedConfig.macros);
 
-        const bool tab2Dirty = [&] {
-            const bool fallbackDirty =
-                (config.main.shiftSelectFallbackForBrowser.value()
-                 != savedConfig.main.shiftSelectFallbackForBrowser.value());
-            return !(config.advanced == savedConfig.advanced) || fallbackDirty;
-        }();
+        const bool tab2Dirty = !(config.advanced == savedConfig.advanced);
 
         const bool tab3Dirty =
             (appConfig.theme != savedAppConfig.theme) || (appConfig.fontSize != savedAppConfig.fontSize);
@@ -681,18 +672,11 @@ namespace areca::settings {
                                                       : tab3Dirty;
 
         const areca::ArecaConfig defaultMain{};
-        areca::ArecaConfig mainForDefaultCheck = config.main;
-        mainForDefaultCheck.shiftSelectFallbackForBrowser.setValue(defaultMain.shiftSelectFallbackForBrowser.value());
-        const bool tab0IsDefault = (mainForDefaultCheck == defaultMain);
+        const bool tab0IsDefault = (config.main == defaultMain);
 
         const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{});
 
-        const bool tab2IsDefault = [&] {
-            const bool fallbackIsDefault =
-                (config.main.shiftSelectFallbackForBrowser.value()
-                 == defaultMain.shiftSelectFallbackForBrowser.value());
-            return (config.advanced == areca::AdvancedConfig{}) && fallbackIsDefault;
-        }();
+        const bool tab2IsDefault = (config.advanced == areca::AdvancedConfig{});
 
         const bool tab3IsDefault = (appConfig.theme == AppTheme::Light) && (appConfig.fontSize == kDefaultFontSize);
 
@@ -740,18 +724,13 @@ namespace areca::settings {
         ImGui::BeginDisabled(!currentTabDirty);
         if (ImGui::Button("Huỷ các thay đổi")) {
             if (activeTab == 0) {
-                const bool currentFallback = config.main.shiftSelectFallbackForBrowser.value();
                 config.main = savedConfig.main;
-                config.main.shiftSelectFallbackForBrowser.setValue(currentFallback);
                 listeningShortcut = false;
             } else if (activeTab == 1) {
                 config.macros = savedConfig.macros;
                 pendingDeleteIndex = SIZE_MAX;
             } else if (activeTab == 2) {
                 config.advanced = savedConfig.advanced;
-                config.main.shiftSelectFallbackForBrowser.setValue(
-                    savedConfig.main.shiftSelectFallbackForBrowser.value()
-                );
             } else {
                 if (appConfig.theme != savedAppConfig.theme) {
                     needReapplyTheme = true;
@@ -773,9 +752,7 @@ namespace areca::settings {
             pushDangerButtonColors();
             if (ImGui::Button("Xác nhận khôi phục?")) {
                 if (activeTab == 0) {
-                    const bool currentFallback = config.main.shiftSelectFallbackForBrowser.value();
                     config.main = areca::ArecaConfig{};
-                    config.main.shiftSelectFallbackForBrowser.setValue(currentFallback);
                     listeningShortcut = false;
                     config.save();
                     savedConfig = config;
@@ -793,9 +770,6 @@ namespace areca::settings {
                         : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 } else if (activeTab == 2) {
                     config.advanced = areca::AdvancedConfig{};
-                    config.main.shiftSelectFallbackForBrowser.setValue(
-                        areca::ArecaConfig{}.shiftSelectFallbackForBrowser.value()
-                    );
                     config.save();
                     savedConfig = config;
                     std::string reloadError;
