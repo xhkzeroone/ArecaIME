@@ -339,18 +339,20 @@ trong màn hình chính và được lưu tại `~/.config/fcitx5/conf/areca.con
 ```ini
 PresentationMode=Rewrite
 SwitchModeKey=Alt+space
+SelectBackendKey=Alt+grave
 BambooInputMethod=Telex 2
 OutputCharset=Unicode
 SpellcheckMode="Khôi phục từ ngay trong lúc gõ"
 RestoreSurroundingText=False
 ModernStyle=True
 AutoCapitalizeAfterPunctuation=False
+ShiftSelectFallbackForBrowser=False
 EnableMacro=True
 CapitalizeMacro=True
 Debug=True
 ```
 
-Chọn **Cấu hình nâng cao** để mở panel timing riêng. Các giá trị trong
+Chọn **Cấu hình nâng cao** để mở panel timing và tương thích riêng. Các giá trị trong
 panel này được lưu tại `~/.config/fcitx5/conf/areca-advanced.conf`:
 
 ```ini
@@ -374,6 +376,10 @@ PostCommitDelayMs=20
 BackspaceRecovery=True
 PreciseTiming=True
 ForceUinput=False
+UseUinputShiftSelectForBrowser=False
+UseUinputShiftSelectForLibreOffice=False
+UseUinputShiftSelectForDiscordAndSignal=False
+UseUinputShiftSelectForSurrounding=False
 UseSurroundingV2ForBrowser=False
 ```
 
@@ -381,12 +387,14 @@ UseSurroundingV2ForBrowser=False
 | --- | --- | --- |
 | Chính | `PresentationMode` | `Rewrite` dùng queue và SurroundingText/forward-Backspace; `Preedit` xử lý đồng bộ bằng Bamboo; `Redirect (EN)` forward nguyên KeyEvent, không gọi Bamboo, queue hay commit text. Rewrite và Preedit có state/engine tách biệt, Redirect không có mutable state. |
 | Chính | `SwitchModeKey` | Hotkey quay vòng `Rewrite → Preedit → Redirect (EN) → Rewrite`, mặc định `Alt+Space`; mode mới được lưu global và hiện bằng popup thông tin của Fcitx5. |
+| Chính | `SelectBackendKey` | Hotkey mở menu chọn nhanh backend xóa phím cho ứng dụng hiện tại, mặc định chưa gán hoặc `Alt+grave`. |
 | Chính | `BambooInputMethod` | Tên input method được định nghĩa bởi Bamboo, mặc định `Telex 2`. |
 | Chính | `OutputCharset` | Bảng mã do Bamboo cung cấp, mặc định `Unicode`; gồm Unicode dựng sẵn/tổ hợp cùng các bảng mã tương thích cũ như TCVN3, VNI Windows, VIQR… |
 | Chính | `SpellcheckMode` | Chế độ kiểm tra cấu trúc âm tiết của Bamboo; có ba mức: `"Không kiểm tra (Tắt)"` – tắt hoàn toàn; `"Khôi phục từ sau khi gõ xong"` – tại word boundary, tự khôi phục từ tiếng Việt không hợp lệ về chuỗi phím Latin ban đầu; `"Khôi phục từ ngay trong lúc gõ"` – như mode 2 nhưng khôi phục trong khi gõ từng ký tự. Mặc định `"Khôi phục từ ngay trong lúc gõ"`. |
 | Chính | `RestoreSurroundingText` | Cho phép nạp lại và sửa từ đã commit ngay trước con trỏ trong mode `Rewrite` và `Preedit`. Đây là tính năng thử nghiệm và mặc định `False`. |
 | Chính | `ModernStyle` | `True` đặt dấu kiểu `hoà`, `thuý`; `False` dùng kiểu `hòa`, `thúy`. |
 | Chính | `AutoCapitalizeAfterPunctuation` | Tự viết hoa chữ ASCII đầu tiên sau `.`, `!`, `?` và khoảng trắng. Nhiều khoảng trắng vẫn giữ trạng thái chờ; `Enter` không kích hoạt. |
+| Chính | `ShiftSelectFallbackForBrowser` | Tự động fallback sang uinput Shift+Left khi trình duyệt không hỗ trợ surrounding text thay vì dùng forward-backspace, mặc định `False`. |
 | Chính | `EnableMacro` | Bật thay thế từ viết tắt tại dấu cách hoặc dấu câu. |
 | Chính | `CapitalizeMacro` | Tự đổi nội dung macro thành chữ thường/toàn chữ hoa theo cách viết key. |
 | Chính | `Debug` | Bật log chi tiết của addon. |
@@ -412,8 +420,37 @@ UseSurroundingV2ForBrowser=False
 | Nâng cao | `ForceUinput` | Ép dùng uinput thay cho forward Backspace khi khả dụng, mặc định `False`. |
 | Nâng cao | `UseXTestInsteadOfUinput` | Dùng backend Native thay cho uinput: Libei + RemoteDesktop portal trên Wayland, XTest trên X11; tự fallback XTest nếu Libei lỗi. Với libportal ≥ 0.8, quyền được khôi phục bằng token lưu tại `~/.config/fcitx5/areca-libei-restore-token` khi compositor hỗ trợ. Tên key cũ được giữ để tương thích cấu hình. |
 | Nâng cao | `UseXTestInsteadOfForwardKey` | Dùng backend Native thay cho forward Backspace, với cùng thứ tự Libei → XTest fallback. Tên key cũ được giữ để tương thích cấu hình. |
+| Nâng cao | `UseUinputShiftSelectForBrowser` | Ép dùng uinput Shift+Left cho trình duyệt web thay vì surrounding text, mặc định `False`. |
 | Nâng cao | `UseUinputShiftSelectForLibreOffice` | Ép `soffice.bin`, `libreoffice`, `DesktopEditors` và `onlyoffice` dùng uinput Shift+Left khi khả dụng, mặc định `False`; nếu tắt hoặc uinput không khả dụng thì dùng forward Backspace. |
+| Nâng cao | `UseUinputShiftSelectForDiscordAndSignal` | Ép ứng dụng Discord và Signal dùng uinput Shift+Left khi khả dụng, mặc định `False`. |
+| Nâng cao | `UseUinputShiftSelectForSurrounding` | Ép dùng uinput Shift+Left cho mọi ứng dụng hỗ trợ surrounding text, mặc định `False`. |
 | Nâng cao | `UseSurroundingV2ForBrowser` | Ép dùng surrounding text v2 xóa từng ký tự khi ứng dụng là trình duyệt, mặc định `False`. |
+
+## Cấu hình backend theo ứng dụng (App Overrides)
+
+Người dùng có thể gán cố định backend xóa phím cho từng ứng dụng tại `~/.config/fcitx5/conf/areca-apps.conf` hoặc cấu hình qua tab **Ứng dụng** trong GUI cài đặt `areca-settings`:
+
+```ini
+[AppOverrides/0]
+AppName=google-chrome
+Mode="Surrounding Text"
+
+[AppOverrides/1]
+AppName=soffice.bin
+Mode="Shift+Left (uinput)"
+```
+
+### Menu chọn nhanh backend bằng phím tắt
+1. Nhấn phím tắt được gán trong `SelectBackendKey` khi đang ở ứng dụng bất kỳ.
+2. Một danh sách ứng cử viên popup xuất hiện gồm 6 lựa chọn:
+   - `1. Tự động`: Sử dụng logic heuristic tự động của Areca.
+   - `2. Surrounding Text`: Sử dụng surrounding text; tự động fallback sang uinput shift-select hoặc forward-key nếu app không hỗ trợ surrounding text.
+   - `3. Shift+Left (uinput)`: Sử dụng cơ chế bôi đen bằng phím Shift+Left ảo qua kernel uinput.
+   - `4. Native (Libei/XTest)`: Sử dụng cơ chế mô phỏng phím cấp display server Native.
+   - `5. Uinput Backspace`: Phát chuỗi Backspace mức kernel qua uinput.
+   - `6. ForwardKey`: Chuyển tiếp cặp phím Backspace qua API Fcitx5.
+3. Nhấn số `1` đến `6` hoặc dùng phím mũi tên và `Enter` để chọn. Lựa chọn được lưu tức thì vào cấu hình ứng dụng.
+4. Trường hợp ứng dụng không trả về program name qua frontend (như trên XIM hoặc Wayland text-input), Areca tự động định danh theo mã UUID của context `context-<uuid_hex>` để đảm bảo menu vẫn hoạt động bình thường.
 
 Lưu ý: đổi giá trị mặc định trong source không ghi đè file cấu hình đã tồn tại.
 Khi nâng cấp từ bản cũ, Areca tự đọc timing còn nằm trong `areca.conf`;

@@ -242,22 +242,28 @@ Với kết quả đi qua `applyResult()` (phím đã được accept), khi `del
 
 Khi `deleteCount > 0`:
 
-1. `soffice.bin`, `libreoffice`, `DesktopEditors` và `onlyoffice` dùng
-   `UinputShiftSelectBackend` nếu `UseUinputShiftSelectForLibreOffice` bật và
-   `/dev/uinput` khả dụng. Các trường hợp còn lại dùng
-   `ForwardBackspaceBackend` và không đọc surrounding text.
-2. `ReliabilityChecker` đánh giá input context.
-3. Checker lọc program trước. Chỉ khi program thuộc họ VS Code, là IDE/code
-   editor/developer tool, hoặc là terminal Linux đã biết thì checker mới đọc và
-   so sánh capability mask. Nếu mask chính xác là `0x72`, checker cache
-   `forceForwardBackspace` rồi chọn `ForwardBackspaceBackend`. Các ứng dụng
-   ngoài allowlist không được xét rule theo mask; verdict unreliable vốn đã
-   chọn forward backend theo policy mặc định.
-   Program name rỗng cũng nằm ngoài allowlist và không được fallback theo
-   frontend, vì không đủ dữ liệu để ép an toàn.
-4. Nếu `UseUinputShiftSelectForBrowser` bật, ứng dụng là trình duyệt web và `/dev/uinput` khả dụng: chọn `UinputShiftSelectBackend`. Tuy nhiên nếu phát hiện đang có bôi đen sẵn (`cursor != anchor`) hoặc có `browserAutocomplete`, hệ thống hủy chọn uinput-shift-select và fallback về `ForwardBackspaceBackend` (+1 phím Backspace phụ) để đảm bảo an toàn.
-5. Verdict reliable còn lại chọn `SurroundingTextBackend`.
-6. Verdict unreliable chọn `ForwardBackspaceBackend`.
+1. `plasmashell` luôn dùng `ForwardBackspaceBackend` để tránh xung đột krunner.
+2. Terminal nhúng trong họ VS Code dùng `ForwardBackspaceBackend`.
+3. Nếu phát hiện đang có bôi đen sẵn (`cursor != anchor`) hoặc có `browserAutocomplete`, hệ thống hủy chọn uinput-shift-select và fallback về `ForwardBackspaceBackend` (+1 phím Backspace phụ) để đảm bảo an toàn.
+4. **Cấu hình ghi đè theo ứng dụng (`AppBackendOverrides`)**: Nếu ứng dụng có cấu hình chỉ định trong `areca-apps.conf`:
+   - `SurroundingText`: Nếu input context hỗ trợ surrounding, áp dụng các tùy chọn tương thích (`UseUinputShiftSelectForSurrounding`, `UseUinputShiftSelectForLibreOffice`, `UseUinputShiftSelectForDiscordAndSignal`, `UseUinputShiftSelectForBrowser`). Nếu không hỗ trợ surrounding, fallback tuần tự sang `UinputShiftSelectBackend` (nếu không phải terminal và uinput khả dụng) rồi sang `ForwardBackspaceBackend`.
+   - `UinputShiftSelect`: Dùng `UinputShiftSelectBackend` nếu uinput khả dụng và không phải terminal.
+   - `NativeXTest`: Dùng `NativeXTestBackend` (Libei trên Wayland, XTest trên X11); nếu không khả dụng fallback sang `UinputBackspaceBackend`, rồi sang `ForwardBackspaceBackend`.
+   - `UinputBackspace`: Dùng `UinputBackspaceBackend`; nếu không khả dụng fallback sang `NativeXTestBackend`, rồi sang `ForwardBackspaceBackend`.
+   - `ForwardKey`: Dùng `ForwardBackspaceBackend`.
+   - `Auto`: Tiếp tục luồng heuristic mặc định bên dưới.
+5. **Đánh giá độ tin cậy và chọn mặc định**:
+   - `ReliabilityChecker` đánh giá input context (`decision.useSurrounding`).
+   - Nếu `decision.useSurrounding` thỏa mãn:
+     - `UseUinputShiftSelectForSurrounding` bật: chọn `UinputShiftSelectBackend`.
+     - `UseUinputShiftSelectForBrowser` bật trên trình duyệt: chọn `UinputShiftSelectBackend`.
+     - `UseSurroundingV2ForBrowser` bật trên trình duyệt: chọn `SurroundingTextV2Backend`.
+     - Ngược lại: chọn `SurroundingTextBackend`.
+   - Nếu không thỏa mãn surrounding text:
+     - `UseUinputShiftSelectForBrowser` hoặc `ShiftSelectFallbackForBrowser` bật trên trình duyệt: chọn `UinputShiftSelectBackend`.
+     - `UseXTestInsteadOfUinput` hoặc `UseXTestInsteadOfForwardKey` bật: chọn `NativeXTestBackend`.
+     - `ForceUinput` bật hoặc terminal DBus: chọn `UinputBackspaceBackend`.
+     - Mặc định còn lại: chọn `ForwardBackspaceBackend`.
 
 ## Sơ đồ Sequence chi tiết các Backend và Selection Logic
 
@@ -276,10 +282,22 @@ sequenceDiagram
     R-->>E: ReliabilityDecision
     E->>IC: surroundingText() & check cursor/anchor
     
-    alt VS Code embedded terminal
+    alt plasmashell OR VS Code embedded terminal
         E-->>S: Return ForwardBackspaceBackend
     else browserAutocomplete OR (surrounding.isValid & cursor != anchor)
         E-->>S: Return ForwardBackspaceBackend (+1 extra backspace)
+    else App Override: mode != Auto
+        alt Mode: SurroundingText
+            E-->>S: Return Surrounding / Shift-Select / ForwardKey
+        else Mode: Shift+Left (uinput)
+            E-->>S: Return UinputShiftSelectBackend
+        else Mode: Native (Libei/XTest)
+            E-->>S: Return NativeXTestBackend (fallback uinput/forward)
+        else Mode: Uinput Backspace
+            E-->>S: Return UinputBackspaceBackend (fallback native/forward)
+        else Mode: ForwardKey
+            E-->>S: Return ForwardBackspaceBackend
+        end
     else decision.useSurrounding & UseUinputShiftSelectForBrowser & isBrowser & uinputAvailable
         E-->>S: Return UinputShiftSelectBackend
     else decision.useSurrounding

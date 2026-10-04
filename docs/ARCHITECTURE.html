@@ -4265,9 +4265,20 @@ ngoài allowlist không được xét rule theo mask; verdict unreliable vốn �
 chọn forward backend theo policy mặc định.
 Program name rỗng cũng nằm ngoài allowlist và không được fallback theo
 frontend, vì không đủ dữ liệu để ép an toàn.</li>
-<li>Nếu <code>UseUinputShiftSelectForBrowser</code> bật, ứng dụng là trình duyệt web và <code>/dev/uinput</code> khả dụng: chọn <code>UinputShiftSelectBackend</code>. Tuy nhiên nếu phát hiện đang có bôi đen sẵn (<code>cursor != anchor</code>) hoặc có <code>browserAutocomplete</code>, hệ thống hủy chọn uinput-shift-select và fallback về <code>ForwardBackspaceBackend</code> (+1 phím Backspace phụ) để đảm bảo an toàn.</li>
-<li>Verdict reliable còn lại chọn <code>SurroundingTextBackend</code>.</li>
-<li>Verdict unreliable chọn <code>ForwardBackspaceBackend</code>.</li>
+<li><code>plasmashell</code> luôn dùng <code>ForwardBackspaceBackend</code> để tránh xung đột krunner.</li>
+<li>Terminal nhúng trong họ VS Code dùng <code>ForwardBackspaceBackend</code>.</li>
+<li>Nếu phát hiện đang có bôi đen sẵn (<code>cursor != anchor</code>) hoặc có <code>browserAutocomplete</code>, hệ thống hủy chọn uinput-shift-select và fallback về <code>ForwardBackspaceBackend</code> (+1 phím Backspace phụ) để đảm bảo an toàn.</li>
+<li><strong>Cấu hình ghi đè theo ứng dụng (<code>AppBackendOverrides</code>)</strong>: Nếu ứng dụng có cấu hình chỉ định trong <code>areca-apps.conf</code>:
+  <ul>
+    <li><code>SurroundingText</code>: Tự động fallback sang <code>UinputShiftSelectBackend</code> rồi sang <code>ForwardBackspaceBackend</code> nếu app không hỗ trợ surrounding.</li>
+    <li><code>UinputShiftSelect</code>: Dùng <code>UinputShiftSelectBackend</code> nếu uinput khả dụng.</li>
+    <li><code>NativeXTest</code>: Dùng <code>NativeXTestBackend</code>; fallback sang <code>UinputBackspaceBackend</code> rồi sang <code>ForwardBackspaceBackend</code>.</li>
+    <li><code>UinputBackspace</code>: Dùng <code>UinputBackspaceBackend</code>; fallback sang <code>NativeXTestBackend</code> rồi sang <code>ForwardBackspaceBackend</code>.</li>
+    <li><code>ForwardKey</code>: Dùng <code>ForwardBackspaceBackend</code>.</li>
+    <li><code>Auto</code>: Tiếp tục luồng heuristic mặc định.</li>
+  </ul>
+</li>
+<li>Đánh giá độ tin cậy và chọn mặc định theo <code>decision.useSurrounding</code> hoặc fallback.</li>
 </ol>
 <h2 id="s%C6%A1-%C4%91%E1%BB%93-sequence-chi-ti%E1%BA%BFt-c%C3%A1c-backend-v%C3%A0-selection-logic" tabindex="-1">Sơ đồ Sequence chi tiết các Backend và Selection Logic</h2>
 <h3 id="1-s%C6%A1-%C4%91%E1%BB%93-quy%E1%BA%BFt-%C4%91%E1%BB%8Bnh-l%E1%BB%B1a-ch%E1%BB%8Dn-backend-selectrewritebackend" tabindex="-1">1. Sơ đồ quyết định lựa chọn Backend (<code>selectRewriteBackend</code>)</h3>
@@ -4283,8 +4294,22 @@ frontend, vì không đủ dữ liệu để ép an toàn.</li>
     R--&gt;&gt;E: ReliabilityDecision
     E-&gt;&gt;IC: surroundingText() &amp; check cursor/anchor
     
-    alt browserAutocomplete OR (surrounding.isValid &amp; cursor != anchor)
+    alt plasmashell OR VS Code embedded terminal
+        E--&gt;&gt;S: Return ForwardBackspaceBackend
+    else browserAutocomplete OR (surrounding.isValid &amp; cursor != anchor)
         E--&gt;&gt;S: Return ForwardBackspaceBackend (+1 extra backspace)
+    else App Override: mode != Auto
+        alt Mode: SurroundingText
+            E--&gt;&gt;S: Return Surrounding / Shift-Select / ForwardKey
+        else Mode: Shift+Left (uinput)
+            E--&gt;&gt;S: Return UinputShiftSelectBackend
+        else Mode: Native (Libei/XTest)
+            E--&gt;&gt;S: Return NativeXTestBackend (fallback uinput/forward)
+        else Mode: Uinput Backspace
+            E--&gt;&gt;S: Return UinputBackspaceBackend (fallback native/forward)
+        else Mode: ForwardKey
+            E--&gt;&gt;S: Return ForwardBackspaceBackend
+        end
     else decision.useSurrounding &amp; UseUinputShiftSelectForBrowser &amp; isBrowser &amp; uinputAvailable
         E--&gt;&gt;S: Return UinputShiftSelectBackend
     else decision.useSurrounding

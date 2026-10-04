@@ -143,10 +143,9 @@
           <article class="feature-card reveal">
             <div class="feature-icon" aria-hidden="true">↝</div>
             <p class="card-kicker">02 · REWRITE THÍCH ỨNG</p>
-            <h3>Hai backend, một kết quả</h3>
+            <h3>Nhiều backend, một kết quả</h3>
             <p>
-              Ưu tiên SurroundingText khi đáng tin cậy; fallback sang phát
-              Backspace qua Fcitx5 khi ứng dụng trả snapshot không phù hợp.
+              Tự động chọn SurroundingText, Shift+Left uinput, Native Libei/XTest hoặc Forward Backspace; hỗ trợ gán và đổi backend nhanh theo app.
             </p>
           </article>
 
@@ -248,14 +247,12 @@
                 <span><b>Hướng của Areca</b><small>Thích ứng theo từng input</small></span>
               </div>
               <p role="cell">
-                Giữ Fcitx5 làm nền tảng, tự đánh giá từng input context và dùng
-                <code>forwardKey()</code> cho fallback ngay trong addon—không
-                cần một dịch vụ uinput chạy riêng.
+                Giữ Fcitx5 làm nền tảng, tự động đánh giá từng input context,
+                đồng thời hỗ trợ phím tắt chọn nhanh và gán cố định backend cho từng ứng dụng.
               </p>
               <p role="cell">
-                Người dùng không phải lập danh sách mode theo app hay cấp thêm
-                quyền điều khiển thiết bị input. Đổi lại, fallback vẫn cần
-                frontend chuyển key đúng và timing phù hợp với ứng dụng.
+                Mặc định vận hành tự động không cần can thiệp; khi cần tương thích đặc thù,
+                người dùng có thể chuyển đổi tức thì giữa Surrounding, Shift+Left, Native và ForwardKey.
               </p>
             </div>
           </div>
@@ -317,7 +314,10 @@
                 <span>04A</span><b>SurroundingText</b><small>Delete + commit</small>
               </div>
               <div class="pipeline-node">
-                <span>04B</span><b>Forward Backspace</b><small>Fallback tuần tự</small>
+                <span>04B</span><b>Uinput Shift-Select</b><small>Bôi đen + commit</small>
+              </div>
+              <div class="pipeline-node">
+                <span>04C</span><b>Native / ForwardKey</b><small>Libei, XTest, Backspace</small>
               </div>
             </div>
           </div>

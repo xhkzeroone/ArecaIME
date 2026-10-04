@@ -84,10 +84,22 @@ sequenceDiagram
     R-->>E: ReliabilityDecision
     E->>IC: surroundingText() & check (cursor != anchor)
     
-    alt VS Code embedded terminal
+    alt plasmashell OR VS Code embedded terminal
         E-->>S: Return ForwardBackspaceBackend
     else browserAutocomplete OR (surrounding.isValid & cursor != anchor)
         E-->>S: Return ForwardBackspaceBackend (+1 extra backspace)
+    else App Override: mode != Auto
+        alt Mode: SurroundingText
+            E-->>S: Return Surrounding / Shift-Select / ForwardKey
+        else Mode: Shift+Left (uinput)
+            E-->>S: Return UinputShiftSelectBackend
+        else Mode: Native (Libei/XTest)
+            E-->>S: Return NativeXTestBackend (fallback uinput/forward)
+        else Mode: Uinput Backspace
+            E-->>S: Return UinputBackspaceBackend (fallback native/forward)
+        else Mode: ForwardKey
+            E-->>S: Return ForwardBackspaceBackend
+        end
     else decision.useSurrounding & UseUinputShiftSelectForBrowser & isBrowser & uinputAvailable
         E-->>S: Return UinputShiftSelectBackend
     else decision.useSurrounding
