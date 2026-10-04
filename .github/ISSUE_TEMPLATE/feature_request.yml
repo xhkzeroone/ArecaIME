@@ -1,0 +1,40 @@
+name: Feature request
+description: Đề xuất tính năng mới cho Areca
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã đóng góp ý tưởng cải tiến Areca! Vui lòng mô tả chi tiết đề xuất bên dưới.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề hoặc nhu cầu thực tế
+      description: Tính năng này giải quyết vấn đề gì hoặc đáp ứng nhu cầu nào trong quá trình gõ phím?
+      placeholder: Tôi thường xuyên gặp khó khăn khi gõ trong ứng dụng X vì...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Giải pháp đề xuất
+      description: Mô tả cách bạn muốn tính năng hoạt động hoặc giao diện hiển thị.
+      placeholder: Thêm tùy chọn mới trong cài đặt hoặc tự động nhận diện...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Giải pháp thay thế đã cân nhắc
+      description: Bạn đã thử giải quyết vấn đề này bằng cách nào khác chưa?
+      placeholder: Sử dụng phím tắt thủ công hoặc chuyển backend sang...
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Ngữ cảnh hoặc hình ảnh bổ sung
+      description: Thêm ảnh chụp màn hình, mock-up giao diện hoặc tài liệu tham khảo nếu có.
+    validations:
+      required: false

@@ -1,0 +1,80 @@
+name: Bug report
+description: Báo cáo lỗi để giúp cải thiện Areca
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã báo cáo lỗi! Vui lòng cung cấp chi tiết thông tin môi trường và các bước tái hiện bên dưới.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Môi trường hệ thống
+      description: Cung cấp thông tin hệ điều hành và phiên bản phần mềm liên quan.
+      placeholder: |
+        - Linux Distribution: Ubuntu 24.04 / Fedora 40 / Arch Linux / Linux Mint 22
+        - Display Server: Wayland / X11
+        - Desktop Environment: GNOME / KDE Plasma / Cinnamon / khác
+        - Phiên bản Fcitx5: output từ lệnh fcitx5 --version
+        - Phiên bản Areca: commit hash hoặc release version
+    validations:
+      required: true
+  - type: textarea
+    id: app_info
+    attributes:
+      label: Thông tin ứng dụng gặp lỗi
+      description: Ứng dụng xảy ra lỗi và cấu hình gõ liên quan.
+      placeholder: |
+        - Tên ứng dụng: Chrome / Firefox / LibreOffice / Discord / Telegram / VS Code...
+        - Định dạng cài đặt: Native deb, rpm, arch / Flatpak / Snap / AppImage
+        - Kiểu gõ: Telex / VNI / Simple Telex
+        - Backend chế độ gõ: Auto / Surrounding Text / Shift+Left uinput / Native Libei hoặc XTest
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước tái hiện lỗi
+      description: Mô tả chi tiết từng bước để gây ra lỗi.
+      placeholder: |
+        1. Mở ứng dụng...
+        2. Chuyển chế độ gõ sang tiếng Việt...
+        3. Gõ chuỗi ký tự...
+        4. Thao tác tiếp theo...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kết quả mong đợi
+      description: Bạn mong đợi điều gì xảy ra?
+      placeholder: Từ hiển thị đúng tiếng Việt, không bị nuốt ký tự hoặc nhảy con trỏ...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Kết quả thực tế
+      description: Điều gì thực tế đã xảy ra?
+      placeholder: Ký tự bị lặp, sai dấu, mất chữ hoặc ứng dụng bị đơ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log và thông tin chẩn đoán
+      description: Trích xuất log fcitx5 hoặc journalctl nếu có.
+      placeholder: |
+        Chạy lệnh sau trong terminal và dán kết quả vào đây:
+        journalctl --user -u fcitx5 -n 100 --no-pager
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Ngữ cảnh hoặc hình ảnh bổ sung
+      description: Thêm ảnh chụp màn hình, video quay màn hình hoặc ghi chú khác nếu có.
+    validations:
+      required: false
