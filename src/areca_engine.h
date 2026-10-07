@@ -3,11 +3,14 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
+#include <fcitx-utils/signals.h>
 #include <fcitx/action.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
+#include <fcitx/menu.h>
 
 #include "areca_config.h"
 #include "adaptive_wait_monitor.h"
@@ -112,6 +115,16 @@ private:
   bool handleBackendSelectionKey(fcitx::InputContext &inputContext,
                                  fcitx::KeyEvent &event);
 
+  void initActions();
+  void updateUI(fcitx::InputContext *ic);
+  void updateInputMethodAction(fcitx::InputContext *ic);
+  void updateCharsetAction(fcitx::InputContext *ic);
+  void updatePresentationModeAction(fcitx::InputContext *ic);
+  void updateSpellcheckAction(fcitx::InputContext *ic);
+  void updateModernStyleAction(fcitx::InputContext *ic);
+  void updateMacroAction(fcitx::InputContext *ic);
+  void updateAutoCapitalizeAction(fcitx::InputContext *ic);
+
   fcitx::Instance *instance_;
   ArecaConfig config_;
   AdvancedConfig advancedConfig_;
@@ -150,7 +163,31 @@ private:
   std::unique_ptr<MouseClickTracker> mouseTracker_;
   std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
       surroundingTextWatcher_;
+
+  std::unique_ptr<fcitx::SimpleAction> inputMethodAction_;
+  std::vector<std::unique_ptr<fcitx::SimpleAction>> inputMethodSubActions_;
+  std::vector<std::string> inputMethodNames_;
+  std::unique_ptr<fcitx::Menu> inputMethodMenu_;
+
+  std::unique_ptr<fcitx::SimpleAction> charsetAction_;
+  std::vector<std::unique_ptr<fcitx::SimpleAction>> charsetSubActions_;
+  std::vector<std::string> charsetNames_;
+  std::unique_ptr<fcitx::Menu> charsetMenu_;
+
+  std::unique_ptr<fcitx::SimpleAction> presentationModeAction_;
+  std::vector<std::unique_ptr<fcitx::SimpleAction>> presentationModeSubActions_;
+  std::unique_ptr<fcitx::Menu> presentationModeMenu_;
+
+  std::unique_ptr<fcitx::SimpleAction> spellcheckAction_;
+  std::vector<std::unique_ptr<fcitx::SimpleAction>> spellcheckSubActions_;
+  std::unique_ptr<fcitx::Menu> spellcheckMenu_;
+
+  std::unique_ptr<fcitx::SimpleAction> modernStyleAction_;
+  std::unique_ptr<fcitx::SimpleAction> macroAction_;
+  std::unique_ptr<fcitx::SimpleAction> autoCapitalizeAction_;
   std::unique_ptr<fcitx::SimpleAction> settingsAction_;
+
+  std::vector<fcitx::ScopedConnection> actionConnections_;
 };
 
 } // namespace areca
