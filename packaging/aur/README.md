@@ -22,7 +22,7 @@ Tên package được dùng là `fcitx5-areca` để không xung đột với pa
 Tag GitHub tương ứng phải tồn tại trước khi build. Với bản hiện tại:
 
 ```bash
-git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v1.0.1
+git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.0.2
 ```
 
 Clone repository AUR mới, chép đúng hai file package rồi test:
@@ -36,7 +36,7 @@ cp /path/to/ArecaIME/packaging/aur/.SRCINFO .
 makepkg --syncdeps --cleanbuild --check
 namcap PKGBUILD fcitx5-areca-*.pkg.tar.zst
 git add PKGBUILD .SRCINFO
-git commit -m "Initial import: fcitx5-areca 1.0.1"
+git commit -m "Initial import: fcitx5-areca 8.0.2"
 git push origin master
 ```
 
