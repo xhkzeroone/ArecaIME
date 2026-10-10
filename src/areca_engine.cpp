@@ -448,51 +448,51 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       switch (it->second) {
       case AppBackendMode::SurroundingText:
         if (decision.useSurrounding) {
-          RewriteBackend *shiftBackend =
-              !isTerminal ? resolvePreferredShiftSelectBackend() : nullptr;
           if (advancedConfig_.useUinputShiftSelectForSurrounding.value() &&
-              shiftBackend) {
+              !isTerminal && uinputShiftSelectBackend_.isAvailable()) {
             if (debugEnabled()) {
               FCITX_INFO()
-                  << "areca: forced shift-select backend instead of "
+                  << "areca: forced uinput-shift-select backend instead of "
                      "surrounding"
                   << " program=" << program
                   << " frontend=" << (frontend ? frontend : "")
-                  << " backend=" << shiftBackend->name();
+                  << " backend=" << uinputShiftSelectBackend_.name();
             }
-            return {shiftBackend};
+            return {&uinputShiftSelectBackend_};
           }
           if (advancedConfig_.useUinputShiftSelectForLibreOffice.value() &&
-              requiresForwardBackspaceBackend(program) && shiftBackend) {
+              requiresForwardBackspaceBackend(program) && !isTerminal &&
+              uinputShiftSelectBackend_.isAvailable()) {
             if (debugEnabled()) {
               FCITX_INFO()
-                  << "areca: office compatibility selected shift-select "
+                  << "areca: office compatibility selected uinput-shift-select "
                      "backend"
                   << " program=" << program
-                  << " backend=" << shiftBackend->name();
+                  << " backend=" << uinputShiftSelectBackend_.name();
             }
-            return {shiftBackend};
+            return {&uinputShiftSelectBackend_};
           }
           if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
-              requiresShiftSelectBackend(program) && shiftBackend) {
+              requiresShiftSelectBackend(program) && !isTerminal &&
+              uinputShiftSelectBackend_.isAvailable()) {
             if (debugEnabled()) {
               FCITX_INFO() << "areca: chat compatibility forced "
-                              "shift-select backend"
+                              "uinput-shift-select backend"
                            << " program=" << program
-                           << " backend=" << shiftBackend->name();
+                           << " backend=" << uinputShiftSelectBackend_.name();
             }
-            return {shiftBackend};
+            return {&uinputShiftSelectBackend_};
           }
           if (advancedConfig_.useUinputShiftSelectForBrowser.value() &&
-              shiftBackend) {
+              !isTerminal && uinputShiftSelectBackend_.isAvailable()) {
             if (debugEnabled()) {
               FCITX_INFO()
-                  << "areca: selected shift-select backend for browser"
+                  << "areca: selected uinput-shift-select backend for browser"
                   << " program=" << program
                   << " frontend=" << (frontend ? frontend : "")
-                  << " backend=" << shiftBackend->name();
+                  << " backend=" << uinputShiftSelectBackend_.name();
             }
-            return {shiftBackend};
+            return {&uinputShiftSelectBackend_};
           }
           if (debugEnabled()) {
             FCITX_INFO() << "areca: app-override selected surrounding backend"
@@ -500,17 +500,14 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {&surroundingBackend_};
         }
-        if (!isTerminal) {
-          if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
-            if (debugEnabled()) {
-              FCITX_INFO()
-                  << "areca: app-override surrounding unsupported, fallback to "
-                     "shift-select backend"
-                  << " program=" << program
-                  << " backend=" << shiftBackend->name();
-            }
-            return {shiftBackend};
+        if (uinputShiftSelectBackend_.isAvailable() && !isTerminal) {
+          if (debugEnabled()) {
+            FCITX_INFO()
+                << "areca: app-override surrounding unsupported, fallback to "
+                   "shift-select backend"
+                << " program=" << program;
           }
+          return {&uinputShiftSelectBackend_};
         }
         break;
       case AppBackendMode::UinputShiftSelect:
