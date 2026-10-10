@@ -558,7 +558,7 @@ namespace areca::settings {
 
                 const char* modeNames[] = {
                     "Tự động",          "Surrounding Text", "Shift+Left (uinput)", "Native (Libei/XTest)",
-                    "Uinput Backspace", "ForwardKey"
+                    "Uinput Backspace", "ForwardKey",       "Shift+Left (Libei/XTest)"
                 };
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
@@ -577,7 +577,7 @@ namespace areca::settings {
 
                     ImGui::TableSetColumnIndex(1);
                     int currentMode = static_cast<int>(overrides[i].mode.value());
-                    if (currentMode < 0 || currentMode > 5) {
+                    if (currentMode < 0 || currentMode > 6) {
                         currentMode = 0;
                     }
                     ImGui::SetNextItemWidth(-1.0F);

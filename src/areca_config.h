@@ -41,13 +41,15 @@ enum class AppBackendMode {
   UinputShiftSelect = 2,
   NativeXTest = 3,
   UinputBackspace = 4,
-  ForwardKey = 5
+  ForwardKey = 5,
+  NativeShiftSelect = 6
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
                                  N_("Surrounding Text"),
                                  N_("Shift+Left (uinput)"),
                                  N_("Native (Libei/XTest)"),
-                                 N_("Uinput Backspace"), N_("ForwardKey"));
+                                 N_("Uinput Backspace"), N_("ForwardKey"),
+                                 N_("Shift+Left (Libei/XTest)"));
 
 FCITX_CONFIGURATION(
     AppBackendOverrideEntry,

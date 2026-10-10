@@ -13,6 +13,8 @@ public:
   virtual ~XTestBackspaceDevice() = default;
   virtual bool isAvailable() = 0;
   virtual bool sendBackspace() = 0;
+  virtual bool sendShift(bool press) { (void)press; return false; }
+  virtual bool sendLeft() { return false; }
 };
 
 class XTestDevice final : public XTestBackspaceDevice {
@@ -33,6 +35,8 @@ public:
   void closeDevice();
   bool sendKey(uint32_t keysym, bool press);
   bool sendBackspace() override;
+  bool sendShift(bool press) override;
+  bool sendLeft() override;
 
 private:
   DebugProvider debugProvider_;
@@ -41,6 +45,8 @@ private:
   bool initialized_ = false;
   bool xtestSupported_ = false;
   uint32_t backspaceKeycode_ = 0;
+  uint32_t shiftKeycode_ = 0;
+  uint32_t leftKeycode_ = 0;
 };
 
 } // namespace areca

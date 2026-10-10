@@ -28,6 +28,7 @@
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
 #include "xtest_backspace_backend.h"
+#include "xtest_shift_select_backend.h"
 
 namespace areca {
 
@@ -89,6 +90,7 @@ private:
   RewriteBackendSelection
   selectRewriteBackend(fcitx::InputContext &inputContext,
                        const BambooResult &result);
+  RewriteBackend *resolvePreferredShiftSelectBackend();
   ReliabilityDecision
   evaluateReliability(fcitx::InputContext &inputContext,
                       const std::string &shownText,
@@ -153,6 +155,7 @@ private:
   UinputShiftSelectBackend uinputShiftSelectBackend_;
   NativeDevice nativeDevice_;
   XTestBackspaceBackend xtestBackspaceBackend_;
+  XTestShiftSelectBackend xtestShiftSelectBackend_;
   std::unique_ptr<fcitx::EventSourceTime> deviceWarmupTimer_;
   InputScheduler scheduler_;
   RewriteModeHandler rewriteHandler_;

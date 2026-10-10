@@ -544,4 +544,46 @@ bool NativeDevice::sendBackspace() {
 #endif
 }
 
+bool NativeDevice::sendShift(bool press) {
+  if (!impl_->wayland) {
+    return impl_->xtest.sendShift(press);
+  }
+#ifdef ARECA_HAVE_LIBEI
+  if (impl_->state == Impl::State::Ready && impl_->keyboard &&
+      impl_->connection) {
+    ei_device_keyboard_key(impl_->keyboard, KEY_LEFTSHIFT, press);
+    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
+    return true;
+  }
+  if (impl_->state == Impl::State::Failed) {
+    return impl_->xtest.sendShift(press);
+  }
+  return false;
+#else
+  return impl_->xtest.sendShift(press);
+#endif
+}
+
+bool NativeDevice::sendLeft() {
+  if (!impl_->wayland) {
+    return impl_->xtest.sendLeft();
+  }
+#ifdef ARECA_HAVE_LIBEI
+  if (impl_->state == Impl::State::Ready && impl_->keyboard &&
+      impl_->connection) {
+    ei_device_keyboard_key(impl_->keyboard, KEY_LEFT, true);
+    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
+    ei_device_keyboard_key(impl_->keyboard, KEY_LEFT, false);
+    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
+    return true;
+  }
+  if (impl_->state == Impl::State::Failed) {
+    return impl_->xtest.sendLeft();
+  }
+  return false;
+#else
+  return impl_->xtest.sendLeft();
+#endif
+}
+
 } // namespace areca

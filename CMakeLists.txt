@@ -77,7 +77,8 @@ add_library(areca MODULE
     src/native_device.cpp
     src/word_segment.cpp
     src/xtest_backspace_backend.cpp
-    src/xtest_device.cpp)
+    src/xtest_device.cpp
+    src/xtest_shift_select_backend.cpp)
 target_compile_definitions(areca PRIVATE
     ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor"
     ARECA_SETTINGS_PATH="${CMAKE_INSTALL_FULL_BINDIR}/areca-settings")
@@ -355,6 +356,18 @@ if(BUILD_TESTING)
     target_link_libraries(areca-xtest-backspace-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME xtest-backspace COMMAND areca-xtest-backspace-test)
+
+    add_executable(areca-xtest-shift-select-test
+        tests/xtest_shift_select_backend_test.cpp
+        src/xtest_shift_select_backend.cpp)
+    target_compile_features(areca-xtest-shift-select-test PRIVATE cxx_std_20)
+    target_compile_options(areca-xtest-shift-select-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-xtest-shift-select-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(areca-xtest-shift-select-test PRIVATE
+        Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME xtest-shift-select COMMAND areca-xtest-shift-select-test)
 
     add_executable(areca-surrounding-text-v2-test
         tests/surrounding_text_v2_backend_test.cpp

@@ -24,6 +24,8 @@ public:
 
   bool isAvailable() override;
   bool sendBackspace() override;
+  bool sendShift(bool press) override;
+  bool sendLeft() override;
   bool warmUp();
 
 private:
