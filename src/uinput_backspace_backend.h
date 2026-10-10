@@ -69,6 +69,7 @@ private:
   uint32_t backspaceDelayMs_ = 0;
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
+  uint64_t ackSentAtUsec_ = 0;
   bool backspaceAckTimedOut_ = false;
   std::string commitText_;
 };

@@ -126,6 +126,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                               adaptiveWait_,
                               [this]() { return debugEnabled(); }),
       uinputShiftSelectBackend_(instance_->eventLoop(), uinputDevice_,
+                                adaptiveWait_,
                                 [this]() { return debugEnabled(); }),
       nativeDevice_(instance_->eventLoop(),
                     [this]() { return debugEnabled(); }),
@@ -370,50 +371,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {&forwardBackspaceBackend_};
   }
 
-  if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
-      requiresShiftSelectBackend(program) &&
-      uinputShiftSelectBackend_.isAvailable()) {
-    if (debugEnabled()) {
-      FCITX_INFO()
-          << "areca: chat compatibility forced uinput-shift-select backend"
-          << " program=" << program
-          << " backend=" << uinputShiftSelectBackend_.name();
-    }
-    return {&uinputShiftSelectBackend_};
-  }
-
-  if (requiresForwardBackspaceBackend(program)) {
-    if (advancedConfig_.useUinputShiftSelectForLibreOffice.value() &&
-        uinputShiftSelectBackend_.isAvailable()) {
-      if (debugEnabled()) {
-        FCITX_INFO()
-            << "areca: office compatibility selected uinput-shift-select "
-               "backend"
-            << " program=" << program
-            << " backend=" << uinputShiftSelectBackend_.name();
-      }
-      return {&uinputShiftSelectBackend_};
-    }
-    if (advancedConfig_.useXTestInsteadOfUinput.value() &&
-        xtestBackspaceBackend_.isAvailable()) {
-      if (debugEnabled()) {
-        FCITX_INFO() << "areca: office compatibility selected native backend "
-                        "(replacing uinput)"
-                     << " program=" << program
-                     << " backend=" << xtestBackspaceBackend_.name();
-      }
-      return {&xtestBackspaceBackend_};
-    }
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: program compatibility selected "
-                      "forward-backspace backend"
-                   << " program=" << program << " office_shift_select="
-                   << advancedConfig_.useUinputShiftSelectForLibreOffice.value()
-                   << " backend=" << forwardBackspaceBackend_.name();
-    }
-    return {&forwardBackspaceBackend_};
-  }
-
   const auto capabilities = inputContext.capabilityFlags();
   const auto &surrounding = inputContext.surroundingText();
   const bool hasSurrounding =
@@ -592,6 +549,50 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         break;
       }
     }
+  }
+
+  if (advancedConfig_.useUinputShiftSelectForDiscordAndSignal.value() &&
+      requiresShiftSelectBackend(program) &&
+      uinputShiftSelectBackend_.isAvailable()) {
+    if (debugEnabled()) {
+      FCITX_INFO()
+          << "areca: chat compatibility forced uinput-shift-select backend"
+          << " program=" << program
+          << " backend=" << uinputShiftSelectBackend_.name();
+    }
+    return {&uinputShiftSelectBackend_};
+  }
+
+  if (requiresForwardBackspaceBackend(program)) {
+    if (advancedConfig_.useUinputShiftSelectForLibreOffice.value() &&
+        uinputShiftSelectBackend_.isAvailable()) {
+      if (debugEnabled()) {
+        FCITX_INFO()
+            << "areca: office compatibility selected uinput-shift-select "
+               "backend"
+            << " program=" << program
+            << " backend=" << uinputShiftSelectBackend_.name();
+      }
+      return {&uinputShiftSelectBackend_};
+    }
+    if (advancedConfig_.useXTestInsteadOfUinput.value() &&
+        xtestBackspaceBackend_.isAvailable()) {
+      if (debugEnabled()) {
+        FCITX_INFO() << "areca: office compatibility selected native backend "
+                        "(replacing uinput)"
+                     << " program=" << program
+                     << " backend=" << xtestBackspaceBackend_.name();
+      }
+      return {&xtestBackspaceBackend_};
+    }
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: program compatibility selected "
+                      "forward-backspace backend"
+                   << " program=" << program << " office_shift_select="
+                   << advancedConfig_.useUinputShiftSelectForLibreOffice.value()
+                   << " backend=" << forwardBackspaceBackend_.name();
+    }
+    return {&forwardBackspaceBackend_};
   }
 
   const bool isBrowserForShiftSelect =
@@ -1070,16 +1071,14 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
   auto &statusArea = inputContext->statusArea();
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        inputMethodAction_.get());
-  statusArea.addAction(fcitx::StatusGroup::InputMethod,
-                       charsetAction_.get());
+  statusArea.addAction(fcitx::StatusGroup::InputMethod, charsetAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        presentationModeAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        spellcheckAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        modernStyleAction_.get());
-  statusArea.addAction(fcitx::StatusGroup::InputMethod,
-                       macroAction_.get());
+  statusArea.addAction(fcitx::StatusGroup::InputMethod, macroAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        autoCapitalizeAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod, settingsAction_.get());
@@ -1581,8 +1580,7 @@ void ArecaEngine::initActions() {
   spellcheckAction_ = std::make_unique<fcitx::SimpleAction>();
   spellcheckAction_->setIcon("tools-check-spelling");
   spellcheckAction_->setShortText(_("Kiểm tra chính tả"));
-  uiManager.registerAction("areca-spellcheck-mode",
-                           spellcheckAction_.get());
+  uiManager.registerAction("areca-spellcheck-mode", spellcheckAction_.get());
 
   spellcheckMenu_ = std::make_unique<fcitx::Menu>();
   spellcheckAction_->setMenu(spellcheckMenu_.get());

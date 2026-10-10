@@ -22,9 +22,16 @@ bool isLeftKey(const fcitx::KeyEvent &event) {
 
 UinputShiftSelectBackend::UinputShiftSelectBackend(fcitx::EventLoop &eventLoop,
                                                    UinputDevice &device,
+                                                   AdaptiveWait &adaptiveWait,
                                                    DebugProvider debugProvider)
     : eventLoop_(eventLoop), device_(device), commitPost_(eventLoop),
-      debugProvider_(std::move(debugProvider)) {}
+      adaptiveWait_(&adaptiveWait), debugProvider_(std::move(debugProvider)) {}
+
+UinputShiftSelectBackend::UinputShiftSelectBackend(fcitx::EventLoop &eventLoop,
+                                                   UinputDevice &device,
+                                                   DebugProvider debugProvider)
+    : eventLoop_(eventLoop), device_(device), commitPost_(eventLoop),
+      adaptiveWait_(nullptr), debugProvider_(std::move(debugProvider)) {}
 
 UinputShiftSelectBackend::~UinputShiftSelectBackend() { clearPending(); }
 
@@ -37,6 +44,9 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
     return ApplyStatus::Failed;
   }
 
+  if (adaptiveWait_) {
+    adaptiveWait_->beginTransaction();
+  }
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
@@ -97,23 +107,26 @@ void UinputShiftSelectBackend::sendNextSelectionLeft() {
   --selectionCount_;
 
   if (selectionCount_) {
-    schedule(shiftSelectDelayMs_, TimerDispatch::TimerCallback,
+    const uint32_t effectiveDelay =
+        adaptiveWait_ ? adaptiveWait_->effectiveBackspaceDelayMs(shiftSelectDelayMs_)
+                      : shiftSelectDelayMs_;
+    schedule(effectiveDelay, TimerDispatch::TimerCallback,
              [this]() { sendNextSelectionLeft(); });
     return;
   }
 
-  // Không thả Shift theo timer nữa. Chờ Left dư quay lại Fcitx để biết N Left
-  // chọn thật đã được nhận; timer này chỉ là đường thoát an toàn khi mất event.
+  ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
   schedule(kSelectionAckTimeoutMs, TimerDispatch::TimerCallback, [this]() {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-shift-select left ack timeout tx="
                    << transactionId_ << " seen=" << leftTracker_.pressesSeen()
                    << " expected=" << leftTracker_.expectedPresses();
     }
-    // Timeout thắng cuộc đua: hủy context đếm trước khi thả Shift. Left đến
-    // muộn sẽ đi theo pipeline phím thông thường và không thể hoàn tất lần hai.
     leftAckTimedOut_ = true;
     leftTracker_.clear();
+    if (adaptiveWait_) {
+      adaptiveWait_->observeAckTimeout();
+    }
     releaseShiftThenCommit();
   });
 }
@@ -156,7 +169,11 @@ bool UinputShiftSelectBackend::handleSelectionLeft(fcitx::KeyEvent &event) {
   }
 
   if (action == UinputKeyAckTracker::PressAction::FilterAndAcknowledge) {
-    // Left dư đã tới Fcitx: lọc nó trước, sau đó mới phát Shift Up.
+    if (ackSentAtUsec_ > 0 && adaptiveWait_) {
+      const uint64_t roundtripUsec = fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
+      ackSentAtUsec_ = 0;
+      adaptiveWait_->observeAckRoundtrip(roundtripUsec);
+    }
     releaseShiftThenCommit();
   }
   return true;
@@ -164,7 +181,10 @@ bool UinputShiftSelectBackend::handleSelectionLeft(fcitx::KeyEvent &event) {
 
 void UinputShiftSelectBackend::releaseShiftThenCommit() {
   releaseShift();
-  schedule(afterSelectWaitMs_, TimerDispatch::PostEvent,
+  const uint32_t effectiveWait =
+      adaptiveWait_ ? adaptiveWait_->effectiveWaitMs(afterSelectWaitMs_)
+                    : afterSelectWaitMs_;
+  schedule(effectiveWait, TimerDispatch::PostEvent,
            [this]() { commitSelectionAndComplete(); });
 }
 
@@ -231,11 +251,17 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
 }
 
 void UinputShiftSelectBackend::scheduleCommit() {
-  schedule(afterSelectWaitMs_, TimerDispatch::PostEvent,
+  const uint32_t effectiveWait =
+      adaptiveWait_ ? adaptiveWait_->effectiveWaitMs(afterSelectWaitMs_)
+                    : afterSelectWaitMs_;
+  schedule(effectiveWait, TimerDispatch::PostEvent,
            [this]() { commitSelectionAndComplete(); });
 }
 
 void UinputShiftSelectBackend::completeWithoutCommit() {
+  if (adaptiveWait_) {
+    adaptiveWait_->cancelTransaction();
+  }
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-shift-select context lost tx="
                  << transactionId_;
@@ -246,6 +272,9 @@ void UinputShiftSelectBackend::completeWithoutCommit() {
 void UinputShiftSelectBackend::finishTransaction() {
   const uint64_t transactionId = transactionId_;
   auto onDone = std::move(onDone_);
+  if (adaptiveWait_) {
+    adaptiveWait_->completeTransaction();
+  }
   clearPending();
   if (onDone) {
     onDone(transactionId, RewriteOutcome::Succeeded);
@@ -294,6 +323,7 @@ void UinputShiftSelectBackend::clearPending() {
   shiftSelectDelayMs_ = 0;
   afterSelectWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
+  ackSentAtUsec_ = 0;
   shiftHeld_ = false;
   leftAckTimedOut_ = false;
   commitText_.clear();

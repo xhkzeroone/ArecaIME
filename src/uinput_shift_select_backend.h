@@ -9,6 +9,7 @@
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/trackableobject.h>
 
+#include "adaptive_wait.h"
 #include "event_loop_post.h"
 #include "rewrite_backend.h"
 #include "uinput_device.h"
@@ -21,6 +22,9 @@ public:
   using DebugProvider = std::function<bool()>;
 
   UinputShiftSelectBackend(fcitx::EventLoop &eventLoop, UinputDevice &device,
+                           AdaptiveWait &adaptiveWait,
+                           DebugProvider debugProvider);
+  UinputShiftSelectBackend(fcitx::EventLoop &eventLoop, UinputDevice &device,
                            DebugProvider debugProvider);
   ~UinputShiftSelectBackend() override;
 
@@ -30,8 +34,6 @@ public:
 
   bool isAvailable();
   bool hasPending() const { return transactionId_ != 0; }
-  // Trả về true khi đây là Left do transaction hiện tại quản lý và event đã
-  // được forward hoặc filter ngay trong hàm này.
   bool handleSelectionLeft(fcitx::KeyEvent &event);
 
 private:
@@ -52,6 +54,7 @@ private:
   fcitx::EventLoop &eventLoop_;
   UinputDevice &device_;
   EventLoopPostTask commitPost_;
+  AdaptiveWait *adaptiveWait_ = nullptr;
   DebugProvider debugProvider_;
 
   std::unique_ptr<fcitx::EventSourceTime> timer_;
@@ -64,6 +67,7 @@ private:
   uint32_t shiftSelectDelayMs_ = 0;
   uint32_t afterSelectWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
+  uint64_t ackSentAtUsec_ = 0;
   bool shiftHeld_ = false;
   bool leftAckTimedOut_ = false;
   std::string commitText_;

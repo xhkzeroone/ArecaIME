@@ -97,8 +97,7 @@ void UinputBackspaceBackend::sendNextBackspace() {
   if (remainingBackspaces_) {
     scheduleNextBackspace();
   } else {
-    // Không commit theo timer ngay sau lần phát cuối. Chờ Backspace dư quay
-    // lại Fcitx; timer chỉ là đường thoát khi event xác nhận bị mất.
+    ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
     schedule(kBackspaceAckTimeoutMs, TimerDispatch::TimerCallback, [this]() {
       if (debugProvider_()) {
         FCITX_INFO() << "areca: uinput-backspace ack timeout tx="
@@ -108,6 +107,7 @@ void UinputBackspaceBackend::sendNextBackspace() {
       }
       backspaceAckTimedOut_ = true;
       backspaceTracker_.clear();
+      adaptiveWait_.observeAckTimeout();
       scheduleCommit();
     });
   }
@@ -150,13 +150,20 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
   }
 
   if (action == UinputKeyAckTracker::PressAction::FilterAndAcknowledge) {
+    if (ackSentAtUsec_ > 0) {
+      const uint64_t roundtripUsec = fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
+      ackSentAtUsec_ = 0;
+      adaptiveWait_.observeAckRoundtrip(roundtripUsec);
+    }
     scheduleCommit();
   }
   return true;
 }
 
 void UinputBackspaceBackend::scheduleNextBackspace() {
-  schedule(backspaceDelayMs_, TimerDispatch::TimerCallback,
+  const uint32_t delayMs =
+      adaptiveWait_.effectiveBackspaceDelayMs(backspaceDelayMs_);
+  schedule(delayMs, TimerDispatch::TimerCallback,
            [this]() { sendNextBackspace(); });
 }
 
@@ -308,6 +315,7 @@ void UinputBackspaceBackend::clearPending() {
   backspaceDelayMs_ = 0;
   afterBackspaceWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
+  ackSentAtUsec_ = 0;
   backspaceAckTimedOut_ = false;
   commitText_.clear();
 }

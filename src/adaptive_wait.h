@@ -14,14 +14,11 @@ public:
   static constexpr uint64_t LagThresholdUsec = 5000;
   static constexpr uint32_t StableTransactionsToDecay = 5;
 
-  // Đánh dấu một lượt xóa mới. Nếu probe toàn cục phát hiện lag trong lúc lượt
-  // này đang chạy thì mức wait không được giảm khi commit hoàn tất.
   void beginTransaction() {
     transactionActive_ = true;
     lagObservedInTransaction_ = false;
   }
 
-  // Hủy trạng thái transaction khi input context biến mất giữa chừng.
   void cancelTransaction() {
     transactionActive_ = false;
     lagObservedInTransaction_ = false;
@@ -38,24 +35,58 @@ public:
     return effectiveWaitMs(baseWaitMs) - baseWaitMs;
   }
 
-  // Timer thuộc chính backend Backspace. Lag ở đây được tính cho transaction
-  // hiện tại để giữ nguyên mức wait sau khi transaction kết thúc.
+  uint32_t effectiveBackspaceDelayMs(uint32_t baseDelayMs) const {
+    if (extraWaitMs_ == 0) {
+      return baseDelayMs;
+    }
+    const uint32_t addedDelay = std::min(4U, (extraWaitMs_ + 9) / 10);
+    return std::min(5U, baseDelayMs + addedDelay);
+  }
+
   Adjustment observeTimer(uint64_t deadlineUsec, uint64_t firedAtUsec) {
     return observeLateness(deadlineUsec, firedAtUsec, true);
   }
 
-  // Probe chạy liên tục trên event loop, kể cả khi chưa có rewrite. Nhờ đó một
-  // transaction chỉ có một Backspace vẫn biết máy đang chậm ngay từ đầu.
   Adjustment observeSystemTimer(uint64_t deadlineUsec, uint64_t firedAtUsec) {
     return observeLateness(deadlineUsec, firedAtUsec, transactionActive_);
   }
 
-  // Chỉ giảm 10 ms sau nhiều transaction ổn định. Không đếm từng timer con vì
-  // một transaction nhiều Backspace có thể làm mức wait tụt quá nhanh.
+  Adjustment observeAckTimeout() {
+    return applyLag(30, true);
+  }
+
+  Adjustment observeAckRoundtrip(uint64_t roundtripUsec) {
+    if (roundtripUsec >= 4000) {
+      const uint32_t latenessMs = static_cast<uint32_t>(roundtripUsec / 1000);
+      return applyLag(latenessMs, true);
+    }
+    return Adjustment::None;
+  }
+
+  Adjustment observeSystemStress(uint32_t suggestedWaitMs) {
+    return applyLag(suggestedWaitMs, transactionActive_);
+  }
+
+  void markSystemStressed() {
+    systemStressed_ = true;
+  }
+
+  void clearSystemStress() {
+    systemStressed_ = false;
+  }
+
+  bool isSystemStressed() const {
+    return systemStressed_;
+  }
+
   Adjustment completeTransaction() {
     transactionActive_ = false;
     if (lagObservedInTransaction_) {
       lagObservedInTransaction_ = false;
+      return Adjustment::None;
+    }
+    if (systemStressed_) {
+      stableTransactions_ = 0;
       return Adjustment::None;
     }
     if (extraWaitMs_ == 0) {
@@ -74,37 +105,39 @@ public:
   uint32_t extraWaitMs() const { return extraWaitMs_; }
 
 private:
+  Adjustment applyLag(uint32_t latenessMs, bool markTransaction) {
+    if (markTransaction) {
+      lagObservedInTransaction_ = true;
+    }
+    stableTransactions_ = 0;
+    const uint32_t previous = extraWaitMs_;
+    const uint32_t clampedLatenessMs = std::min(MaxWaitMs, latenessMs);
+    const uint32_t roundedLatenessMs =
+        ((clampedLatenessMs + StepMs - 1) / StepMs) * StepMs;
+    const uint32_t steppedWaitMs = std::min(MaxWaitMs, extraWaitMs_ + StepMs);
+    extraWaitMs_ = std::max(steppedWaitMs, roundedLatenessMs);
+    return extraWaitMs_ != previous ? Adjustment::Increased
+                                    : Adjustment::None;
+  }
+
   Adjustment observeLateness(uint64_t deadlineUsec, uint64_t firedAtUsec,
                              bool markTransaction) {
     const uint64_t latenessUsec =
         firedAtUsec > deadlineUsec ? firedAtUsec - deadlineUsec : 0;
     if (latenessUsec >= LagThresholdUsec) {
-      if (markTransaction) {
-        lagObservedInTransaction_ = true;
-      }
-      stableTransactions_ = 0;
-      const uint32_t previous = extraWaitMs_;
-      // Đổi độ trễ sang ms rồi làm tròn lên bước 10 ms. Ví dụ 12.9 ms thành
-      // 20 ms để lần phát hiện đầu tiên có thêm biên an toàn.
       const uint64_t latenessMs = std::min<uint64_t>(
           MaxWaitMs, latenessUsec / 1000 + (latenessUsec % 1000 != 0));
-      const uint32_t roundedLatenessMs =
-          static_cast<uint32_t>(std::min<uint64_t>(
-              MaxWaitMs, ((latenessMs + StepMs - 1) / StepMs) * StepMs));
-      // Nếu lag lặp lại, tiếp tục học thêm tối thiểu một bước 10 ms ngay cả khi
-      // độ trễ mới không lớn hơn mức đã ghi nhận.
-      const uint32_t steppedWaitMs = std::min(MaxWaitMs, extraWaitMs_ + StepMs);
-      extraWaitMs_ = std::max(steppedWaitMs, roundedLatenessMs);
-      return extraWaitMs_ != previous ? Adjustment::Increased
-                                      : Adjustment::None;
+      return applyLag(static_cast<uint32_t>(latenessMs), markTransaction);
     }
 
     return Adjustment::None;
   }
+
   uint32_t extraWaitMs_ = 0;
   uint32_t stableTransactions_ = 0;
   bool transactionActive_ = false;
   bool lagObservedInTransaction_ = false;
+  bool systemStressed_ = false;
 };
 
 } // namespace areca

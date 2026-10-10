@@ -81,7 +81,9 @@ void ForwardBackspaceBackend::sendNextBackspace() {
 }
 
 void ForwardBackspaceBackend::scheduleNextBackspace() {
-  schedule(backspaceDelayMs_, TimerDispatch::TimerCallback,
+  const uint32_t delayMs =
+      adaptiveWait_.effectiveBackspaceDelayMs(backspaceDelayMs_);
+  schedule(delayMs, TimerDispatch::TimerCallback,
            [this]() { sendNextBackspace(); });
 }
 
