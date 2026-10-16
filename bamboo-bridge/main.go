@@ -74,20 +74,77 @@ func ArecaBambooAddMacro(id C.uint64_t, key *C.char, value *C.char) {
 	}
 }
 
+func toTitleCase(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	startOfWord := true
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			if startOfWord {
+				b.WriteRune(unicode.ToUpper(r))
+				startOfWord = false
+			} else {
+				b.WriteRune(unicode.ToLower(r))
+			}
+		} else if unicode.IsMark(r) {
+			b.WriteRune(r)
+		} else {
+			startOfWord = true
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 func matchMacroCase(key string, value string) string {
 	runes := []rune(key)
 	if len(runes) == 0 {
 		return value
 	}
-	if unicode.IsLower(runes[0]) {
-		return strings.ToLower(value)
-	}
-	for _, current := range runes[1:] {
-		if unicode.IsLower(current) {
-			return value
+
+	var letters []rune
+	for _, r := range runes {
+		if unicode.IsLetter(r) {
+			letters = append(letters, r)
 		}
 	}
-	return strings.ToUpper(value)
+
+	if len(letters) == 0 {
+		return value
+	}
+
+	allLower := true
+	allUpper := true
+	for _, r := range letters {
+		if unicode.IsUpper(r) {
+			allLower = false
+		}
+		if unicode.IsLower(r) {
+			allUpper = false
+		}
+	}
+
+	if allLower {
+		return strings.ToLower(value)
+	}
+	if allUpper {
+		return strings.ToUpper(value)
+	}
+
+	if unicode.IsUpper(letters[0]) {
+		restLower := true
+		for _, r := range letters[1:] {
+			if !unicode.IsLower(r) {
+				restLower = false
+				break
+			}
+		}
+		if restLower {
+			return toTitleCase(value)
+		}
+	}
+
+	return value
 }
 
 //export ArecaBambooExpandMacro

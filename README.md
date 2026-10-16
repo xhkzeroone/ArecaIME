@@ -516,6 +516,14 @@ các cặp `Từ viết tắt → Nội dung thay thế`. Macro được lookup 
 hoa/thường và chỉ expand khi gặp word boundary, nên key vẫn có thể được gõ như
 một phần của từ dài hơn.
 
+Ví dụ với macro `tv → tiếng việt` và `CapitalizeMacro=True`:
+
+```text
+tv<Space>  → tiếng việt␠
+TV<Space>  → TIẾNG VIỆT␠
+Tv<Space>  → Tiếng Việt␠
+```
+
 Ví dụ với macro `bt → Be There` và `CapitalizeMacro=True`:
 
 ```text

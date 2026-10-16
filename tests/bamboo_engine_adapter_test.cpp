@@ -272,6 +272,28 @@ int main() {
   }
   assert(display == "BE THERE ");
 
+  const std::vector<areca::MacroDefinition> vietnameseMacros = {
+      {"tv", "tiếng việt"}};
+  areca::BambooEngineAdapter titlecaseMacroEngine(
+      "Telex 2", true, true, true, "Unicode", true, true, vietnameseMacros);
+  display.clear();
+  for (char key : std::string("Tv ")) {
+    applyToDisplay(display, type(titlecaseMacroEngine, key));
+  }
+  assert(display == "Tiếng Việt ");
+
+  display.clear();
+  for (char key : std::string("TV ")) {
+    applyToDisplay(display, type(titlecaseMacroEngine, key));
+  }
+  assert(display == "TIẾNG VIỆT ");
+
+  display.clear();
+  for (char key : std::string("tv ")) {
+    applyToDisplay(display, type(titlecaseMacroEngine, key));
+  }
+  assert(display == "tiếng việt ");
+
   areca::BambooEngineAdapter disabledMacroEngine(
       "Telex 2", true, true, true, "Unicode", false, true, macros);
   display.clear();

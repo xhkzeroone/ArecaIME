@@ -211,7 +211,8 @@ Macro table là sub-config riêng gồm các cặp `Key/Value`. Khi xử lý m�
 boundary, bridge lấy word hiện tại ở `PunctuationMode`, lookup key không phân
 biệt hoa/thường và expand trước spell-check. Nếu `CapitalizeMacro` bật, key viết
 thường tạo replacement viết thường, key toàn chữ hoa tạo replacement toàn chữ
-hoa, còn kiểu mixed-case giữ nguyên value cấu hình. Adapter reset Bamboo sau
+hoa, key viết hoa chữ đầu tạo replacement viết hoa chữ đầu mỗi từ dạng Title Case,
+còn các kiểu mixed-case khác giữ nguyên value cấu hình. Adapter reset Bamboo sau
 match, nối boundary, encode theo charset rồi tính delta rewrite. Vì thế macro
 không có đường commit đặc biệt và vẫn tuân thủ mọi queue/pending invariant.
 
