@@ -581,13 +581,15 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {surBackend, 0, false, backendVerdict_.probePending};
         }
-        if (!isTerminal) {
+        if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
+            inputTypeDetector_.isBrowser(program)) {
           if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
             if (debugEnabled()) {
               FCITX_INFO()
-                  << "areca: app-override surrounding unsupported, fallback to "
-                     "shift-select backend"
-                  << " program=" << program;
+                  << "areca: browser surrounding disabled or failed, fallback to shift-select"
+                  << " program=" << program
+                  << " frontend=" << (frontend ? frontend : "")
+                  << " backend=" << shiftBackend->name();
             }
             return {shiftBackend};
           }
