@@ -498,15 +498,15 @@ namespace areca::settings {
 
     void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut) {
         drawPageIntro(
-            "Ứng dụng", "Cấu hình backend xóa phím cố định cho từng ứng dụng và phím tắt mở menu chọn backend."
+            "Ứng dụng", "Chọn chế độ gõ hoặc backend Rewrite riêng cho từng ứng dụng."
         );
 
         beginSettingsCard(
-            "BackendShortcutCard", "Phím tắt chọn nhanh backend",
-            "Nhấn phím tắt này khi đang ở trong ứng dụng bất kỳ để mở danh sách chọn backend."
+            "BackendShortcutCard", "Phím tắt chọn nhanh chế độ / backend",
+            "Nhấn phím tắt này trong ứng dụng bất kỳ để mở danh sách lựa chọn."
         );
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Phím tắt chọn backend:");
+        ImGui::TextUnformatted("Phím tắt mở danh sách:");
         ImGui::SameLine();
         std::string currentShortcut = formatKeyList(config.main.selectBackendKey.value());
         if (currentShortcut.empty()) {
@@ -529,7 +529,7 @@ namespace areca::settings {
 
         beginSettingsCard(
             "AppOverridesCard", "Danh sách ứng dụng đã cấu hình",
-            "Chỉ định backend cố định cho từng ứng dụng cụ thể. Ứng dụng để Tự động sẽ do hệ thống tự nhận diện."
+            "Chỉ định Preedit, Redirect hoặc backend Rewrite cho từng ứng dụng. Tự động sẽ dùng chế độ mặc định."
         );
         auto& overrides = *config.apps.appOverrides.mutableValue();
 
@@ -547,7 +547,7 @@ namespace areca::settings {
                     ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
                 )) {
                 ImGui::TableSetupColumn("Tên ứng dụng", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Backend", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Chế độ / backend", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0F);
                 ImGui::TableHeadersRow();
 
@@ -568,7 +568,7 @@ namespace areca::settings {
                 bsName += ")";
 
                 const char* modeNames[] = {
-                    "Tự động", surName.c_str(), shiftName.c_str(), bsName.c_str()
+                    "Tự động", surName.c_str(), shiftName.c_str(), bsName.c_str(), "Preedit", "Redirect (EN)"
                 };
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
@@ -587,7 +587,7 @@ namespace areca::settings {
 
                     ImGui::TableSetColumnIndex(1);
                     int currentMode = static_cast<int>(overrides[i].mode.value());
-                    if (currentMode < 0 || currentMode > 3) {
+                    if (currentMode < 0 || currentMode > 5) {
                         currentMode = 0;
                     }
                     ImGui::SetNextItemWidth(-1.0F);
