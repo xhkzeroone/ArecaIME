@@ -103,7 +103,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             config_.spellcheckMode.value() == SpellcheckMode::Realtime,
             config_.modernStyle.value(), config_.outputCharset.value(),
             config_.enableMacro.value(), config_.capitalizeMacro.value(),
-            macroRevision_, macroDefinitions());
+            macroRevision_, macroDefinitions(),
+            config_.revertMacroOnBackspace.value());
       }),
       preeditStateFactory_([this](fcitx::InputContext &) {
         return new PreeditInputState(
@@ -112,7 +113,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             config_.spellcheckMode.value() == SpellcheckMode::Realtime,
             config_.modernStyle.value(), config_.outputCharset.value(),
             config_.enableMacro.value(), config_.capitalizeMacro.value(),
-            macroRevision_, macroDefinitions());
+            macroRevision_, macroDefinitions(),
+            config_.revertMacroOnBackspace.value());
       }),
       adaptiveWaitMonitor_(instance_->eventLoop(), adaptiveWait_,
                            [this]() { return debugEnabled(); }),
@@ -1453,12 +1455,13 @@ void ArecaEngine::applyConfig() {
   const auto outputCharset = config_.outputCharset.value();
   const bool macroEnabled = config_.enableMacro.value();
   const bool capitalizeMacro = config_.capitalizeMacro.value();
+  const bool revertMacroOnBackspace = config_.revertMacroOnBackspace.value();
   const bool autoCapitalize = config_.autoCapitalizeAfterPunctuation.value();
   const auto macros = macroDefinitions();
   instance_->inputContextManager().foreach (
       [this, &inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
-       &outputCharset, macroEnabled, capitalizeMacro, autoCapitalize,
-       &macros, &previousOverrides, previousDefaultMode,
+       &outputCharset, macroEnabled, capitalizeMacro, revertMacroOnBackspace,
+       autoCapitalize, &macros, &previousOverrides, previousDefaultMode,
        requestedMode](fcitx::InputContext *inputContext) {
         auto *rewriteState = rewriteHandler_.stateFor(*inputContext);
         const std::string program = resolveProgram(*inputContext, rewriteState);
@@ -1492,6 +1495,7 @@ void ArecaEngine::applyConfig() {
               state->outputCharset == outputCharset &&
               state->macroEnabled == macroEnabled &&
               state->capitalizeMacro == capitalizeMacro &&
+              state->revertMacroOnBackspace == revertMacroOnBackspace &&
               state->macroRevision == macroRevision_) {
             return;
           }
@@ -1499,7 +1503,8 @@ void ArecaEngine::applyConfig() {
             resetMode();
             state->engine = std::make_unique<BambooEngineAdapter>(
                 inputMethod, spellCheck, realtimeSpellcheck, modernStyle,
-                outputCharset, macroEnabled, capitalizeMacro, macros);
+                outputCharset, macroEnabled, capitalizeMacro, macros,
+                revertMacroOnBackspace);
             state->inputMethod = inputMethod;
             state->spellCheck = spellCheck;
             state->realtimeSpellcheck = realtimeSpellcheck;
@@ -1507,6 +1512,7 @@ void ArecaEngine::applyConfig() {
             state->outputCharset = outputCharset;
             state->macroEnabled = macroEnabled;
             state->capitalizeMacro = capitalizeMacro;
+            state->revertMacroOnBackspace = revertMacroOnBackspace;
             state->macroRevision = macroRevision_;
           } catch (const std::exception &error) {
             FCITX_ERROR() << "areca: cannot select Bamboo method: "

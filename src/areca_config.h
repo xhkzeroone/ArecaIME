@@ -260,6 +260,9 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> capitalizeMacro{
         this, "CapitalizeMacro", N_("Tự đổi hoa/thường cho nội dung macro"),
         true};
+    fcitx::Option<bool> revertMacroOnBackspace{
+        this, "RevertMacroOnBackspace",
+        N_("Hoàn tác macro khi nhấn Backspace"), true};
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};

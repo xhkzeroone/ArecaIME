@@ -382,6 +382,7 @@ AutoCapitalizeAfterPunctuation=False
 ShiftSelectFallbackForBrowser=False
 EnableMacro=True
 CapitalizeMacro=True
+RevertMacroOnBackspace=True
 Debug=True
 ```
 
@@ -427,6 +428,7 @@ UseXTestInsteadOfUinput=False
 | Chính | `ShiftSelectFallbackForBrowser` | Tự động fallback sang uinput Shift+Left khi trình duyệt không hỗ trợ surrounding text thay vì dùng forward-backspace, mặc định `False`. |
 | Chính | `EnableMacro` | Bật thay thế từ viết tắt tại dấu cách hoặc dấu câu. |
 | Chính | `CapitalizeMacro` | Tự đổi nội dung macro thành chữ thường/toàn chữ hoa theo cách viết key. |
+| Chính | `RevertMacroOnBackspace` | Hoàn tác nội dung macro đã mở rộng về lại key viết tắt gốc khi nhấn Backspace ngay sau đó. |
 | Chính | `Debug` | Bật log chi tiết của addon. |
 | Nâng cao | `BackspaceDelayMs` | Delay giữa hai cặp Backspace press/release được forward. |
 | Nâng cao | `AfterBackspaceWaitMs` | Thời gian chờ sau Backspace cuối cho các frontend khác / chưa xác định, mặc định 10 ms. |
@@ -531,6 +533,9 @@ bt<Space>  → be there␠
 BT<Space>  → BE THERE␠
 Bt<Space>  → Be There␠
 ```
+
+Nếu nhấn Backspace ngay sau khi macro mở rộng và `RevertMacroOnBackspace=True`, Areca hoàn tác nội dung mở rộng
+về lại key viết tắt gốc kèm boundary thay vì xóa từng ký tự.
 
 Expansion chạy trước spell-check, được encode theo `OutputCharset`, sau đó đi
 qua cùng scheduler và rewrite backend như kết quả Bamboo bình thường. Dữ liệu

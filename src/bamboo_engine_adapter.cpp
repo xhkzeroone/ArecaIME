@@ -75,10 +75,12 @@ BambooEngineAdapter::BambooEngineAdapter(std::string inputMethod,
                                          std::string outputCharset,
                                          bool macroEnabled,
                                          bool capitalizeMacro,
-                                         std::vector<MacroDefinition> macros)
+                                         std::vector<MacroDefinition> macros,
+                                         bool revertMacroOnBackspace)
     : spellCheck_(spellCheck), realtimeSpellcheck_(realtimeSpellcheck),
       outputCharset_(std::move(outputCharset)),
-      macroEnabled_(macroEnabled), capitalizeMacro_(capitalizeMacro) {
+      macroEnabled_(macroEnabled), capitalizeMacro_(capitalizeMacro),
+      revertMacroOnBackspace_(revertMacroOnBackspace) {
   handle_ = ArecaBambooCreate(inputMethod.data(), modernStyle ? 1 : 0);
   if (!handle_) {
     throw std::runtime_error("unknown Bamboo input method: " + inputMethod);
@@ -108,6 +110,9 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
   // Latin keystrokes that produced it.
   if (!canProcessKey(codepoint)) {
     if (finalizedWordAvailable_) {
+      macroRecoveryAvailable_ = false;
+      macroExpandedTextWithBoundary_.clear();
+      macroRawKeyWithBoundary_.clear();
       ++trailingBoundaryCount_;
       result.commitText = encode(utf8Text);
       return result;
@@ -146,16 +151,34 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
       finalizedRenderedText_ = encode(finalized);
       finalizedWordAvailable_ = true;
       trailingBoundaryCount_ = 1;
+      macroRecoveryAvailable_ = false;
+      macroExpandedTextWithBoundary_.clear();
+      macroRawKeyWithBoundary_.clear();
+    } else if (result.macroExpanded && revertMacroOnBackspace_) {
+      finalizedRenderedText_.clear();
+      finalizedWordAvailable_ = false;
+      trailingBoundaryCount_ = 0;
+      macroRecoveryAvailable_ = true;
+      macroExpandedTextWithBoundary_ = next;
+      std::string rawWithBoundary = renderedText_;
+      rawWithBoundary += utf8Text;
+      macroRawKeyWithBoundary_ = encode(rawWithBoundary);
     } else {
       finalizedRenderedText_.clear();
       finalizedWordAvailable_ = false;
       trailingBoundaryCount_ = 0;
+      macroRecoveryAvailable_ = false;
+      macroExpandedTextWithBoundary_.clear();
+      macroRawKeyWithBoundary_.clear();
     }
     renderedText_.clear();
     result.newText.clear();
     return result;
   }
 
+  macroRecoveryAvailable_ = false;
+  macroExpandedTextWithBoundary_.clear();
+  macroRawKeyWithBoundary_.clear();
   if (finalizedWordAvailable_) {
     ArecaBambooReset(handle_);
     finalizedRenderedText_.clear();
@@ -189,6 +212,28 @@ BambooResult BambooEngineAdapter::processBackspace() {
   BambooResult result;
   result.currentText = renderedText_;
 
+  if (macroRecoveryAvailable_) {
+    macroRecoveryAvailable_ = false;
+    result.currentText = macroExpandedTextWithBoundary_;
+    result.newText = macroRawKeyWithBoundary_;
+
+    const auto oldChars = codepoints(result.currentText);
+    const auto newChars = codepoints(result.newText);
+    size_t prefix = 0;
+    while (prefix + 1 < oldChars.size() && prefix + 1 < newChars.size() &&
+           oldChars[prefix].first == newChars[prefix].first) {
+      ++prefix;
+    }
+
+    result.deleteCount = static_cast<uint32_t>((oldChars.size() - 1) - prefix);
+    result.commitText = result.newText.substr(newChars[prefix].second);
+
+    macroExpandedTextWithBoundary_.clear();
+    macroRawKeyWithBoundary_.clear();
+    renderedText_.clear();
+    return result;
+  }
+
   char *raw = ArecaBambooRecoverBackspace(handle_);
   if (!raw) {
     throw std::runtime_error("Bamboo Backspace processing failed");
@@ -216,6 +261,9 @@ void BambooEngineAdapter::reset() {
   finalizedRenderedText_.clear();
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
+  macroRecoveryAvailable_ = false;
+  macroExpandedTextWithBoundary_.clear();
+  macroRawKeyWithBoundary_.clear();
 }
 
 bool BambooEngineAdapter::restoreFromRenderedText(const std::string &text) {
@@ -231,10 +279,16 @@ bool BambooEngineAdapter::restoreFromRenderedText(const std::string &text) {
   finalizedRenderedText_.clear();
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
+  macroRecoveryAvailable_ = false;
+  macroExpandedTextWithBoundary_.clear();
+  macroRawKeyWithBoundary_.clear();
   return true;
 }
 
 void BambooEngineAdapter::backspace() {
+  macroRecoveryAvailable_ = false;
+  macroExpandedTextWithBoundary_.clear();
+  macroRawKeyWithBoundary_.clear();
   if (finalizedWordAvailable_) {
     if (trailingBoundaryCount_ > 1) {
       --trailingBoundaryCount_;

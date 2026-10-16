@@ -23,7 +23,8 @@ struct PreeditInputState final : public fcitx::InputContextProperty {
                              bool modernStyle, std::string outputCharset,
                              bool macroEnabled, bool capitalizeMacro,
                              uint64_t macroRevision,
-                             std::vector<MacroDefinition> macros);
+                             std::vector<MacroDefinition> macros,
+                             bool revertMacroOnBackspace = true);
 
   std::string inputMethod;
   bool spellCheck;
@@ -32,6 +33,7 @@ struct PreeditInputState final : public fcitx::InputContextProperty {
   std::string outputCharset;
   bool macroEnabled;
   bool capitalizeMacro;
+  bool revertMacroOnBackspace;
   uint64_t macroRevision;
   std::unique_ptr<VietnameseEngine> engine;
   std::string composing;

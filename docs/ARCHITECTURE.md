@@ -215,6 +215,8 @@ hoa, key viết hoa chữ đầu tạo replacement viết hoa chữ đầu mỗi
 còn các kiểu mixed-case khác giữ nguyên value cấu hình. Adapter reset Bamboo sau
 match, nối boundary, encode theo charset rồi tính delta rewrite. Vì thế macro
 không có đường commit đặc biệt và vẫn tuân thủ mọi queue/pending invariant.
+Nếu nhấn Backspace ngay sau khi macro mở rộng và `RevertMacroOnBackspace` bật, adapter hoàn tác nội dung mở
+rộng về lại key viết tắt ban đầu kèm boundary qua delta rewrite. Khi `RevertMacroOnBackspace` tắt, `canUndoMacro()` trả về `false` và Backspace xử lý như thường.
 
 Nếu `AutoCapitalizeAfterPunctuation` bật, state theo từng input context theo dõi
 `.`, `!`, `?` rồi khoảng trắng. Chữ ASCII thường kế tiếp được đổi thành keysym

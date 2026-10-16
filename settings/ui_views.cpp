@@ -250,6 +250,8 @@ namespace areca::settings {
             checkbox("Bật macro", config.main.enableMacro);
             ImGui::TableNextColumn();
             checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);
+            ImGui::TableNextColumn();
+            checkbox("Hoàn tác macro khi nhấn Backspace", config.main.revertMacroOnBackspace);
             ImGui::EndTable();
         }
         endSettingsCard();

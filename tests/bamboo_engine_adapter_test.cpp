@@ -310,9 +310,67 @@ int main() {
   }
   assert(display == "Viê\u0323t Nam ");
 
+  // Test macro undo on Backspace:
+  areca::BambooEngineAdapter undoEngine(
+      "Telex 2", true, true, true, "Unicode", true, true,
+      {{"k", "không"}, {"dtncs", "đoàn thanh niên cộng sản hồ chí minh"}});
+
+  display = "50";
+  for (char key : std::string("k.")) {
+    applyToDisplay(display, type(undoEngine, key));
+  }
+  assert(display == "50không.");
+  assert(undoEngine.canUndoMacro());
+  auto undoPeriodResult = undoEngine.processBackspace();
+  applyToDisplay(display, undoPeriodResult);
+  assert(display == "50k.");
+  assert(!undoEngine.canUndoMacro());
+
+  display = "50";
+  for (char key : std::string("k ")) {
+    applyToDisplay(display, type(undoEngine, key));
+  }
+  assert(display == "50không ");
+  assert(undoEngine.canUndoMacro());
+  auto undoSpaceResult = undoEngine.processBackspace();
+  applyToDisplay(display, undoSpaceResult);
+  assert(display == "50k ");
+  assert(!undoEngine.canUndoMacro());
+
+  display.clear();
+  for (char key : std::string("dtncs.")) {
+    applyToDisplay(display, type(undoEngine, key));
+  }
+  assert(display == "đoàn thanh niên cộng sản hồ chí minh.");
+  assert(undoEngine.canUndoMacro());
+  auto undoLongResult = undoEngine.processBackspace();
+  applyToDisplay(display, undoLongResult);
+  assert(display == "dtncs.");
+  assert(!undoEngine.canUndoMacro());
+
+  display = "50";
+  for (char key : std::string("k.")) {
+    applyToDisplay(display, type(undoEngine, key));
+  }
+  assert(display == "50không.");
+  assert(undoEngine.canUndoMacro());
+  type(undoEngine, 'a');
+  assert(!undoEngine.canUndoMacro());
+
+  // Test macro undo disabled when revertMacroOnBackspace is false:
+  areca::BambooEngineAdapter disabledUndoEngine(
+      "Telex 2", true, true, true, "Unicode", true, true,
+      {{"k", "không"}}, false);
+
+  display = "50";
+  for (char key : std::string("k.")) {
+    applyToDisplay(display, type(disabledUndoEngine, key));
+  }
+  assert(display == "50không.");
+  assert(!disabledUndoEngine.canUndoMacro());
+
   // Test spellcheck mistake recovery on Backspace:
-  // Typing "nhanhsh" (typo of "nhánh" + extra "h"), calling processBackspace()
-  // restores the valid Vietnamese syllable "nhánh".
+  // Typing "nhanhsh", calling processBackspace restores "nhánh"
   engine.reset();
   display.clear();
   for (char key : std::string("nhanhsh")) {

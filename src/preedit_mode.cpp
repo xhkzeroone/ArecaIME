@@ -63,16 +63,19 @@ PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
                                      std::string outputCharset,
                                      bool macroEnabled, bool capitalizeMacro,
                                      uint64_t macroRevision,
-                                     std::vector<MacroDefinition> macros)
+                                     std::vector<MacroDefinition> macros,
+                                     bool revertMacroOnBackspace)
     : inputMethod(std::move(inputMethod)), spellCheck(spellCheck),
       realtimeSpellcheck(realtimeSpellcheck),
       modernStyle(modernStyle), outputCharset(std::move(outputCharset)),
       macroEnabled(macroEnabled), capitalizeMacro(capitalizeMacro),
+      revertMacroOnBackspace(revertMacroOnBackspace),
       macroRevision(macroRevision),
       engine(std::make_unique<BambooEngineAdapter>(
           this->inputMethod, this->spellCheck, this->realtimeSpellcheck,
           this->modernStyle, this->outputCharset, this->macroEnabled,
-          this->capitalizeMacro, std::move(macros))) {}
+          this->capitalizeMacro, std::move(macros),
+          this->revertMacroOnBackspace)) {}
 
 PreeditModeHandler::PreeditModeHandler(
     fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
@@ -149,6 +152,27 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
 
   if (isBackspace) {
     state->sentenceCapitalization.reset();
+    if (state->engine && state->engine->canUndoMacro()) {
+      try {
+        const auto result = state->engine->processBackspace();
+        auto &surrounding = inputContext->surroundingText();
+        if (surrounding.isValid() && result.deleteCount > 0) {
+          inputContext->deleteSurroundingText(
+              -static_cast<int>(result.deleteCount), result.deleteCount);
+          updateSurroundingCacheAfterDelete(
+              *inputContext, -static_cast<int>(result.deleteCount),
+              result.deleteCount);
+          if (!result.commitText.empty()) {
+            inputContext->commitString(result.commitText);
+            updateSurroundingCacheAfterCommit(*inputContext, result.commitText);
+          }
+          event.filterAndAccept();
+          return;
+        }
+      } catch (const std::exception &error) {
+        FCITX_ERROR() << "areca: preedit macro undo failed: " << error.what();
+      }
+    }
     if (state->composing.empty()) {
       try {
         // Adapter đếm các boundary đã commit. Backspace qua boundary trung gian

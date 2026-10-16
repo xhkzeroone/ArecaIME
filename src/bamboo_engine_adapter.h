@@ -26,6 +26,7 @@ public:
   // Nạp lại text đã có trước con trỏ. Implement mặc định từ chối để các engine
   // giả trong test và engine khác không vô tình nhận một trạng thái không hỗ trợ.
   virtual bool restoreFromRenderedText(const std::string &) { return false; }
+  virtual bool canUndoMacro() const { return false; }
 };
 
 class BambooEngineAdapter final : public VietnameseEngine {
@@ -37,7 +38,8 @@ public:
                                std::string outputCharset = "Unicode",
                                bool macroEnabled = true,
                                bool capitalizeMacro = true,
-                               std::vector<MacroDefinition> macros = {});
+                               std::vector<MacroDefinition> macros = {},
+                               bool revertMacroOnBackspace = true);
   ~BambooEngineAdapter() override;
 
   BambooEngineAdapter(const BambooEngineAdapter &) = delete;
@@ -51,6 +53,13 @@ public:
   void reset() override;
   bool restoreFromRenderedText(const std::string &text) override;
   const std::string &currentText() const override { return renderedText_; }
+  bool canUndoMacro() const override {
+    return revertMacroOnBackspace_ && macroRecoveryAvailable_;
+  }
+  bool revertMacroOnBackspace() const { return revertMacroOnBackspace_; }
+  void setRevertMacroOnBackspace(bool enable) {
+    revertMacroOnBackspace_ = enable;
+  }
   bool valid() const { return handle_ != 0; }
   static std::vector<std::string> inputMethodNames();
   static std::vector<std::string> charsetNames();
@@ -64,10 +73,14 @@ private:
   std::string outputCharset_;
   bool macroEnabled_ = true;
   bool capitalizeMacro_ = true;
+  bool revertMacroOnBackspace_ = true;
   std::string renderedText_;
   std::string finalizedRenderedText_;
   uint32_t trailingBoundaryCount_ = 0;
   bool finalizedWordAvailable_ = false;
+  bool macroRecoveryAvailable_ = false;
+  std::string macroExpandedTextWithBoundary_;
+  std::string macroRawKeyWithBoundary_;
 };
 
 } // namespace areca
