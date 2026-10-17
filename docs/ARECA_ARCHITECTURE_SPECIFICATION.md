@@ -50,7 +50,8 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 | `BambooEngineAdapter` | Lớp cầu nối C++/Go gọi thư viện `bamboo-core`, biến đổi kết quả gõ thành `BambooResult` (bao gồm `deleteCount` và `commitText`). |
 | `ReliabilityChecker` | Kiểm tra khả năng tương thích SurroundingText của ứng dụng ở lần gõ đầu tiên và quyết định chiến lược rewrite. |
 | `RewriteBackend` | Interface trừu tượng định nghĩa phương thức thực thi một `RewritePlan`. |
-| `SurroundingTextBackend` | Thực thi xóa văn bản qua API Fcitx `deleteSurroundingText()` và chèn chữ mới qua `commitString()`. |
+| `SurroundingTextBackend` | Thực thi xóa văn bản qua API Fcitx `deleteSurroundingText()` và chèn chữ mới qua `commitString()`, tích hợp `AdaptiveWait` và kiểm tra xác nhận qua sự kiện `SurroundingTextUpdated`. |
+| `SurroundingTextV2Backend` | Thực thi xóa văn bản từng ký tự tuần tự (Incremental Delete) cho các trình soạn thảo không ổn định với xóa gộp, tích hợp `AdaptiveWait`. |
 | `UinputShiftSelectBackend` | Phát `Shift down` và `Left` × N+1 qua `/dev/uinput`; Fcitx forward N Left đầu, lọc lần xác nhận cuối, phát `Shift up`, chờ mặc định 20 ms rồi commit. Timeout xác nhận là 20 ms. |
 | `UinputBackspaceBackend` | Phát `KEY_BACKSPACE` × N+1 qua `/dev/uinput`; Fcitx forward N lần đầu, lọc lần xác nhận cuối rồi dùng settling delay thích ứng. Timeout xác nhận là 20 ms. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng settling delay thích ứng theo timer drift và commit chữ mới. |
@@ -123,27 +124,77 @@ sequenceDiagram
 
 ### 5.1. `SurroundingTextBackend` Sequence Diagram
 
+#### A. Luồng Probe xác thực độ tin cậy và kiểm tra sự kiện `SurroundingTextUpdated`
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as InputScheduler
+    participant E as ArecaEngine
+    participant B as SurroundingTextBackend
+    participant IC as InputContext
+    participant EL as EventLoop
+    participant FB as FallbackBackend
+
+    S->>B: apply(inputContext, plan[probe=true], onDone)
+    B->>B: Lưu snapshot gốc và tính snapshot kỳ vọng
+    B->>IC: deleteSurroundingText(-count, count)
+    B->>EL: addTimeEvent(ProbeDeadline = 150ms)
+    
+    alt Trường hợp 1: Nhận sự kiện InputContextSurroundingTextUpdated trước 150ms
+        IC-->>E: Sự kiện InputContextSurroundingTextUpdated
+        E->>B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=true)
+        B->>B: surroundingProbeMatches: kiểm tra ngữ nghĩa text trước con trỏ
+        Note over B: Xác thực khớp: con trỏ bằng anchor, không còn text cũ, khớp text kỳ vọng
+        B->>EL: timer.reset (Hủy deadline 150ms)
+        B->>E: onProbeSucceeded: probePending = false, reliable = true
+        B->>EL: Chờ effectiveWaitMs (AdaptiveWait)
+        EL-->>B: commitPost_.schedule (Pha post của EventLoop)
+        B->>IC: commitString(commitText)
+        B->>S: onDone(transactionId, Succeeded)
+    else Trường hợp 2: Hết hạn 150ms không có sự kiện hợp lệ (Timeout)
+        EL-->>B: Timer ProbeDeadline 150ms kích hoạt
+        B->>B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=false)
+        Note over B: Kiểm tra lần cuối snapshot hiện tại trong queue
+        alt Snapshot vẫn không khớp
+            B->>E: onProbeFailed: known = true, reliable = false, probePending = false
+            B->>FB: apply(inputContext, plan[probe=false], onDone)
+            Note over B,FB: Chuyển sang ShiftSelect nếu là trình duyệt hoặc Backspace
+        end
+    end
+```
+
+#### B. Luồng Rewrite thông thường với `AdaptiveWait` và `EventLoopPostTask`
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant B as SurroundingTextBackend
     participant IC as InputContext
+    participant AW as AdaptiveWait
     participant EL as EventLoop
+    participant PT as EventLoopPostTask
 
-    S->>B: apply(inputContext, plan, onDone)
+    S->>B: apply(inputContext, plan[probe=false], onDone)
     alt backspaceCount > 0
+        B->>AW: beginTransaction
         B->>IC: deleteSurroundingText(-count, count)
-        B->>B: updateSurroundingCacheAfterDelete(...)
-        B->>EL: addTimeEvent(SurroundingWaitMs = 3ms)
-        Note over B,EL: Chờ event-loop settling delay
-        EL-->>B: Timer callback
+        B->>B: updateSurroundingCacheAfterDelete
+        B->>AW: effectiveWaitMs(waitMs), effectiveExtraWaitMs(waitMs)
+        B->>EL: addTimeEvent(effectiveWaitMs)
+        EL-->>B: Timer callback (observeTimer ghi nhận độ trễ thực tế)
+        B->>PT: commitPost_.schedule
+        PT-->>B: Pha post của EventLoop
+        B->>B: commitAfterAdaptiveWait: kiểm tra nếu trễ tăng thì giãn tiếp
         B->>IC: commitString(commitText)
-        B->>B: updateSurroundingCacheAfterCommit(...)
-        B->>S: onDone(transactionId)
+        B->>B: updateSurroundingCacheAfterCommit
+        B->>AW: completeTransaction (giảm dần độ trễ khi hệ thống ổn định)
+        B->>S: onDone(transactionId, Succeeded)
     else backspaceCount == 0
         B->>IC: commitString(commitText)
-        B->>S: onDone(transactionId) (Immediate Completed)
+        B->>B: updateSurroundingCacheAfterCommit
+        B->>S: onDone(transactionId, Succeeded)
     end
 ```
 

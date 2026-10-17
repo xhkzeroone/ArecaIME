@@ -498,9 +498,28 @@ Probe chỉ diễn ra khi rewrite đầu tiên cần delete:
 - Snapshot phải valid.
 - Từ ngay trước cursor phải có suffix không rỗng khớp với `currentText`.
 
+Khi bắt đầu probe, backend gửi lệnh xóa và khởi tạo timer deadline 150 ms trên
+EventLoop. Backend xác thực thành công thông qua sự kiện `SurroundingTextUpdated`
+nhờ hàm kiểm tra ngữ nghĩa `surroundingProbeMatches`:
+
+- Con trỏ và anchor phải trùng nhau, không nằm trong vùng bôi đen.
+- Phần văn bản trước con trỏ trước khi xóa phải chứa đúng đoạn text kỳ vọng sau khi xóa.
+- Văn bản hiện tại trước con trỏ không được còn chứa đoạn văn bản cũ chưa xóa.
+- Loại trừ trạng thái trung gian khi ứng dụng di chuyển con trỏ trước rồi mới xóa ký tự sau.
+
+Khi khớp ngữ nghĩa thành công, backend hủy deadline 150 ms, xác nhận độ tin cậy
+và chuyển sang commit. Nếu hết 150 ms mà không nhận được sự kiện hợp lệ, backend
+kiểm tra snapshot lần cuối rồi đánh dấu không tin cậy và chuyển giao diện sang
+fallback backend như Shift-Select cho trình duyệt hoặc Backspace.
+
+Cả `SurroundingTextBackend` và `SurroundingTextV2Backend` đều tích hợp `AdaptiveWait`
+kết hợp `EventLoopPostTask`. Thời gian chờ commit được tính thích ứng và đẩy sang
+pha post của event loop, tự động giãn thêm trễ nếu hệ thống bị nghẽn nhằm ngăn chặn
+hiện tượng commit trước khi ứng dụng kịp xóa text cũ.
+
 Kết quả được cache ở cấp `ArecaEngine`, cùng UUID của context hiện tại. Bình
 thường lifecycle sẽ xoá verdict để rewrite sau đánh giá lại. Backspace, Ctrl+A
-và phím di chuyển/chọn text bảo vệ riêng verdict trong 1 giây; lifecycle và reset
+và phím di chuyển hoặc chọn text bảo vệ riêng verdict trong 1 giây; lifecycle và reset
 state nhập vẫn chạy bình thường. UUID thay đổi luôn làm cache được tạo lại cho
 context mới.
 
