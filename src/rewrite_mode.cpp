@@ -403,8 +403,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                      << " queue=" << scheduler_.queuedKeyCount()
                      << " program=" << inputContext->program();
       }
-      event.filterAndAccept();
-      scheduler_.enqueueBackspace(*inputContext);
+      // Bắt đầu: Macro undo chặn auto-repeat và chỉ chạy sau khi thả Backspace
+      deferBackspaceRecoveryUntilRelease(event, *state);
+      // Kết thúc: Macro undo chặn auto-repeat và chỉ chạy sau khi thả Backspace
       return;
     }
     if (shouldRecoverBackspace(*inputContext, *state)) {

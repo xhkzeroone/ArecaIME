@@ -52,7 +52,11 @@ public:
     return result;
   }
 
-  areca::BambooResult processBackspace() override { return {}; }
+  areca::BambooResult processBackspace() override {
+    ++backspaceProcessCount;
+    macroUndoAvailable = false;
+    return {};
+  }
   void backspace() override {}
   void reset() override { current_.clear(); }
   bool restoreFromRenderedText(const std::string &text) override {
@@ -63,6 +67,10 @@ public:
     return true;
   }
   const std::string &currentText() const override { return current_; }
+  bool canUndoMacro() const override { return macroUndoAvailable; }
+
+  int backspaceProcessCount = 0;
+  bool macroUndoAvailable = false;
 
 private:
   std::string current_;
@@ -71,6 +79,65 @@ private:
 } // namespace
 
 int main() {
+  // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
+  // Backspace, giống BackspaceRecovery thường.
+  {
+    fcitx::EventLoop loop;
+    fcitx::InputContextManager manager;
+    areca::RewriteModeHandler::StateFactory factory(
+        [](fcitx::InputContext &) {
+          auto *state = new areca::RewriteInputState(
+              "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+          auto engine = std::make_unique<TestEngine>();
+          engine->macroUndoAvailable = true;
+          state->engine = std::move(engine);
+          return state;
+        });
+    manager.registerProperty("rewrite-macro-backspace-test", &factory);
+    TestInputContext context(manager, "org.gnome.TextEditor");
+    areca::InputScheduler scheduler(
+        loop,
+        [&](fcitx::InputContext &ic) {
+          return ic.propertyFor(&factory)->engine.get();
+        },
+        [] {
+          areca::SchedulerTiming timing;
+          timing.postCommitDelayMs = 0;
+          return timing;
+        },
+        [] { return false; },
+        [](fcitx::InputContext &, const areca::BambooResult &) {
+          return areca::RewriteBackendSelection{};
+        });
+    areca::RewriteModeHandler handler(
+        loop, factory, scheduler, [] { return false; }, [] { return false; },
+        [](fcitx::InputContext &, const char *) {}, [] { return false; },
+        [](fcitx::InputContext &) { return false; }, [] { return false; });
+
+    auto *state = context.propertyFor(&factory);
+    auto *engine = static_cast<TestEngine *>(state->engine.get());
+
+    fcitx::KeyEvent press(&context, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(press);
+    assert(press.accepted());
+    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(engine->backspaceProcessCount == 0);
+
+    fcitx::KeyEvent repeat(
+        &context,
+        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+    handler.handleKeyEvent(repeat);
+    assert(repeat.accepted());
+    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(engine->backspaceProcessCount == 0);
+
+    fcitx::KeyEvent release(&context, fcitx::Key(FcitxKey_BackSpace), true);
+    handler.handleKeyEvent(release);
+    assert(release.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
+    assert(engine->backspaceProcessCount == 1);
+  }
+
   // So sánh handler với luồng accept/enqueue cũ, dùng cùng loại engine giả.
   for (bool initiallyEnabled : {false, true}) {
     fcitx::EventLoop loop;
