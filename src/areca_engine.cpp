@@ -686,11 +686,12 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
     }
 
     backendVerdict_.forceForwardBackspace = false;
-    if (isProgrammingProgram(programName) || isTerminalProgram(programName)) {
+    if (isProgrammingProgram(programName) || isTerminalProgram(programName) ||
+        isOfficeProgram(programName)) {
       backendVerdict_.forceForwardBackspace = true;
       if (debugEnabled()) {
         FCITX_INFO() << "areca: reliability first-probe force_forward=1"
-                     << " reason=programming-or-terminal-program"
+                     << " reason=programming-terminal-or-office-program"
                      << " program=" << programName;
       }
     } else if (backendVerdict_.reliable && isVSCodeFamilyProgram(programName)) {

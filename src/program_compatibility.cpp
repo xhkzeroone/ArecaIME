@@ -22,6 +22,19 @@ std::string normalizedProgramName(std::string program) {
   }
   return program;
 }
+
+template <typename Names>
+bool matchesNameOrVariant(std::string_view program, const Names &names) {
+  return std::any_of(names.begin(), names.end(),
+                     [program](std::string_view name) {
+                       if (!program.starts_with(name)) {
+                         return false;
+                       }
+                       return program.size() == name.size() ||
+                              program[name.size()] == '.' ||
+                              program[name.size()] == '-';
+                     });
+}
 } // namespace
 
 bool isProgrammingProgram(const std::string &rawProgram) {
@@ -113,11 +126,9 @@ bool isProgrammingProgram(const std::string &rawProgram) {
        "io.rancherdesktop.app", "lens-desktop", "openlens",
        "dev.k8slens.openlens"});
 
-  const auto isExactMatch = [&program](const auto &names) {
-    return std::find(names.begin(), names.end(), program) != names.end();
-  };
-  if (isExactMatch(editorsAndIdes) || isExactMatch(specializedIdes) ||
-      isExactMatch(developerTools)) {
+  if (matchesNameOrVariant(program, editorsAndIdes) ||
+      matchesNameOrVariant(program, specializedIdes) ||
+      matchesNameOrVariant(program, developerTools)) {
     return true;
   }
 
@@ -157,6 +168,15 @@ bool isProgrammingProgram(const std::string &rawProgram) {
                      [&program](std::string_view prefix) {
                        return program.starts_with(prefix);
                      });
+}
+
+bool isOfficeProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  static constexpr auto names = std::to_array<std::string_view>(
+      {"libreoffice", "soffice", "softoffice", "org.libreoffice",
+       "onlyoffice", "desktopeditors", "org.onlyoffice"});
+
+  return matchesNameOrVariant(program, names);
 }
 
 
@@ -247,22 +267,8 @@ bool isTerminalProgram(const std::string &rawProgram) {
                                        "urxvtc",
                                        "urxvtd"});
 
-  const auto isExactMatch = [&program](const auto &names) {
-    return std::find(names.begin(), names.end(), program) != names.end();
-  };
-  if (isExactMatch(distroTerminals) || isExactMatch(thirdPartyTerminals)) {
-    return true;
-  }
-
-  static constexpr auto prefixes = std::to_array<std::string_view>(
-      {"org.gnome.terminal.", "org.gnome.console.", "app.devsuite.ptyxis.",
-       "org.xfce.terminal.", "org.mate.terminal.", "com.deepin.terminal.",
-       "io.elementary.terminal.", "com.system76.cosmicterm.", "warp-terminal-",
-       "dev.warp.warp-", "wezterm-", "kitty-"});
-  return std::any_of(prefixes.begin(), prefixes.end(),
-                     [&program](std::string_view prefix) {
-                       return program.starts_with(prefix);
-                     });
+  return matchesNameOrVariant(program, distroTerminals) ||
+         matchesNameOrVariant(program, thirdPartyTerminals);
 }
 
 bool isVSCodeBasedProgram(const std::string &rawProgram) {

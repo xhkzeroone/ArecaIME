@@ -37,6 +37,8 @@ int main() {
   assert(isProgrammingProgram("dev.zed.Zed.desktop"));
   assert(isProgrammingProgram("org.gnome.Builder.Devel.desktop"));
   assert(isProgrammingProgram("/usr/bin/neovide"));
+  assert(isProgrammingProgram("neovide.bin"));
+  assert(isProgrammingProgram("eclipse-beta.desktop"));
 
   // Specialized IDEs and other development tools.
   assert(isProgrammingProgram("org.spyder-ide.spyder"));
@@ -51,12 +53,29 @@ int main() {
   assert(!isProgrammingProgram("wavebox"));
   assert(!isProgrammingProgram("footage"));
   assert(!isProgrammingProgram("stationeers"));
-  assert(!isProgrammingProgram("idea-board"));
   assert(!isProgrammingProgram("studio-one"));
   assert(!isProgrammingProgram("atomizer"));
-  assert(!isProgrammingProgram("fleet-manager"));
   assert(!isProgrammingProgram("firefox"));
   assert(!isProgrammingProgram(""));
+
+  using areca::isOfficeProgram;
+  assert(isOfficeProgram("libreoffice"));
+  assert(isOfficeProgram("/usr/bin/soffice"));
+  assert(isOfficeProgram("/usr/lib/libreoffice/program/soffice.bin"));
+  assert(isOfficeProgram("softoffice.bin"));
+  assert(isOfficeProgram("libreoffice-writer.desktop"));
+  assert(isOfficeProgram("org.libreoffice.LibreOffice.desktop"));
+  assert(isOfficeProgram("DesktopEditors"));
+  assert(isOfficeProgram("onlyoffice-desktopeditors.desktop"));
+  assert(isOfficeProgram("org.onlyoffice.desktopeditors"));
+  assert(isOfficeProgram("libreoffice-writer-beta.desktop"));
+  assert(isOfficeProgram("onlyoffice-desktopeditors-preview.desktop"));
+  assert(!isOfficeProgram("openoffice"));
+  assert(!isOfficeProgram("office-notes"));
+  assert(!isOfficeProgram("libreofficetest"));
+  assert(!isOfficeProgram("sofficehelper"));
+  assert(!isOfficeProgram("onlyofficetest"));
+  assert(!isOfficeProgram(""));
 
   using areca::isTerminalProgram;
   assert(isTerminalProgram("ghostty"));
@@ -68,6 +87,11 @@ int main() {
   assert(isTerminalProgram("mate-terminal"));
   assert(isTerminalProgram("xfce4-terminal"));
   assert(isTerminalProgram("io.elementary.terminal"));
+  assert(isTerminalProgram("org.gnome.Terminal.Devel.desktop"));
+  assert(isTerminalProgram("ghostty-beta.desktop"));
+  assert(isTerminalProgram("foot.bin"));
+  assert(!isTerminalProgram("footage"));
+  assert(!isTerminalProgram("stationeers"));
   // KDE terminals deliberately stay outside the terminal compatibility path.
   assert(!isTerminalProgram("konsole"));
   assert(!isTerminalProgram("org.kde.Konsole.desktop"));

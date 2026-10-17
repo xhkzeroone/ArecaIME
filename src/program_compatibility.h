@@ -14,6 +14,9 @@ bool isVSCodeFamilyProgram(const std::string &program);
 // Programming editors and IDEs (JetBrains, Sublime Text, Zed, Eclipse, etc.).
 bool isProgrammingProgram(const std::string &program);
 
+// Office suites that need the forward-Backspace compatibility path.
+bool isOfficeProgram(const std::string &program);
+
 // Chat applications that need Shift+Left selection for rewrites.
 bool requiresShiftSelectBackend(const std::string &program);
 
