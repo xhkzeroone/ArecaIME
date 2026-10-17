@@ -577,7 +577,7 @@ jobs:
                 fcitx5 \
                 fcitx5-devel
               gem install --no-document --bindir /usr/local/bin fpm
-              export PATH="$(ruby -r rubygems -e 'puts Gem.bindir' 2>/dev/null || true):/usr/local/bin:$PATH"
+              export PATH="/usr/local/bin:$PATH"
 
               cmake -S . -B build-pkg-opensuse -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
