@@ -40,12 +40,10 @@ constexpr uint64_t kBackendVerdictProtectionUsec = 1ULL * 1000 * 1000;
 
 using SurroundingRule = bool (*)(const fcitx::SurroundingText &);
 
-constexpr std::array<SurroundingRule, 4> kInvalidSurroundingRules = {
+constexpr std::array<SurroundingRule, 3> kInvalidSurroundingRules = {
     [](const auto &s) { return s.cursor() <= 0; },
     [](const auto &s) { return s.anchor() <= 0; },
-    [](const auto &s) { return s.text().empty(); },
-    [](const auto &s) { return s.text() == "_"; },
-};
+    [](const auto &s) { return s.text().empty(); }};
 
 bool isInvalidSurrounding(const fcitx::SurroundingText &surrounding) {
   return std::any_of(kInvalidSurroundingRules.begin(),
@@ -695,8 +693,7 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
                      << " reason=programming-or-terminal-program"
                      << " program=" << programName;
       }
-    } else if (backendVerdict_.reliable &&
-               isVSCodeFamilyProgram(programName)) {
+    } else if (backendVerdict_.reliable && isVSCodeFamilyProgram(programName)) {
       const uint64_t capabilityMask =
           inputContext.capabilityFlags().toInteger();
       backendVerdict_.forceForwardBackspace = (capabilityMask == 0x72);
