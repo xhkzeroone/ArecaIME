@@ -445,6 +445,7 @@ namespace areca::settings {
         inputInt("Chờ sau Backspace XIM (ms)", config.advanced.ximAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace Fcitx4 (ms)", config.advanced.fcitx4AfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace DBus (ms)", config.advanced.dbusAfterBackspaceWaitMs);
+        inputInt("Chờ sau Backspace IBus (ms)", config.advanced.ibusAfterBackspaceWaitMs);
         endSettingsCard();
 
         beginSettingsCard(
@@ -456,6 +457,7 @@ namespace areca::settings {
         inputInt("Chờ sau uinput Shift+Left XIM (ms)", config.advanced.ximAfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left Fcitx4 (ms)", config.advanced.fcitx4AfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left DBus (ms)", config.advanced.dbusAfterUinputShiftSelectWaitMs);
+        inputInt("Chờ sau uinput Shift+Left IBus (ms)", config.advanced.ibusAfterUinputShiftSelectWaitMs);
         endSettingsCard();
 
         beginSettingsCard(
@@ -478,6 +480,7 @@ namespace areca::settings {
         inputInt("Chờ sau Backspace Native XIM (ms)", config.advanced.ximAfterXTestBackspaceWaitMs);
         inputInt("Chờ sau Backspace Native Fcitx4 (ms)", config.advanced.fcitx4AfterXTestBackspaceWaitMs);
         inputInt("Chờ sau Backspace Native DBus (ms)", config.advanced.dbusAfterXTestBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native IBus (ms)", config.advanced.ibusAfterXTestBackspaceWaitMs);
         endSettingsCard();
 
         beginSettingsCard("GeneralTimingCard", "Timing chung");

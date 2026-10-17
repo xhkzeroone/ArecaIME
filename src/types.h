@@ -22,6 +22,7 @@ struct RewritePlan {
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
   uint32_t dbusAfterBackspaceWaitMs = 10;
+  uint32_t ibusAfterBackspaceWaitMs = 10;
 
   uint32_t uinputShiftSelectDelayMs = 1;
   uint32_t afterUinputShiftSelectWaitMs = 20;
@@ -29,6 +30,7 @@ struct RewritePlan {
   uint32_t ximAfterUinputShiftSelectWaitMs = 20;
   uint32_t fcitx4AfterUinputShiftSelectWaitMs = 20;
   uint32_t dbusAfterUinputShiftSelectWaitMs = 20;
+  uint32_t ibusAfterUinputShiftSelectWaitMs = 20;
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingDeleteDelayMs = 10;
@@ -40,6 +42,7 @@ struct RewritePlan {
   uint32_t ximAfterXTestBackspaceWaitMs = 10;
   uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
   uint32_t dbusAfterXTestBackspaceWaitMs = 10;
+  uint32_t ibusAfterXTestBackspaceWaitMs = 10;
 
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
@@ -64,6 +67,9 @@ inline uint32_t resolveAfterXTestBackspaceWaitMs(const char *frontendName,
   if (fe.starts_with("dbus")) {
     return plan.dbusAfterXTestBackspaceWaitMs;
   }
+  if (fe.starts_with("ibus")) {
+    return plan.ibusAfterXTestBackspaceWaitMs;
+  }
   return plan.afterXTestBackspaceWaitMs;
 }
 
@@ -85,6 +91,9 @@ inline uint32_t resolveAfterBackspaceWaitMs(const char *frontendName,
   if (fe.starts_with("dbus")) {
     return plan.dbusAfterBackspaceWaitMs;
   }
+  if (fe.starts_with("ibus")) {
+    return plan.ibusAfterBackspaceWaitMs;
+  }
   return plan.afterBackspaceWaitMs;
 }
 
@@ -105,6 +114,9 @@ inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
   }
   if (fe.starts_with("dbus")) {
     return plan.dbusAfterUinputShiftSelectWaitMs;
+  }
+  if (fe.starts_with("ibus")) {
+    return plan.ibusAfterUinputShiftSelectWaitMs;
   }
   return plan.afterUinputShiftSelectWaitMs;
 }

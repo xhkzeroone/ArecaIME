@@ -19,6 +19,7 @@ struct SchedulerTiming {
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
   uint32_t dbusAfterBackspaceWaitMs = 10;
+  uint32_t ibusAfterBackspaceWaitMs = 10;
 
   uint32_t uinputShiftSelectDelayMs = 1;
   uint32_t afterUinputShiftSelectWaitMs = 20;
@@ -26,6 +27,7 @@ struct SchedulerTiming {
   uint32_t ximAfterUinputShiftSelectWaitMs = 20;
   uint32_t fcitx4AfterUinputShiftSelectWaitMs = 20;
   uint32_t dbusAfterUinputShiftSelectWaitMs = 20;
+  uint32_t ibusAfterUinputShiftSelectWaitMs = 20;
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingDeleteDelayMs = 10;
@@ -37,6 +39,7 @@ struct SchedulerTiming {
   uint32_t ximAfterXTestBackspaceWaitMs = 10;
   uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
   uint32_t dbusAfterXTestBackspaceWaitMs = 10;
+  uint32_t ibusAfterXTestBackspaceWaitMs = 10;
   uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
 };

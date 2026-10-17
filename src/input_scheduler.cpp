@@ -213,6 +213,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.ximAfterBackspaceWaitMs = timing.ximAfterBackspaceWaitMs;
   plan.fcitx4AfterBackspaceWaitMs = timing.fcitx4AfterBackspaceWaitMs;
   plan.dbusAfterBackspaceWaitMs = timing.dbusAfterBackspaceWaitMs;
+  plan.ibusAfterBackspaceWaitMs = timing.ibusAfterBackspaceWaitMs;
   plan.uinputShiftSelectDelayMs = timing.uinputShiftSelectDelayMs;
   plan.afterUinputShiftSelectWaitMs = timing.afterUinputShiftSelectWaitMs;
   plan.waylandAfterUinputShiftSelectWaitMs =
@@ -222,6 +223,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
       timing.fcitx4AfterUinputShiftSelectWaitMs;
   plan.dbusAfterUinputShiftSelectWaitMs =
       timing.dbusAfterUinputShiftSelectWaitMs;
+  plan.ibusAfterUinputShiftSelectWaitMs =
+      timing.ibusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
   plan.surroundingDeleteDelayMs = timing.surroundingDeleteDelayMs;
   plan.waylandSurroundingDeleteDelayMs = timing.waylandSurroundingDeleteDelayMs;
@@ -234,6 +237,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.fcitx4AfterXTestBackspaceWaitMs =
       timing.fcitx4AfterXTestBackspaceWaitMs;
   plan.dbusAfterXTestBackspaceWaitMs = timing.dbusAfterXTestBackspaceWaitMs;
+  plan.ibusAfterXTestBackspaceWaitMs = timing.ibusAfterXTestBackspaceWaitMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;
 

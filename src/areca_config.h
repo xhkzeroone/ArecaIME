@@ -131,6 +131,10 @@ FCITX_CONFIGURATION(
         this, "DbusAfterBackspaceWaitMs",
         N_("Chờ sau Backspace cuối DBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> ibusAfterBackspaceWaitMs{
+        this, "IBusAfterBackspaceWaitMs",
+        N_("Chờ sau Backspace cuối IBus (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectDelayMs{
         this, "UinputShiftSelectDelayMs",
         N_("Delay giữa các phím uinput Shift+Left (ms)"), 1,
@@ -154,6 +158,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterUinputShiftSelectWaitMs{
         this, "DbusAfterUinputShiftSelectWaitMs",
         N_("Chờ sau khi thả Shift uinput DBus (ms)"), 20,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> ibusAfterUinputShiftSelectWaitMs{
+        this, "IBusAfterUinputShiftSelectWaitMs",
+        N_("Chờ sau khi thả Shift uinput IBus (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
@@ -193,6 +201,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterXTestBackspaceWaitMs{
         this, "DbusAfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native DBus (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> ibusAfterXTestBackspaceWaitMs{
+        this, "IBusAfterXTestBackspaceWaitMs",
+        N_("Chờ sau Backspace cuối Native IBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,

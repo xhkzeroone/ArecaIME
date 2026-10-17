@@ -1377,6 +1377,7 @@ SchedulerTiming ArecaEngine::timing() const {
       static_cast<uint32_t>(advancedConfig_.ximAfterBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.fcitx4AfterBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.dbusAfterBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.ibusAfterBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.uinputShiftSelectDelayMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.afterUinputShiftSelectWaitMs.value()),
@@ -1388,6 +1389,8 @@ SchedulerTiming ArecaEngine::timing() const {
           advancedConfig_.fcitx4AfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.dbusAfterUinputShiftSelectWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.ibusAfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingDeleteDelayMs.value()),
       static_cast<uint32_t>(
@@ -1404,6 +1407,8 @@ SchedulerTiming ArecaEngine::timing() const {
           advancedConfig_.fcitx4AfterXTestBackspaceWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.dbusAfterXTestBackspaceWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.ibusAfterXTestBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }
