@@ -437,9 +437,7 @@ jobs:
                 fcitx5-frontend-gtk3 \
                 fcitx5-frontend-qt5 \
                 libdbus-1-dev \
-                libei-dev \
                 libinput-dev \
-                libportal-dev \
                 libudev-dev \
                 libfcitx5core-dev \
                 libfcitx5config-dev \
@@ -463,7 +461,8 @@ jobs:
                 libgl1-mesa-dev \
                 libegl1-mesa-dev \
                 libasound2-dev
-              gem install --no-document fpm
+              gem install --no-document --bindir /usr/local/bin fpm
+              export PATH="/usr/local/bin:$PATH"
 
               # Build SDL3 from source (Debian 12 has no official SDL3 package yet)
               git clone --depth 1 --branch release-3.2.x \
@@ -512,9 +511,7 @@ jobs:
                 --depends fcitx5-frontend-qt5 \
                 --depends libdbus-1-3 \
                 --depends libfontconfig1 \
-                --depends libei1 \
                 --depends libinput10 \
-                --depends libportal1 \
                 --depends libudev1 \
                 --depends libx11-6 \
                 --depends libxtst6 \
@@ -579,7 +576,8 @@ jobs:
                 libportal-devel \
                 fcitx5 \
                 fcitx5-devel
-              gem install --no-document fpm
+              gem install --no-document --bindir /usr/local/bin fpm
+              export PATH="$(ruby -r rubygems -e 'puts Gem.bindir' 2>/dev/null || true):/usr/local/bin:$PATH"
 
               cmake -S . -B build-pkg-opensuse -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
