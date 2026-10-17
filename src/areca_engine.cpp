@@ -206,8 +206,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         if (!inputContext) {
           return;
         }
-        // Nếu backend đang ở giai đoạn probe, thông báo để nó xác nhận thành công
-        // và hủy deadline timer 150ms.
+        // Nếu backend đang ở giai đoạn probe, thông báo để nó xác nhận thành
+        // công và hủy deadline timer 150ms.
         if (surroundingBackend_.isProbing()) {
           surroundingBackend_.notifySurroundingTextUpdated(*inputContext);
         }
@@ -585,11 +585,11 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
             inputTypeDetector_.isBrowser(program)) {
           if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
             if (debugEnabled()) {
-              FCITX_INFO()
-                  << "areca: browser surrounding disabled or failed, fallback to shift-select"
-                  << " program=" << program
-                  << " frontend=" << (frontend ? frontend : "")
-                  << " backend=" << shiftBackend->name();
+              FCITX_INFO() << "areca: browser surrounding disabled or failed, "
+                              "fallback to shift-select"
+                           << " program=" << program
+                           << " frontend=" << (frontend ? frontend : "")
+                           << " backend=" << shiftBackend->name();
             }
             return {shiftBackend};
           }
@@ -647,11 +647,11 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         lastAutoBackendByApp_[program] = AppBackendMode::ShiftSelect;
       }
       if (debugEnabled()) {
-        FCITX_INFO()
-            << "areca: browser surrounding disabled or failed, fallback to shift-select"
-            << " program=" << program
-            << " frontend=" << (frontend ? frontend : "")
-            << " backend=" << shiftBackend->name();
+        FCITX_INFO() << "areca: browser surrounding disabled or failed, "
+                        "fallback to shift-select"
+                     << " program=" << program
+                     << " frontend=" << (frontend ? frontend : "")
+                     << " backend=" << shiftBackend->name();
       }
       return {shiftBackend};
     }
@@ -688,9 +688,15 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
     }
 
     backendVerdict_.forceForwardBackspace = false;
-    const bool atspiInactive = !focusTracker_ || !focusTracker_->isValid();
-    if (atspiInactive && backendVerdict_.reliable &&
-        isVSCodeFamilyProgram(programName)) {
+    if (isProgrammingProgram(programName) || isTerminalProgram(programName)) {
+      backendVerdict_.forceForwardBackspace = true;
+      if (debugEnabled()) {
+        FCITX_INFO() << "areca: reliability first-probe force_forward=1"
+                     << " reason=programming-or-terminal-program"
+                     << " program=" << programName;
+      }
+    } else if (backendVerdict_.reliable &&
+               isVSCodeFamilyProgram(programName)) {
       const uint64_t capabilityMask =
           inputContext.capabilityFlags().toInteger();
       backendVerdict_.forceForwardBackspace = (capabilityMask == 0x72);
@@ -763,15 +769,13 @@ ArecaEngine::effectivePresentationMode(fcitx::InputContext &inputContext) {
   if (!program.empty()) {
     const auto it = appBackendOverridesMap_.find(program);
     if (it != appBackendOverridesMap_.end()) {
-      return presentationModeForAppSetting(it->second,
-                                           activePresentationMode_);
+      return presentationModeForAppSetting(it->second, activePresentationMode_);
     }
   }
   return activePresentationMode_;
 }
 
-InputModeHandler &ArecaEngine::handlerFor(
-    fcitx::InputContext &inputContext) {
+InputModeHandler &ArecaEngine::handlerFor(fcitx::InputContext &inputContext) {
   switch (effectivePresentationMode(inputContext)) {
   case PresentationMode::Preedit:
     return preeditHandler_;
@@ -1248,8 +1252,8 @@ void ArecaEngine::deactivate(const fcitx::InputMethodEntry &,
   backendSelectionPost_.cancel();
   if (isBackendSelecting(*inputContext)) {
     inputContext->inputPanel().reset();
-    inputContext->updateUserInterface(
-        fcitx::UserInterfaceComponent::InputPanel, true);
+    inputContext->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
+                                      true);
   }
   const PresentationMode presentationMode =
       effectivePresentationMode(*inputContext);
@@ -1269,8 +1273,7 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
       }
       return;
     }
-    if (effectivePresentationMode(*inputContext) ==
-        PresentationMode::Rewrite) {
+    if (effectivePresentationMode(*inputContext) == PresentationMode::Rewrite) {
       clearBackendVerdictForLifecycle(*inputContext, "reset");
     }
     if (debugEnabled()) {

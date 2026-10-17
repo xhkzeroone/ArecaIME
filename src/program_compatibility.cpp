@@ -22,8 +22,10 @@ std::string normalizedProgramName(std::string program) {
   }
   return program;
 }
+} // namespace
 
-bool isProgrammingProgram(const std::string &program) {
+bool isProgrammingProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
   // IDEs and code editors. Both executable names and desktop/application IDs
   // are included because input-method frontends may report either form.
   static constexpr auto editorsAndIdes = std::to_array<std::string_view>(
@@ -157,7 +159,6 @@ bool isProgrammingProgram(const std::string &program) {
                      });
 }
 
-} // namespace
 
 bool isTerminalProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
@@ -283,8 +284,7 @@ bool isVSCodeBasedProgram(const std::string &rawProgram) {
 
 bool isVSCodeFamilyProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
-  return isVSCodeBasedProgram(program) || isProgrammingProgram(program) ||
-         isTerminalProgram(program);
+  return isVSCodeBasedProgram(program);
 }
 
 bool requiresShiftSelectBackend(const std::string &rawProgram) {

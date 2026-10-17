@@ -8,8 +8,11 @@ namespace areca {
 bool isVSCodeBasedProgram(const std::string &program);
 
 // Programs that need the forward-Backspace compatibility path when they
-// expose the otherwise reliable 0x72 capability mask.
+// expose the otherwise reliable 0x72 capability mask (strictly VS Code family).
 bool isVSCodeFamilyProgram(const std::string &program);
+
+// Programming editors and IDEs (JetBrains, Sublime Text, Zed, Eclipse, etc.).
+bool isProgrammingProgram(const std::string &program);
 
 // Chat applications that need Shift+Left selection for rewrites.
 bool requiresShiftSelectBackend(const std::string &program);
