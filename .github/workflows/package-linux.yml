@@ -375,13 +375,235 @@ jobs:
           path: dist/*.rpm
           if-no-files-found: error
 
+  debian:
+    name: Debian 12 (Bookworm)
+    runs-on: ubuntu-24.04
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+      DEBIAN_FRONTEND: noninteractive
+      SDL3_PREFIX: /opt/sdl3-local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build, test and package in Debian 12
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          docker run --rm \
+            -e VERSION="$VERSION" \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -e SDL3_PREFIX="$SDL3_PREFIX" \
+            -v "$PWD:/work" \
+            -w /work \
+            debian:bookworm \
+            bash -lc '
+              set -euo pipefail
+              apt-get update
+              apt-get install -y \
+                build-essential \
+                cmake \
+                ninja-build \
+                pkg-config \
+                extra-cmake-modules \
+                golang-go \
+                ruby \
+                ruby-dev \
+                git \
+                fcitx5 \
+                fcitx5-config-qt \
+                fcitx5-frontend-gtk3 \
+                fcitx5-frontend-qt5 \
+                libdbus-1-dev \
+                libei-dev \
+                libinput-dev \
+                libportal-dev \
+                libudev-dev \
+                libfcitx5core-dev \
+                libfcitx5config-dev \
+                libfcitx5utils-dev \
+                libfontconfig-dev \
+                libx11-dev \
+                libxtst-dev \
+                patchelf \
+                libxext-dev \
+                libxrandr-dev \
+                libxcursor-dev \
+                libxfixes-dev \
+                libxi-dev \
+                libxss-dev \
+                libxkbcommon-dev \
+                libwayland-dev \
+                wayland-protocols \
+                libdecor-0-dev \
+                libdrm-dev \
+                libgbm-dev \
+                libgl1-mesa-dev \
+                libegl1-mesa-dev \
+                libasound2-dev
+              gem install --no-document fpm
+
+              # Build SDL3 from source (Debian 12 has no official SDL3 package yet)
+              git clone --depth 1 --branch release-3.2.x \
+                https://github.com/libsdl-org/SDL.git /tmp/sdl3-src
+              cmake -S /tmp/sdl3-src -B /tmp/sdl3-build -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+                -DSDL_SHARED=ON \
+                -DSDL_STATIC=OFF
+              cmake --build /tmp/sdl3-build --parallel
+              cmake --install /tmp/sdl3-build
+
+              # Build Areca
+              cmake -S . -B build-pkg-debian -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                -DCMAKE_PREFIX_PATH="$SDL3_PREFIX" \
+                -DBUILD_TESTING=ON
+              cmake --build build-pkg-debian --parallel
+              ctest --test-dir build-pkg-debian --output-on-failure
+
+              # Package DEB
+              mkdir -p pkgroot-debian
+              DESTDIR="$PWD/pkgroot-debian" cmake --install build-pkg-debian --strip
+
+              bundle_dir="pkgroot-debian/usr/lib/fcitx5-areca"
+              mkdir -p "$bundle_dir"
+              cp -a "$SDL3_PREFIX"/lib/libSDL3.so* "$bundle_dir/"
+
+              while IFS= read -r -d "" f; do
+                if patchelf --print-rpath "$f" >/dev/null 2>&1; then
+                  patchelf --set-rpath "\$ORIGIN/../lib/fcitx5-areca" "$f" || true
+                fi
+              done < <(find pkgroot-debian/usr/bin pkgroot-debian/usr/lib \
+                         -maxdepth 2 -type f -print0 2>/dev/null)
+
+              fpm -s dir -t deb \
+                -n fcitx5-areca \
+                -v "$VERSION" \
+                --architecture amd64 \
+                --description "Areca Vietnamese input method for Fcitx5" \
+                --url "https://github.com/xhkzeroone/ArecaIME" \
+                --license MIT \
+                --depends fcitx5 \
+                --depends fcitx5-frontend-gtk3 \
+                --depends fcitx5-frontend-qt5 \
+                --depends libdbus-1-3 \
+                --depends libfontconfig1 \
+                --depends libei1 \
+                --depends libinput10 \
+                --depends libportal1 \
+                --depends libudev1 \
+                --depends libx11-6 \
+                --depends libxtst6 \
+                -C pkgroot-debian \
+                -p "dist/fcitx5-areca_${VERSION}_debian12_amd64.deb" \
+                .
+              dpkg-deb -c \
+                "dist/fcitx5-areca_${VERSION}_debian12_amd64.deb"
+            '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fcitx5-areca-debian12-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  opensuse:
+    name: openSUSE Tumbleweed
+    runs-on: ubuntu-24.04
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build, test and package in openSUSE Tumbleweed
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          docker run --rm \
+            -e VERSION="$VERSION" \
+            -v "$PWD:/work" \
+            -w /work \
+            opensuse/tumbleweed:latest \
+            bash -lc '
+              set -euo pipefail
+              zypper --non-interactive refresh
+              zypper --non-interactive install -y --no-recommends \
+                gcc-c++ \
+                make \
+                cmake \
+                ninja \
+                pkgconf-pkg-config \
+                extra-cmake-modules \
+                go \
+                ruby \
+                ruby-devel \
+                rpm-build \
+                dbus-1-devel \
+                libinput-devel \
+                systemd-devel \
+                SDL3-devel \
+                fontconfig-devel \
+                libX11-devel \
+                libXtst-devel \
+                libei-devel \
+                libportal-devel \
+                fcitx5 \
+                fcitx5-devel
+              gem install --no-document fpm
+
+              cmake -S . -B build-pkg-opensuse -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                -DBUILD_TESTING=ON
+              cmake --build build-pkg-opensuse --parallel
+              ctest --test-dir build-pkg-opensuse --output-on-failure
+
+              mkdir -p pkgroot-opensuse
+              DESTDIR="$PWD/pkgroot-opensuse" \
+                cmake --install build-pkg-opensuse --strip
+              fpm -s dir -t rpm \
+                -n fcitx5-areca \
+                -v "$VERSION" \
+                --architecture x86_64 \
+                --description "Areca Vietnamese input method for Fcitx5" \
+                --url "https://github.com/xhkzeroone/ArecaIME" \
+                --license MIT \
+                --depends fcitx5 \
+                --depends libdbus-1-3 \
+                --depends libinput10 \
+                --depends SDL3 \
+                --depends fontconfig \
+                --depends libX11-6 \
+                --depends libXtst6 \
+                -C pkgroot-opensuse \
+                -p "dist/fcitx5-areca-${VERSION}.opensuse-tumbleweed.x86_64.rpm" \
+                .
+              rpm -qpl \
+                "dist/fcitx5-areca-${VERSION}.opensuse-tumbleweed.x86_64.rpm"
+            '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fcitx5-areca-opensuse-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+
   release:
     name: Publish tagged release
     runs-on: ubuntu-24.04
     needs:
       - ubuntu
+      - debian
       - arch
       - fedora
+      - opensuse
     if: github.ref_type == 'tag'
     permissions:
       contents: write
@@ -400,7 +622,7 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --title "$tag" \
-              --notes "Areca packages for Ubuntu 24.04, Ubuntu 26.04, Linux Mint 22, Arch Linux and Fedora."
+              --notes "Areca packages for Ubuntu, Linux Mint, Debian, Arch Linux, Fedora, and openSUSE."
           fi
           find artifacts -type f -print0 | \
             xargs -0 gh release upload "$tag" --clobber
