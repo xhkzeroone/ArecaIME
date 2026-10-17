@@ -222,6 +222,13 @@ jobs:
           dpkg-deb -c \
             "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb"
 
+          if [[ "${{ matrix.package_suffix }}" == "ubuntu24" ]]; then
+            cp "dist/fcitx5-areca_${VERSION}_ubuntu24_amd64.deb" \
+               "dist/fcitx5-areca_${VERSION}_popos24_amd64.deb"
+            cp "dist/fcitx5-areca_${VERSION}_ubuntu24_amd64.deb" \
+               "dist/fcitx5-areca_${VERSION}_zorin17_amd64.deb"
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
@@ -282,6 +289,14 @@ jobs:
               su builder -c \
                 "cd /work/arch-pkg && makepkg --noconfirm --check"
               mv arch-pkg/*.pkg.tar.zst dist/
+              for f in dist/fcitx5-areca-*.pkg.tar.zst; do
+                [[ -f "$f" ]] || continue
+                cp "$f" "${f%.pkg.tar.zst}.cachyos.pkg.tar.zst"
+                cp "$f" "${f%.pkg.tar.zst}.manjaro.pkg.tar.zst"
+                cp "$f" "${f%.pkg.tar.zst}.endeavouros.pkg.tar.zst"
+                cp "$f" "${f%.pkg.tar.zst}.garuda.pkg.tar.zst"
+                break
+              done
             '
 
       - uses: actions/upload-artifact@v4
@@ -367,6 +382,11 @@ jobs:
                 .
               rpm -qpl \
                 "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm"
+
+              cp "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
+                 "dist/fcitx5-areca-${VERSION}.nobara.x86_64.rpm"
+              cp "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
+                 "dist/fcitx5-areca-${VERSION}.bazzite.x86_64.rpm"
             '
 
       - uses: actions/upload-artifact@v4
@@ -503,6 +523,9 @@ jobs:
                 .
               dpkg-deb -c \
                 "dist/fcitx5-areca_${VERSION}_debian12_amd64.deb"
+
+              cp "dist/fcitx5-areca_${VERSION}_debian12_amd64.deb" \
+                 "dist/fcitx5-areca_${VERSION}_mxlinux23_amd64.deb"
             '
 
       - uses: actions/upload-artifact@v4
@@ -622,7 +645,7 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --title "$tag" \
-              --notes "Areca packages for Ubuntu, Linux Mint, Debian, Arch Linux, Fedora, and openSUSE."
+              --notes "Areca packages for Arch Linux, CachyOS, Manjaro, EndeavourOS, Garuda, Ubuntu, Pop!_OS, Linux Mint, Zorin OS, Debian, MX Linux, Fedora, Nobara, Bazzite, and openSUSE."
           fi
           find artifacts -type f -print0 | \
             xargs -0 gh release upload "$tag" --clobber
