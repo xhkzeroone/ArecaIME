@@ -71,12 +71,10 @@ bool InputTypeDetector::isTerminal(const std::string &program,
     return true;
   }
   if (tracker_ && tracker_->isValid() && tracker_->isTerminalFocused()) {
-    const std::string trackedProgram = tracker_->focusProgram();
-    if (program.empty() || program == trackedProgram ||
-        (isVSCodeBasedProgram(program) &&
-         isVSCodeBasedProgram(trackedProgram))) {
-      return true;
+    if (!program.empty() && isBrowserLikeProgram(program)) {
+      return false;
     }
+    return true;
   }
   return program.empty() && frontend &&
          std::string_view(frontend).starts_with("dbus");
