@@ -4135,7 +4135,11 @@ Wayland và Fcitx5.</p>
 </tr>
 <tr>
 <td><code>SurroundingTextBackend</code></td>
-<td>Gọi <code>deleteSurroundingText()</code> và <code>commitString()</code>.</td>
+<td>Gọi <code>deleteSurroundingText()</code> và <code>commitString()</code>, tích hợp <code>AdaptiveWait</code> và kiểm tra xác nhận qua sự kiện <code>SurroundingTextUpdated</code>.</td>
+</tr>
+<tr>
+<td><code>SurroundingTextV2Backend</code></td>
+<td>Xóa văn bản từng ký tự tuần tự (Incremental Delete) cho các trình soạn thảo không ổn định với xóa gộp, tích hợp <code>AdaptiveWait</code>.</td>
 </tr>
 <tr>
 <td><code>ForwardBackspaceBackend</code></td>
@@ -4323,26 +4327,72 @@ frontend, vì không đủ dữ liệu để ép an toàn.</li>
     end
 </div></code></pre>
 <h3 id="2-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-surroundingtextbackend" tabindex="-1">2. Sơ đồ luồng <code>SurroundingTextBackend</code></h3>
+<h4 id="a-lu%E1%BB%93ng-probe-x%C3%A1c-th%E1%BB%B1c-%C4%91%E1%BB%99-tin-c%E1%BA%ADy-v%C3%A0-ki%E1%BB%83m-tra-s%E1%BB%B1-ki%E1%BB%87n-surroundingtextupdated" tabindex="-1">A. Luồng Probe xác thực độ tin cậy và kiểm tra sự kiện <code>SurroundingTextUpdated</code></h4>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    autonumber
+    participant S as InputScheduler
+    participant E as ArecaEngine
+    participant B as SurroundingTextBackend
+    participant IC as InputContext
+    participant EL as EventLoop
+    participant FB as FallbackBackend
+
+    S-&gt;&gt;B: apply(inputContext, plan[probe=true], onDone)
+    B-&gt;&gt;B: Lưu snapshot gốc và tính snapshot kỳ vọng
+    B-&gt;&gt;IC: deleteSurroundingText(-count, count)
+    B-&gt;&gt;EL: addTimeEvent(ProbeDeadline = 150ms)
+    
+    alt Trường hợp 1: Nhận sự kiện InputContextSurroundingTextUpdated trước 150ms
+        IC--&gt;&gt;E: Sự kiện InputContextSurroundingTextUpdated
+        E-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=true)
+        B-&gt;&gt;B: surroundingProbeMatches: kiểm tra ngữ nghĩa text trước con trỏ
+        Note over B: Xác thực khớp: con trỏ bằng anchor, không còn text cũ, khớp text kỳ vọng
+        B-&gt;&gt;EL: timer.reset (Hủy deadline 150ms)
+        B-&gt;&gt;E: onProbeSucceeded: probePending = false, reliable = true
+        B-&gt;&gt;EL: Chờ effectiveWaitMs (AdaptiveWait)
+        EL--&gt;&gt;B: commitPost_.schedule (Pha post của EventLoop)
+        B-&gt;&gt;IC: commitString(commitText)
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
+    else Trường hợp 2: Hết hạn 150ms không có sự kiện hợp lệ (Timeout)
+        EL--&gt;&gt;B: Timer ProbeDeadline 150ms kích hoạt
+        B-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=false)
+        Note over B: Kiểm tra lần cuối snapshot hiện tại trong queue
+        alt Snapshot vẫn không khớp
+            B-&gt;&gt;E: onProbeFailed: known = true, reliable = false, probePending = false
+            B-&gt;&gt;FB: apply(inputContext, plan[probe=false], onDone)
+            Note over B,FB: Chuyển sang ShiftSelect nếu là trình duyệt hoặc Backspace
+        end
+    end
+</div></code></pre>
+<h4 id="b-lu%E1%BB%93ng-rewrite-th%C3%B4ng-th%C6%B0%E1%BB%9Dng-v%E1%BB%9Bi-adaptivewait-v%C3%A0-eventloopposttask" tabindex="-1">B. Luồng Rewrite thông thường với <code>AdaptiveWait</code> và <code>EventLoopPostTask</code></h4>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant B as SurroundingTextBackend
     participant IC as InputContext
+    participant AW as AdaptiveWait
     participant EL as EventLoop
+    participant PT as EventLoopPostTask
 
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
+    S-&gt;&gt;B: apply(inputContext, plan[probe=false], onDone)
     alt backspaceCount &gt; 0
+        B-&gt;&gt;AW: beginTransaction
         B-&gt;&gt;IC: deleteSurroundingText(-count, count)
-        B-&gt;&gt;B: updateSurroundingCacheAfterDelete(...)
-        B-&gt;&gt;EL: addTimeEvent(DefaultWaitMs = 3ms)
-        Note over B,EL: Chờ event-loop settling delay
-        EL--&gt;&gt;B: Timer callback
+        B-&gt;&gt;B: updateSurroundingCacheAfterDelete
+        B-&gt;&gt;AW: effectiveWaitMs(waitMs), effectiveExtraWaitMs(waitMs)
+        B-&gt;&gt;EL: addTimeEvent(effectiveWaitMs)
+        EL--&gt;&gt;B: Timer callback (observeTimer ghi nhận độ trễ thực tế)
+        B-&gt;&gt;PT: commitPost_.schedule
+        PT--&gt;&gt;B: Pha post của EventLoop
+        B-&gt;&gt;B: commitAfterAdaptiveWait: kiểm tra nếu trễ tăng thì giãn tiếp
         B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;B: updateSurroundingCacheAfterCommit(...)
-        B-&gt;&gt;S: onDone(transactionId)
+        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
+        B-&gt;&gt;AW: completeTransaction (giảm dần độ trễ khi hệ thống ổn định)
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
     else backspaceCount == 0
         B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;S: onDone(transactionId) (Immediate Completed)
+        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
     end
 </div></code></pre>
 <h3 id="3-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-uinputshiftselectbackend" tabindex="-1">3. Sơ đồ luồng <code>UinputShiftSelectBackend</code></h3>
@@ -4478,9 +4528,26 @@ theo input context. <code>RedirectModeHandler</code> không xử lý nội dung:
 <li>Snapshot phải valid.</li>
 <li>Từ ngay trước cursor phải có suffix không rỗng khớp với <code>currentText</code>.</li>
 </ul>
+<p>Khi bắt đầu probe, backend gửi lệnh xóa và khởi tạo timer deadline 150 ms trên
+EventLoop. Backend xác thực thành công thông qua sự kiện <code>SurroundingTextUpdated</code>
+nhờ hàm kiểm tra ngữ nghĩa <code>surroundingProbeMatches</code>:</p>
+<ul>
+<li>Con trỏ và anchor phải trùng nhau, không nằm trong vùng bôi đen.</li>
+<li>Phần văn bản trước con trỏ trước khi xóa phải chứa đúng đoạn text kỳ vọng sau khi xóa.</li>
+<li>Văn bản hiện tại trước con trỏ không được còn chứa đoạn văn bản cũ chưa xóa.</li>
+<li>Loại trừ trạng thái trung gian khi ứng dụng di chuyển con trỏ trước rồi mới xóa ký tự sau.</li>
+</ul>
+<p>Khi khớp ngữ nghĩa thành công, backend hủy deadline 150 ms, xác nhận độ tin cậy
+và chuyển sang commit. Nếu hết 150 ms mà không nhận được sự kiện hợp lệ, backend
+kiểm tra snapshot lần cuối rồi đánh dấu không tin cậy và chuyển giao diện sang
+fallback backend như Shift-Select cho trình duyệt hoặc Backspace.</p>
+<p>Cả <code>SurroundingTextBackend</code> và <code>SurroundingTextV2Backend</code> đều tích hợp <code>AdaptiveWait</code>
+kết hợp <code>EventLoopPostTask</code>. Thời gian chờ commit được tính thích ứng và đẩy sang
+pha post của event loop, tự động giãn thêm trễ nếu hệ thống bị nghẽn nhằm ngăn chặn
+hiện tượng commit trước khi ứng dụng kịp xóa text cũ.</p>
 <p>Kết quả được cache ở cấp <code>ArecaEngine</code>, cùng UUID của context hiện tại. Bình
 thường lifecycle sẽ xoá verdict để rewrite sau đánh giá lại. Backspace, Ctrl+A
-và phím di chuyển/chọn text bảo vệ riêng verdict trong 1 giây; lifecycle và reset
+và phím di chuyển hoặc chọn text bảo vệ riêng verdict trong 1 giây; lifecycle và reset
 state nhập vẫn chạy bình thường. UUID thay đổi luôn làm cache được tạo lại cho
 context mới.</p>
 <p>Snapshot browser autocomplete không được dùng làm first probe; checker giữ
