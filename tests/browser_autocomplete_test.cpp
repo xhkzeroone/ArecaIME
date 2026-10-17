@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "browser_autocomplete.h"
+#include "program_compatibility.h"
 
 int main() {
   using areca::isBrowserAutocomplete;

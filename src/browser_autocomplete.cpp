@@ -6,6 +6,8 @@
 
 #include <fcitx-utils/utf8.h>
 
+#include "program_compatibility.h"
+
 namespace areca {
 namespace {
 
@@ -24,96 +26,7 @@ size_t utf8CharIndexForByteOffset(const std::string &text, size_t byteOffset) {
       std::string(text.begin(), text.begin() + byteOffset));
 }
 
-std::string normalizedProgramName(std::string program) {
-  const auto slash = program.find_last_of('/');
-  if (slash != std::string::npos) {
-    program.erase(0, slash + 1);
-  }
-  for (char &c : program) {
-    if (c >= 'A' && c <= 'Z') {
-      c = static_cast<char>(c - 'A' + 'a');
-    }
-  }
-  constexpr const char suffix[] = ".desktop";
-  constexpr size_t suffixLength = sizeof(suffix) - 1;
-  if (program.size() >= suffixLength &&
-      program.compare(program.size() - suffixLength, suffixLength, suffix) ==
-          0) {
-    program.resize(program.size() - suffixLength);
-  }
-  return program;
-}
-
-bool isFirefoxFamilyProgram(const std::string &rawProgram) {
-  const std::string program = normalizedProgramName(rawProgram);
-  static constexpr std::array<const char *, 12> patterns = {
-      "firefox", "librewolf",   "waterfox",   "floorp",
-      "zen",     "tor-browser", "torbrowser", "mullvad",
-      "icecat",  "seamonkey",   "palemoon",   "basilisk"};
-  return std::any_of(patterns.begin(), patterns.end(),
-                     [&program](const char *pattern) {
-                       return program.find(pattern) != std::string::npos;
-                     });
-}
-
 } // namespace
-
-bool isBrowserLikeProgram(const std::string &rawProgram) {
-  const std::string program = normalizedProgramName(rawProgram);
-  if (program.empty()) {
-    return true;
-  }
-
-  static constexpr std::array<const char *, 45> patterns = {"chrome",
-                                                            "google-chrome",
-                                                            "chromium",
-                                                            "chromium-browser",
-                                                            "edge",
-                                                            "msedge",
-                                                            "brave",
-                                                            "vivaldi",
-                                                            "opera",
-                                                            "opera-beta",
-                                                            "opera-developer",
-                                                            "coccoc",
-                                                            "yandex",
-                                                            "firefox",
-                                                            "librewolf",
-                                                            "waterfox",
-                                                            "floorp",
-                                                            "zen",
-                                                            "tor-browser",
-                                                            "torbrowser",
-                                                            "epiphany",
-                                                            "falkon",
-                                                            "midori",
-                                                            "qutebrowser",
-                                                            "palemoon",
-                                                            "basilisk",
-                                                            "nyxt",
-                                                            "otter",
-                                                            "dooble",
-                                                            "arc",
-                                                            "helium",
-                                                            "mullvad",
-                                                            "thorium",
-                                                            "ladybird",
-                                                            "luakit",
-                                                            "surf",
-                                                            "min",
-                                                            "icecat",
-                                                            "seamonkey",
-                                                            "konqueror",
-                                                            "mercury",
-                                                            "angelfish",
-                                                            "vieb",
-                                                            "netsurf",
-                                                            "window:"};
-  return std::any_of(patterns.begin(), patterns.end(),
-                     [&program](const char *pattern) {
-                       return program.find(pattern) != std::string::npos;
-                     });
-}
 
 bool isSelectionImmediatelyAfterText(const std::string &text,
                                      unsigned int cursor,

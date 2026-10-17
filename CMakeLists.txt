@@ -278,7 +278,8 @@ if(BUILD_TESTING)
 
     add_executable(areca-browser-autocomplete-test
         tests/browser_autocomplete_test.cpp
-        src/browser_autocomplete.cpp)
+        src/browser_autocomplete.cpp
+        src/program_compatibility.cpp)
     target_compile_features(areca-browser-autocomplete-test PRIVATE cxx_std_20)
     target_compile_options(areca-browser-autocomplete-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)

@@ -315,4 +315,38 @@ bool isChromiumBrowser(const std::string &rawProgram) {
                      });
 }
 
+bool isFirefoxFamilyProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  static constexpr auto patterns = std::to_array<std::string_view>(
+      {"firefox", "librewolf", "waterfox", "floorp", "zen", "tor-browser",
+       "torbrowser", "mullvad", "icecat", "seamonkey", "palemoon",
+       "basilisk"});
+  return std::any_of(patterns.begin(), patterns.end(),
+                     [&program](std::string_view pattern) {
+                       return program.find(pattern) != std::string::npos;
+                     });
+}
+
+bool isBrowserLikeProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  if (program.empty()) {
+    return true;
+  }
+
+  static constexpr auto patterns = std::to_array<std::string_view>(
+      {"chrome", "google-chrome", "chromium", "chromium-browser", "edge",
+       "msedge", "brave", "vivaldi", "opera", "opera-beta",
+       "opera-developer", "coccoc", "yandex", "firefox", "librewolf",
+       "waterfox", "floorp", "zen", "tor-browser", "torbrowser",
+       "epiphany", "falkon", "midori", "qutebrowser", "palemoon",
+       "basilisk", "nyxt", "otter", "dooble", "arc", "helium",
+       "mullvad", "thorium", "ladybird", "luakit", "surf", "min",
+       "icecat", "seamonkey", "konqueror", "mercury", "angelfish",
+       "vieb", "netsurf", "window:"});
+  return std::any_of(patterns.begin(), patterns.end(),
+                     [&program](std::string_view pattern) {
+                       return program.find(pattern) != std::string::npos;
+                     });
+}
+
 } // namespace areca

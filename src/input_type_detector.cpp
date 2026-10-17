@@ -8,7 +8,6 @@
 #include <fcitx-utils/event.h>
 #include <fcitx/inputcontext.h>
 
-#include "browser_autocomplete.h"
 #include "program_compatibility.h"
 #include "window_focus_tracker.h"
 

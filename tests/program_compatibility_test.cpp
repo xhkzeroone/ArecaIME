@@ -143,6 +143,17 @@ int main() {
   assert(!isChromiumBrowser("ghostty"));
   assert(!isChromiumBrowser(""));
 
+  using areca::isBrowserLikeProgram;
+  using areca::isFirefoxFamilyProgram;
+  assert(isBrowserLikeProgram("google-chrome.desktop"));
+  assert(isBrowserLikeProgram("/usr/bin/firefox"));
+  assert(isBrowserLikeProgram(""));
+  assert(!isBrowserLikeProgram("org.kde.kate"));
+  assert(isFirefoxFamilyProgram("Firefox.desktop"));
+  assert(isFirefoxFamilyProgram("org.mozilla.firefoxdeveloperedition"));
+  assert(isFirefoxFamilyProgram("librewolf"));
+  assert(!isFirefoxFamilyProgram("chromium"));
+
   using areca::resolveAfterBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;
   using areca::resolveAfterXTestBackspaceWaitMs;
