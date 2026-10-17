@@ -4149,7 +4149,11 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 </tr>
 <tr>
 <td style="text-align:left"><code>SurroundingTextBackend</code></td>
-<td style="text-align:left">Thực thi xóa văn bản qua API Fcitx <code>deleteSurroundingText()</code> và chèn chữ mới qua <code>commitString()</code>.</td>
+<td style="text-align:left">Thực thi xóa văn bản qua API Fcitx <code>deleteSurroundingText()</code> và chèn chữ mới qua <code>commitString()</code>, tích hợp <code>AdaptiveWait</code> và kiểm tra xác nhận qua sự kiện <code>SurroundingTextUpdated</code>.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>SurroundingTextV2Backend</code></td>
+<td style="text-align:left">Thực thi xóa văn bản từng ký tự tuần tự (Incremental Delete) cho các trình soạn thảo không ổn định với xóa gộp, tích hợp <code>AdaptiveWait</code>.</td>
 </tr>
 <tr>
 <td style="text-align:left"><code>UinputShiftSelectBackend</code></td>
@@ -4227,26 +4231,72 @@ Nếu phát hiện trong ô nhập liệu đang có văn bản bôi đen sẵn (
 <hr>
 <h2 id="5-chi-ti%E1%BA%BFt-s%C6%A1-%C4%91%E1%BB%93-tu%E1%BA%A7n-t%E1%BB%B1-sequence-diagrams-c%C3%A1c-backend" tabindex="-1">5. Chi tiết sơ đồ tuần tự (Sequence Diagrams) các Backend</h2>
 <h3 id="51-surroundingtextbackend-sequence-diagram" tabindex="-1">5.1. <code>SurroundingTextBackend</code> Sequence Diagram</h3>
+<h4 id="a-lu%E1%BB%93ng-probe-x%C3%A1c-th%E1%BB%B1c-%C4%91%E1%BB%99-tin-c%E1%BA%ADy-v%C3%A0-ki%E1%BB%83m-tra-s%E1%BB%B1-ki%E1%BB%87n-surroundingtextupdated" tabindex="-1">A. Luồng Probe xác thực độ tin cậy và kiểm tra sự kiện <code>SurroundingTextUpdated</code></h4>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    autonumber
+    participant S as InputScheduler
+    participant E as ArecaEngine
+    participant B as SurroundingTextBackend
+    participant IC as InputContext
+    participant EL as EventLoop
+    participant FB as FallbackBackend
+
+    S-&gt;&gt;B: apply(inputContext, plan[probe=true], onDone)
+    B-&gt;&gt;B: Lưu snapshot gốc và tính snapshot kỳ vọng
+    B-&gt;&gt;IC: deleteSurroundingText(-count, count)
+    B-&gt;&gt;EL: addTimeEvent(ProbeDeadline = 150ms)
+    
+    alt Trường hợp 1: Nhận sự kiện InputContextSurroundingTextUpdated trước 150ms
+        IC--&gt;&gt;E: Sự kiện InputContextSurroundingTextUpdated
+        E-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=true)
+        B-&gt;&gt;B: surroundingProbeMatches: kiểm tra ngữ nghĩa text trước con trỏ
+        Note over B: Xác thực khớp: con trỏ bằng anchor, không còn text cũ, khớp text kỳ vọng
+        B-&gt;&gt;EL: timer.reset (Hủy deadline 150ms)
+        B-&gt;&gt;E: onProbeSucceeded: probePending = false, reliable = true
+        B-&gt;&gt;EL: Chờ effectiveWaitMs (AdaptiveWait)
+        EL--&gt;&gt;B: commitPost_.schedule (Pha post của EventLoop)
+        B-&gt;&gt;IC: commitString(commitText)
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
+    else Trường hợp 2: Hết hạn 150ms không có sự kiện hợp lệ (Timeout)
+        EL--&gt;&gt;B: Timer ProbeDeadline 150ms kích hoạt
+        B-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=false)
+        Note over B: Kiểm tra lần cuối snapshot hiện tại trong queue
+        alt Snapshot vẫn không khớp
+            B-&gt;&gt;E: onProbeFailed: known = true, reliable = false, probePending = false
+            B-&gt;&gt;FB: apply(inputContext, plan[probe=false], onDone)
+            Note over B,FB: Chuyển sang ShiftSelect nếu là trình duyệt hoặc Backspace
+        end
+    end
+</div></code></pre>
+<h4 id="b-lu%E1%BB%93ng-rewrite-th%C3%B4ng-th%C6%B0%E1%BB%9Dng-v%E1%BB%9Bi-adaptivewait-v%C3%A0-eventloopposttask" tabindex="-1">B. Luồng Rewrite thông thường với <code>AdaptiveWait</code> và <code>EventLoopPostTask</code></h4>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant B as SurroundingTextBackend
     participant IC as InputContext
+    participant AW as AdaptiveWait
     participant EL as EventLoop
+    participant PT as EventLoopPostTask
 
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
+    S-&gt;&gt;B: apply(inputContext, plan[probe=false], onDone)
     alt backspaceCount &gt; 0
+        B-&gt;&gt;AW: beginTransaction
         B-&gt;&gt;IC: deleteSurroundingText(-count, count)
-        B-&gt;&gt;B: updateSurroundingCacheAfterDelete(...)
-        B-&gt;&gt;EL: addTimeEvent(DefaultWaitMs = 3ms)
-        Note over B,EL: Chờ event-loop settling delay
-        EL--&gt;&gt;B: Timer callback
+        B-&gt;&gt;B: updateSurroundingCacheAfterDelete
+        B-&gt;&gt;AW: effectiveWaitMs(waitMs), effectiveExtraWaitMs(waitMs)
+        B-&gt;&gt;EL: addTimeEvent(effectiveWaitMs)
+        EL--&gt;&gt;B: Timer callback (observeTimer ghi nhận độ trễ thực tế)
+        B-&gt;&gt;PT: commitPost_.schedule
+        PT--&gt;&gt;B: Pha post của EventLoop
+        B-&gt;&gt;B: commitAfterAdaptiveWait: kiểm tra nếu trễ tăng thì giãn tiếp
         B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;B: updateSurroundingCacheAfterCommit(...)
-        B-&gt;&gt;S: onDone(transactionId)
+        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
+        B-&gt;&gt;AW: completeTransaction (giảm dần độ trễ khi hệ thống ổn định)
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
     else backspaceCount == 0
         B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;S: onDone(transactionId) (Immediate Completed)
+        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
+        B-&gt;&gt;S: onDone(transactionId, Succeeded)
     end
 </div></code></pre>
 <hr>
