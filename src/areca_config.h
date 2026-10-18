@@ -49,14 +49,12 @@ enum class AppBackendMode {
   Redirect = 5
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
-                                 N_("Surrounding"),
-                                 N_("Shift select"),
+                                 N_("Surrounding"), N_("Shift select"),
                                  N_("Backspace"), N_("Preedit"),
                                  N_("Redirect (EN)"));
 
 inline PresentationMode
-presentationModeForAppSetting(AppBackendMode mode,
-                              PresentationMode fallback) {
+presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
   switch (mode) {
   case AppBackendMode::Preedit:
     return PresentationMode::Preedit;
@@ -95,6 +93,55 @@ FCITX_CONFIGURATION(
                      {},
                      {},
                      fcitx::ListDisplayOptionAnnotation("AppName")};);
+
+FCITX_CONFIGURATION(
+    AppTimingOverrideEntry,
+    fcitx::Option<std::string> appName{this, "AppName", N_("Tên ứng dụng"), ""};
+    fcitx::Option<std::string> frontend{this, "Frontend", N_("Frontend"), ""};
+    fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
+        this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), -1,
+        fcitx::IntConstrain(-1, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> afterBackspaceWaitMs{
+        this, "AfterBackspaceWaitMs", N_("Chờ sau Backspace cuối (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectDelayMs{
+        this, "UinputShiftSelectDelayMs", N_("Delay giữa Shift+Left (ms)"), -1,
+        fcitx::IntConstrain(-1, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> afterUinputShiftSelectWaitMs{
+        this, "AfterUinputShiftSelectWaitMs", N_("Chờ sau Shift+Left (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
+        this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
+        this, "SurroundingDeleteDelayMs", N_("Delay xóa surrounding v2 (ms)"),
+        -1, fcitx::IntConstrain(-1, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> afterSurroundingDeleteWaitMs{
+        this, "AfterSurroundingDeleteWaitMs",
+        N_("Chờ sau xóa surrounding v2 cuối (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> xtestBackspaceDelayMs{
+        this, "XTestBackspaceDelayMs", N_("Delay giữa Native Backspace (ms)"),
+        -1, fcitx::IntConstrain(-1, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> afterXTestBackspaceWaitMs{
+        this, "AfterXTestBackspaceWaitMs",
+        N_("Chờ sau Native Backspace cuối (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
+        this, "PostCommitDelayMs", N_("Delay sau commit (ms)"), -1,
+        fcitx::IntConstrain(-1, 5000)};);
+
+FCITX_CONFIGURATION(
+    AppTimingProfilesConfig,
+    fcitx::OptionWithAnnotation<std::vector<AppTimingOverrideEntry>,
+                                fcitx::ListDisplayOptionAnnotation>
+        appTimings{this,
+                   "AppTimings",
+                   N_("Cấu hình timing theo ứng dụng"),
+                   {},
+                   {},
+                   {},
+                   fcitx::ListDisplayOptionAnnotation("AppName")};);
 
 FCITX_CONFIGURATION(
     MacroTableConfig,
@@ -273,8 +320,8 @@ FCITX_CONFIGURATION(
         this, "CapitalizeMacro", N_("Tự đổi hoa/thường cho nội dung macro"),
         true};
     fcitx::Option<bool> revertMacroOnBackspace{
-        this, "RevertMacroOnBackspace",
-        N_("Hoàn tác macro khi nhấn Backspace"), true};
+        this, "RevertMacroOnBackspace", N_("Hoàn tác macro khi nhấn Backspace"),
+        true};
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};

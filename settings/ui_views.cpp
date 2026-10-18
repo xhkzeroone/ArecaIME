@@ -499,10 +499,67 @@ namespace areca::settings {
         endSettingsCard();
     }
 
-    void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut) {
-        drawPageIntro(
-            "Ứng dụng", "Chọn chế độ gõ hoặc backend Rewrite riêng cho từng ứng dụng."
+    void applyFrontendTimingDefaults(ConfigStore& config, areca::AppTimingOverrideEntry& entry) {
+        const std::string_view frontend = entry.frontend.value();
+        const auto frontendValue = [&frontend](int generic, int wayland, int xim, int fcitx4, int dbus, int ibus) {
+            if (frontend.starts_with("wayland"))
+                return wayland;
+            if (frontend.starts_with("xim"))
+                return xim;
+            if (frontend.starts_with("fcitx4"))
+                return fcitx4;
+            if (frontend.starts_with("dbus"))
+                return dbus;
+            if (frontend.starts_with("ibus"))
+                return ibus;
+            return generic;
+        };
+        const auto& advanced = config.advanced;
+        entry.backspaceDelayMs.setValue(advanced.backspaceDelayMs.value());
+        entry.afterBackspaceWaitMs.setValue(frontendValue(
+            advanced.afterBackspaceWaitMs.value(), advanced.waylandAfterBackspaceWaitMs.value(),
+            advanced.ximAfterBackspaceWaitMs.value(), advanced.fcitx4AfterBackspaceWaitMs.value(),
+            advanced.dbusAfterBackspaceWaitMs.value(), advanced.ibusAfterBackspaceWaitMs.value()
+        ));
+        entry.uinputShiftSelectDelayMs.setValue(advanced.uinputShiftSelectDelayMs.value());
+        entry.afterUinputShiftSelectWaitMs.setValue(frontendValue(
+            advanced.afterUinputShiftSelectWaitMs.value(), advanced.waylandAfterUinputShiftSelectWaitMs.value(),
+            advanced.ximAfterUinputShiftSelectWaitMs.value(), advanced.fcitx4AfterUinputShiftSelectWaitMs.value(),
+            advanced.dbusAfterUinputShiftSelectWaitMs.value(), advanced.ibusAfterUinputShiftSelectWaitMs.value()
+        ));
+        entry.surroundingWaitMs.setValue(advanced.surroundingWaitMs.value());
+        entry.surroundingDeleteDelayMs.setValue(
+            frontend.starts_with("wayland") ? advanced.waylandSurroundingDeleteDelayMs.value()
+                                            : advanced.surroundingDeleteDelayMs.value()
         );
+        entry.afterSurroundingDeleteWaitMs.setValue(advanced.afterSurroundingDeleteWaitMs.value());
+        entry.xtestBackspaceDelayMs.setValue(advanced.xtestBackspaceDelayMs.value());
+        entry.afterXTestBackspaceWaitMs.setValue(frontendValue(
+            advanced.afterXTestBackspaceWaitMs.value(), advanced.waylandAfterXTestBackspaceWaitMs.value(),
+            advanced.ximAfterXTestBackspaceWaitMs.value(), advanced.fcitx4AfterXTestBackspaceWaitMs.value(),
+            advanced.dbusAfterXTestBackspaceWaitMs.value(), advanced.ibusAfterXTestBackspaceWaitMs.value()
+        ));
+        entry.postCommitDelayMs.setValue(advanced.postCommitDelayMs.value());
+    }
+
+    struct AppTimingEditorState {
+        bool open = false;
+        size_t appIndex = SIZE_MAX;
+        std::string originalName;
+        areca::AppTimingOverrideEntry draft;
+    };
+
+    static AppTimingEditorState appTimingEditor;
+
+    void resetAppTimingEditor() { appTimingEditor = AppTimingEditorState{}; }
+
+    bool drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut) {
+        bool saveTiming = false;
+        auto& timingEditorOpen = appTimingEditor.open;
+        auto& timingAppIndex = appTimingEditor.appIndex;
+        auto& timingOriginalName = appTimingEditor.originalName;
+        auto& timingDraft = appTimingEditor.draft;
+        drawPageIntro("Ứng dụng", "Chọn chế độ gõ hoặc backend Rewrite riêng cho từng ứng dụng.");
 
         beginSettingsCard(
             "BackendShortcutCard", "Phím tắt chọn nhanh chế độ / backend",
@@ -530,12 +587,72 @@ namespace areca::settings {
         }
         endSettingsCard();
 
+        auto& overrides = *config.apps.appOverrides.mutableValue();
+
+        if (timingEditorOpen && timingAppIndex < overrides.size()) {
+            timingDraft.appName.setValue(overrides[timingAppIndex].appName.value());
+            const std::string timingTitle = "Timing riêng: " + timingDraft.appName.value();
+            const std::string timingDescription = timingDraft.frontend.value().empty()
+                ? "Frontend mặc định"
+                : "Frontend: " + timingDraft.frontend.value();
+            beginSettingsCard("InlineAppTimingEditor", timingTitle.c_str(), timingDescription.c_str());
+            if (ImGui::BeginTable("InlineAppTimingInputs", 2, ImGuiTableFlags_SizingStretchSame)) {
+                ImGui::TableNextColumn();
+                ImGui::SeparatorText("Backspace");
+                inputInt("Delay giữa Backspace (ms)", timingDraft.backspaceDelayMs);
+                inputInt("Chờ sau Backspace cuối (ms)", timingDraft.afterBackspaceWaitMs);
+                ImGui::SeparatorText("Shift+Left");
+                inputInt("Delay giữa Shift+Left (ms)", timingDraft.uinputShiftSelectDelayMs);
+                inputInt("Chờ sau Shift+Left (ms)", timingDraft.afterUinputShiftSelectWaitMs);
+
+                ImGui::TableNextColumn();
+                ImGui::SeparatorText("Surrounding text");
+                inputInt("Chờ sau xóa surrounding (ms)", timingDraft.surroundingWaitMs);
+                inputInt("Delay xóa surrounding v2 (ms)", timingDraft.surroundingDeleteDelayMs);
+                inputInt("Chờ sau xóa surrounding v2 cuối (ms)", timingDraft.afterSurroundingDeleteWaitMs);
+                ImGui::SeparatorText("Native / chung");
+                inputInt("Delay giữa Native Backspace (ms)", timingDraft.xtestBackspaceDelayMs);
+                inputInt("Chờ sau Native Backspace cuối (ms)", timingDraft.afterXTestBackspaceWaitMs);
+                inputInt("Delay sau commit (ms)", timingDraft.postCommitDelayMs);
+                ImGui::EndTable();
+            }
+
+            if (ImGui::Button("Đặt lại theo frontend")) {
+                applyFrontendTimingDefaults(config, timingDraft);
+            }
+            ImGui::SameLine();
+            pushPrimaryButtonColors();
+            if (ImGui::Button("Lưu và áp dụng")) {
+                auto& timings = *config.appTimings.appTimings.mutableValue();
+                const auto timingIt = std::find_if(timings.begin(), timings.end(), [](const auto& entry) {
+                    return entry.appName.value() == timingOriginalName;
+                });
+                if (timingIt != timings.end()) {
+                    *timingIt = timingDraft;
+                } else {
+                    timings.push_back(timingDraft);
+                }
+                timingOriginalName = timingDraft.appName.value();
+                timingEditorOpen = false;
+                timingAppIndex = SIZE_MAX;
+                saveTiming = true;
+            }
+            ImGui::PopStyleColor(4);
+            ImGui::SameLine();
+            if (ImGui::Button("Đóng")) {
+                timingEditorOpen = false;
+                timingAppIndex = SIZE_MAX;
+            }
+            endSettingsCard();
+        } else if (timingEditorOpen) {
+            timingEditorOpen = false;
+            timingAppIndex = SIZE_MAX;
+        }
+
         beginSettingsCard(
             "AppOverridesCard", "Danh sách ứng dụng đã cấu hình",
             "Chỉ định Preedit, Redirect hoặc backend Rewrite cho từng ứng dụng. Tự động sẽ dùng chế độ mặc định."
         );
-        auto& overrides = *config.apps.appOverrides.mutableValue();
-
         pushPrimaryButtonColors();
         if (ImGui::Button("+  Thêm ứng dụng")) {
             areca::AppBackendOverrideEntry entry;
@@ -546,12 +663,13 @@ namespace areca::settings {
         if (!overrides.empty()) {
             size_t removeIndex = overrides.size();
             if (ImGui::BeginTable(
-                    "app-overrides-table", 3,
+                    "app-overrides-table", 4,
                     ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
                 )) {
                 ImGui::TableSetupColumn("Tên ứng dụng", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Frontend", ImGuiTableColumnFlags_WidthFixed, 120.0F);
                 ImGui::TableSetupColumn("Chế độ / backend", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0F);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 230.0F);
                 ImGui::TableHeadersRow();
 
                 std::string surName = "Surrounding (";
@@ -570,9 +688,8 @@ namespace areca::settings {
                 }
                 bsName += ")";
 
-                const char* modeNames[] = {
-                    "Tự động", surName.c_str(), shiftName.c_str(), bsName.c_str(), "Preedit", "Redirect (EN)"
-                };
+                const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
+                                           bsName.c_str(), "Preedit",       "Redirect (EN)"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));
@@ -585,10 +702,36 @@ namespace areca::settings {
                     buf[sizeof(buf) - 1] = '\0';
                     ImGui::SetNextItemWidth(-1.0F);
                     if (ImGui::InputTextWithHint("##app", "vd: discord, code, google-chrome...", buf, sizeof(buf))) {
-                        overrides[i].appName.setValue(std::string(buf));
+                        const std::string newName(buf);
+                        auto& timings = *config.appTimings.appTimings.mutableValue();
+                        const auto timingIt =
+                            std::find_if(timings.begin(), timings.end(), [&currentName](const auto& entry) {
+                                return entry.appName.value() == currentName;
+                            });
+                        if (timingIt != timings.end()) {
+                            timingIt->appName.setValue(newName);
+                        }
+                        overrides[i].appName.setValue(newName);
+                        currentName = newName;
+                        if (timingEditorOpen && timingAppIndex == i) {
+                            timingOriginalName = newName;
+                        }
                     }
 
                     ImGui::TableSetColumnIndex(1);
+                    const auto& timings = config.appTimings.appTimings.value();
+                    const auto timingIt =
+                        std::find_if(timings.begin(), timings.end(), [&currentName](const auto& entry) {
+                            return entry.appName.value() == currentName;
+                        });
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(
+                        timingIt == timings.end() || timingIt->frontend.value().empty()
+                            ? ""
+                            : timingIt->frontend.value().c_str()
+                    );
+
+                    ImGui::TableSetColumnIndex(2);
                     int currentMode = static_cast<int>(overrides[i].mode.value());
                     if (currentMode < 0 || currentMode > 5) {
                         currentMode = 0;
@@ -598,7 +741,22 @@ namespace areca::settings {
                         overrides[i].mode.setValue(static_cast<areca::AppBackendMode>(currentMode));
                     }
 
-                    ImGui::TableSetColumnIndex(2);
+                    ImGui::TableSetColumnIndex(3);
+                    const bool hasFrontend = timingIt != timings.end() && !timingIt->frontend.value().empty();
+                    ImGui::BeginDisabled(!hasFrontend);
+                    if (ImGui::Button("Timing riêng")) {
+                        timingEditorOpen = true;
+                        timingAppIndex = i;
+                        timingOriginalName = overrides[i].appName.value();
+                        timingDraft = *timingIt;
+                    }
+                    ImGui::EndDisabled();
+                    if (!hasFrontend && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                        ImGui::SetTooltip(
+                            "Mở ứng dụng này rồi chọn lại mode/backend bằng phím tắt để Areca ghi nhận frontend."
+                        );
+                    }
+                    ImGui::SameLine();
                     pushDangerButtonColors();
                     if (ImGui::Button("Xóa")) {
                         removeIndex = i;
@@ -611,12 +769,26 @@ namespace areca::settings {
             }
 
             if (removeIndex < overrides.size()) {
+                const std::string removedName = overrides[removeIndex].appName.value();
                 overrides.erase(overrides.begin() + removeIndex);
+                auto& timings = *config.appTimings.appTimings.mutableValue();
+                std::erase_if(timings, [&removedName](const auto& entry) {
+                    return entry.appName.value() == removedName;
+                });
+                if (timingEditorOpen) {
+                    if (timingAppIndex == removeIndex) {
+                        timingEditorOpen = false;
+                        timingAppIndex = SIZE_MAX;
+                    } else if (timingAppIndex > removeIndex) {
+                        --timingAppIndex;
+                    }
+                }
             }
         } else {
             ImGui::TextDisabled("Chưa có ứng dụng nào được cấu hình riêng.");
         }
         endSettingsCard();
+        return saveTiming;
     }
 
     void drawAppearance(AppConfig& appConfig, bool& needReapplyTheme) {
@@ -701,6 +873,7 @@ namespace areca::settings {
         drawBrandHeader();
 
         bool triggerAutoSave = false;
+        bool triggerTimingSave = false;
         if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None)) {
             if (ImGui::BeginTabItem("Bộ gõ")) {
                 newActiveTab = 0;
@@ -730,7 +903,7 @@ namespace areca::settings {
                     "AppsScroll", ImVec2(0.0F, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding,
                     ImGuiWindowFlags_HorizontalScrollbar
                 );
-                drawAppOverrides(config, listeningBackendShortcut);
+                triggerTimingSave = drawAppOverrides(config, listeningBackendShortcut);
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
@@ -777,6 +950,18 @@ namespace areca::settings {
             }
         }
 
+        if (triggerTimingSave) {
+            if (hasInvalidMacros) {
+                status = "Đã cập nhật timing, nhưng chưa lưu vì có macro bị rỗng thông tin.";
+            } else {
+                config.save();
+                savedConfig = config;
+                std::string reloadError;
+                status = reloadArecaAddon(reloadError) ? "Đã lưu timing và Areca đang chạy đã tải lại cấu hình."
+                                                       : "Đã lưu timing, nhưng Areca chưa áp dụng: " + reloadError;
+            }
+        }
+
         if (newActiveTab != prevTab) {
             confirmReset = false;
             pendingDeleteIndex = SIZE_MAX;
@@ -793,8 +978,9 @@ namespace areca::settings {
 
         const bool tab1Dirty = !(config.macros == savedConfig.macros);
 
-        const bool tab2Dirty =
-            !(config.apps == savedConfig.apps) || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
+        const bool tab2Dirty = !(config.apps == savedConfig.apps)
+            || !(config.appTimings == savedConfig.appTimings)
+            || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
 
         const bool tab3Dirty = !(config.advanced == savedConfig.advanced);
 
@@ -813,6 +999,7 @@ namespace areca::settings {
         const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{});
 
         const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{})
+            && (config.appTimings == areca::AppTimingProfilesConfig{})
             && (config.main.selectBackendKey == defaultMain.selectBackendKey);
 
         const bool tab3IsDefault = (config.advanced == areca::AdvancedConfig{});
@@ -873,8 +1060,10 @@ namespace areca::settings {
                 pendingDeleteIndex = SIZE_MAX;
             } else if (activeTab == 2) {
                 config.apps = savedConfig.apps;
+                config.appTimings = savedConfig.appTimings;
                 config.main.selectBackendKey = savedConfig.main.selectBackendKey;
                 listeningBackendShortcut = false;
+                resetAppTimingEditor();
             } else if (activeTab == 3) {
                 config.advanced = savedConfig.advanced;
             } else {
@@ -916,8 +1105,10 @@ namespace areca::settings {
                         : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 } else if (activeTab == 2) {
                     config.apps = areca::AppProfilesConfig{};
+                    config.appTimings = areca::AppTimingProfilesConfig{};
                     config.main.selectBackendKey = defaultMain.selectBackendKey;
                     listeningBackendShortcut = false;
+                    resetAppTimingEditor();
                     config.save();
                     savedConfig = config;
                     std::string reloadError;

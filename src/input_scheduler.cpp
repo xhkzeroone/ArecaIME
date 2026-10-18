@@ -52,6 +52,7 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
 
   // Khóa scheduler trong lúc xử lý đồng bộ để tránh công việc khác chen vào.
   processing_ = true;
+  activeTiming_ = timingProvider_(*inputContext);
   try {
     // Engine rỗng chưa đảm bảo đầu ra giống phím gốc (bảng mã/macro có thể đổi
     // ký tự). Phải xem kết quả Bamboo trước khi quyết định bỏ filterAndAccept.
@@ -180,6 +181,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
                                  VietnameseEngine &engine,
                                  const BambooResult &result,
                                  const std::string &rawText) {
+  activeTiming_ = timingProvider_(inputContext);
   if (debugProvider_()) {
     FCITX_INFO() << "areca: bamboo result current=" << result.currentText
                  << " new=" << result.newText
@@ -205,7 +207,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     return;
   }
 
-  const auto timing = timingProvider_();
+  const auto &timing = activeTiming_;
   RewritePlan plan;
   plan.transactionId = nextTransactionId_++;
   plan.backspaceDelayMs = timing.backspaceDelayMs;
@@ -326,12 +328,11 @@ void InputScheduler::finishKeyAfterCommit() {
 }
 
 void InputScheduler::finishKeyAfterDelay() {
-  const auto timing = timingProvider_();
   const uint64_t delayUsec =
-      static_cast<uint64_t>(timing.postCommitDelayMs) * 1000;
+      static_cast<uint64_t>(activeTiming_.postCommitDelayMs) * 1000;
   if (debugProvider_()) {
     FCITX_INFO() << "areca: post-commit barrier delay_us=" << delayUsec
-                 << " accuracy_us=" << timing.timerAccuracyUsec
+                 << " accuracy_us=" << activeTiming_.timerAccuracyUsec
                  << " queue_depth=" << queue_.size();
   }
   if (delayUsec == 0) {
@@ -341,7 +342,7 @@ void InputScheduler::finishKeyAfterDelay() {
 
   const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC) + delayUsec;
   postCommitTimer_ = eventLoop_.addTimeEvent(
-      CLOCK_MONOTONIC, deadline, timing.timerAccuracyUsec,
+      CLOCK_MONOTONIC, deadline, activeTiming_.timerAccuracyUsec,
       [this](fcitx::EventSourceTime *, uint64_t) {
         auto completedTimer = std::move(postCommitTimer_);
         finishKey();

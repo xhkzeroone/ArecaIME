@@ -105,7 +105,7 @@ int main() {
       [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
         return &engine;
       },
-      [] {
+      [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 0;
         return timing;
@@ -159,7 +159,7 @@ int main() {
       [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
         return &barrierEngine;
       },
-      [] {
+      [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 20;
         timing.timerAccuracyUsec = 1;
@@ -203,7 +203,8 @@ int main() {
       [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
         return &failureEngine;
       },
-      [] { return areca::SchedulerTiming{}; }, [] { return false; },
+      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+      [] { return false; },
       [&](fcitx::InputContext &, const areca::BambooResult &result) {
         return areca::RewriteBackendSelection{
             result.deleteCount ? &failureBackend : nullptr};

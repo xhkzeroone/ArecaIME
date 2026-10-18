@@ -17,7 +17,7 @@ void drawBasic(
 
 bool drawMacros(ConfigStore& config, size_t& pendingDeleteIndex);
 
-void drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut);
+bool drawAppOverrides(ConfigStore& config, bool& listeningBackendShortcut);
 
 void drawAdvanced(ConfigStore& config);
 

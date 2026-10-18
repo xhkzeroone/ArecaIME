@@ -57,7 +57,8 @@ class InputScheduler {
 public:
   using EngineResolver =
       std::function<VietnameseEngine *(fcitx::InputContext &)>;
-  using TimingProvider = std::function<SchedulerTiming()>;
+  using TimingProvider =
+      std::function<SchedulerTiming(fcitx::InputContext &)>;
   using DebugProvider = std::function<bool()>;
   using RewriteBackendSelector = std::function<RewriteBackendSelection(
       fcitx::InputContext &, const BambooResult &)>;
@@ -99,6 +100,7 @@ private:
   RewriteBackendSelector rewriteBackendSelector_;
   KeyQueue queue_;
   std::unique_ptr<fcitx::EventSourceTime> postCommitTimer_;
+  SchedulerTiming activeTiming_;
   uint64_t nextSequence_ = 1;
   uint64_t nextTransactionId_ = 1;
   uint64_t activeTransactionId_ = 0;

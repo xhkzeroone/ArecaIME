@@ -50,8 +50,9 @@ struct RewritePlan {
   bool probeSurrounding = false;
 };
 
+template <typename Timing>
 inline uint32_t resolveAfterXTestBackspaceWaitMs(const char *frontendName,
-                                                 const RewritePlan &plan) {
+                                                 const Timing &plan) {
   if (!frontendName) {
     return plan.afterXTestBackspaceWaitMs;
   }
@@ -74,8 +75,9 @@ inline uint32_t resolveAfterXTestBackspaceWaitMs(const char *frontendName,
   return plan.afterXTestBackspaceWaitMs;
 }
 
+template <typename Timing>
 inline uint32_t resolveAfterBackspaceWaitMs(const char *frontendName,
-                                            const RewritePlan &plan) {
+                                            const Timing &plan) {
   if (!frontendName) {
     return plan.afterBackspaceWaitMs;
   }
@@ -98,8 +100,9 @@ inline uint32_t resolveAfterBackspaceWaitMs(const char *frontendName,
   return plan.afterBackspaceWaitMs;
 }
 
+template <typename Timing>
 inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
-                                                     const RewritePlan &plan) {
+                                                    const Timing &plan) {
   if (!frontendName) {
     return plan.afterUinputShiftSelectWaitMs;
   }
@@ -122,8 +125,9 @@ inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
   return plan.afterUinputShiftSelectWaitMs;
 }
 
+template <typename Timing>
 inline uint32_t resolveSurroundingDeleteDelayMs(const char *frontendName,
-                                                const RewritePlan &plan) {
+                                                const Timing &plan) {
   if (!frontendName) {
     return plan.surroundingDeleteDelayMs;
   }

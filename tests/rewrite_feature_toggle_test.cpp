@@ -112,7 +112,7 @@ int main() {
         [&](fcitx::InputContext &ic) {
           return ic.propertyFor(&factory)->engine.get();
         },
-        [] {
+        [](fcitx::InputContext &) {
           areca::SchedulerTiming timing;
           timing.postCommitDelayMs = 0;
           return timing;
@@ -150,7 +150,7 @@ int main() {
     assert(engine->backspaceProcessCount == 1);
 
     // Đợi qua cửa sổ bảo vệ phím inject sau transaction trước đó.
-    std::this_thread::sleep_for(std::chrono::milliseconds(21));
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
     // BackspaceRecovery không được chặn repeat cho composition bình thường.
     engine->process('a', "a");
@@ -214,7 +214,7 @@ int main() {
     bool enabled = initiallyEnabled;
     areca::InputScheduler scheduler(loop,
         [&](fcitx::InputContext &ic) { return ic.propertyFor(&factory)->engine.get(); },
-        [] { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
+        [](fcitx::InputContext &) { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
         [] { return false; },
         [](fcitx::InputContext &, const areca::BambooResult &) {
           return areca::RewriteBackendSelection{};
@@ -247,7 +247,7 @@ int main() {
     TestEngine legacyEngine;
     areca::InputScheduler legacy(loop,
         [&](fcitx::InputContext &) -> areca::VietnameseEngine * { return &legacyEngine; },
-        [] { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
+        [](fcitx::InputContext &) { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
         [] { return false; },
         [](fcitx::InputContext &, const areca::BambooResult &) {
           return areca::RewriteBackendSelection{};
@@ -290,7 +290,7 @@ int main() {
       [&](fcitx::InputContext &ic) {
         return ic.propertyFor(&restoreFactory)->engine.get();
       },
-      [] {
+      [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 0;
         return timing;
@@ -331,7 +331,7 @@ int main() {
       [&](fcitx::InputContext &ic) {
         return ic.propertyFor(&boundaryFactory)->engine.get();
       },
-      [] {
+      [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 0;
         return timing;

@@ -14,6 +14,7 @@ class ConfigStore {
     ArecaConfig main;
     MacroTableConfig macros;
     AppProfilesConfig apps;
+    AppTimingProfilesConfig appTimings;
     AdvancedConfig advanced;
 };
 

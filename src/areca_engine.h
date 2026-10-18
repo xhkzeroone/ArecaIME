@@ -90,7 +90,7 @@ private:
   effectivePresentationMode(fcitx::InputContext &inputContext);
   static const char *presentationModeName(PresentationMode mode);
   void switchPresentationMode(fcitx::InputContext &inputContext);
-  SchedulerTiming timing() const;
+  SchedulerTiming timing(fcitx::InputContext &inputContext);
   bool debugEnabled() const { return config_.debug.value(); }
   RewriteBackendSelection
   selectRewriteBackend(fcitx::InputContext &inputContext,
@@ -147,6 +147,7 @@ private:
   AdvancedConfig advancedConfig_;
   MacroTableConfig macroTable_;
   AppProfilesConfig appProfiles_;
+  AppTimingProfilesConfig appTimingProfiles_;
   uint64_t macroRevision_ = 1;
   std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
