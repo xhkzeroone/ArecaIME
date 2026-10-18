@@ -284,9 +284,10 @@ void SurroundingTextBackend::observeAndRun(uint64_t deadlineUsec,
 }
 
 void SurroundingTextBackend::scheduleProbeDeadline() {
-  // Đặt deadline 150ms. Nếu không nhận được SurroundingTextUpdated event
+  const uint32_t timeoutMs = savedPlan_.surroundingProbeTimeoutMs;
+  // Nếu không nhận được SurroundingTextUpdated event
   // trong thời gian này thì đánh giá ứng dụng không hỗ trợ và chuyển backend.
-  schedule(150, TimerDispatch::TimerCallback, [this]() {
+  schedule(timeoutMs, TimerDispatch::TimerCallback, [this, timeoutMs]() {
     if (!isProbe_) {
       return;
     }
@@ -303,8 +304,8 @@ void SurroundingTextBackend::scheduleProbeDeadline() {
       return;
     }
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: surrounding delete unconfirmed after 150ms tx="
-                   << transactionId_;
+      FCITX_INFO() << "areca: surrounding delete unconfirmed after "
+                   << timeoutMs << "ms tx=" << transactionId_;
     }
     handleProbeFailure();
   });
@@ -330,7 +331,9 @@ void SurroundingTextBackend::handleProbeFailure() {
                                : nullptr;
 
   RewritePlan plan = savedPlan_;
-  plan.probeSurrounding = true;
+  // Probe chỉ xác minh deleteSurroundingText. Backend phát phím fallback
+  // tiếp tục theo ACK và timing riêng của nó.
+  plan.probeSurrounding = false;
   auto onDone = std::move(onDone_);
   fcitx::TrackableObjectReference<fcitx::InputContext> icWatch =
       inputContext->watch();

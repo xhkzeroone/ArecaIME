@@ -18,6 +18,7 @@ struct RewritePlan {
   uint64_t transactionId = 0;
   uint32_t backspaceCount = 0;
   uint32_t backspaceDelayMs = 1;
+  uint32_t uinputBackspaceAckTimeoutMs = 150;
   uint32_t afterBackspaceWaitMs = 10;
   uint32_t waylandAfterBackspaceWaitMs = 3;
   uint32_t ximAfterBackspaceWaitMs = 10;
@@ -26,6 +27,7 @@ struct RewritePlan {
   uint32_t ibusAfterBackspaceWaitMs = 10;
 
   uint32_t uinputShiftSelectDelayMs = 1;
+  uint32_t uinputShiftSelectAckTimeoutMs = 150;
   uint32_t afterUinputShiftSelectWaitMs = 20;
   uint32_t waylandAfterUinputShiftSelectWaitMs = 20;
   uint32_t ximAfterUinputShiftSelectWaitMs = 20;
@@ -34,6 +36,7 @@ struct RewritePlan {
   uint32_t ibusAfterUinputShiftSelectWaitMs = 20;
 
   uint32_t surroundingWaitMs = 3;
+  uint32_t surroundingProbeTimeoutMs = 80;
   uint32_t surroundingDeleteDelayMs = 10;
   uint32_t waylandSurroundingDeleteDelayMs = 0;
   uint32_t afterSurroundingDeleteWaitMs = 1;

@@ -296,7 +296,8 @@ void SurroundingTextV2Backend::observeAndRun(uint64_t deadlineUsec,
 }
 
 void SurroundingTextV2Backend::scheduleProbeDeadline() {
-  schedule(150, TimerDispatch::TimerCallback, [this]() {
+  const uint32_t timeoutMs = savedPlan_.surroundingProbeTimeoutMs;
+  schedule(timeoutMs, TimerDispatch::TimerCallback, [this, timeoutMs]() {
     if (!isProbe_) {
       return;
     }
@@ -310,8 +311,8 @@ void SurroundingTextV2Backend::scheduleProbeDeadline() {
       return;
     }
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: surrounding-v2 delete unconfirmed after 150ms tx="
-                   << transactionId_;
+      FCITX_INFO() << "areca: surrounding-v2 delete unconfirmed after "
+                   << timeoutMs << "ms tx=" << transactionId_;
     }
     handleProbeFailure();
   });
@@ -336,7 +337,7 @@ void SurroundingTextV2Backend::handleProbeFailure() {
                                : nullptr;
   RewritePlan plan = savedPlan_;
   plan.backspaceCount = remainingDeletes_ + (probeDeletePending_ ? 1U : 0U);
-  plan.probeSurrounding = true;
+  plan.probeSurrounding = false;
   auto onDone = std::move(onDone_);
   auto icWatch = inputContext->watch();
   clearPending();

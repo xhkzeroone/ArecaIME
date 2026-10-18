@@ -10,8 +10,6 @@ namespace {
 
 // Backspace xác nhận và timer chạy đua trong cùng event loop. Timeout hủy bộ
 // đếm để Backspace đến muộn không thể bắt đầu commit lần thứ hai.
-constexpr uint32_t kBackspaceAckTimeoutMs = 20;
-
 bool isBackspaceKey(const fcitx::KeyEvent &event) {
   return event.key().sym() == FcitxKey_BackSpace ||
          event.rawKey().sym() == FcitxKey_BackSpace;
@@ -50,6 +48,7 @@ ApplyStatus UinputBackspaceBackend::apply(fcitx::InputContext &inputContext,
   // Kế hoạch không xóa ký tự nào không mở cửa sổ nhận Backspace xác nhận.
   backspaceAckTimedOut_ = deletedCharacters_ == 0;
   backspaceDelayMs_ = plan.backspaceDelayMs;
+  ackTimeoutMs_ = plan.uinputBackspaceAckTimeoutMs;
   const char *frontend = inputContext.frontend();
   afterBackspaceWaitMs_ = resolveAfterBackspaceWaitMs(frontend, plan);
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
@@ -98,7 +97,7 @@ void UinputBackspaceBackend::sendNextBackspace() {
     scheduleNextBackspace();
   } else {
     ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
-    schedule(kBackspaceAckTimeoutMs, TimerDispatch::TimerCallback, [this]() {
+    schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
       if (debugProvider_()) {
         FCITX_INFO() << "areca: uinput-backspace ack timeout tx="
                      << transactionId_
@@ -313,6 +312,7 @@ void UinputBackspaceBackend::clearPending() {
   sentBackspaces_ = 0;
   backspaceTracker_.clear();
   backspaceDelayMs_ = 0;
+  ackTimeoutMs_ = 150;
   afterBackspaceWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
   ackSentAtUsec_ = 0;

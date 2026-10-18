@@ -211,6 +211,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   RewritePlan plan;
   plan.transactionId = nextTransactionId_++;
   plan.backspaceDelayMs = timing.backspaceDelayMs;
+  plan.uinputBackspaceAckTimeoutMs = timing.uinputBackspaceAckTimeoutMs;
   plan.afterBackspaceWaitMs = timing.afterBackspaceWaitMs;
   plan.waylandAfterBackspaceWaitMs = timing.waylandAfterBackspaceWaitMs;
   plan.ximAfterBackspaceWaitMs = timing.ximAfterBackspaceWaitMs;
@@ -218,6 +219,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.dbusAfterBackspaceWaitMs = timing.dbusAfterBackspaceWaitMs;
   plan.ibusAfterBackspaceWaitMs = timing.ibusAfterBackspaceWaitMs;
   plan.uinputShiftSelectDelayMs = timing.uinputShiftSelectDelayMs;
+  plan.uinputShiftSelectAckTimeoutMs = timing.uinputShiftSelectAckTimeoutMs;
   plan.afterUinputShiftSelectWaitMs = timing.afterUinputShiftSelectWaitMs;
   plan.waylandAfterUinputShiftSelectWaitMs =
       timing.waylandAfterUinputShiftSelectWaitMs;
@@ -229,6 +231,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.ibusAfterUinputShiftSelectWaitMs =
       timing.ibusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
+  plan.surroundingProbeTimeoutMs = timing.surroundingProbeTimeoutMs;
   plan.surroundingDeleteDelayMs = timing.surroundingDeleteDelayMs;
   plan.waylandSurroundingDeleteDelayMs = timing.waylandSurroundingDeleteDelayMs;
   plan.afterSurroundingDeleteWaitMs = timing.afterSurroundingDeleteWaitMs;

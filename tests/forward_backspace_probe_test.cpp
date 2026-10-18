@@ -50,7 +50,6 @@ int main() {
   plan.backspaceCount = 1;
   plan.afterBackspaceWaitMs = 1;
   plan.commitText = "õ";
-  plan.probeSurrounding = true;
 
   bool done = false;
   const auto status =
@@ -63,18 +62,15 @@ int main() {
                     });
 
   assert(status == areca::ApplyStatus::Pending);
-  assert(backend.isProbing());
   assert(!done);
   assert(events ==
          std::vector<std::string>({"backspace-down", "backspace-up"}));
 
-  inputContext.surroundingText().setText("g", 1, 1);
-  backend.notifySurroundingTextUpdated(inputContext);
   eventLoop.exec();
 
   assert(done);
   assert(events == std::vector<std::string>(
                        {"backspace-down", "backspace-up", "commit:õ"}));
-  std::cout << "ForwardBackspaceBackend probe test passed\n";
+  std::cout << "ForwardBackspaceBackend test passed\n";
   return 0;
 }

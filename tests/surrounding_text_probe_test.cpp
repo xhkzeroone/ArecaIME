@@ -147,7 +147,7 @@ void testProbeFailureFallbackToShiftSelect() {
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
 
-  // Không gửi event -> deadline 150ms cháy -> fallback sang shift-select.
+  // Không gửi event -> probe deadline cháy -> fallback sang shift-select.
   eventLoop.exec();
 
   assert(!probeSucceededCalled);
@@ -197,7 +197,7 @@ void testProbeFailureFallbackToBackspace() {
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
 
-  // Không gửi event -> deadline 150ms cháy -> fallback sang backspace.
+  // Không gửi event -> probe deadline cháy -> fallback sang backspace.
   eventLoop.exec();
 
   assert(!probeSucceededCalled);

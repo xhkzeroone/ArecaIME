@@ -160,6 +160,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> uinputBackspaceAckTimeoutMs{
+        this, "UinputBackspaceAckTimeoutMs",
+        N_("Timeout ACK uinput Backspace (ms)"), 150,
+        fcitx::IntConstrain(1, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> afterBackspaceWaitMs{
         this, "AfterBackspaceWaitMs", N_("Chờ sau Backspace cuối (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
@@ -186,6 +190,10 @@ FCITX_CONFIGURATION(
         this, "UinputShiftSelectDelayMs",
         N_("Delay giữa các phím uinput Shift+Left (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
+    fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectAckTimeoutMs{
+        this, "UinputShiftSelectAckTimeoutMs",
+        N_("Timeout ACK uinput Shift+Left (ms)"), 150,
+        fcitx::IntConstrain(1, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> afterUinputShiftSelectWaitMs{
         this, "AfterUinputShiftSelectWaitMs",
         N_("Chờ sau khi thả Shift uinput (ms)"), 20,
@@ -213,6 +221,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> surroundingProbeTimeoutMs{
+        this, "SurroundingProbeTimeoutMs",
+        N_("Timeout kiểm tra surrounding text (ms)"), 80,
+        fcitx::IntConstrain(1, 1000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
         this, "SurroundingDeleteDelayMs",
         N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 10,

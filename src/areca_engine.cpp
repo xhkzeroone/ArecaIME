@@ -209,15 +209,12 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           return;
         }
         // Nếu backend đang ở giai đoạn probe, thông báo để nó xác nhận thành
-        // công và hủy deadline timer 150ms.
+        // công và hủy deadline timer probe.
         if (surroundingBackend_.isProbing()) {
           surroundingBackend_.notifySurroundingTextUpdated(*inputContext);
         }
         if (surroundingV2Backend_.isProbing()) {
           surroundingV2Backend_.notifySurroundingTextUpdated(*inputContext);
-        }
-        if (forwardBackspaceBackend_.isProbing()) {
-          forwardBackspaceBackend_.notifySurroundingTextUpdated(*inputContext);
         }
         // Callback chỉ ghi nhận rằng frontend đã đổi text hoặc cursor. Việc đọc
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
@@ -1423,6 +1420,7 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
 SchedulerTiming ArecaEngine::timing(fcitx::InputContext &inputContext) {
   SchedulerTiming result{
       static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
+      static_cast<uint32_t>(advancedConfig_.uinputBackspaceAckTimeoutMs.value()),
       static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.waylandAfterBackspaceWaitMs.value()),
@@ -1431,6 +1429,8 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &inputContext) {
       static_cast<uint32_t>(advancedConfig_.dbusAfterBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.ibusAfterBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.uinputShiftSelectDelayMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.uinputShiftSelectAckTimeoutMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.afterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(
@@ -1444,6 +1444,7 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &inputContext) {
       static_cast<uint32_t>(
           advancedConfig_.ibusAfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.surroundingProbeTimeoutMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingDeleteDelayMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.waylandSurroundingDeleteDelayMs.value()),

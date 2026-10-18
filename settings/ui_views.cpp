@@ -440,6 +440,7 @@ namespace areca::settings {
 
         beginSettingsCard("BackspaceTimingCard", "uinput Backspace", "Độ trễ khi mô phỏng thao tác xoá ký tự.");
         inputInt("Delay giữa Backspace (ms)", config.advanced.backspaceDelayMs);
+        inputInt("Timeout ACK uinput Backspace (ms)", config.advanced.uinputBackspaceAckTimeoutMs);
         inputInt("Chờ sau Backspace (ms)", config.advanced.afterBackspaceWaitMs);
         inputInt("Chờ sau Backspace Wayland (ms)", config.advanced.waylandAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace XIM (ms)", config.advanced.ximAfterBackspaceWaitMs);
@@ -452,6 +453,7 @@ namespace areca::settings {
             "ShiftSelectTimingCard", "uinput Shift+Left", "Độ trễ khi chọn lại phần văn bản cần thay thế."
         );
         inputInt("Delay giữa uinput Shift+Left (ms)", config.advanced.uinputShiftSelectDelayMs);
+        inputInt("Timeout ACK uinput Shift+Left (ms)", config.advanced.uinputShiftSelectAckTimeoutMs);
         inputInt("Chờ sau uinput Shift+Left (ms)", config.advanced.afterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left Wayland (ms)", config.advanced.waylandAfterUinputShiftSelectWaitMs);
         inputInt("Chờ sau uinput Shift+Left XIM (ms)", config.advanced.ximAfterUinputShiftSelectWaitMs);
@@ -464,6 +466,7 @@ namespace areca::settings {
             "SurroundingTextCard", "Surrounding text", "Timing cho backend xử lý văn bản xung quanh con trỏ."
         );
         inputInt("Chờ sau xóa surrounding text (ms)", config.advanced.surroundingWaitMs);
+        inputInt("Timeout kiểm tra surrounding text (ms)", config.advanced.surroundingProbeTimeoutMs);
         inputInt("Delay giữa các lệnh xóa surrounding v2 (ms)", config.advanced.surroundingDeleteDelayMs);
         inputInt(
             "Delay giữa các lệnh xóa surrounding v2 Wayland (ms)", config.advanced.waylandSurroundingDeleteDelayMs

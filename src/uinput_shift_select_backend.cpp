@@ -11,8 +11,6 @@ namespace {
 
 // Left xác nhận và timer này chạy đua trong cùng event loop. Bên nào tới trước
 // sẽ thả Shift; timeout đồng thời hủy bộ đếm để Left đến muộn không xử lý lại.
-constexpr uint32_t kSelectionAckTimeoutMs = 20;
-
 bool isLeftKey(const fcitx::KeyEvent &event) {
   return event.key().sym() == FcitxKey_Left ||
          event.rawKey().sym() == FcitxKey_Left;
@@ -57,6 +55,7 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
   leftTracker_.reset(selectedCharacters_);
   leftAckTimedOut_ = false;
   shiftSelectDelayMs_ = plan.uinputShiftSelectDelayMs;
+  ackTimeoutMs_ = plan.uinputShiftSelectAckTimeoutMs;
   const char *frontend = inputContext.frontend();
   afterSelectWaitMs_ = resolveAfterUinputShiftSelectWaitMs(frontend, plan);
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
@@ -116,7 +115,7 @@ void UinputShiftSelectBackend::sendNextSelectionLeft() {
   }
 
   ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
-  schedule(kSelectionAckTimeoutMs, TimerDispatch::TimerCallback, [this]() {
+  schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-shift-select left ack timeout tx="
                    << transactionId_ << " seen=" << leftTracker_.pressesSeen()
@@ -321,6 +320,7 @@ void UinputShiftSelectBackend::clearPending() {
   selectedCharacters_ = 0;
   leftTracker_.clear();
   shiftSelectDelayMs_ = 0;
+  ackTimeoutMs_ = 150;
   afterSelectWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
   ackSentAtUsec_ = 0;

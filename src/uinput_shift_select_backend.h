@@ -65,6 +65,7 @@ private:
   uint32_t selectedCharacters_ = 0;
   UinputKeyAckTracker leftTracker_;
   uint32_t shiftSelectDelayMs_ = 0;
+  uint32_t ackTimeoutMs_ = 150;
   uint32_t afterSelectWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
   uint64_t ackSentAtUsec_ = 0;

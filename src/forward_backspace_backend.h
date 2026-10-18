@@ -28,17 +28,12 @@ public:
                     RewriteDone onDone) override;
 
   bool hasPending() const { return transactionId_ != 0; }
-  bool isProbing() const { return probePending_; }
-  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext,
-                                    bool fromUpdateEvent = true);
-
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
 
   void sendNextBackspace();
   void scheduleNextBackspace();
   void scheduleCommit();
-  void scheduleProbeDeadline();
   void commitAfterAdaptiveWait(uint32_t appliedExtraWaitMs);
   void commitAndComplete();
   void completeWithoutCommit();
@@ -65,12 +60,6 @@ private:
   uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
   std::string commitText_;
-  bool probePending_ = false;
-  std::string originalProbeText_;
-  unsigned int originalProbeCursor_ = 0;
-  std::string expectedProbeText_;
-  unsigned int expectedProbeCursor_ = 0;
-  unsigned int expectedProbeAnchor_ = 0;
 };
 
 } // namespace areca
