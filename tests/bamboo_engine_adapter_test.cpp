@@ -377,7 +377,9 @@ int main() {
     applyToDisplay(display, type(engine, key));
   }
   assert(display == "nhanhsh");
+  assert(engine.wasRestoredBySpellcheck());
   auto backspaceResult = engine.processBackspace();
+  assert(!engine.wasRestoredBySpellcheck());
   applyToDisplay(display, backspaceResult);
   assert(display == "nhánh");
 

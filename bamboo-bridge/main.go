@@ -228,10 +228,14 @@ func ArecaBambooCanProcess(id C.uint64_t, key C.uint32_t) C.int {
 }
 
 //export ArecaBambooProcess
-func ArecaBambooProcess(id C.uint64_t, key C.uint32_t, spellCheck C.int) *C.char {
+func ArecaBambooProcess(id C.uint64_t, key C.uint32_t, spellCheck C.int,
+	spellcheckRestored *C.int) *C.char {
 	engine := engineFor(id)
 	if engine == nil {
 		return nil
+	}
+	if spellcheckRestored != nil {
+		*spellcheckRestored = 0
 	}
 	prevText := engine.GetProcessedString(bamboo.VietnameseMode)
 
@@ -239,6 +243,9 @@ func ArecaBambooProcess(id C.uint64_t, key C.uint32_t, spellCheck C.int) *C.char
 
 	text := engine.GetProcessedString(bamboo.VietnameseMode)
 	if spellCheck != 0 && bamboo.HasAnyVietnameseRune(text) && !engine.IsValid(false) {
+		if spellcheckRestored != nil {
+			*spellcheckRestored = 1
+		}
 		if !bamboo.HasAnyVietnameseRune(prevText) {
 			for engine.GetProcessedString(bamboo.VietnameseMode) != "" {
 				engine.RemoveLastChar(true)
@@ -403,14 +410,21 @@ func ArecaBambooRestore(id C.uint64_t, visibleText *C.char) C.int {
 }
 
 //export ArecaBambooFinalizeWord
-func ArecaBambooFinalizeWord(id C.uint64_t, spellCheck C.int) *C.char {
+func ArecaBambooFinalizeWord(id C.uint64_t, spellCheck C.int,
+	spellcheckRestored *C.int) *C.char {
 	engine := engineFor(id)
 	if engine == nil {
 		return nil
 	}
+	if spellcheckRestored != nil {
+		*spellcheckRestored = 0
+	}
 
 	text := engine.GetProcessedString(bamboo.VietnameseMode)
 	if spellCheck != 0 && bamboo.HasAnyVietnameseRune(text) && !engine.IsValid(true) {
+		if spellcheckRestored != nil {
+			*spellcheckRestored = 1
+		}
 		engine.RestoreLastWord(false)
 		text = engine.GetProcessedString(bamboo.EnglishMode)
 	}

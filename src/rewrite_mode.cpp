@@ -231,13 +231,15 @@ bool RewriteModeHandler::shouldRecoverBackspace(
     }
     return false;
   }
-  const bool capture = backspaceRecoveryProvider_();
+  const bool capture = backspaceRecoveryProvider_() &&
+                       state.engine->wasRestoredBySpellcheck();
   if (debugProvider_()) {
     const char *frontend = inputContext.frontend();
     FCITX_INFO() << "areca: backspace route="
                  << (capture ? "recovery" : "forward")
                  << " reason="
-                 << (capture ? "composition-active" : "gate-disabled")
+                 << (capture ? "spellcheck-restored"
+                             : "not-spellcheck-restored-or-gate-disabled")
                  << " current=" << currentText
                  << " queue=" << queuedKeys
                  << " program=" << inputContext.program()
@@ -289,6 +291,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   const auto normalizedKey = key.normalize();
   const auto rawKey = event.rawKey();
   const auto rawSym = rawKey.sym();
+  const bool isRepeat = key.states().test(fcitx::KeyState::Repeat) ||
+                        rawKey.states().test(fcitx::KeyState::Repeat);
   const bool isBackspace =
       key.check(FcitxKey_BackSpace) || rawKey.check(FcitxKey_BackSpace);
   const auto textSym = normalizeRewriteKeypadSym(normalizedKey.sym());
@@ -304,7 +308,14 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (event.isRelease()) {
     if (isBackspace && state && state->engine &&
         state->backspaceRecoveryAwaitingRelease) {
-      runDeferredBackspaceRecovery(*inputContext, event, *state);
+      if (isRepeat) {
+        // Một số frontend biểu diễn auto-repeat bằng cặp release/press có cờ
+        // Repeat. Không được coi release trung gian này là lúc người dùng đã
+        // thả phím, nếu không các repeat tiếp theo sẽ lọt xuống ứng dụng.
+        event.filterAndAccept();
+      } else {
+        runDeferredBackspaceRecovery(*inputContext, event, *state);
+      }
     }
     return;
   }

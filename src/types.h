@@ -11,6 +11,7 @@ struct BambooResult {
   uint32_t deleteCount = 0;
   std::string commitText;
   bool macroExpanded = false;
+  bool spellcheckRestored = false;
 };
 
 struct RewritePlan {

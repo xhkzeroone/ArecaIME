@@ -11,8 +11,10 @@ extern "C" {
 uint64_t ArecaBambooCreate(char *inputMethod, int modernStyle);
 void ArecaBambooDestroy(uint64_t id);
 int ArecaBambooCanProcess(uint64_t id, uint32_t key);
-char *ArecaBambooProcess(uint64_t id, uint32_t key, int spellCheck);
-char *ArecaBambooFinalizeWord(uint64_t id, int spellCheck);
+char *ArecaBambooProcess(uint64_t id, uint32_t key, int spellCheck,
+                         int *spellcheckRestored);
+char *ArecaBambooFinalizeWord(uint64_t id, int spellCheck,
+                              int *spellcheckRestored);
 char *ArecaBambooBackspace(uint64_t id);
 char *ArecaBambooRecoverBackspace(uint64_t id);
 int ArecaBambooRestore(uint64_t id, char *visibleText);
@@ -104,6 +106,7 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
                                           const std::string &utf8Text) {
   BambooResult result;
   result.currentText = renderedText_;
+  spellcheckRestored_ = false;
 
   // Finalize the current word before committing a boundary. With spell check
   // enabled, Bamboo restores an invalid Vietnamese-looking word to the raw
@@ -126,7 +129,11 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
       result.macroExpanded = true;
       ArecaBambooReset(handle_);
     } else {
-      raw = ArecaBambooFinalizeWord(handle_, spellCheck_ ? 1 : 0);
+      int spellcheckRestored = 0;
+      raw = ArecaBambooFinalizeWord(handle_, spellCheck_ ? 1 : 0,
+                                    &spellcheckRestored);
+      result.spellcheckRestored = spellcheckRestored != 0;
+      spellcheckRestored_ = result.spellcheckRestored;
     }
     if (!raw) {
       throw std::runtime_error("Bamboo word finalization failed");
@@ -186,7 +193,10 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
     trailingBoundaryCount_ = 0;
   }
 
-  char *raw = ArecaBambooProcess(handle_, codepoint, realtimeSpellcheck_ ? 1 : 0);
+  int spellcheckRestored = 0;
+  char *raw = ArecaBambooProcess(handle_, codepoint,
+                                 realtimeSpellcheck_ ? 1 : 0,
+                                 &spellcheckRestored);
   if (!raw) {
     throw std::runtime_error("Bamboo processing failed");
   }
@@ -205,6 +215,8 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
   result.commitText = next.substr(newChars[prefix].second);
   renderedText_ = std::move(next);
   result.newText = renderedText_;
+  result.spellcheckRestored = spellcheckRestored != 0;
+  spellcheckRestored_ = result.spellcheckRestored;
   return result;
 }
 
@@ -231,6 +243,7 @@ BambooResult BambooEngineAdapter::processBackspace() {
     macroExpandedTextWithBoundary_.clear();
     macroRawKeyWithBoundary_.clear();
     renderedText_.clear();
+    spellcheckRestored_ = false;
     return result;
   }
 
@@ -252,6 +265,7 @@ BambooResult BambooEngineAdapter::processBackspace() {
 
   result.deleteCount = static_cast<uint32_t>((oldChars.size() - 1) - prefix);
   result.commitText = result.newText.substr(newChars[prefix].second);
+  spellcheckRestored_ = false;
   return result;
 }
 
@@ -262,6 +276,7 @@ void BambooEngineAdapter::reset() {
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
   macroRecoveryAvailable_ = false;
+  spellcheckRestored_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();
 }
@@ -280,12 +295,14 @@ bool BambooEngineAdapter::restoreFromRenderedText(const std::string &text) {
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
   macroRecoveryAvailable_ = false;
+  spellcheckRestored_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();
   return true;
 }
 
 void BambooEngineAdapter::backspace() {
+  spellcheckRestored_ = false;
   macroRecoveryAvailable_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();

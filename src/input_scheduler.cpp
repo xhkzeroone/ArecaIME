@@ -185,7 +185,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
                  << " new=" << result.newText
                  << " delete=" << result.deleteCount
                  << " commit=" << result.commitText
-                 << " macro=" << result.macroExpanded;
+                 << " macro=" << result.macroExpanded
+                 << " spellcheck_restored=" << result.spellcheckRestored;
   }
   if (!result.deleteCount) {
     // The original event was accepted before queueing, so every no-delete
