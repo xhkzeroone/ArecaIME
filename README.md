@@ -313,14 +313,16 @@ trong [Hướng dẫn debug](docs/DEBUGGING.md).
 
 ## Build package trên GitHub
 
-Workflow [Build Linux packages](.github/workflows/package-linux.yml) chỉ build
-ba dòng distro đang được hỗ trợ cho release:
+Workflow [Build Linux packages](.github/workflows/package-linux.yml) build các
+dòng distro đang được hỗ trợ cho release:
 
-- Ubuntu 24.04 và Ubuntu mới nhất: hai gói `.deb` độc lập. Ubuntu 24.04 giữ mốc
-  tương thích tối thiểu; Ubuntu 26.04 kiểm tra trực tiếp Fcitx5 mới.
+- Ubuntu 24.04, 25.10 và 26.04: ba gói `.deb` độc lập. Ubuntu 25.10 được build
+  trong container chính chủ vì GitHub không cung cấp hosted runner cho đời 25.
+- Linux Mint 22.x: gói `.deb` theo package base Ubuntu 24.04.
 - Arch Linux rolling: gói `.pkg.tar.zst` từ
   [`packaging/arch/PKGBUILD`](packaging/arch/PKGBUILD).
-- Fedora mới nhất: gói `.rpm` được build bên trong image `fedora:latest`.
+- Fedora 42, 43 và 44: ba gói `.rpm` được build độc lập trong container của
+  từng đời Fedora.
 
 Mỗi nhánh đều build addon và chạy toàn bộ CTest trước khi tạo artifact. Bamboo
 được checkout và đưa vào source archive theo submodule. Pull request, push vào `main`

@@ -235,6 +235,99 @@ jobs:
           path: dist/*.deb
           if-no-files-found: error
 
+  ubuntu25:
+    name: Ubuntu 25.10
+    runs-on: ubuntu-24.04
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build, test and package in Ubuntu 25.10
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          docker run --rm \
+            -e VERSION="$VERSION" \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -v "$PWD:/work" \
+            -w /work \
+            ubuntu:25.10 \
+            bash -lc '
+              set -euo pipefail
+              apt-get update
+              apt-get install -y \
+                build-essential \
+                cmake \
+                ninja-build \
+                pkg-config \
+                extra-cmake-modules \
+                golang-go \
+                ruby \
+                ruby-dev \
+                fcitx5 \
+                fcitx5-config-qt \
+                fcitx5-frontend-gtk3 \
+                fcitx5-frontend-qt5 \
+                libdbus-1-dev \
+                libei-dev \
+                libinput-dev \
+                libportal-dev \
+                libudev-dev \
+                libfcitx5core-dev \
+                libfcitx5config-dev \
+                libfcitx5utils-dev \
+                libfontconfig-dev \
+                libx11-dev \
+                libxtst-dev \
+                libsdl3-dev
+              gem install --no-document fpm
+
+              cmake -S . -B build-pkg-ubuntu25 -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                -DBUILD_TESTING=ON
+              cmake --build build-pkg-ubuntu25 --parallel
+              ctest --test-dir build-pkg-ubuntu25 --output-on-failure
+
+              mkdir -p pkgroot-ubuntu25
+              DESTDIR="$PWD/pkgroot-ubuntu25" \
+                cmake --install build-pkg-ubuntu25 --strip
+              fpm -s dir -t deb \
+                -n fcitx5-areca \
+                -v "$VERSION" \
+                --architecture amd64 \
+                --description "Areca Vietnamese input method for Fcitx5" \
+                --url "https://github.com/xhkzeroone/ArecaIME" \
+                --license MIT \
+                --depends fcitx5 \
+                --depends fcitx5-frontend-gtk3 \
+                --depends fcitx5-frontend-qt5 \
+                --depends libdbus-1-3 \
+                --depends libfontconfig1 \
+                --depends libei1 \
+                --depends libinput10 \
+                --depends libportal1 \
+                --depends libudev1 \
+                --depends libx11-6 \
+                --depends libxtst6 \
+                --depends libsdl3-0 \
+                -C pkgroot-ubuntu25 \
+                -p "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb" \
+                .
+              dpkg-deb -c \
+                "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb"
+            '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fcitx5-areca-ubuntu25-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
   arch:
     name: Arch Linux rolling
     runs-on: ubuntu-24.04
@@ -306,9 +399,13 @@ jobs:
           if-no-files-found: error
 
   fedora:
-    name: Fedora latest
+    name: Fedora ${{ matrix.version }}
     runs-on: ubuntu-24.04
     needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["44", "43", "42"]
     env:
       VERSION: ${{ needs.version.outputs.value }}
     steps:
@@ -316,7 +413,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build, test and package in Fedora latest
+      - name: Build, test and package in Fedora ${{ matrix.version }}
         run: |
           set -euo pipefail
           mkdir -p dist
@@ -324,7 +421,7 @@ jobs:
             -e VERSION="$VERSION" \
             -v "$PWD:/work" \
             -w /work \
-            fedora:latest \
+            fedora:${{ matrix.version }} \
             bash -lc '
               set -euo pipefail
               dnf install -y \
@@ -378,20 +475,22 @@ jobs:
                 --depends libX11 \
                 --depends libXtst \
                 -C pkgroot-fedora \
-                -p "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
+                -p "dist/fcitx5-areca-${VERSION}.fedora${{ matrix.version }}.x86_64.rpm" \
                 .
               rpm -qpl \
-                "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm"
+                "dist/fcitx5-areca-${VERSION}.fedora${{ matrix.version }}.x86_64.rpm"
 
-              cp "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
-                 "dist/fcitx5-areca-${VERSION}.nobara.x86_64.rpm"
-              cp "dist/fcitx5-areca-${VERSION}.fedora-latest.x86_64.rpm" \
-                 "dist/fcitx5-areca-${VERSION}.bazzite.x86_64.rpm"
+              if [[ "${{ matrix.version }}" == "44" ]]; then
+                cp "dist/fcitx5-areca-${VERSION}.fedora44.x86_64.rpm" \
+                   "dist/fcitx5-areca-${VERSION}.nobara.x86_64.rpm"
+                cp "dist/fcitx5-areca-${VERSION}.fedora44.x86_64.rpm" \
+                   "dist/fcitx5-areca-${VERSION}.bazzite.x86_64.rpm"
+              fi
             '
 
       - uses: actions/upload-artifact@v4
         with:
-          name: fcitx5-areca-fedora-rpm
+          name: fcitx5-areca-fedora${{ matrix.version }}-rpm
           path: dist/*.rpm
           if-no-files-found: error
 
@@ -490,6 +589,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - ubuntu
+      - ubuntu25
       - arch
       - fedora
       - opensuse
