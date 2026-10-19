@@ -267,12 +267,16 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   }
   // Kết thúc: FullReplace xóa sạch từ cũ cùng gợi ý Omnibox và chèn lại toàn bộ từ mới
   plan.probeSurrounding = selection.probeSurrounding;
+  if (selection.surroundingProbeTimeoutMs > 0) {
+    plan.surroundingProbeTimeoutMs = selection.surroundingProbeTimeoutMs;
+  }
   if (debugProvider_()) {
     FCITX_INFO() << "areca: rewrite select backend=" << backend.name()
                  << " tx=" << plan.transactionId
                  << " bamboo_delete=" << result.deleteCount
                  << " additional_backspaces=" << selection.additionalBackspaces
                  << " full_replace=" << selection.fullReplace
+                 << " probe_timeout_ms=" << plan.surroundingProbeTimeoutMs
                  << " plan_backspaces=" << plan.backspaceCount;
   }
 

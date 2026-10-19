@@ -466,7 +466,6 @@ namespace areca::settings {
             "SurroundingTextCard", "Surrounding text", "Timing cho backend xử lý văn bản xung quanh con trỏ."
         );
         inputInt("Chờ sau xóa surrounding text (ms)", config.advanced.surroundingWaitMs);
-        inputInt("Timeout kiểm tra surrounding text (ms)", config.advanced.surroundingProbeTimeoutMs);
         inputInt("Delay giữa các lệnh xóa surrounding v2 (ms)", config.advanced.surroundingDeleteDelayMs);
         inputInt(
             "Delay giữa các lệnh xóa surrounding v2 Wayland (ms)", config.advanced.waylandSurroundingDeleteDelayMs

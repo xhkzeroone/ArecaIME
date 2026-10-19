@@ -460,10 +460,16 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   // Chỉ phục hồi nếu chính kiểu gõ Bamboo hiện tại xử lý phím này. Vì vậy Space
   // và dấu câu kết thúc macro không hút snapshot cũ vào engine, trong khi số của
   // VNI hoặc ký hiệu của VIQR/Telex 2 vẫn có thể sửa từ đã commit.
-  if (state->engine->canProcessKey(codepoint)) {
+  const bool canProcessText = state->engine->canProcessKey(codepoint);
+  if (canProcessText) {
+    if (state->wordBoundaryPending) {
+      ++state->wordSerial;
+      state->wordBoundaryPending = false;
+    }
     tryRestoreFromSurroundingText(*inputContext, *state);
   } else {
     state->surroundingRestoreArmed = false;
+    state->wordBoundaryPending = true;
   }
   // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
@@ -498,6 +504,8 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
     // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái
     // tạo trạng thái từ vị trí con trỏ mới nếu người dùng bật tính năng.
     state->surroundingRestoreArmed = true;
+    state->wordSerial = 0;
+    state->wordBoundaryPending = false;
     // Bắt đầu: Đặt lại trạng thái first word thanh địa chỉ khi đặt lại ngữ cảnh
     state->addrBarIsFirstWord = true;
     state->addrBarHadSpace = false;

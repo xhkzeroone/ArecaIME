@@ -50,18 +50,22 @@ struct SchedulerTiming {
 struct RewriteBackendSelection {
   RewriteBackend *backend = nullptr;
   uint32_t additionalBackspaces = 0;
-  // Bắt đầu: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu tiên trong thanh địa chỉ Chromium
+  // Bắt đầu: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu
+  // tiên trong thanh địa chỉ Chromium
   bool fullReplace = false;
-  // Kết thúc: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu tiên trong thanh địa chỉ Chromium
+  // Kết thúc: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu
+  // tiên trong thanh địa chỉ Chromium
   bool probeSurrounding = false;
+  // 0 giữ timing chung. Probe tự động đặt 150 ms cho lần đầu và 80 ms cho lần
+  // retry ở từ kế tiếp.
+  uint32_t surroundingProbeTimeoutMs = 0;
 };
 
 class InputScheduler {
 public:
   using EngineResolver =
       std::function<VietnameseEngine *(fcitx::InputContext &)>;
-  using TimingProvider =
-      std::function<SchedulerTiming(fcitx::InputContext &)>;
+  using TimingProvider = std::function<SchedulerTiming(fcitx::InputContext &)>;
   using DebugProvider = std::function<bool()>;
   using RewriteBackendSelector = std::function<RewriteBackendSelection(
       fcitx::InputContext &, const BambooResult &)>;
@@ -73,9 +77,10 @@ public:
   void enqueue(fcitx::InputContext &inputContext, uint32_t codepoint,
                std::string utf8Text);
   // Cho editor web nhận phím đầu qua frontend thay vì commitString để mở chế độ
-  // soạn thảo. Vẫn xử lý Bamboo một lần để giữ trạng thái ghép dấu cho phím sau.
-  // false: chưa sửa engine/event, caller có thể enqueue theo luồng thông thường.
-  // true: đã xử lý xong hoặc bắt đầu applyResult, caller không enqueue lần nữa.
+  // soạn thảo. Vẫn xử lý Bamboo một lần để giữ trạng thái ghép dấu cho phím
+  // sau. false: chưa sửa engine/event, caller có thể enqueue theo luồng thông
+  // thường. true: đã xử lý xong hoặc bắt đầu applyResult, caller không enqueue
+  // lần nữa.
   bool handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
                      const std::string &utf8Text);
   void enqueueBackspace(fcitx::InputContext &inputContext);

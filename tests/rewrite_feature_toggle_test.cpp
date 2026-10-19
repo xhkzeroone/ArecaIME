@@ -346,12 +346,18 @@ int main() {
       [] { return false; }, [](fcitx::InputContext &) { return false; },
       [] { return true; });
   boundaryHandler.activate(boundaryContext);
+  auto *boundaryState = boundaryContext.propertyFor(&boundaryFactory);
+  assert(boundaryState->wordSerial == 0);
+  assert(!boundaryState->wordBoundaryPending);
   fcitx::KeyEvent trailingSpace(&boundaryContext, fcitx::Key(FcitxKey_space));
   boundaryHandler.handleKeyEvent(trailingSpace);
-  assert(!boundaryContext.propertyFor(&boundaryFactory)
-              ->surroundingRestoreArmed);
+  assert(!boundaryState->surroundingRestoreArmed);
+  assert(boundaryState->wordSerial == 0);
+  assert(boundaryState->wordBoundaryPending);
   fcitx::KeyEvent nextLetter(&boundaryContext, fcitx::Key(FcitxKey_a));
   boundaryHandler.handleKeyEvent(nextLetter);
+  assert(boundaryState->wordSerial == 1);
+  assert(!boundaryState->wordBoundaryPending);
   assert((boundaryContext.events ==
           std::vector<std::string>{"commit: ", "commit:a"}));
   assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
@@ -372,4 +378,5 @@ int main() {
   assert(!advancedConfig.useSurroundingV2InsteadOfSurroundingV1.value());
   assert(!advancedConfig.useUinputInsteadOfForwardKey.value());
   assert(!advancedConfig.useXTestInsteadOfUinput.value());
+  assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
 }

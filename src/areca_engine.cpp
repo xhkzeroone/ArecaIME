@@ -349,6 +349,7 @@ RewriteBackend *ArecaEngine::resolvePreferredSurroundingBackend() {
 void ArecaEngine::handleSurroundingProbeSucceeded(
     fcitx::InputContext &inputContext) {
   backendVerdict_.probePending = false;
+  backendVerdict_.retryOnNextWord = false;
   if (debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe succeeded program="
                  << inputContext.program();
@@ -357,11 +358,14 @@ void ArecaEngine::handleSurroundingProbeSucceeded(
 
 void ArecaEngine::handleSurroundingProbeFailed(
     fcitx::InputContext &inputContext) {
-  backendVerdict_.known = true;
-  backendVerdict_.reliable = false;
-  backendVerdict_.probePending = false;
+  auto *state = inputContext.propertyFor(&rewriteStateFactory_);
+  const uint32_t wordSerial = state ? state->wordSerial : 0;
+  backendVerdict_.probeFailed(wordSerial);
   if (debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe failed, marked unreliable"
+                 << " attempt=" << backendVerdict_.probeAttempts
+                 << " retry_next_word=" << backendVerdict_.retryOnNextWord
+                 << " word=" << wordSerial
                  << " program=" << inputContext.program();
   }
 }
@@ -574,11 +578,20 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       case AppBackendMode::SurroundingText:
         if (decision.useSurrounding) {
           auto *surBackend = resolvePreferredSurroundingBackend();
+          if (backendVerdict_.probePending) {
+            backendVerdict_.probeStarted();
+          }
+          const uint32_t probeTimeoutMs = backendVerdict_.probePending
+                                              ? backendVerdict_
+                                                    .activeProbeTimeoutMs()
+                                              : 0;
           if (debugEnabled()) {
             FCITX_INFO() << "areca: app-override selected surrounding backend="
-                         << surBackend->name() << " program=" << program;
+                         << surBackend->name() << " program=" << program
+                         << " probe_timeout_ms=" << probeTimeoutMs;
           }
-          return {surBackend, 0, false, backendVerdict_.probePending};
+          return {surBackend, 0, false, backendVerdict_.probePending,
+                  probeTimeoutMs};
         }
         if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
             inputTypeDetector_.isBrowser(program)) {
@@ -628,15 +641,23 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 
   if (decision.useSurrounding) {
     auto *surBackend = resolvePreferredSurroundingBackend();
+    if (backendVerdict_.probePending) {
+      backendVerdict_.probeStarted();
+    }
+    const uint32_t probeTimeoutMs = backendVerdict_.probePending
+                                        ? backendVerdict_.activeProbeTimeoutMs()
+                                        : 0;
     if (!program.empty()) {
       lastAutoBackendByApp_[program] = AppBackendMode::SurroundingText;
     }
     if (debugEnabled()) {
       FCITX_INFO() << "areca: auto selected surrounding backend="
                    << surBackend->name() << " program=" << program
-                   << " probe=" << backendVerdict_.probePending;
+                   << " probe=" << backendVerdict_.probePending
+                   << " probe_timeout_ms=" << probeTimeoutMs;
     }
-    return {surBackend, 0, false, backendVerdict_.probePending};
+    return {surBackend, 0, false, backendVerdict_.probePending,
+            probeTimeoutMs};
   }
 
   if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
@@ -674,6 +695,17 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
       inputTypeDetector_.isBrowser(programName) &&
       isBrowserAutocomplete(surrounding.text(), surrounding.cursor(),
                             surrounding.anchor(), shownText);
+
+  // Bắt đầu: Probe lại đúng một lần khi bước sang từ kế tiếp
+  auto *state = inputContext.propertyFor(&rewriteStateFactory_);
+  if (!browserAutocomplete && state &&
+      backendVerdict_.retryForWord(state->wordSerial) && debugEnabled()) {
+    FCITX_INFO() << "areca: surrounding probe retry armed"
+                 << " attempt=" << (backendVerdict_.probeAttempts + 1)
+                 << " word=" << state->wordSerial
+                 << " program=" << programName;
+  }
+  // Kết thúc: Probe lại đúng một lần khi bước sang từ kế tiếp
 
   if (!backendVerdict_.known && !browserAutocomplete) {
     backendVerdict_.reliable = !isInvalidSurrounding(surrounding);

@@ -39,8 +39,7 @@ public:
 
   // Gọi từ ArecaEngine khi nhận InputContextSurroundingTextUpdated trong lúc
   // probe.
-  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext,
-                                    bool fromUpdateEvent = true);
+  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext);
 
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
@@ -79,6 +78,7 @@ private:
   std::string expectedProbeText_;
   unsigned int expectedProbeCursor_ = 0;
   unsigned int expectedProbeAnchor_ = 0;
+  uint32_t probeUpdateCount_ = 0;
 };
 
 } // namespace areca

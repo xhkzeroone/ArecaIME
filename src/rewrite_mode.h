@@ -44,6 +44,10 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   // Frontend hoặc lifecycle reset đã thay đổi text/vị trí quanh con trỏ. Cờ
   // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một lần.
   bool surroundingRestoreArmed = false;
+  // Tăng khi ký tự đầu tiên của một từ mới tới sau boundary. Backend dùng số
+  // này để chỉ retry surrounding probe ở từ kế tiếp, không retry mỗi ký tự.
+  uint32_t wordSerial = 0;
+  bool wordBoundaryPending = false;
   std::string resolvedProgram;
   // Bắt đầu: Theo dõi trạng thái thanh địa chỉ Chromium và từ đầu tiên
   uint64_t addrBarUiVerdictAtUsec = 0;

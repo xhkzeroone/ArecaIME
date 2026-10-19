@@ -11,10 +11,37 @@
 #include <fcitx/inputcontextmanager.h>
 
 #include "rewrite_backend.h"
+#include "surrounding_reliability.h"
 #include "surrounding_text_backend.h"
 #include "types.h"
 
 namespace {
+
+void testRetryOnlyOnSecondWord() {
+  areca::SurroundingReliabilityState state;
+
+  state.known = true;
+  state.reliable = true;
+  state.probePending = true;
+  state.probeStarted();
+  assert(state.activeProbeTimeoutMs() == 150);
+  state.probeFailed(0);
+  assert(state.probeAttempts == 1);
+  assert(state.retryOnNextWord);
+  assert(!state.retryForWord(0));
+  assert(state.retryForWord(1));
+  assert(!state.known);
+
+  state.known = true;
+  state.reliable = true;
+  state.probePending = true;
+  state.probeStarted();
+  assert(state.activeProbeTimeoutMs() == 80);
+  state.probeFailed(1);
+  assert(state.probeAttempts == 2);
+  assert(!state.retryOnNextWord);
+  assert(!state.retryForWord(2));
+}
 
 class DummyInputContext final : public fcitx::InputContext {
 public:
@@ -204,6 +231,49 @@ void testProbeFailureFallbackToBackspace() {
   assert(probeFailedCalled);
   assert(doneCalled);
   assert(inputContext.committedText == "trieu");
+}
+
+// A stale update must not be rescued by polling a newer cached snapshot at the
+// deadline. Only a real update event can confirm the deletion.
+void testSingleWrongUpdateFallsBack() {
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  DummyInputContext inputContext(manager, events);
+  inputContext.surroundingText().setText("go", 2, 2);
+
+  FakeBackspaceBackend fallback(events);
+  bool probeSucceeded = false;
+  bool probeFailed = false;
+  bool doneCalled = false;
+  areca::SurroundingTextBackend backend(
+      eventLoop, []() { return false; },
+      [&](fcitx::InputContext &) { probeSucceeded = true; },
+      [&](fcitx::InputContext &) { probeFailed = true; },
+      [&](fcitx::InputContext &) -> areca::RewriteBackend * {
+        return &fallback;
+      });
+
+  auto plan = makePlan(107, 1, "õ", true);
+  plan.surroundingProbeTimeoutMs = 5;
+  const auto status = backend.apply(
+      inputContext, plan,
+      [&](uint64_t, areca::RewriteOutcome outcome) {
+        assert(outcome == areca::RewriteOutcome::Succeeded);
+        doneCalled = true;
+        eventLoop.exit();
+      });
+  assert(status == areca::ApplyStatus::Pending);
+
+  // The only event still contains the original text. Even if the cached
+  // snapshot changes silently later, it is not a frontend acknowledgement.
+  backend.notifySurroundingTextUpdated(inputContext);
+  inputContext.surroundingText().setText("g", 1, 1);
+  eventLoop.exec();
+
+  assert(!probeSucceeded);
+  assert(probeFailed);
+  assert(doneCalled);
 }
 
 // SurroundingTextUpdated event arrives before deadline -> probe succeeds.
@@ -427,8 +497,10 @@ void testAdaptiveWaitIntegration() {
 } // namespace
 
 int main() {
+  testRetryOnlyOnSecondWord();
   testProbeFailureFallbackToShiftSelect();
   testProbeFailureFallbackToBackspace();
+  testSingleWrongUpdateFallsBack();
   testProbeSuccessViaEvent();
   testProbeSuccessViaSynchronousEvent();
   testProbeAcceptsInvalidEmptyUpdateEvent();

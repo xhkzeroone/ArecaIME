@@ -221,7 +221,7 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> surroundingProbeTimeoutMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingProbeTimeoutMs{
         this, "SurroundingProbeTimeoutMs",
         N_("Timeout kiểm tra surrounding text (ms)"), 80,
         fcitx::IntConstrain(1, 1000)};

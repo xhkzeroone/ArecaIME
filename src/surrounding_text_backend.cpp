@@ -98,7 +98,7 @@ ApplyStatus SurroundingTextBackend::apply(fcitx::InputContext &inputContext,
 }
 
 void SurroundingTextBackend::notifySurroundingTextUpdated(
-    fcitx::InputContext &inputContext, bool fromUpdateEvent) {
+    fcitx::InputContext &inputContext) {
   if (!isProbe_) {
     return;
   }
@@ -107,11 +107,13 @@ void SurroundingTextBackend::notifySurroundingTextUpdated(
     return;
   }
 
+  ++probeUpdateCount_;
+
   const auto &surrounding = inputContext.surroundingText();
   if (!surroundingProbeMatches(
           surrounding.isValid(), originalProbeText_, originalProbeCursor_,
           expectedProbeText_, expectedProbeCursor_, surrounding.text(),
-          surrounding.cursor(), surrounding.anchor(), fromUpdateEvent)) {
+          surrounding.cursor(), surrounding.anchor())) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding probe ignored unmatched update"
                    << " tx=" << transactionId_
@@ -124,6 +126,8 @@ void SurroundingTextBackend::notifySurroundingTextUpdated(
                    << " actual_cursor=" << surrounding.cursor()
                    << " expected_anchor=" << expectedProbeAnchor_
                    << " actual_anchor=" << surrounding.anchor();
+      FCITX_INFO() << "areca: surrounding probe update count="
+                   << probeUpdateCount_ << " tx=" << transactionId_;
     }
     return;
   }
@@ -296,16 +300,10 @@ void SurroundingTextBackend::scheduleProbeDeadline() {
       completeWithoutCommit();
       return;
     }
-    // The snapshot may already be current even when the corresponding event
-    // was delayed in the frontend queue. Validate once more before falling
-    // back to an input-emulation backend.
-    notifySurroundingTextUpdated(*inputContext, false);
-    if (!isProbe_) {
-      return;
-    }
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding delete unconfirmed after "
-                   << timeoutMs << "ms tx=" << transactionId_;
+                   << timeoutMs << "ms tx=" << transactionId_
+                   << " updates=" << probeUpdateCount_;
     }
     handleProbeFailure();
   });
@@ -390,6 +388,7 @@ void SurroundingTextBackend::clearPending() {
   expectedProbeText_.clear();
   expectedProbeCursor_ = 0;
   expectedProbeAnchor_ = 0;
+  probeUpdateCount_ = 0;
 }
 
 } // namespace areca

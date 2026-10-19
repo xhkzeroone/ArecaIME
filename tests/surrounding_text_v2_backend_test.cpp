@@ -185,6 +185,47 @@ void testProbeFailureFallsBack() {
   assert(events == std::vector<std::string>({"delete:-1:1", "commit:õ"}));
 }
 
+void testSingleWrongUpdateFallsBack() {
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  DummyInputContext inputContext(manager, events);
+  inputContext.surroundingText().setText("go", 2, 2);
+
+  bool probeSucceeded = false;
+  bool probeFailed = false;
+  bool fallbackCalled = false;
+  bool doneCalled = false;
+  FakeFallbackBackend fallback(fallbackCalled);
+  areca::SurroundingTextV2Backend backend(
+      eventLoop, []() { return false; },
+      [&](fcitx::InputContext &) { probeSucceeded = true; },
+      [&](fcitx::InputContext &) { probeFailed = true; },
+      [&](fcitx::InputContext &) -> areca::RewriteBackend * {
+        return &fallback;
+      });
+
+  auto plan = makeProbePlan(306);
+  plan.surroundingProbeTimeoutMs = 5;
+  const auto status = backend.apply(
+      inputContext, plan,
+      [&](uint64_t, areca::RewriteOutcome outcome) {
+        assert(outcome == areca::RewriteOutcome::Succeeded);
+        doneCalled = true;
+        eventLoop.exit();
+      });
+  assert(status == areca::ApplyStatus::Pending);
+
+  backend.notifySurroundingTextUpdated(inputContext);
+  inputContext.surroundingText().setText("g", 1, 1);
+  eventLoop.exec();
+
+  assert(!probeSucceeded);
+  assert(probeFailed);
+  assert(fallbackCalled);
+  assert(doneCalled);
+}
+
 void testProbeChecksFinalDelete() {
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
@@ -289,6 +330,7 @@ int main() {
   testProbeSuccess();
   testCommitWaitsForFinalDeleteUpdate();
   testProbeFailureFallsBack();
+  testSingleWrongUpdateFallsBack();
   testProbeChecksFinalDelete();
   testPartialProbeFallsBackOnlyRemainingDelete();
 

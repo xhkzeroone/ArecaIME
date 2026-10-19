@@ -24,6 +24,7 @@
 #include "redirect_mode.h"
 #include "rewrite_mode.h"
 #include "surrounding_text_backend.h"
+#include "surrounding_reliability.h"
 #include "surrounding_text_v2_backend.h"
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
@@ -32,20 +33,6 @@
 #include "xtest_shift_select_backend.h"
 
 namespace areca {
-
-struct SurroundingReliabilityState {
-  bool known = false;
-  bool reliable = false;
-  bool forceForwardBackspace = false;
-  bool probePending = false;
-
-  void reset() {
-    known = false;
-    reliable = false;
-    forceForwardBackspace = false;
-    probePending = false;
-  }
-};
 
 struct ReliabilityDecision {
   bool useSurrounding = false;

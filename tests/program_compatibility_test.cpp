@@ -39,6 +39,8 @@ int main() {
   assert(isProgrammingProgram("/usr/bin/neovide"));
   assert(isProgrammingProgram("neovide.bin"));
   assert(isProgrammingProgram("eclipse-beta.desktop"));
+  assert(isProgrammingProgram("plasmashell"));
+  assert(isProgrammingProgram("org.kde.plasmashell.desktop"));
 
   // Specialized IDEs and other development tools.
   assert(isProgrammingProgram("org.spyder-ide.spyder"));

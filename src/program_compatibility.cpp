@@ -68,6 +68,11 @@ bool isProgrammingProgram(const std::string &rawProgram) {
        "org.racket_lang.drracket", "bluej", "org.bluej.bluej", "greenfoot",
        "processing", "org.processing.processingide",
 
+       // Plasma shell fields can expose a valid surrounding snapshot but
+       // apply destructive updates late without publishing a matching ACK.
+       // Route them through the same non-surrounding compatibility path.
+       "plasmashell", "org.kde.plasmashell",
+
        // Linux desktop editors and IDEs.
        "gnome-builder", "org.gnome.builder", "geany", "org.geany.geany",
        "qtcreator", "qt-creator", "org.qt-project.qtcreator", "codeblocks",

@@ -28,8 +28,7 @@ inline bool
 surroundingProbeMatches(bool actualValid, std::string_view originalText,
                         uint32_t originalCursor, std::string_view expectedText,
                         uint32_t expectedCursor, std::string_view actualText,
-                        uint32_t actualCursor, uint32_t actualAnchor,
-                        bool fromUpdateEvent) {
+                        uint32_t actualCursor, uint32_t actualAnchor) {
   if (actualCursor != actualAnchor) {
     return false;
   }
@@ -49,11 +48,10 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
     return false;
   }
 
-  // An invalid empty snapshot is useful only when it came from an actual
-  // update event confirming that the field became empty.
+  // This matcher is called only for an actual SurroundingTextUpdated event.
+  // Some clients invalidate the snapshot when the field becomes empty.
   if (!actualValid) {
-    return fromUpdateEvent && actualText.empty() && actualCursor == 0 &&
-           expectedBefore.empty();
+    return actualText.empty() && actualCursor == 0 && expectedBefore.empty();
   }
 
   // The text that was supposed to be deleted is still immediately before the

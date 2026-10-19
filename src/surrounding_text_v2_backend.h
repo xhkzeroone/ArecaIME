@@ -36,8 +36,7 @@ public:
 
   bool hasPending() const { return transactionId_ != 0; }
   bool isProbing() const { return isProbe_; }
-  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext,
-                                    bool fromUpdateEvent = true);
+  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext);
 
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
@@ -81,6 +80,7 @@ private:
   std::string expectedProbeText_;
   unsigned int expectedProbeCursor_ = 0;
   unsigned int expectedProbeAnchor_ = 0;
+  uint32_t probeUpdateCount_ = 0;
 };
 
 } // namespace areca

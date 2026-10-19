@@ -117,17 +117,19 @@ void SurroundingTextV2Backend::sendNextDelete() {
 }
 
 void SurroundingTextV2Backend::notifySurroundingTextUpdated(
-    fcitx::InputContext &inputContext, bool fromUpdateEvent) {
+    fcitx::InputContext &inputContext) {
   if (!isProbe_ || !probeDeletePending_ ||
       inputContext_.get() != &inputContext) {
     return;
   }
 
+  ++probeUpdateCount_;
+
   const auto &surrounding = inputContext.surroundingText();
   if (!surroundingProbeMatches(
           surrounding.isValid(), originalProbeText_, originalProbeCursor_,
           expectedProbeText_, expectedProbeCursor_, surrounding.text(),
-          surrounding.cursor(), surrounding.anchor(), fromUpdateEvent)) {
+          surrounding.cursor(), surrounding.anchor())) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding-v2 probe ignored unmatched update"
                    << " tx=" << transactionId_
@@ -135,7 +137,8 @@ void SurroundingTextV2Backend::notifySurroundingTextUpdated(
                    << " actual_text=" << surrounding.text()
                    << " expected_size=" << expectedProbeText_.size()
                    << " actual_size=" << surrounding.text().size()
-                   << " actual_valid=" << surrounding.isValid();
+                   << " actual_valid=" << surrounding.isValid()
+                   << " updates=" << probeUpdateCount_;
     }
     return;
   }
@@ -306,13 +309,10 @@ void SurroundingTextV2Backend::scheduleProbeDeadline() {
       completeWithoutCommit();
       return;
     }
-    notifySurroundingTextUpdated(*inputContext, false);
-    if (!isProbe_) {
-      return;
-    }
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding-v2 delete unconfirmed after "
-                   << timeoutMs << "ms tx=" << transactionId_;
+                   << timeoutMs << "ms tx=" << transactionId_
+                   << " updates=" << probeUpdateCount_;
     }
     handleProbeFailure();
   });
@@ -386,6 +386,7 @@ void SurroundingTextV2Backend::clearPending() {
   expectedProbeText_.clear();
   expectedProbeCursor_ = 0;
   expectedProbeAnchor_ = 0;
+  probeUpdateCount_ = 0;
 }
 
 } // namespace areca
