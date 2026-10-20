@@ -275,7 +275,7 @@ FCITX_CONFIGURATION(
         N_("Dùng Surrounding v2 thay cho Surrounding v1"), false};
     fcitx::Option<bool> useUinputInsteadOfForwardKey{
         this, "UseUinputInsteadOfForwardKey",
-        N_("Dùng uinput thay cho ForwardKey"), false};
+        N_("Dùng uinput thay cho ForwardKey"), true};
     fcitx::Option<bool> useXTestInsteadOfUinput{
         this, "UseXTestInsteadOfUinput",
         N_("Dùng Native (Libei/XTest) thay thế uinput"), false};
