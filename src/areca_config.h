@@ -160,7 +160,8 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> uinputBackspaceAckTimeoutMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain>
+        uinputBackspaceAckTimeoutMs{
         this, "UinputBackspaceAckTimeoutMs",
         N_("Timeout ACK uinput Backspace (ms)"), 150,
         fcitx::IntConstrain(1, 5000)};
@@ -190,7 +191,8 @@ FCITX_CONFIGURATION(
         this, "UinputShiftSelectDelayMs",
         N_("Delay giữa các phím uinput Shift+Left (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectAckTimeoutMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain>
+        uinputShiftSelectAckTimeoutMs{
         this, "UinputShiftSelectAckTimeoutMs",
         N_("Timeout ACK uinput Shift+Left (ms)"), 150,
         fcitx::IntConstrain(1, 5000)};
