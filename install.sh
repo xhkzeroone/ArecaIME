@@ -30,6 +30,27 @@ run_root() {
   fi
 }
 
+restart_fcitx() {
+  local target_user="${SUDO_USER:-${USER:-}}" target_uid
+  if ! command -v fcitx5 >/dev/null 2>&1; then
+    log "Không tìm thấy fcitx5 để khởi động lại. Hãy đăng xuất rồi đăng nhập lại."
+    return
+  fi
+
+  log "Đang khởi động lại Fcitx5..."
+  if [[ -z "$target_user" || "$target_user" == root || "$(id -un)" == "$target_user" ]]; then
+    fcitx5 -rd >/dev/null 2>&1 || log "Không thể tự khởi động lại Fcitx5; hãy đăng xuất rồi đăng nhập lại."
+    return
+  fi
+
+  target_uid="$(id -u "$target_user")"
+  sudo -H -u "$target_user" env \
+    XDG_RUNTIME_DIR="/run/user/$target_uid" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$target_uid/bus" \
+    fcitx5 -rd >/dev/null 2>&1 \
+    || log "Không thể tự khởi động lại Fcitx5; hãy đăng xuất rồi đăng nhập lại."
+}
+
 require_command() {
   command -v "$1" >/dev/null 2>&1 || die "Không tìm thấy '$1'. Hãy cài $1 rồi chạy lại."
 }
@@ -166,7 +187,8 @@ main() {
   if ask_yes_no "Khởi động lại máy ngay bây giờ?"; then
     log "Đang khởi động lại..."; run_root systemctl reboot
   else
-    log "Bạn có thể khởi động lại sau để mọi thay đổi có hiệu lực."
+    restart_fcitx
+    log "Bạn có thể khởi động lại máy sau để quyền nhóm uinput có hiệu lực đầy đủ."
   fi
 }
 
