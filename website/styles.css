@@ -1033,7 +1033,7 @@ kbd {
 
 .distro-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   padding: 8px;
   background: #f7f5ed;
   border-bottom: 1px solid var(--line);

@@ -341,12 +341,12 @@
           <p class="eyebrow"><span></span> Bắt đầu</p>
           <h2>Cài đặt bằng một script.</h2>
           <p>
-            Tải gói dựng sẵn cho distro của bạn hoặc dùng installer để build
-            trực tiếp từ mã nguồn. Sau khi cài, chỉ cần thêm Areca trong công
-            cụ cấu hình Fcitx5.
+            Chạy một lệnh để tự kiểm tra hệ điều hành, tải đúng gói từ release
+            mới nhất và cài đặt Areca. Installer sẽ hỏi trước khi cấp quyền
+            uinput hoặc khởi động lại máy.
           </p>
           <div class="distro-list" aria-label="Các bản phân phối được hỗ trợ">
-            <span>Arch</span><span>Ubuntu 24+</span><span>Debian</span><span>Fedora</span>
+            <span>Ubuntu</span><span>Arch</span><span>Fedora</span><span>openSUSE</span>
           </div>
           <a
             class="button button-primary release-button"
@@ -368,7 +368,7 @@
 
         <div class="installer-card reveal">
           <div class="installer-head">
-            <span>Cài đặt theo distro</span>
+            <span>Cài đặt Areca</span>
             <a
               href="https://github.com/xhkzeroone/ArecaIME/releases/latest"
               target="_blank"
@@ -377,7 +377,7 @@
             >
           </div>
 
-          <div class="distro-tabs" role="tablist" aria-label="Chọn bản phân phối Linux">
+          <div class="distro-tabs" role="tablist" aria-label="Chọn phương thức cài đặt">
             <button
               id="tab-ubuntu"
               class="distro-tab is-active"
@@ -386,27 +386,7 @@
               aria-selected="true"
               aria-controls="panel-ubuntu"
               data-install-tab="ubuntu"
-            >Ubuntu</button>
-            <button
-              id="tab-arch"
-              class="distro-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-arch"
-              data-install-tab="arch"
-            >Arch</button>
-            <button
-              id="tab-fedora"
-              class="distro-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-fedora"
-              data-install-tab="fedora"
-            >Fedora</button>
-
-            
+            >Tự động</button>
             <button
               id="tab-source"
               class="distro-tab"
@@ -425,26 +405,18 @@
             aria-labelledby="tab-ubuntu"
             data-install-panel="ubuntu"
           >
-            <div class="package-instruction">
-              <span class="step-number">1</span>
-              <p>
-                Mở <a href="https://github.com/xhkzeroone/ArecaIME/releases/latest">release mới nhất</a>
-                và tải gói <code>ubuntu24_amd64.deb</code> hoặc
-                <code>ubuntu26_amd64.deb</code> đúng phiên bản Ubuntu.
-              </p>
-            </div>
-            <div class="package-instruction">
-              <span class="step-number">2</span>
-              <p>Mở terminal tại thư mục Downloads rồi chạy:</p>
-            </div>
+            <p class="source-intro">
+              Mở terminal và chạy lệnh sau. Installer sẽ tự chọn gói phù hợp
+              với hệ điều hành và phiên bản hiện tại.
+            </p>
             <div class="command-row">
-              <pre id="ubuntu-command"><code>sudo apt install ./fcitx5-areca_*_ubuntu*_amd64.deb</code></pre>
+              <pre id="ubuntu-command"><code>curl -fsSL https://raw.githubusercontent.com/xhkzeroone/ArecaIME/main/install.sh | bash</code></pre>
               <button class="copy-button" type="button" data-copy-target="ubuntu-command">
                 <span class="copy-icon" aria-hidden="true">▣</span>
                 <span class="copy-label">Sao chép</span>
               </button>
             </div>
-            <p class="panel-note">Debian chưa có binary riêng; hãy chọn tab <b>Mã nguồn</b>.</p>
+            <p class="panel-note">Cần có <code>curl</code> và <code>sudo</code>. Hệ điều hành chưa có gói release sẽ được báo lỗi rõ ràng.</p>
           </div>
 
           <div
@@ -565,40 +537,6 @@ cd ArecaIME
           </div>
         </div>
 
-        <!-- Uinput check & fix -->
-        <div class="uinput-check reveal">
-          <h3>Kiểm tra &amp; Sửa quyền <b>/dev/uinput</b> (Dành cho gói cài đặt .deb / .rpm / .pkg)</h3>
-          <p>Khi cài từ gói phát hành, file rule <code>99-uinput-areca.rules</code> đã được hệ thống tự động cài sẵn. Bạn hãy chọn 1 trong 2 cách sửa dưới đây:</p>
-
-          <div style="margin-top: 1rem; padding: 12px 16px; background: rgba(21, 153, 87, 0.08); border-left: 4px solid #159957; border-radius: 8px;">
-            <h4 style="margin: 0 0 6px 0; color: #159957; font-size: 15px;"><b>Cách 1: Sửa triệt để &amp; Lâu dài (Khuyên dùng)</b></h4>
-            <p style="margin: 0;"><b>Bước 1:</b> Thêm tài khoản hiện tại vào nhóm <code>input</code>:</p>
-            <pre style="margin-top: 4px;">sudo usermod -aG input $USER</pre>
-            <p style="margin-top: 6px; margin-bottom: 0;"><b>Bước 2:</b> <b>Đăng xuất và đăng nhập lại</b> (hoặc khởi động lại máy).</p>
-            <p style="margin-top: 6px; color: #159957; font-size: 13px;">✔ <b>Hoàn tất!</b> Khi đăng nhập lại, quyền nhóm sẽ có hiệu lực vĩnh viễn (bạn không cần làm thêm Cách 2).</p>
-          </div>
-
-          <div style="margin-top: 1rem; padding: 12px 16px; background: rgba(180, 83, 9, 0.06); border-left: 4px solid #b45309; border-radius: 8px;">
-            <h4 style="margin: 0 0 6px 0; color: #b45309; font-size: 15px;"><b>Cách 2: Sửa nhanh (Dùng ngay không cần đăng xuất)</b></h4>
-            <p style="margin: 0;">Nếu đang cần gõ ngay mà chưa muốn đăng xuất tài khoản, hãy chạy các lệnh sau:</p>
-            <pre style="margin-top: 6px;">sudo udevadm control --reload-rules &amp;&amp; sudo udevadm trigger
-sudo chown root:input /dev/uinput 2>/dev/null || sudo chown root:input /dev/input/uinput
-sudo chmod 0660 /dev/uinput 2>/dev/null || sudo chmod 0660 /dev/input/uinput</pre>
-          </div>
-
-          <div style="margin-top: 1.2rem;">
-            <h4 style="margin: 0 0 4px 0;"><b>Kiểm tra lại quyền thiết bị (Tùy chọn)</b></h4>
-            <pre>ls -l /dev/uinput /dev/input/uinput 2>/dev/null</pre>
-            <p style="margin-top:0.3rem;"><i>Kết quả chính xác có dạng: <code>crw-rw---- 1 root input ... /dev/uinput</code></i></p>
-          </div>
-
-          <div style="margin-top: 1rem;">
-            <h4 style="margin: 0 0 4px 0;"><b>Nếu hệ thống chưa có file udev rule (Trường hợp ngoại lệ)</b></h4>
-            <p style="margin: 0 0 4px 0; font-size: 13px;">Chỉ thực hiện nếu kiểm tra thấy thiếu file rule udev trên distro của bạn:</p>
-            <pre>echo 'KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d/99-uinput-areca.rules
-sudo udevadm control --reload-rules &amp;&amp; sudo udevadm trigger</pre>
-          </div>
-        </div>
       </section>
 
       <section id="credits" class="credits section-block section-shell reveal">

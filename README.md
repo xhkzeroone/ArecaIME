@@ -1,220 +1,31 @@
 # Areca IME
 
-Areca là bộ gõ tiếng Việt cho Linux dưới dạng addon Fcitx5, viết bằng C++20 và
-chạy chủ yếu trên Wayland. Areca dùng trực tiếp `bamboo-core` để xử lý tiếng
-Việt, nhưng tự quản lý thời điểm xử lý phím và cách sửa nội dung đã hiển thị.
+[![GitHub stars](https://img.shields.io/github/stars/xhkzeroone/ArecaIME?style=flat&logo=github)](https://github.com/xhkzeroone/ArecaIME/stargazers)
+[![GitHub release](https://img.shields.io/github/v/release/xhkzeroone/ArecaIME)](https://github.com/xhkzeroone/ArecaIME/releases/latest)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/xhkzeroone/ArecaIME)](https://github.com/xhkzeroone/ArecaIME/commits/main)
+[![Last commit](https://img.shields.io/github/last-commit/xhkzeroone/ArecaIME)](https://github.com/xhkzeroone/ArecaIME/commits/main)
+[![Build Linux packages](https://github.com/xhkzeroone/ArecaIME/actions/workflows/package-linux.yml/badge.svg)](https://github.com/xhkzeroone/ArecaIME/actions/workflows/package-linux.yml)
 
-Areca tuần tự hóa text key bằng scheduler và FIFO để không cho phím sau chen
-vào rewrite hoặc barrier sau commit. Khi Bamboo không giữ text và scheduler
-rảnh, phím đầu có đầu ra không đổi được để nguyên cho frontend xử lý, giúp
-editor web nhận sự kiện phím để mở chế độ soạn thảo. Bamboo vẫn nhớ phím đó
-để phím sau ghép dấu đúng.
+Areca là bộ gõ tiếng Việt cho Linux, chạy dưới dạng addon của Fcitx5 và được
+tối ưu cho Wayland. Bộ gõ sử dụng lõi xử lý tiếng Việt của
+[Bamboo Engine](https://github.com/BambooEngine/bamboo-core), hỗ trợ Telex và
+tự chọn cách sửa từ phù hợp với từng ứng dụng.
 
-> Areca hiện là dự án thử nghiệm. Backend fallback phát Backspace qua
-> `InputContext::forwardKey()`; hãy bật debug khi thử trên frontend mới.
+> Areca đang trong giai đoạn thử nghiệm. Nếu gặp lỗi, vui lòng gửi báo cáo kèm
+> tên bản phân phối, phiên bản hệ điều hành và ứng dụng đang sử dụng.
 
-### Bật/tắt tính năng nhập liệu
+## Cài đặt
 
-Hai tùy chọn nhập liệu trong **Cấu hình nâng cao**
-(`conf/areca-advanced.conf`) mặc định bật:
-
-| Khóa | Nhãn giao diện | Khi tắt |
-| --- | --- | --- |
-| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong mọi ứng dụng | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
-| `ForwardFirstCharacter` | Chuyển tiếp phím đầu để tương thích trình duyệt | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
-
-Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
-reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
-Tắt cả hai bằng:
-
-```ini
-EnableMouseTracking=False
-ForwardFirstCharacter=False
+```bash
+curl -fsSL https://raw.githubusercontent.com/xhkzeroone/ArecaIME/main/install.sh | bash
 ```
 
-Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click reset
-composition của input context hiện tại trong mọi ứng dụng. Chuyển tiếp phím đầu
-chỉ áp dụng cho trình duyệt và không tạo thread/process riêng.
+Installer cần `curl` và `sudo`. Mọi thao tác cấp quyền và khởi động lại đều hỏi
+xác nhận trước.
 
-## Reset khi click chuột
+### Arch Linux (AUR)
 
-Khi `EnableMouseTracking=True`, Areca chạy helper riêng `areca-mouse-monitor` dùng **libinput + udev**, báo nhấn
-chuột và tap touchpad qua pipe vào event loop Fcitx. Trước phím nhấn tiếp theo
-trong ứng dụng hiện tại, engine reset composition nếu scheduler cho phép; nếu rewrite
-đang được bảo vệ, cờ click được giữ cho lần sau. Di chuyển, cuộn và nhả chuột
-không yêu cầu reset.
-
-Build cần gói phát triển libinput/libudev. Helper được cài vào libexec theo
-`CMAKE_INSTALL_PREFIX`; rule `70-areca-pointer.rules` cấp quyền đọc chuột/touchpad
-cho phiên desktop local đang active qua `uaccess`. Quyền này cho phiên đó đọc
-sự kiện thô của thiết bị, kể cả sự kiện khác trên thiết bị kết hợp. Không cần
-helper root hoặc thêm user vào nhóm `input` khi hệ thống hỗ trợ ACL này.
-Cài với prefix user cần cài rule riêng vào thư mục udev hệ thống. Sau lần cài
-đầu, reload rule và kết nối lại thiết bị hoặc đăng xuất/đăng nhập.
-
-Xem [kiến trúc](docs/ARCHITECTURE.md#theo-dõi-click-và-reset-composition) và
-[hướng dẫn debug](docs/DEBUGGING.md#mouse-tracker) để kiểm tra helper, quyền và log.
-
-## Lời cảm ơn
-
-Areca sử dụng [Bamboo Engine / bamboo-core](https://github.com/BambooEngine/bamboo-core),
-thư viện xử lý tiếng Việt do **Lương Thành Lâm** phát triển và phát hành theo
-giấy phép MIT. Phần chuyển đổi Telex và các quy tắc tiếng Việt của Areca đến từ
-chính `bamboo-core`; Areca chỉ bổ sung lớp tích hợp Fcitx5, scheduler và các
-backend rewrite.
-
-Xin cảm ơn tác giả Bamboo cùng những người được dự án Bamboo ghi công:
-
-- Trung Ngo, tác giả `bogo.js`.
-- Trần Kỳ Nam, tác giả `GoTiengViet`.
-
-Mã nguồn và license nguyên bản được giữ trong submodule
-[`bamboo/bamboo-core`](bamboo/bamboo-core).
-
-## Ý tưởng thiết kế
-
-Ứng dụng Wayland không phải lúc nào cũng cung cấp `SurroundingText` chính xác.
-Trong khi đó, gõ tiếng Việt kiểu Telex thường cần sửa lại những ký tự đã xuất
-hiện, ví dụ `a` + `w` biến thành `ă`. Areca giải quyết bài toán này bằng ba lớp:
-
-1. `bamboo-core` quyết định chuỗi tiếng Việt mới.
-2. Scheduler quyết định **khi nào** được xử lý phím tiếp theo.
-3. Rewrite backend quyết định **cách** xoá chuỗi cũ và chèn chuỗi mới.
-
-```text
-Fcitx5 keyEvent
-       ├──► phím đầu, engine rảnh: Bamboo → không đổi → event chưa accept
-       │ các text key còn lại: filterAndAccept
-       ▼
- KeyQueue (FIFO)
-       │ pump ngay nếu pipeline đang rảnh
-       │ giữ lại nếu commit/rewrite đang pending
-       ▼
- InputScheduler ──► BambooEngineAdapter ──► BambooResult
-                                             │
-                         deleteCount == 0 ────┤──► unchanged: commitString
-                                                  └──► transformed: commitString
-                                             │
-                         deleteCount > 0  ────┘
-                                             │
-                                   ┌─────────┴─────────┐
-                                   ▼         ▼         ▼
-                        SurroundingText   Forward    UinputShiftSelect
-                        delete + commit   Backspace  Shift+Left bôi đen
-                                                     → commit từng char
-```
-
-Các invariant quan trọng:
-
-- Queue giữ đúng thứ tự phím đầu vào.
-- Chỉ một phím được Bamboo xử lý tại một thời điểm.
-- Key đầu được xử lý ngay; key sau chỉ được pump khi commit/rewrite trước đã
-  hoàn tất và qua `PostCommitDelayMs`.
-- Chỉ có một rewrite bất đồng bộ pending.
-- Backend uinput chỉ commit sau khi nhận phím xác nhận `N+1` hoặc timeout 20 ms,
-  rồi đi hết settling wait tương ứng.
-- Phím mới vẫn được nhận vào queue khi backend đang chạy, nhưng chưa được xử lý.
-- Không `sleep()` trên main thread Fcitx5; mọi delay đều dùng event loop.
-
-Chi tiết từng component, state machine và sơ đồ sequence diagram nằm trong
-[Tài liệu kiến trúc](docs/ARCHITECTURE.md), [Đặc tả kỹ thuật](docs/ARECA_ARCHITECTURE_SPECIFICATION.md) hoặc xem [Giao diện HTML trực quan](website/architecture.html).
-
-## Các đường rewrite
-
-### SurroundingText
-
-Ở rewrite đầu tiên của mỗi input context, Areca so phần từ ngay trước cursor
-với text mà Bamboo tin rằng đang hiển thị. Kết quả được cache cho ô nhập đó:
-
-- Khớp: dùng `deleteSurroundingText()` rồi `commitString()`.
-- Không khớp, snapshot không hợp lệ hoặc app không hỗ trợ capability: fallback
-  sang uinput hoặc forward-Backspace.
-
-Areca tự động cập nhật cache SurroundingText nội bộ (`st.deleteText()` và `st.setText()`) ngay sau mỗi thao tác xóa và commit, giữ cho bộ đệm Fcitx5 luôn đồng bộ tức thì với màn hình.
-
-### Uinput Shift Select
-
-Khi tùy chọn `UseUinputShiftSelectForBrowser` được bật trên ứng dụng dạng trình duyệt web và `/dev/uinput` khả dụng, Areca sử dụng `UinputShiftSelectBackend`.
-
-Backend này hoạt động theo cơ chế:
-1. Nhấn giữ phím `Shift` ảo qua thiết bị kernel `/dev/uinput`.
-2. Muốn chọn `N` ký tự thì phát `Left` `N+1` lần. Fcitx đếm các sự kiện
-   quay lại, forward `N` lần đầu và filter lần cuối để không chọn dư.
-3. Chỉ thả `Shift` sau khi Fcitx nhận đủ `N+1` lần `Left`, rồi chờ settling
-   delay mặc định 20 ms trước khi commit. Người dùng có thể chỉnh riêng từng
-   frontend trong cấu hình nâng cao.
-4. Commit chuỗi ký tự mới theo hai bước với delay 5 ms giữa hai phần.
-
-Tín hiệu `Left` xác nhận chạy đua với watchdog 20 ms. Nếu watchdog tới trước,
-backend thả `Shift` và hủy context đếm để Left đến muộn không kích hoạt lại.
-
-Cơ chế bảo vệ: Nếu phát hiện trong ô nhập liệu đang có văn bản bôi đen sẵn (`cursor != anchor`) hoặc trình duyệt đang ở trạng thái Autocomplete gợi ý, hệ thống sẽ tự động chuyển sang `ForwardBackspaceBackend` (+1 phím Backspace phụ) để xóa an toàn vùng chọn cũ thay vì dùng phím `Shift+Left`.
-
-### Uinput Backspace
-
-Khi `/dev/uinput` khả dụng và ứng dụng cần phát Backspace ở mức phần cứng kernel (như terminal DBus hoặc ứng dụng chưa xác định), Areca tự động dùng `UinputBackspaceBackend`. Muốn xóa `N` ký tự, backend phát `N+1` Backspace: Fcitx forward `N` lần đầu, filter lần xác nhận cuối rồi mới bắt đầu settling wait và commit. Tín hiệu xác nhận chạy đua với timeout 20 ms. Terminal nhúng trong VS Code và các bản fork luôn dùng `ForwardBackspaceBackend`. Script cài đặt tự động tạo file rule `99-uinput-areca.rules` để phân quyền cho nhóm `uinput`.
-
-### Forward Backspace
-
-Khi SurroundingText không đáng tin cậy và uinput không khả dụng, addon dùng
-`InputContext::forwardKey()` để phát đúng `N` cặp Backspace press/release. Phím
-đầu được phát ngay; các phím sau cách nhau `BackspaceDelayMs`. Sau Backspace
-cuối, backend chờ `AfterBackspaceWaitMs`, commit text mới, báo hoàn tất đúng một
-lần rồi scheduler mới bắt đầu `PostCommitDelayMs`. Riêng input context có
-frontend `wayland` tự động dùng `WaylandAfterBackspaceWaitMs`, mặc định 3 ms.
-
-```text
-forward Backspace × N
-        → AfterBackspaceWaitMs
-        → commitString
-        → rewrite done
-        → PostCommitDelayMs
-```
-
-Trong toàn bộ transaction, scheduler vẫn giữ `processing=true`, vì vậy key đến
-sau chỉ được append vào FIFO.
-
-Areca thăm dò độ trễ của event loop mỗi 10 ms để nhận ra tình trạng chậm toàn
-hệ thống trước khi bắt đầu rewrite. `ForwardBackspaceBackend` và
-`UinputBackspaceBackend` dùng chung tín hiệu này, đồng thời tiếp tục đo timer
-trong transaction. Ngay ở callback đầu tiên trễ từ 5 ms, thời gian chờ trước
-commit tăng theo độ trễ quan sát được và được làm tròn lên bước 10 ms. Các lần
-trễ tiếp theo tiếp tục tăng ít nhất 10 ms, tối đa tổng cộng 50 ms. Mức tối thiểu
-là timing mặc định của frontend hiện tại. Sau 5 transaction đúng giờ liên tiếp,
-thời gian chờ giảm 10 ms. Timer giữa các Backspace không làm mức chờ giảm sớm.
-Mức thích ứng được đặt lại khi addon khởi động lại.
-
-Ở mọi rewrite backend có khoảng chờ giữa thao tác xóa và commit, timer hết hạn
-chỉ đánh dấu đã chờ đủ. Commit sau đó được đưa sang pha post của event loop thay
-vì chạy ngay bên trong callback timer. Vì vậy khi event loop đang tồn đọng công
-việc, thao tác commit tự chờ qua backlog đó. Timer giữa các bước xóa vẫn chạy
-trực tiếp để không kéo dài chuỗi Backspace, Shift+Left hoặc surrounding delete.
-
-Areca lọc program trước: chỉ VS Code và các bản phân nhánh,
-IDE/code editor/developer tool, hoặc terminal Linux đã biết (terminal của
-distro/desktop environment và terminal bên thứ ba) mới được kiểm tra capability
-mask. Trong nhóm này, addon chỉ ép backend forward-Backspace khi mask chính xác
-là `0x72`. Mask không được xét cho các ứng dụng ngoài allowlist này; input có
-SurroundingText unreliable vốn đã đi qua forward backend theo policy mặc định.
-Nếu frontend không cung cấp program name, addon không áp dụng rule này để tránh
-ép nhầm và làm hỏng ứng dụng không xác định.
-
-## Bảo vệ state trước reset của ứng dụng
-
-Một số ứng dụng gọi `reset()` nhiều lần trong lúc người dùng vẫn đang gõ. Areca bảo vệ trạng thái gõ bằng cơ chế:
-
-- Trong vòng 50 ms ngay sau khi hoàn tất rewrite (hoặc khi có rewrite/key đang xử lý), Areca tự động từ chối các lệnh reset dội ngược từ trình duyệt web để giữ ổn định con trỏ.
-- Khi không còn rewrite pending và ngoài cửa sổ 50 ms, lệnh reset hợp lệ từ ứng dụng sẽ xoá Bamboo state và queue của input context ngay lập tức.
-- Verdict SurroundingText được lưu ở cấp addon. Backspace, Ctrl+A và phím di chuyển bảo vệ riêng verdict này trong 1 giây; lifecycle vẫn reset các state nhập khác như bình thường.
-
-Password field luôn bypass Bamboo, SurroundingText và rewrite backend; phím gốc được
-forward thẳng để không đưa nội dung nhạy cảm vào state của addon.
-
-## Cài đặt nhanh
-
-### Cài đặt qua AUR trên Arch Linux
-
-Cài đặt bản binary dựng sẵn:
+Cài bản binary dựng sẵn:
 
 ```bash
 paru -S fcitx5-areca-bin
@@ -222,7 +33,7 @@ paru -S fcitx5-areca-bin
 yay -S fcitx5-areca-bin
 ```
 
-Cài đặt bản git build từ mã nguồn mới nhất:
+Cài bản mới nhất từ mã nguồn Git:
 
 ```bash
 paru -S fcitx5-areca-git
@@ -230,360 +41,145 @@ paru -S fcitx5-areca-git
 yay -S fcitx5-areca-git
 ```
 
-### Cài đặt bằng installer script
+## Cài từ mã nguồn
 
-Installer hỗ trợ Arch/CachyOS, Debian/Ubuntu (bao gồm Linux Mint, Pop!_OS và Zorin OS), Fedora/RHEL và openSUSE Tumbleweed. Script sẽ cài dependency,
-khởi tạo submodule Bamboo, build, chạy test và cài addon:
+Phần này dành cho người dùng có bản phân phối hoặc phiên bản chưa có gói dựng
+sẵn trong installer. Trước tiên, cài bộ biên dịch C++20, CMake, Extra CMake
+Modules, Ninja, Go và các gói phát triển của Fcitx5, SDL3, libinput, libudev,
+DBus, Fontconfig, X11 và Xtst bằng trình quản lý gói của hệ điều hành.
+
+Tải mã nguồn cùng Bamboo Engine:
+
+```bash
+git clone --recurse-submodules https://github.com/xhkzeroone/ArecaIME.git
+cd ArecaIME
+```
+
+Developer có thể dùng script build có sẵn:
 
 ```bash
 ./scripts/install.sh
 ```
 
-Nếu dependency đã có sẵn:
+Hoặc chạy từng bước thủ công như bên dưới.
+
+Build và chạy test:
 
 ```bash
-./scripts/install.sh --skip-deps
-```
-
-Trên Arch/CachyOS, installer mặc định không chạy `pacman -Sy` hoặc nâng cấp toàn
-hệ thống. Nó dùng database package hiện có để cài dependency còn thiếu:
-
-```bash
-./scripts/install.sh --no-system-update
-```
-
-Nếu máy đã có đủ dependency, `--skip-deps` là đường cài không gọi `pacman`. Khi
-muốn chủ động nâng toàn hệ thống theo quy trình được Arch hỗ trợ, dùng:
-
-```bash
-./scripts/install.sh --system-update
-```
-
-Một số lựa chọn khác:
-
-```bash
-./scripts/install.sh --user
-./scripts/install.sh --build-dir build-make
-./scripts/install.sh --skip-tests
-./scripts/install.sh --no-restart
-```
-
-Gỡ cài đặt Areca và xóa dữ liệu cấu hình:
-
-```bash
-./scripts/uninstall.sh
-```
-
-Nếu chỉ muốn gỡ bản cài đặt user:
-
-```bash
-./scripts/uninstall.sh --user
-```
-
-
-Khi build từ source trên NixOS, `shell.nix` khai báo dependency cho môi trường build. Chạy installer trong môi trường đó để cài vào user prefix:
-
-```bash
-nix-shell --run './scripts/install.sh --skip-deps --user'
-```
-
-Để cài toàn hệ thống theo cấu hình NixOS, thêm derivation `fcitx5-areca` vào danh sách addon của fcitx5, sau đó rebuild lại system:
-
-```nix
-i18n = {
-  inputMethod = {
-    enable = true;
-    type = "fcitx5";
-    fcitx5 = {
-      addons = with pkgs; [
-        fcitx5-areca
-      ];
-    };
-  };
-};
-```
-
-Sau khi cài, mở `fcitx5-configtool` và thêm **Areca (Bamboo)** vào danh sách
-input method.
-
-Trên Plasma Wayland, KWin có thể là process trực tiếp khởi chạy Fcitx bằng một
-`WAYLAND_SOCKET` riêng; khi đó `fcitx5 -rd` từ terminal
-có thể không thay được instance đang giữ addon cũ. Xem cách xác nhận và xử lý
-trong [Hướng dẫn debug](docs/DEBUGGING.md).
-
-## Build package trên GitHub
-
-Workflow [Build Linux packages](.github/workflows/package-linux.yml) build các
-dòng distro đang được hỗ trợ cho release:
-
-- Ubuntu 24.04, 25.10 và 26.04: ba gói `.deb` độc lập. Ubuntu 25.10 được build
-  trong container chính chủ vì GitHub không cung cấp hosted runner cho đời 25.
-- Linux Mint 22.x: gói `.deb` theo package base Ubuntu 24.04.
-- Arch Linux rolling: gói `.pkg.tar.zst` từ
-  [`packaging/arch/PKGBUILD`](packaging/arch/PKGBUILD).
-- Fedora 42, 43 và 44: ba gói `.rpm` được build độc lập trong container của
-  từng đời Fedora.
-
-Mỗi nhánh đều build addon và chạy toàn bộ CTest trước khi tạo artifact. Bamboo
-được checkout và đưa vào source archive theo submodule. Pull request, push vào `main`
-và chạy thủ công sẽ tạo artifact của workflow; tag `v*` hoặc tag bắt đầu bằng
-số còn tự động tải các gói lên GitHub Release tương ứng.
-
-Bộ metadata dành riêng cho AUR nằm tại [`packaging/aur`](packaging/aur). Xem
-[hướng dẫn publish `fcitx5-areca`](packaging/aur/README.md) để tạo repository
-AUR, build kiểm tra và cập nhật package theo tag GitHub.
-
-## Build thủ công
-
-Yêu cầu:
-
-- CMake 3.20 trở lên.
-- Compiler hỗ trợ C++20.
-- Go.
-- Fcitx5 Core, Config và Utils development packages.
-- Ninja hoặc Make.
-- SDL3, fontconfig
-
-```bash
-git submodule update --init
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-sudo cmake --install build
 ```
 
-Nếu thư mục `build` cũ dùng Ninja nhưng máy hiện tại không còn Ninja, dùng một
-build directory mới thay vì tái sử dụng cache khác generator:
+Cài vào hệ thống, nạp lại rule thiết bị và khởi động lại Fcitx5:
 
 ```bash
-cmake -S . -B build-make -G "Unix Makefiles"
-cmake --build build-make
+sudo cmake --install build
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+fcitx5 -rd
 ```
 
-Build tạo addon `areca.so`.
+Để bật backend `uinput`, thêm tài khoản hiện tại vào nhóm `input`, sau đó đăng
+xuất và đăng nhập lại:
 
-Bộ cài đặt cài icon Areca dạng scalable và symbolic có màu vào theme `hicolor`
-dưới các tên `areca`, `fcitx-areca` và `org.fcitx.Fcitx5.fcitx-areca`, sau đó
-cập nhật icon cache nếu `gtk-update-icon-cache` có sẵn.
-
-## Cấu hình
-
-Mở cấu hình Areca trong `fcitx5-configtool`. Các tuỳ chọn thường dùng nằm ngay
-trong màn hình chính và được lưu tại `~/.config/fcitx5/conf/areca.conf`:
-
-```ini
-PresentationMode=Rewrite
-SwitchModeKey=Alt+space
-SelectBackendKey=Alt+grave
-BambooInputMethod=Telex 2
-OutputCharset=Unicode
-SpellcheckMode="Khôi phục từ ngay trong lúc gõ"
-RestoreSurroundingText=False
-ModernStyle=True
-AutoCapitalizeAfterPunctuation=False
-ShiftSelectFallbackForBrowser=False
-EnableMacro=True
-CapitalizeMacro=True
-RevertMacroOnBackspace=True
-Debug=True
+```bash
+sudo usermod -aG input "$USER"
 ```
 
-Chọn **Cấu hình nâng cao** để mở panel timing và tương thích riêng. Các giá trị trong
-panel này được lưu tại `~/.config/fcitx5/conf/areca-advanced.conf`:
+Nhóm `input` có quyền đọc/ghi thiết bị đầu vào ở mức thấp. Có thể bỏ qua bước
+này nếu không muốn cấp quyền; Areca sẽ dùng backend dự phòng.
 
-```ini
-BackspaceDelayMs=1
-AfterBackspaceWaitMs=10
-WaylandAfterBackspaceWaitMs=3
-XimAfterBackspaceWaitMs=10
-Fcitx4AfterBackspaceWaitMs=10
-DbusAfterBackspaceWaitMs=10
-UinputShiftSelectDelayMs=1
-AfterUinputShiftSelectWaitMs=20
-WaylandAfterUinputShiftSelectWaitMs=20
-XimAfterUinputShiftSelectWaitMs=20
-Fcitx4AfterUinputShiftSelectWaitMs=20
-DbusAfterUinputShiftSelectWaitMs=20
-SurroundingWaitMs=3
-SurroundingDeleteDelayMs=10
-WaylandSurroundingDeleteDelayMs=0
-AfterSurroundingDeleteWaitMs=1
-PostCommitDelayMs=20
-BackspaceRecovery=True
-PreciseTiming=True
-UseSurroundingV2InsteadOfSurroundingV1=False
-UseUinputInsteadOfForwardKey=False
-UseXTestInsteadOfUinput=False
+### Thiết lập Fcitx5
+
+1. Mở `fcitx5-configtool`.
+2. Bỏ chọn **Only Show Current Language** nếu chưa thấy bộ gõ.
+3. Tìm **Areca (Bamboo)** và thêm vào danh sách bên phải.
+4. Chọn Areca từ biểu tượng Fcitx5 hoặc dùng phím tắt chuyển bộ gõ.
+
+Nếu addon chưa xuất hiện, hãy đăng xuất rồi đăng nhập lại. Trên Wayland, cũng
+nên chắc chắn phiên desktop đang dùng Fcitx5 làm input method.
+
+## Xem log
+
+Để có log chi tiết, bật `Debug=True` trong phần cấu hình nâng cao của Areca,
+sau đó khởi động lại Fcitx5:
+
+```bash
+fcitx5 -rd
 ```
 
-| Panel | Tuỳ chọn | Ý nghĩa |
-| --- | --- | --- |
-| Chính | `PresentationMode` | `Rewrite` dùng queue và SurroundingText/forward-Backspace; `Preedit` xử lý đồng bộ bằng Bamboo; `Redirect (EN)` forward nguyên KeyEvent, không gọi Bamboo, queue hay commit text. Rewrite và Preedit có state/engine tách biệt, Redirect không có mutable state. |
-| Chính | `SwitchModeKey` | Hotkey quay vòng `Rewrite → Preedit → Redirect (EN) → Rewrite`, mặc định `Alt+Space`; mode mới được lưu global và hiện bằng popup thông tin của Fcitx5. |
-| Chính | `SelectBackendKey` | Hotkey mở menu chọn nhanh backend xóa phím cho ứng dụng hiện tại, mặc định chưa gán hoặc `Alt+grave`. |
-| Chính | `BambooInputMethod` | Tên input method được định nghĩa bởi Bamboo, mặc định `Telex 2`. |
-| Chính | `OutputCharset` | Bảng mã do Bamboo cung cấp, mặc định `Unicode`; gồm Unicode dựng sẵn/tổ hợp cùng các bảng mã tương thích cũ như TCVN3, VNI Windows, VIQR… |
-| Chính | `SpellcheckMode` | Chế độ kiểm tra cấu trúc âm tiết của Bamboo; có ba mức: `"Không kiểm tra (Tắt)"` – tắt hoàn toàn; `"Khôi phục từ sau khi gõ xong"` – tại word boundary, tự khôi phục từ tiếng Việt không hợp lệ về chuỗi phím Latin ban đầu; `"Khôi phục từ ngay trong lúc gõ"` – như mode 2 nhưng khôi phục trong khi gõ từng ký tự. Mặc định `"Khôi phục từ ngay trong lúc gõ"`. |
-| Chính | `RestoreSurroundingText` | Cho phép nạp lại và sửa từ đã commit ngay trước con trỏ trong mode `Rewrite` và `Preedit`. Đây là tính năng thử nghiệm và mặc định `False`. |
-| Chính | `ModernStyle` | `True` đặt dấu kiểu `hoà`, `thuý`; `False` dùng kiểu `hòa`, `thúy`. |
-| Chính | `AutoCapitalizeAfterPunctuation` | Tự viết hoa chữ ASCII đầu tiên sau `.`, `!`, `?` và khoảng trắng. Nhiều khoảng trắng vẫn giữ trạng thái chờ; `Enter` không kích hoạt. |
-| Chính | `ShiftSelectFallbackForBrowser` | Tự động fallback sang uinput Shift+Left khi trình duyệt không hỗ trợ surrounding text thay vì dùng forward-backspace, mặc định `False`. |
-| Chính | `EnableMacro` | Bật thay thế từ viết tắt tại dấu cách hoặc dấu câu. |
-| Chính | `CapitalizeMacro` | Tự đổi nội dung macro thành chữ thường/toàn chữ hoa theo cách viết key. |
-| Chính | `RevertMacroOnBackspace` | Hoàn tác nội dung macro đã mở rộng về lại key viết tắt gốc khi nhấn Backspace ngay sau đó. |
-| Chính | `Debug` | Bật log chi tiết của addon. |
-| Nâng cao | `BackspaceDelayMs` | Delay giữa hai cặp Backspace press/release được forward. |
-| Nâng cao | `AfterBackspaceWaitMs` | Thời gian chờ sau Backspace cuối cho các frontend khác / chưa xác định, mặc định 10 ms. |
-| Nâng cao | `WaylandAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Wayland, mặc định 3 ms. |
-| Nâng cao | `XimAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend XIM, mặc định 10 ms. |
-| Nâng cao | `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend Fcitx4, mặc định 10 ms. |
-| Nâng cao | `DbusAfterBackspaceWaitMs` | Thời gian chờ riêng sau Backspace cuối cho frontend DBus, mặc định 10 ms. |
-| Nâng cao | `UinputShiftSelectDelayMs` | Delay giữa các phím uinput Shift+Left, mặc định 1 ms. |
-| Nâng cao | `AfterUinputShiftSelectWaitMs` | Chờ sau Shift Up cho frontend khác hoặc chưa xác định, mặc định 20 ms. |
-| Nâng cao | `WaylandAfterUinputShiftSelectWaitMs` | Chờ sau Shift Up trên Wayland, mặc định 20 ms. |
-| Nâng cao | `XimAfterUinputShiftSelectWaitMs` | Chờ sau Shift Up trên XIM, mặc định 20 ms. |
-| Nâng cao | `Fcitx4AfterUinputShiftSelectWaitMs` | Chờ sau Shift Up trên Fcitx4, mặc định 20 ms. |
-| Nâng cao | `DbusAfterUinputShiftSelectWaitMs` | Chờ sau Shift Up trên DBus, mặc định 20 ms. |
-| Nâng cao | `SurroundingWaitMs` | Thời gian chờ sau khi xóa surrounding text trước khi commit text mới, mặc định 3 ms. |
-| Nâng cao | `SurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2, mặc định 10 ms. |
-| Nâng cao | `WaylandSurroundingDeleteDelayMs` | Delay giữa hai lệnh xóa surrounding liên tiếp của v2 cho frontend Wayland, mặc định 0 ms. |
-| Nâng cao | `AfterSurroundingDeleteWaitMs` | Thời gian chờ sau lệnh xóa surrounding cuối trước khi commit của v2, mặc định 1 ms. |
-| Nâng cao | `PostCommitDelayMs` | Settling window độc lập sau mọi text commit. |
-| Nâng cao | `BackspaceRecovery` | Bật khôi phục lỗi chính tả khi nhấn Backspace trong lúc Bamboo còn composition ở cả `Rewrite` và `Preedit`, ví dụ `nhanhsh` + Backspace có thể khôi phục về `nhánh`. Mặc định `True`. |
-| Nâng cao | `PreciseTiming` | Dùng accuracy `1µs` cho timer Backspace và post-commit; nếu tắt sẽ dùng timer coalescing mặc định của event loop. |
-| Nâng cao | `UseSurroundingV2InsteadOfSurroundingV1` | Dùng Surrounding v2 xóa từng ký tự với delay thay cho Surrounding v1 xóa cả đoạn một lần, mặc định `False`. |
-| Nâng cao | `UseUinputInsteadOfForwardKey` | Dùng uinput thay cho forward Backspace khi khả dụng, mặc định `False`. Tương thích ngược với key `ForceUinput` cũ. |
-| Nâng cao | `UseXTestInsteadOfUinput` | Dùng backend Native thay cho uinput: Libei + RemoteDesktop portal trên Wayland, XTest trên X11; tự fallback XTest nếu Libei lỗi. Khi bật cùng `UseUinputInsteadOfForwardKey`, Backspace cũng chuyển sang dùng Native. |
+Theo dõi log Areca theo thời gian thực:
 
-## Cấu hình backend theo ứng dụng (App Overrides)
-
-Người dùng có thể gán cố định backend xóa phím cho từng ứng dụng tại `~/.config/fcitx5/conf/areca-apps.conf` hoặc cấu hình qua tab **Ứng dụng** trong GUI cài đặt `areca-settings`:
-
-```ini
-[AppOverrides/0]
-AppName=google-chrome
-Mode="Surrounding Text"
-
-[AppOverrides/1]
-AppName=soffice.bin
-Mode="Shift select"
+```bash
+journalctl --user -f | grep --line-buffered -i areca
 ```
 
-### Menu chọn nhanh backend bằng phím tắt
-1. Nhấn phím tắt được gán trong `SelectBackendKey` khi đang ở ứng dụng bất kỳ.
-2. Một danh sách ứng cử viên popup xuất hiện gồm 4 lựa chọn:
-   - `1. Tự động`: Sử dụng logic heuristic tự động của Areca.
-   - `2. Surrounding`: Sử dụng surrounding text, tự động fallback nếu app không hỗ trợ.
-   - `3. Shift select`: Bôi đen văn bản bằng Shift+Left. Mặc định dùng thiết bị uinput, nếu bật tuỳ chọn dùng Native thì chuyển sang Native device.
-   - `4. Backspace`: Xoá ký tự bằng Backspace. Tự động dùng uinput hoặc Native theo cấu hình thiết bị.
-3. Nhấn số `1` đến `4` hoặc dùng phím mũi tên và `Enter` để chọn. Lựa chọn được lưu tức thì vào cấu hình ứng dụng.
-4. Trường hợp ứng dụng không trả về program name qua frontend như trên XIM hoặc Wayland text-input, Areca tự động định danh theo mã UUID của context `context-<uuid_hex>` để đảm bảo menu vẫn hoạt động bình thường.
+Xem toàn bộ log Areca từ lần khởi động hiện tại:
 
-Lưu ý: đổi giá trị mặc định trong source không ghi đè file cấu hình đã tồn tại.
-Khi nâng cấp từ bản cũ, Areca tự đọc timing còn nằm trong `areca.conf`;
-nếu `areca-advanced.conf` đã tồn tại thì file mới luôn được ưu tiên. Hãy sửa file
-người dùng hoặc dùng giao diện cấu hình Fcitx5 rồi reload addon.
-Danh sách `BambooInputMethod` và `OutputCharset` trong giao diện được lấy động
-từ `bamboo-core`, không được hard-code trong addon.
-
-## Khôi phục trạng thái từ surrounding text
-
-Checkbox `RestoreSurroundingText` cho phép tiếp tục sửa từ đã được ứng dụng
-commit, tương tự cơ chế surrounding text của UniKey. Khi bật, Areca nạp lại từ
-tiếng Việt Unicode dựng sẵn ngay trước con trỏ; phím dấu tiếp theo có thể đổi
-`tưởng` + `s` thành `tướng`. Trong `Rewrite`, thay đổi đi qua scheduler và
-rewrite backend hiện có. Trong `Preedit`, Areca xóa bản đã commit rồi chuyển cả
-từ vào composition để không hiển thị trùng; từ được commit lại khi preedit kết
-thúc. Khi tắt, Areca không đọc lại hoặc sửa từ cũ.
-
-Areca chỉ thử khôi phục một lần sau khi frontend cập nhật surrounding text và
-chỉ khi đang dùng bảng mã `Unicode`, con trỏ không có selection và field không
-phải password; riêng `Rewrite` còn yêu cầu queue đang rảnh. Bridge dựng lại
-state Bamboo bằng kiểu gõ hiện tại trong một engine tạm, rồi chỉ nhận kết quả
-nếu chuỗi render khớp chính xác văn bản trên màn hình. UTF-8 lỗi, Unicode dấu
-tổ hợp, từ dài quá 16 ký tự hoặc ứng dụng không quảng bá `SurroundingText` đều
-bị bỏ qua. Tính năng mặc định tắt vì chất lượng snapshot và thao tác xóa
-surrounding text phụ thuộc frontend.
-
-Trong `Preedit`, `từ + word boundary` vẫn được commit ngay để không tạo độ trễ
-khi gõ. Adapter giữ snapshot của từ vừa hoàn tất và đếm các boundary theo sau.
-Backspace đi ngược từng Space; khi chạm snapshot, Areca xóa boundary cuối cùng
-cùng từ đã commit rồi đưa riêng từ trở lại preedit để phím dấu tiếp theo có thể
-sửa nó. Việc kéo từ chỉ diễn ra khi app hỗ trợ `SurroundingText` và snapshot
-khớp chính xác; nếu không, Areca để app xử lý Backspace bình thường. Hành vi này
-độc lập với checkbox `RestoreSurroundingText`.
-
-## Macro
-
-Mở cấu hình Areca trong `fcitx5-configtool`, chọn **Chỉnh sửa macro** rồi thêm
-các cặp `Từ viết tắt → Nội dung thay thế`. Macro được lookup không phân biệt
-hoa/thường và chỉ expand khi gặp word boundary, nên key vẫn có thể được gõ như
-một phần của từ dài hơn.
-
-Ví dụ với macro `tv → tiếng việt` và `CapitalizeMacro=True`:
-
-```text
-tv<Space>  → tiếng việt␠
-TV<Space>  → TIẾNG VIỆT␠
-Tv<Space>  → Tiếng Việt␠
+```bash
+journalctl --user -b --no-pager | grep -i areca
 ```
 
-Ví dụ với macro `bt → Be There` và `CapitalizeMacro=True`:
+Khi kiểm tra lỗi `uinput`, lọc các dòng liên quan bằng:
 
-```text
-bt<Space>  → be there␠
-BT<Space>  → BE THERE␠
-Bt<Space>  → Be There␠
+```bash
+journalctl --user -b --no-pager | grep -Ei 'areca.*(uinput|backend|failed|timeout)'
 ```
 
-Nếu nhấn Backspace ngay sau khi macro mở rộng và `RevertMacroOnBackspace=True`, Areca hoàn tác nội dung mở rộng
-về lại key viết tắt gốc kèm boundary thay vì xóa từng ký tự.
+Nếu Fcitx5 không ghi vào user journal, có thể chạy trực tiếp để xem log trong
+terminal:
 
-Expansion chạy trước spell-check, được encode theo `OutputCharset`, sau đó đi
-qua cùng scheduler và rewrite backend như kết quả Bamboo bình thường. Dữ liệu
-được lưu tại `~/.config/fcitx5/conf/areca-macro-table.conf`.
+```bash
+fcitx5 -rd
+```
 
-Areca giữ lại composition Bamboo của từ vừa chốt. Vì vậy sau khi Backspace qua
-dấu cách hoặc dấu câu, có thể tiếp tục sửa dấu hay xoá từ vừa gõ thay vì Bamboo
-coi đó là một từ hoàn toàn mới.
+Hướng dẫn phân tích từng backend nằm trong [tài liệu debug](docs/DEBUGGING.md).
 
-## Redirect (EN)
+## Website và tài liệu
 
-`Redirect (EN)` là mode global do người dùng tự chọn. Ở mode này press event
-được forward nguyên bản như password field; release event không bị filter. Không
-có text nào đi qua Bamboo, queue, timer, SurroundingText hoặc rewrite backend.
+- [Website giới thiệu Areca](https://xhkzeroone.github.io/ArecaIME/)
+- [Kiến trúc trực quan](https://xhkzeroone.github.io/ArecaIME/architecture.html)
+- [Tài liệu kiến trúc](docs/ARCHITECTURE.md)
+- [Đặc tả kỹ thuật](docs/ARECA_ARCHITECTURE_SPECIFICATION.md)
+- [Hướng dẫn debug](docs/DEBUGGING.md)
 
-Areca không tự đổi mode theo ứng dụng.
+## Star History
 
-## Trạng thái và giới hạn hiện tại
+[![Biểu đồ Star History](https://api.star-history.com/svg?repos=xhkzeroone/ArecaIME&type=Date)](https://star-history.com/#xhkzeroone/ArecaIME&Date)
 
-- `Rewrite` và `Preedit` là hai presentation mode độc lập. `Redirect` không giữ
-  state. Đổi mode sẽ hủy queue và composition cũ trước khi mode mới nhận phím.
-- Reliability là heuristic một lần cho mỗi input context, không phải chứng minh
-  tuyệt đối rằng mọi snapshot tương lai đều đúng.
-- Khả năng chuyển `forwardKey()` tới ứng dụng vẫn phụ thuộc frontend/compositor.
-- Native addon `.so` không hot reload. File mới có thể đã cài nhưng process
-  Fcitx hiện tại vẫn map inode cũ trong RAM.
+## Contributors
 
-## Tài liệu
+Xin cảm ơn những người đã đóng góp trực tiếp cho Areca:
 
-- [Kiến trúc & luồng hoạt động (Tổng quan)](docs/ARCHITECTURE.md)
-- [Đặc tả kiến trúc & Sơ đồ Sequence](docs/ARECA_ARCHITECTURE_SPECIFICATION.md)
-- [Bản vẽ kiến trúc HTML tương tác](website/architecture.html)
-- [Cài đặt, reload và debug](docs/DEBUGGING.md)
+[![Contributors](https://contrib.rocks/image?repo=xhkzeroone/ArecaIME)](https://github.com/xhkzeroone/ArecaIME/graphs/contributors)
 
-## 🌴 Tác giả & Đồng hành
+Xin chân thành cảm ơn các anh, chị, em trong cộng đồng đã dành thời gian trải
+nghiệm Areca, báo lỗi, gửi log và chia sẻ những ý tưởng quý báu. Mỗi phản hồi
+đều là một đóng góp thiết thực, giúp Areca ngày càng ổn định và hoạt động tốt
+hơn trên nhiều ứng dụng, môi trường desktop và bản phân phối Linux.
 
-- **Kim Xuân Hồng** ([@kimxuanhong](https://github.com/kimxuanhong) / [@xhkzeroone](https://github.com/xhkzeroone)) — *Tác giả & Khởi tạo dự án*
+Areca được xây dựng trên nền tảng
+[Bamboo Engine / bamboo-core](https://github.com/BambooEngine/bamboo-core),
+thư viện xử lý tiếng Việt do **Lương Thành Lâm** phát triển và chia sẻ với cộng
+đồng dưới giấy phép MIT. Dự án xin gửi lời cảm ơn chân thành đến anh vì đã tạo
+ra một nền tảng vững chắc, giúp Areca có thể tập trung hoàn thiện trải nghiệm
+gõ tiếng Việt trên Fcitx5 và Wayland.
 
-<a href="https://github.com/xhkzeroone/ArecaIME/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=xhkzeroone/ArecaIME" alt="Areca IME Contributors" />
-</a>
+Areca cũng trân trọng ghi nhận những công trình đặt nền móng cho Bamboo Engine:
+**Trung Ngo**, tác giả `bogo.js`, và **Trần Kỳ Nam**, tác giả `GoTiengViet`.
+Những đóng góp của các tác giả đã giúp hệ sinh thái bộ gõ tiếng Việt nguồn mở
+ngày càng phong phú và tạo điều kiện để các dự án như Areca tiếp tục phát triển.
 
-Mọi đóng góp báo lỗi hoặc gửi Pull Request đều được hoan nghênh. Xem hướng dẫn tại [CONTRIBUTING.md](CONTRIBUTING.md).
+Mã nguồn cùng thông tin giấy phép nguyên bản của Bamboo được giữ nguyên trong
+submodule [`bamboo/bamboo-core`](bamboo/bamboo-core) để thể hiện đầy đủ nguồn
+gốc và sự ghi nhận đối với các tác giả.
 
-## License
+Xin cảm ơn các dự án bộ gõ tiếng Việt cho Fcitx5 đã cung cấp nhiều ý tưởng và
+nguồn tham khảo hữu ích trong quá trình phát triển Areca:
 
-Areca được phát hành theo giấy phép [MIT](LICENSE). `bamboo-core` là một dự án
-độc lập và giữ license/copyright riêng tại
-[`bamboo/bamboo-core/LICENSE`](bamboo/bamboo-core/LICENSE).
+- [VMK — Vietnamese Micro Key](https://github.com/thanhpy2009/VMK)
+- [Fcitx5 Lotus](https://github.com/LotusInputMethod/fcitx5-lotus)
+- [SKey / fcitx5-skey](https://github.com/collyn/skey)
