@@ -8,8 +8,11 @@ namespace areca {
 class UinputDevice {
 public:
   using DebugProvider = std::function<bool()>;
+  using UnavailableCallback = std::function<void()>;
 
-  explicit UinputDevice(DebugProvider debugProvider);
+  explicit UinputDevice(
+      DebugProvider debugProvider,
+      UnavailableCallback unavailableCallback = {});
   ~UinputDevice();
 
   bool isAvailable();
@@ -19,6 +22,7 @@ public:
 
 private:
   DebugProvider debugProvider_;
+  UnavailableCallback unavailableCallback_;
   int uinputFd_ = -1;
   bool deviceInitialized_ = false;
 };

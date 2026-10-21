@@ -11,8 +11,11 @@
 
 namespace areca {
 
-UinputDevice::UinputDevice(DebugProvider debugProvider)
-    : debugProvider_(std::move(debugProvider)) {}
+UinputDevice::UinputDevice(
+    DebugProvider debugProvider,
+    UnavailableCallback unavailableCallback)
+    : debugProvider_(std::move(debugProvider)),
+      unavailableCallback_(std::move(unavailableCallback)) {}
 
 UinputDevice::~UinputDevice() { closeDevice(); }
 
@@ -20,6 +23,9 @@ bool UinputDevice::isAvailable() { return ensureDevice(); }
 
 bool UinputDevice::ensureDevice() {
   if (deviceInitialized_) {
+    if (uinputFd_ < 0 && unavailableCallback_) {
+      unavailableCallback_();
+    }
     return uinputFd_ >= 0;
   }
   deviceInitialized_ = true;
@@ -32,6 +38,9 @@ bool UinputDevice::ensureDevice() {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput failed to open /dev/uinput";
     }
+    if (unavailableCallback_) {
+      unavailableCallback_();
+    }
     return false;
   }
 
@@ -41,6 +50,9 @@ bool UinputDevice::ensureDevice() {
       ioctl(uinputFd_, UI_SET_KEYBIT, KEY_BACKSPACE) < 0 ||
       ioctl(uinputFd_, UI_SET_EVBIT, EV_SYN) < 0) {
     closeDevice();
+    if (unavailableCallback_) {
+      unavailableCallback_();
+    }
     return false;
   }
 
@@ -65,6 +77,9 @@ bool UinputDevice::ensureDevice() {
     if (write(uinputFd_, &udev, sizeof(udev)) < 0 ||
         ioctl(uinputFd_, UI_DEV_CREATE) < 0) {
       closeDevice();
+      if (unavailableCallback_) {
+        unavailableCallback_();
+      }
       return false;
     }
 #ifdef UI_DEV_SETUP

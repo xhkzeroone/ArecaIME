@@ -8,6 +8,7 @@ include(CTest)
 find_package(Fcitx5Core REQUIRED)
 find_package(Fcitx5Config REQUIRED)
 find_package(Fcitx5Utils REQUIRED)
+find_package(Fcitx5ModuleNotifications REQUIRED)
 find_program(GO_EXECUTABLE go REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DBUS REQUIRED dbus-1)
@@ -107,6 +108,7 @@ target_link_libraries(areca PRIVATE
     Fcitx5::Core
     Fcitx5::Config
     Fcitx5::Utils
+    Fcitx5::Module::Notifications
     ${DBUS_LIBRARIES}
     PkgConfig::X11_CLIENT
     PkgConfig::XTEST

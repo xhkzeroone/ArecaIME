@@ -108,6 +108,7 @@ private:
                                        const char *eventName);
   bool backendVerdictProtected(fcitx::InputContext &inputContext) const;
   bool backspaceRecoveryEnabled() const;
+  void notifyUinputUnavailable();
   void scheduleDeviceWarmup();
   void applyConfig();
   std::vector<MacroDefinition> macroDefinitions() const;

@@ -8,3 +8,6 @@ Library=areca
 Type=SharedLibrary
 OnDemand=True
 Configurable=True
+
+[Addon/OptionalDependencies]
+0=notifications

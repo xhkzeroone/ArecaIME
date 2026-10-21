@@ -26,6 +26,7 @@
 #include <fcitx/statusarea.h>
 #include <fcitx/surroundingtext.h>
 #include <fcitx/userinterfacemanager.h>
+#include <notifications_public.h>
 
 #include "browser_autocomplete.h"
 #include "program_compatibility.h"
@@ -143,7 +144,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           &adaptiveWait_),
       forwardBackspaceBackend_(instance_->eventLoop(), adaptiveWait_,
                                [this]() { return debugEnabled(); }),
-      uinputDevice_([this]() { return debugEnabled(); }),
+      uinputDevice_([this]() { return debugEnabled(); },
+                    [this]() { notifyUinputUnavailable(); }),
       uinputBackspaceBackend_(instance_->eventLoop(), uinputDevice_,
                               adaptiveWait_,
                               [this]() { return debugEnabled(); }),
@@ -758,6 +760,21 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
 
 bool ArecaEngine::backspaceRecoveryEnabled() const {
   return config_.backspaceRecovery.value();
+}
+
+void ArecaEngine::notifyUinputUnavailable() {
+  auto *notifications = instance_->addonManager().addon("notifications", true);
+  if (!notifications) {
+    FCITX_WARN() << "areca: cannot show uinput permission notification: "
+                    "notifications addon is unavailable";
+    return;
+  }
+  notifications->call<fcitx::INotifications::sendNotification>(
+      "Areca", 0, "fcitx-areca", "Areca không thể khởi tạo uinput",
+      "Hãy kiểm tra quyền truy cập /dev/uinput và bảo đảm module uinput đã "
+      "được bật, sau đó khởi động lại Fcitx5.",
+      std::vector<std::string>{}, 15000, fcitx::NotificationActionCallback{},
+      fcitx::NotificationClosedCallback{});
 }
 
 void ArecaEngine::scheduleDeviceWarmup() {
