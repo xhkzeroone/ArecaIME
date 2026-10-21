@@ -65,7 +65,6 @@ std::string icUuidToHex(const fcitx::ICUUID &uuid) {
 
 constexpr const char *kMacroConfigPath = "conf/areca-macro-table.conf";
 constexpr const char *kAppsConfigPath = "conf/areca-apps.conf";
-constexpr const char *kAppTimingsConfigPath = "conf/areca-app-timings.conf";
 constexpr const char *kAdvancedConfigPath = "conf/areca-advanced.conf";
 #if defined(ARECA_HAS_STANDARD_PATHS)
 constexpr auto kPkgConfigPath = fcitx::StandardPathsType::PkgConfig;
@@ -1005,46 +1004,15 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
 
   if (it != overrides.end()) {
     it->mode.setValue(mode);
+    const char *frontend = inputContext.frontend();
+    it->frontend.setValue(frontend ? frontend : "");
   } else {
     AppBackendOverrideEntry entry;
     entry.appName.setValue(appName);
+    const char *frontend = inputContext.frontend();
+    entry.frontend.setValue(frontend ? frontend : "");
     entry.mode.setValue(mode);
     overrides.push_back(std::move(entry));
-  }
-
-  auto &timingOverrides = *appTimingProfiles_.appTimings.mutableValue();
-  const auto timingIt =
-      std::find_if(timingOverrides.begin(), timingOverrides.end(),
-                   [&appName](const AppTimingOverrideEntry &entry) {
-                     return entry.appName.value() == appName;
-                   });
-  if (timingIt == timingOverrides.end()) {
-    const SchedulerTiming defaults = timing(inputContext);
-    const char *frontend = inputContext.frontend();
-    AppTimingOverrideEntry entry;
-    entry.appName.setValue(appName);
-    entry.frontend.setValue(frontend ? frontend : "");
-    entry.backspaceDelayMs.setValue(
-        static_cast<int>(defaults.backspaceDelayMs));
-    entry.afterBackspaceWaitMs.setValue(
-        static_cast<int>(resolveAfterBackspaceWaitMs(frontend, defaults)));
-    entry.uinputShiftSelectDelayMs.setValue(
-        static_cast<int>(defaults.uinputShiftSelectDelayMs));
-    entry.afterUinputShiftSelectWaitMs.setValue(static_cast<int>(
-        resolveAfterUinputShiftSelectWaitMs(frontend, defaults)));
-    entry.surroundingWaitMs.setValue(
-        static_cast<int>(defaults.surroundingWaitMs));
-    entry.surroundingDeleteDelayMs.setValue(
-        static_cast<int>(resolveSurroundingDeleteDelayMs(frontend, defaults)));
-    entry.afterSurroundingDeleteWaitMs.setValue(
-        static_cast<int>(defaults.afterSurroundingDeleteWaitMs));
-    entry.xtestBackspaceDelayMs.setValue(
-        static_cast<int>(defaults.xtestBackspaceDelayMs));
-    entry.afterXTestBackspaceWaitMs.setValue(
-        static_cast<int>(resolveAfterXTestBackspaceWaitMs(frontend, defaults)));
-    entry.postCommitDelayMs.setValue(
-        static_cast<int>(defaults.postCommitDelayMs));
-    timingOverrides.push_back(std::move(entry));
   }
 
   applyConfig();
@@ -1376,9 +1344,6 @@ ArecaEngine::getSubConfig(const std::string &path) const {
   if (path == "apps") {
     return &appProfiles_;
   }
-  if (path == "app-timings") {
-    return &appTimingProfiles_;
-  }
   if (path == "advanced") {
     return &advancedConfig_;
   }
@@ -1408,13 +1373,6 @@ void ArecaEngine::setSubConfig(const std::string &path,
     applyConfig();
     return;
   }
-  if (path == "app-timings") {
-    appTimingProfiles_.load(config, true);
-    fcitx::safeSaveAsIni(appTimingProfiles_, kPkgConfigPath,
-                         kAppTimingsConfigPath);
-    applyConfig();
-    return;
-  }
   if (path != "macro") {
     return;
   }
@@ -1437,7 +1395,6 @@ void ArecaEngine::reloadConfig() {
   fcitx::readAsIni(advancedConfig_, kPkgConfigPath, kAdvancedConfigPath);
   fcitx::readAsIni(macroTable_, kPkgConfigPath, kMacroConfigPath);
   fcitx::readAsIni(appProfiles_, kPkgConfigPath, kAppsConfigPath);
-  fcitx::readAsIni(appTimingProfiles_, kPkgConfigPath, kAppTimingsConfigPath);
   ++macroRevision_;
   applyConfig();
   if (inputMethodAction_) {
@@ -1449,8 +1406,6 @@ void ArecaEngine::save() {
   fcitx::safeSaveAsIni(config_, kPkgConfigPath, "conf/areca.conf");
   fcitx::safeSaveAsIni(macroTable_, kPkgConfigPath, kMacroConfigPath);
   fcitx::safeSaveAsIni(appProfiles_, kPkgConfigPath, kAppsConfigPath);
-  fcitx::safeSaveAsIni(appTimingProfiles_, kPkgConfigPath,
-                       kAppTimingsConfigPath);
   fcitx::safeSaveAsIni(advancedConfig_, kPkgConfigPath, kAdvancedConfigPath);
 }
 
@@ -1466,8 +1421,8 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
   return result;
 }
 
-SchedulerTiming ArecaEngine::timing(fcitx::InputContext &inputContext) {
-  SchedulerTiming result{
+SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
+  return SchedulerTiming{
       static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
       static_cast<uint32_t>(advancedConfig_.uinputBackspaceAckTimeoutMs.value()),
       static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
@@ -1513,69 +1468,6 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &inputContext) {
           advancedConfig_.ibusAfterXTestBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};
-
-  auto *state = inputContext.propertyFor(&rewriteStateFactory_);
-  const std::string program = resolveProgram(inputContext, state);
-  const auto &entries = appTimingProfiles_.appTimings.value();
-  const auto entry = std::find_if(
-      entries.begin(), entries.end(), [&program](const auto &candidate) {
-        return !program.empty() && candidate.appName.value() == program;
-      });
-  if (entry == entries.end()) {
-    return result;
-  }
-
-  const auto overrideValue = [](int configured, uint32_t &target) {
-    if (configured >= 0) {
-      target = static_cast<uint32_t>(configured);
-    }
-  };
-  overrideValue(entry->backspaceDelayMs.value(), result.backspaceDelayMs);
-  if (entry->afterBackspaceWaitMs.value() >= 0) {
-    const auto value =
-        static_cast<uint32_t>(entry->afterBackspaceWaitMs.value());
-    result.afterBackspaceWaitMs = value;
-    result.waylandAfterBackspaceWaitMs = value;
-    result.ximAfterBackspaceWaitMs = value;
-    result.fcitx4AfterBackspaceWaitMs = value;
-    result.dbusAfterBackspaceWaitMs = value;
-    result.ibusAfterBackspaceWaitMs = value;
-  }
-  overrideValue(entry->uinputShiftSelectDelayMs.value(),
-                result.uinputShiftSelectDelayMs);
-  if (entry->afterUinputShiftSelectWaitMs.value() >= 0) {
-    const auto value =
-        static_cast<uint32_t>(entry->afterUinputShiftSelectWaitMs.value());
-    result.afterUinputShiftSelectWaitMs = value;
-    result.waylandAfterUinputShiftSelectWaitMs = value;
-    result.ximAfterUinputShiftSelectWaitMs = value;
-    result.fcitx4AfterUinputShiftSelectWaitMs = value;
-    result.dbusAfterUinputShiftSelectWaitMs = value;
-    result.ibusAfterUinputShiftSelectWaitMs = value;
-  }
-  overrideValue(entry->surroundingWaitMs.value(), result.surroundingWaitMs);
-  if (entry->surroundingDeleteDelayMs.value() >= 0) {
-    const auto value =
-        static_cast<uint32_t>(entry->surroundingDeleteDelayMs.value());
-    result.surroundingDeleteDelayMs = value;
-    result.waylandSurroundingDeleteDelayMs = value;
-  }
-  overrideValue(entry->afterSurroundingDeleteWaitMs.value(),
-                result.afterSurroundingDeleteWaitMs);
-  overrideValue(entry->xtestBackspaceDelayMs.value(),
-                result.xtestBackspaceDelayMs);
-  if (entry->afterXTestBackspaceWaitMs.value() >= 0) {
-    const auto value =
-        static_cast<uint32_t>(entry->afterXTestBackspaceWaitMs.value());
-    result.afterXTestBackspaceWaitMs = value;
-    result.waylandAfterXTestBackspaceWaitMs = value;
-    result.ximAfterXTestBackspaceWaitMs = value;
-    result.fcitx4AfterXTestBackspaceWaitMs = value;
-    result.dbusAfterXTestBackspaceWaitMs = value;
-    result.ibusAfterXTestBackspaceWaitMs = value;
-  }
-  overrideValue(entry->postCommitDelayMs.value(), result.postCommitDelayMs);
-  return result;
 }
 
 void ArecaEngine::rebuildAppBackendOverridesMap() {

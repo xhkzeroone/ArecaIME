@@ -18,7 +18,6 @@ namespace areca::settings {
         constexpr const char* kMainConfigPath = "conf/areca.conf";
         constexpr const char* kMacroConfigPath = "conf/areca-macro-table.conf";
         constexpr const char* kAppsConfigPath = "conf/areca-apps.conf";
-        constexpr const char* kAppTimingsConfigPath = "conf/areca-app-timings.conf";
         constexpr const char* kAdvancedConfigPath = "conf/areca-advanced.conf";
     } // namespace
 
@@ -32,14 +31,12 @@ namespace areca::settings {
         fcitx::readAsIni(advanced, kPkgConfigPath, kAdvancedConfigPath);
         fcitx::readAsIni(macros, kPkgConfigPath, kMacroConfigPath);
         fcitx::readAsIni(apps, kPkgConfigPath, kAppsConfigPath);
-        fcitx::readAsIni(appTimings, kPkgConfigPath, kAppTimingsConfigPath);
     }
 
     void ConfigStore::save() const {
         fcitx::safeSaveAsIni(main, kPkgConfigPath, kMainConfigPath);
         fcitx::safeSaveAsIni(macros, kPkgConfigPath, kMacroConfigPath);
         fcitx::safeSaveAsIni(apps, kPkgConfigPath, kAppsConfigPath);
-        fcitx::safeSaveAsIni(appTimings, kPkgConfigPath, kAppTimingsConfigPath);
         fcitx::safeSaveAsIni(advanced, kPkgConfigPath, kAdvancedConfigPath);
     }
 

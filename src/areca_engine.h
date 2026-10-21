@@ -135,7 +135,6 @@ private:
   AdvancedConfig advancedConfig_;
   MacroTableConfig macroTable_;
   AppProfilesConfig appProfiles_;
-  AppTimingProfilesConfig appTimingProfiles_;
   uint64_t macroRevision_ = 1;
   std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
