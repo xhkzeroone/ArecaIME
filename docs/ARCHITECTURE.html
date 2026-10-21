@@ -4151,7 +4151,7 @@ Wayland và Fcitx5.</p>
 </tr>
 <tr>
 <td><code>UinputShiftSelectBackend</code></td>
-<td>Gửi <code>Shift down</code> và <code>Left</code> × N+1 qua <code>/dev/uinput</code>; Fcitx forward N lần đầu, lọc lần xác nhận cuối, gửi <code>Shift up</code>, chờ mặc định 20 ms rồi commit.</td>
+<td>Gửi <code>Shift down</code> và <code>Left</code> × N+1 qua <code>/dev/uinput</code>; Fcitx forward N lần đầu, lọc lần xác nhận cuối, gửi <code>Shift up</code>, chờ 5 ms trên Wayland hoặc 10 ms trên frontend khác rồi commit.</td>
 </tr>
 <tr>
 <td><code>UinputKeyAckTracker</code></td>
@@ -4425,7 +4425,7 @@ frontend, vì không đủ dữ liệu để ép an toàn.</li>
         B-&gt;&gt;B: clear left tracker
     end
     B-&gt;&gt;DEV: sendKeyEvent(KEY_LEFTSHIFT, 0) (Shift UP)
-    B-&gt;&gt;EL: addTimeEvent(AfterSelectWaitMs = 20ms mặc định)
+    B-&gt;&gt;EL: addTimeEvent(AfterSelectWaitMs = 5ms Wayland / 10ms frontend khác)
     
     EL--&gt;&gt;B: Timer callback (Settling wait hoàn tất)
     

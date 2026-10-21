@@ -174,12 +174,12 @@ int main() {
   assert(plan.afterSurroundingDeleteWaitMs == 1);
   assert(plan.dbusAfterBackspaceWaitMs == 10);
   assert(plan.ibusAfterBackspaceWaitMs == 10);
-  assert(plan.afterUinputShiftSelectWaitMs == 20);
-  assert(plan.waylandAfterUinputShiftSelectWaitMs == 20);
-  assert(plan.ximAfterUinputShiftSelectWaitMs == 20);
-  assert(plan.fcitx4AfterUinputShiftSelectWaitMs == 20);
-  assert(plan.dbusAfterUinputShiftSelectWaitMs == 20);
-  assert(plan.ibusAfterUinputShiftSelectWaitMs == 20);
+  assert(plan.afterUinputShiftSelectWaitMs == 10);
+  assert(plan.waylandAfterUinputShiftSelectWaitMs == 5);
+  assert(plan.ximAfterUinputShiftSelectWaitMs == 10);
+  assert(plan.fcitx4AfterUinputShiftSelectWaitMs == 10);
+  assert(plan.dbusAfterUinputShiftSelectWaitMs == 10);
+  assert(plan.ibusAfterUinputShiftSelectWaitMs == 10);
   plan.afterBackspaceWaitMs = 10;
   plan.waylandAfterBackspaceWaitMs = 3;
   plan.ximAfterBackspaceWaitMs = 10;

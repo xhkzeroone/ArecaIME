@@ -372,7 +372,7 @@ sequenceDiagram
         B->>B: clear left tracker
     end
     B->>DEV: sendKeyEvent(KEY_LEFTSHIFT, 0) (Shift UP)
-    B->>EL: addTimeEvent(AfterSelectWaitMs = 20ms mặc định)
+    B->>EL: addTimeEvent(AfterSelectWaitMs = 5ms Wayland / 10ms frontend khác)
     
     EL-->>B: Timer callback (Settling wait hoàn tất)
     

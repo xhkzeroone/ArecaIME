@@ -116,7 +116,7 @@ Khi log có `rewrite select backend=uinput-shift-select`, kiểm tra:
 1. `select_left=N` phải đi cùng `emit_left=N+1`.
 2. Các dòng `left press` từ `seen=1` tới `seen=N` phải có `action=forward`.
 3. Dòng `seen=N+1` phải có `action=filter`, sau đó backend mới Shift Up và
-   chờ mặc định 20 ms trước commit.
+   chờ 5 ms trên Wayland hoặc 10 ms trên frontend khác trước commit.
 4. Nếu có `left ack timeout`, tín hiệu N+1 không quay lại trong 20 ms; backend
    đã hủy tracker và thả Shift bằng đường timeout.
 
