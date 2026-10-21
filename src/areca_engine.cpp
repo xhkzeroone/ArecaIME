@@ -26,9 +26,8 @@
 #include <fcitx/statusarea.h>
 #include <fcitx/surroundingtext.h>
 #include <fcitx/userinterfacemanager.h>
-#include <notifications_public.h>
-
 #include "browser_autocomplete.h"
+#include "fcitx_notifications_compat.h"
 #include "program_compatibility.h"
 
 #include "mouse_click_tracker.h"
