@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
+#include <utility>
 
 namespace areca {
 
@@ -21,6 +23,8 @@ public:
     pressesSeen_ = 0;
     releasesSeen_ = 0;
     completionSignaled_ = false;
+    pressActions_.clear();
+    releaseActions_.clear();
   }
 
   void clear() {
@@ -29,6 +33,8 @@ public:
     pressesSeen_ = 0;
     releasesSeen_ = 0;
     completionSignaled_ = false;
+    pressActions_.clear();
+    releaseActions_.clear();
   }
 
   PressAction observePress() {
@@ -52,6 +58,39 @@ public:
     return releasesSeen_ > forwardedPresses_;
   }
 
+  // GTK có thể xử lý lại event chưa được IM nhận. Không tính lượt gửi lại
+  // thành phím xác nhận. Timestamp 0 không đủ để nhận diện event.
+  PressAction observePress(uint32_t time, uint32_t code, bool repeat) {
+    if (!time || !code) {
+      return observePress();
+    }
+    const auto id = std::make_pair(time, code);
+    if (repeat) {
+      if (auto it = pressActions_.find(id); it != pressActions_.end()) {
+        return it->second == PressAction::Forward ? PressAction::Forward
+                                                 : PressAction::Filter;
+      }
+    }
+    const auto action = observePress();
+    pressActions_[id] = action;
+    // Hai phím thật có thể cùng timestamp do độ phân giải mili giây.
+    releaseActions_.erase(id);
+    return action;
+  }
+
+  bool shouldFilterRelease(uint32_t time, uint32_t code) {
+    if (!time || !code) {
+      return shouldFilterRelease();
+    }
+    const auto id = std::make_pair(time, code);
+    if (auto it = releaseActions_.find(id); it != releaseActions_.end()) {
+      return it->second;
+    }
+    const bool filter = shouldFilterRelease();
+    releaseActions_[id] = filter;
+    return filter;
+  }
+
   uint32_t expectedPresses() const { return expectedPresses_; }
   uint32_t pressesSeen() const { return pressesSeen_; }
   uint32_t releasesSeen() const { return releasesSeen_; }
@@ -62,6 +101,8 @@ private:
   uint32_t pressesSeen_ = 0;
   uint32_t releasesSeen_ = 0;
   bool completionSignaled_ = false;
+  std::map<std::pair<uint32_t, uint32_t>, PressAction> pressActions_;
+  std::map<std::pair<uint32_t, uint32_t>, bool> releaseActions_;
 };
 
 } // namespace areca

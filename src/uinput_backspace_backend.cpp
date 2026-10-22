@@ -1,6 +1,7 @@
 #include "uinput_backspace_backend.h"
 
 #include <linux/input.h>
+#include <string_view>
 #include <utility>
 
 #include <fcitx-utils/log.h>
@@ -118,10 +119,18 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
     return false;
   }
 
+  const char *frontend = event.inputContext()->frontend();
+  const bool dbus = frontend && std::string_view(frontend) == "dbus";
+  const auto time = dbus ? static_cast<uint32_t>(event.time()) : 0;
+  const auto code = event.rawKey().code();
+
   if (event.isRelease()) {
-    const bool filter = backspaceTracker_.shouldFilterRelease();
+    const bool filter = backspaceTracker_.shouldFilterRelease(time, code);
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-backspace release tx=" << transactionId_
+                   << " event_time=" << event.time()
+                   << " keycode=" << event.rawKey().code()
+                   << " states=" << event.rawKey().states().toInteger()
                    << " seen=" << backspaceTracker_.releasesSeen()
                    << " expected=" << backspaceTracker_.expectedPresses()
                    << " action=" << (filter ? "filter" : "forward");
@@ -134,10 +143,15 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
     return true;
   }
 
-  const auto action = backspaceTracker_.observePress();
+  const bool repeat = event.rawKey().states().test(fcitx::KeyState::Repeat) ||
+                      event.key().states().test(fcitx::KeyState::Repeat);
+  const auto action = backspaceTracker_.observePress(time, code, repeat);
   const bool forward = action == UinputKeyAckTracker::PressAction::Forward;
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-backspace press tx=" << transactionId_
+                 << " event_time=" << event.time()
+                 << " keycode=" << event.rawKey().code()
+                 << " states=" << event.rawKey().states().toInteger()
                  << " seen=" << backspaceTracker_.pressesSeen()
                  << " expected=" << backspaceTracker_.expectedPresses()
                  << " action=" << (forward ? "forward" : "filter");
