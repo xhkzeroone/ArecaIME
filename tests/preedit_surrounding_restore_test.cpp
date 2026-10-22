@@ -14,11 +14,13 @@ namespace {
 
 class TestInputContext final : public fcitx::InputContext {
 public:
-  explicit TestInputContext(fcitx::InputContextManager &manager)
-      : fcitx::InputContext(manager, "org.gnome.TextEditor") {}
+  explicit TestInputContext(fcitx::InputContextManager &manager,
+                            const char *frontend = "wayland")
+      : fcitx::InputContext(manager, "org.gnome.TextEditor"),
+        frontend_(frontend) {}
   ~TestInputContext() override { destroy(); }
 
-  const char *frontend() const override { return "wayland"; }
+  const char *frontend() const override { return frontend_; }
 
   void commitStringImpl(const std::string &text) override {
     commits.push_back(text);
@@ -40,6 +42,9 @@ public:
   std::vector<std::string> commits;
   std::vector<DeleteCall> deletes;
   std::vector<bool> forwardedBackspaces;
+
+private:
+  const char *frontend_;
 };
 
 } // namespace
@@ -326,6 +331,54 @@ int main() {
   assert(recoveryRepeatContext.propertyFor(&factory)->composing.empty());
   assert(recoveryRepeatContext.propertyFor(&factory)
              ->engine->currentText().empty());
+
+  // IBus không gắn Repeat: nhấn giữ hủy khôi phục từ đã commit.
+  {
+    TestInputContext ibusContext(manager, "ibus");
+    handler.activate(ibusContext);
+    auto *ibusState = ibusContext.propertyFor(&factory);
+    for (const char key : std::string("as ")) {
+      fcitx::KeyEvent typed(
+          &ibusContext, fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
+      handler.handleKeyEvent(typed);
+    }
+    const auto erasuresBefore = requestedBackspaces;
+    fcitx::KeyEvent press(&ibusContext, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(press);
+    assert(press.accepted());
+    for (int i = 0; i < 3; ++i) {
+      fcitx::KeyEvent repeat(&ibusContext, fcitx::Key(FcitxKey_BackSpace));
+      handler.handleKeyEvent(repeat);
+      assert(!repeat.accepted());
+      assert(ibusState->composing.empty());
+      assert(ibusState->engine->currentText().empty());
+      assert(ibusState->finalizedWordRecovery ==
+             areca::FinalizedWordRecoveryState::Idle);
+    }
+    fcitx::KeyEvent release(&ibusContext, fcitx::Key(FcitxKey_BackSpace), true);
+    handler.handleKeyEvent(release);
+    assert(!release.accepted());
+    assert(requestedBackspaces == erasuresBefore);
+    assert(ibusContext.commits ==
+           std::vector<std::string>{"á "});
+
+    // Release phải kết thúc lần nhấn giữ để lần gõ sau recovery bình thường.
+    for (const char key : std::string("nhanhsh")) {
+      fcitx::KeyEvent typed(
+          &ibusContext, fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
+      handler.handleKeyEvent(typed);
+    }
+    fcitx::KeyEvent tap(&ibusContext, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(tap);
+    assert(tap.accepted());
+    assert(ibusState->composing == "nhánh");
+    // Press tiếp theo vẫn sửa trong preedit, không ép commit ra ứng dụng.
+    fcitx::KeyEvent secondTap(&ibusContext, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(secondTap);
+    assert(secondTap.accepted());
+    assert(!ibusState->composing.empty());
+    assert(ibusContext.commits == std::vector<std::string>{"á "});
+  }
 
   backspaceRecovery = false;
   TestInputContext plainBackspaceContext(manager);

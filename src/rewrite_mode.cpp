@@ -1,6 +1,7 @@
 #include "rewrite_mode.h"
 
 #include <exception>
+#include <string_view>
 #include <utility>
 
 #include <fcitx-utils/capabilityflags.h>
@@ -300,6 +301,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (debugProvider_() && (!event.isRelease() || isBackspace || isEnter)) {
     FCITX_INFO() << "areca: rewrite handler key=" << key.toString()
                  << " release=" << event.isRelease()
+                 << " repeat=" << isRepeat
                  << " pending=" << scheduler_.rewritePending()
                  << " queue=" << scheduler_.queuedKeyCount();
   }
@@ -392,10 +394,17 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     // Kết thúc: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
     if (state->backspaceRecoveryAwaitingRelease) {
-      if (isRepeat) {
+      // IBus có thể gửi press lặp mà không có cờ Repeat. Press tiếp theo
+      // trước release là nhấn giữ; phím inject đã được loại ở các guard trên.
+      const char *frontend = inputContext->frontend();
+      const bool ibusHeldPress =
+          frontend && std::string_view(frontend) == "ibus";
+      if (isRepeat || ibusHeldPress) {
         if (debugProvider_()) {
           FCITX_INFO() << "areca: backspace route=forward"
                        << " reason=repeat-reset-composition"
+                       << " repeat=" << isRepeat
+                       << " inferred_ibus_repeat=" << ibusHeldPress
                        << " program=" << inputContext->program();
         }
         resetContext(*inputContext);

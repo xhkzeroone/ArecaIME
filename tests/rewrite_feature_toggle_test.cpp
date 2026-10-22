@@ -19,11 +19,12 @@ namespace {
 class TestInputContext final : public fcitx::InputContext {
 public:
   explicit TestInputContext(fcitx::InputContextManager &manager,
-                            const char *program = "google-chrome")
-      : fcitx::InputContext(manager, program) {}
+                            const char *program = "google-chrome",
+                            const char *frontend = "wayland")
+      : fcitx::InputContext(manager, program), frontend_(frontend) {}
   ~TestInputContext() override { destroy(); }
 
-  const char *frontend() const override { return "wayland"; }
+  const char *frontend() const override { return frontend_; }
 
   void commitStringImpl(const std::string &text) override {
     events.push_back("commit:" + text);
@@ -36,6 +37,9 @@ public:
   void updatePreeditImpl() override {}
 
   std::vector<std::string> events;
+
+private:
+  const char *frontend_;
 };
 
 class TestEngine final : public areca::VietnameseEngine {
@@ -88,7 +92,11 @@ private:
 int main() {
   // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
   // Backspace, giống BackspaceRecovery thường.
-  {
+  // GNOME/IBus gửi các press lặp không kèm cờ Repeat.
+  for (bool ibusWithoutRepeatFlag : {false, true}) {
+    const auto repeatState = ibusWithoutRepeatFlag
+                                 ? fcitx::KeyState::NoState
+                                 : fcitx::KeyState::Repeat;
     fcitx::EventLoop loop;
     fcitx::InputContextManager manager;
     areca::RewriteModeHandler::StateFactory factory(
@@ -101,7 +109,8 @@ int main() {
           return state;
         });
     manager.registerProperty("rewrite-macro-backspace-test", &factory);
-    TestInputContext context(manager, "org.gnome.TextEditor");
+    TestInputContext context(manager, "org.gnome.TextEditor",
+                             ibusWithoutRepeatFlag ? "ibus" : "wayland");
     areca::InputScheduler scheduler(
         loop,
         [&](fcitx::InputContext &ic) {
@@ -132,7 +141,7 @@ int main() {
 
     fcitx::KeyEvent repeat(
         &context,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+        fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(repeat);
     assert(!repeat.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -175,16 +184,23 @@ int main() {
 
     fcitx::KeyEvent restoredRepeat(
         &context,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+        fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(restoredRepeat);
     assert(!restoredRepeat.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->currentText().empty());
 
+    fcitx::KeyEvent continuedHold(
+        &context, fcitx::Key(FcitxKey_BackSpace, repeatState));
+    handler.handleKeyEvent(continuedHold);
+    assert(!continuedHold.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
+    assert(engine->backspaceProcessCount == 1);
+
     // Sau khi thấy repeat, mọi event còn lại đi thẳng xuống ứng dụng.
     fcitx::KeyEvent repeatedRelease(
         &context,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat), true);
+        fcitx::Key(FcitxKey_BackSpace, repeatState), true);
     handler.handleKeyEvent(repeatedRelease);
     assert(!repeatedRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -192,7 +208,7 @@ int main() {
 
     fcitx::KeyEvent repeatAfterRelease(
         &context,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+        fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(repeatAfterRelease);
     assert(!repeatAfterRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);

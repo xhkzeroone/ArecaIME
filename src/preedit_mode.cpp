@@ -1,6 +1,7 @@
 #include "preedit_mode.h"
 
 #include <exception>
+#include <string_view>
 #include <utility>
 
 #include <fcitx-utils/capabilityflags.h>
@@ -172,8 +173,20 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
 
   if (isBackspace) {
+    // IBus có thể gửi press lặp không có Repeat khi đang chờ khôi phục từ.
+    const char *frontend = inputContext->frontend();
+    const bool ibusHeldPress =
+        state->finalizedWordRecovery ==
+            FinalizedWordRecoveryState::AwaitingBackspaceRelease &&
+        frontend && std::string_view(frontend) == "ibus";
     state->sentenceCapitalization.reset();
-    if (isRepeat) {
+    if (isRepeat || ibusHeldPress) {
+      if (debugProvider_()) {
+        FCITX_INFO() << "areca: preedit backspace route=forward"
+                     << " reason=repeat-reset-composition"
+                     << " repeat=" << isRepeat
+                     << " inferred_ibus_repeat=" << ibusHeldPress;
+      }
       // Giữ nguyên phần chữ người dùng đang thấy, nhưng bỏ toàn bộ trạng thái
       // Bamboo để chuỗi Backspace repeat tiếp tục xóa trực tiếp trong app.
       if (state->composing.empty()) {
