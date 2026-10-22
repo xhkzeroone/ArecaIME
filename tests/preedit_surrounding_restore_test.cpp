@@ -305,6 +305,28 @@ int main() {
   assert(recover.accepted());
   assert(recoveryContext.propertyFor(&factory)->composing == "nhánh");
 
+  // Khi Backspace chuyển thành repeat, commit phần preedit đang thấy rồi xóa
+  // state Bamboo; repeat hiện tại và các repeat sau đi thẳng xuống ứng dụng.
+  TestInputContext recoveryRepeatContext(manager);
+  handler.activate(recoveryRepeatContext);
+  for (const char key : std::string("nhanhsh")) {
+    fcitx::KeyEvent keyEvent(
+        &recoveryRepeatContext,
+        fcitx::Key(fcitx::Key::keySymFromUnicode(
+            static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+  }
+  fcitx::KeyEvent recoveryRepeat(
+      &recoveryRepeatContext,
+      fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+  handler.handleKeyEvent(recoveryRepeat);
+  assert(!recoveryRepeat.accepted());
+  assert(recoveryRepeatContext.commits ==
+         std::vector<std::string>{"nhanhsh"});
+  assert(recoveryRepeatContext.propertyFor(&factory)->composing.empty());
+  assert(recoveryRepeatContext.propertyFor(&factory)
+             ->engine->currentText().empty());
+
   backspaceRecovery = false;
   TestInputContext plainBackspaceContext(manager);
   handler.activate(plainBackspaceContext);

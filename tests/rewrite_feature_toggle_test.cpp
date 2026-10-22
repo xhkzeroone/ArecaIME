@@ -57,16 +57,13 @@ public:
   areca::BambooResult processBackspace() override {
     ++backspaceProcessCount;
     macroUndoAvailable = false;
-    spellcheckRestored = false;
     return {};
   }
   void backspace() override {
     ++plainBackspaceCount;
-    spellcheckRestored = false;
   }
   void reset() override {
     current_.clear();
-    spellcheckRestored = false;
   }
   bool restoreFromRenderedText(const std::string &text) override {
     if (text.empty()) {
@@ -77,12 +74,10 @@ public:
   }
   const std::string &currentText() const override { return current_; }
   bool canUndoMacro() const override { return macroUndoAvailable; }
-  bool wasRestoredBySpellcheck() const override { return spellcheckRestored; }
 
   int backspaceProcessCount = 0;
   int plainBackspaceCount = 0;
   bool macroUndoAvailable = false;
-  bool spellcheckRestored = false;
 
 private:
   std::string current_;
@@ -139,29 +134,40 @@ int main() {
         &context,
         fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
     handler.handleKeyEvent(repeat);
-    assert(repeat.accepted());
-    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(!repeat.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->backspaceProcessCount == 0);
+    assert(engine->currentText().empty());
 
     fcitx::KeyEvent release(&context, fcitx::Key(FcitxKey_BackSpace), true);
     handler.handleKeyEvent(release);
-    assert(release.accepted());
+    assert(!release.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
-    assert(engine->backspaceProcessCount == 1);
+    assert(engine->backspaceProcessCount == 0);
 
     // Đợi qua cửa sổ bảo vệ phím inject sau transaction trước đó.
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
-    // BackspaceRecovery không được chặn repeat cho composition bình thường.
+    // Giống Preedit: hễ còn composition thì Backspace luôn đi qua
+    // processBackspace(), không phụ thuộc cờ trạng thái spellcheck riêng.
     engine->process('a', "a");
     fcitx::KeyEvent plainPress(&context, fcitx::Key(FcitxKey_BackSpace));
     handler.handleKeyEvent(plainPress);
-    assert(!state->backspaceRecoveryAwaitingRelease);
-    assert(engine->plainBackspaceCount == 1);
+    assert(plainPress.accepted());
+    assert(state->backspaceRecoveryAwaitingRelease);
 
-    // Chỉ từ vừa bị spellcheck restore mới chờ release và nuốt auto-repeat.
+    fcitx::KeyEvent plainRelease(&context, fcitx::Key(FcitxKey_BackSpace), true);
+    handler.handleKeyEvent(plainRelease);
+    assert(plainRelease.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
+    assert(engine->backspaceProcessCount == 1);
+    assert(engine->plainBackspaceCount == 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    // Lần Backspace tiếp theo vẫn đi cùng luồng; không có cờ one-shot làm nó
+    // rơi sang nhánh forward.
     engine->process('a', "a");
-    engine->spellcheckRestored = true;
     fcitx::KeyEvent restoredPress(&context, fcitx::Key(FcitxKey_BackSpace));
     handler.handleKeyEvent(restoredPress);
     assert(restoredPress.accepted());
@@ -171,32 +177,32 @@ int main() {
         &context,
         fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
     handler.handleKeyEvent(restoredRepeat);
-    assert(restoredRepeat.accepted());
-    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(!restoredRepeat.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
+    assert(engine->currentText().empty());
 
-    // X11/IBus có thể gửi release trung gian kèm Repeat. Release này vẫn phải
-    // bị nuốt; chỉ release vật lý cuối cùng mới chạy recovery.
+    // Sau khi thấy repeat, mọi event còn lại đi thẳng xuống ứng dụng.
     fcitx::KeyEvent repeatedRelease(
         &context,
         fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat), true);
     handler.handleKeyEvent(repeatedRelease);
-    assert(repeatedRelease.accepted());
-    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(!repeatedRelease.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->backspaceProcessCount == 1);
 
     fcitx::KeyEvent repeatAfterRelease(
         &context,
         fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
     handler.handleKeyEvent(repeatAfterRelease);
-    assert(repeatAfterRelease.accepted());
-    assert(state->backspaceRecoveryAwaitingRelease);
+    assert(!repeatAfterRelease.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
 
     fcitx::KeyEvent restoredRelease(&context,
                                     fcitx::Key(FcitxKey_BackSpace), true);
     handler.handleKeyEvent(restoredRelease);
-    assert(restoredRelease.accepted());
+    assert(!restoredRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
-    assert(engine->backspaceProcessCount == 2);
+    assert(engine->backspaceProcessCount == 1);
   }
 
   // So sánh handler với luồng accept/enqueue cũ, dùng cùng loại engine giả.

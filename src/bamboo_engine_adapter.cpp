@@ -106,7 +106,6 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
                                           const std::string &utf8Text) {
   BambooResult result;
   result.currentText = renderedText_;
-  spellcheckRestored_ = false;
 
   // Finalize the current word before committing a boundary. With spell check
   // enabled, Bamboo restores an invalid Vietnamese-looking word to the raw
@@ -133,7 +132,6 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
       raw = ArecaBambooFinalizeWord(handle_, spellCheck_ ? 1 : 0,
                                     &spellcheckRestored);
       result.spellcheckRestored = spellcheckRestored != 0;
-      spellcheckRestored_ = result.spellcheckRestored;
     }
     if (!raw) {
       throw std::runtime_error("Bamboo word finalization failed");
@@ -216,7 +214,6 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
   renderedText_ = std::move(next);
   result.newText = renderedText_;
   result.spellcheckRestored = spellcheckRestored != 0;
-  spellcheckRestored_ = result.spellcheckRestored;
   return result;
 }
 
@@ -243,7 +240,6 @@ BambooResult BambooEngineAdapter::processBackspace() {
     macroExpandedTextWithBoundary_.clear();
     macroRawKeyWithBoundary_.clear();
     renderedText_.clear();
-    spellcheckRestored_ = false;
     return result;
   }
 
@@ -265,7 +261,6 @@ BambooResult BambooEngineAdapter::processBackspace() {
 
   result.deleteCount = static_cast<uint32_t>((oldChars.size() - 1) - prefix);
   result.commitText = result.newText.substr(newChars[prefix].second);
-  spellcheckRestored_ = false;
   return result;
 }
 
@@ -276,7 +271,6 @@ void BambooEngineAdapter::reset() {
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
   macroRecoveryAvailable_ = false;
-  spellcheckRestored_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();
 }
@@ -295,14 +289,12 @@ bool BambooEngineAdapter::restoreFromRenderedText(const std::string &text) {
   finalizedWordAvailable_ = false;
   trailingBoundaryCount_ = 0;
   macroRecoveryAvailable_ = false;
-  spellcheckRestored_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();
   return true;
 }
 
 void BambooEngineAdapter::backspace() {
-  spellcheckRestored_ = false;
   macroRecoveryAvailable_ = false;
   macroExpandedTextWithBoundary_.clear();
   macroRawKeyWithBoundary_.clear();

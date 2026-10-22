@@ -231,15 +231,13 @@ bool RewriteModeHandler::shouldRecoverBackspace(
     }
     return false;
   }
-  const bool capture = backspaceRecoveryProvider_() &&
-                       state.engine->wasRestoredBySpellcheck();
+  const bool capture = backspaceRecoveryProvider_();
   if (debugProvider_()) {
     const char *frontend = inputContext.frontend();
     FCITX_INFO() << "areca: backspace route="
                  << (capture ? "recovery" : "forward")
                  << " reason="
-                 << (capture ? "spellcheck-restored"
-                             : "not-spellcheck-restored-or-gate-disabled")
+                 << (capture ? "composition-active" : "gate-disabled")
                  << " current=" << currentText
                  << " queue=" << queuedKeys
                  << " program=" << inputContext.program()
@@ -309,10 +307,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     if (isBackspace && state && state->engine &&
         state->backspaceRecoveryAwaitingRelease) {
       if (isRepeat) {
-        // Một số frontend biểu diễn auto-repeat bằng cặp release/press có cờ
-        // Repeat. Không được coi release trung gian này là lúc người dùng đã
-        // thả phím, nếu không các repeat tiếp theo sẽ lọt xuống ứng dụng.
-        event.filterAndAccept();
+        resetContext(*inputContext);
+        event.forward();
       } else {
         runDeferredBackspaceRecovery(*inputContext, event, *state);
       }
@@ -396,6 +392,16 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     // Kết thúc: Xóa hết từ đang gõ trong thanh địa chỉ khi chưa có space tái kích hoạt trạng thái first word
     if (state->backspaceRecoveryAwaitingRelease) {
+      if (isRepeat) {
+        if (debugProvider_()) {
+          FCITX_INFO() << "areca: backspace route=forward"
+                       << " reason=repeat-reset-composition"
+                       << " program=" << inputContext->program();
+        }
+        resetContext(*inputContext);
+        event.forward();
+        return;
+      }
       if (debugProvider_()) {
         const char *frontend = inputContext->frontend();
         FCITX_INFO() << "areca: backspace route=recovery"

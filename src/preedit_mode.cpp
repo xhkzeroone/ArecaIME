@@ -173,6 +173,19 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
 
   if (isBackspace) {
     state->sentenceCapitalization.reset();
+    if (isRepeat) {
+      // Giữ nguyên phần chữ người dùng đang thấy, nhưng bỏ toàn bộ trạng thái
+      // Bamboo để chuỗi Backspace repeat tiếp tục xóa trực tiếp trong app.
+      if (state->composing.empty()) {
+        clearComposition(*inputContext, *state);
+      } else {
+        commitComposition(*inputContext, *state);
+      }
+      state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+      state->surroundingRestoreArmed = false;
+      event.forward();
+      return;
+    }
     if (state->engine && state->engine->canUndoMacro()) {
       try {
         const auto result = state->engine->processBackspace();

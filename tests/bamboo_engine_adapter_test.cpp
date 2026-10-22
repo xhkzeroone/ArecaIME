@@ -377,10 +377,20 @@ int main() {
     applyToDisplay(display, type(engine, key));
   }
   assert(display == "nhanhsh");
-  assert(engine.wasRestoredBySpellcheck());
   auto backspaceResult = engine.processBackspace();
-  assert(!engine.wasRestoredBySpellcheck());
   applyToDisplay(display, backspaceResult);
+  assert(display == "nhánh");
+
+  // Rewrite và Preedit đều có thể gọi processBackspace liên tiếp; Bamboo tự
+  // quyết định khi nào chuỗi raw còn lại dựng lại được thành tiếng Việt.
+  engine.reset();
+  display.clear();
+  for (char key : std::string("nhanhshhh")) {
+    applyToDisplay(display, type(engine, key));
+  }
+  for (int i = 0; i < 3; ++i) {
+    applyToDisplay(display, engine.processBackspace());
+  }
   assert(display == "nhánh");
 
   // Plain backspace only syncs Bamboo state for a forwarded physical key. It

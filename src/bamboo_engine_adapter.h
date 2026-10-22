@@ -23,7 +23,6 @@ public:
   virtual void backspace() = 0;
   virtual void reset() = 0;
   virtual const std::string &currentText() const = 0;
-  virtual bool wasRestoredBySpellcheck() const { return false; }
   // Nạp lại text đã có trước con trỏ. Implement mặc định từ chối để các engine
   // giả trong test và engine khác không vô tình nhận một trạng thái không hỗ trợ.
   virtual bool restoreFromRenderedText(const std::string &) { return false; }
@@ -54,9 +53,6 @@ public:
   void reset() override;
   bool restoreFromRenderedText(const std::string &text) override;
   const std::string &currentText() const override { return renderedText_; }
-  bool wasRestoredBySpellcheck() const override {
-    return spellcheckRestored_;
-  }
   bool canUndoMacro() const override {
     return revertMacroOnBackspace_ && macroRecoveryAvailable_;
   }
@@ -83,7 +79,6 @@ private:
   uint32_t trailingBoundaryCount_ = 0;
   bool finalizedWordAvailable_ = false;
   bool macroRecoveryAvailable_ = false;
-  bool spellcheckRestored_ = false;
   std::string macroExpandedTextWithBoundary_;
   std::string macroRawKeyWithBoundary_;
 };
