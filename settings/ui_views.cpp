@@ -243,8 +243,6 @@ namespace areca::settings {
             ImGui::TableNextColumn();
             checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);
             ImGui::TableNextColumn();
-            checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
-            ImGui::TableNextColumn();
             checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
             ImGui::TableNextColumn();
             checkbox("Bật macro", config.main.enableMacro);

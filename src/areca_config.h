@@ -294,7 +294,7 @@ FCITX_CONFIGURATION(
     fcitx::SubConfigOption appOverridesEditor{
         this, "AppOverridesEditor", N_("Cấu hình backend theo ứng dụng"),
         "fcitx://config/addon/areca/apps"};
-    fcitx::Option<bool> backspaceRecovery{
+    fcitx::HiddenOption<bool> backspaceRecovery{
         this, "BackspaceRecovery",
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> restoreSurroundingText{

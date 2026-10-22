@@ -762,7 +762,7 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
 }
 
 bool ArecaEngine::backspaceRecoveryEnabled() const {
-  return config_.backspaceRecovery.value();
+  return true;
 }
 
 bool ArecaEngine::eraseFinalizedPreeditWord(
