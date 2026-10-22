@@ -242,16 +242,17 @@ FCITX_CONFIGURATION(
 
 FCITX_CONFIGURATION(
     ArecaConfig,
-    fcitx::OptionWithAnnotation<PresentationMode,
-                                PresentationModeI18NAnnotation>
-        presentationMode{this, "PresentationMode", N_("Chế độ hiển thị"),
-                         PresentationMode::Rewrite};
-    fcitx::KeyListOption switchModeKey{
-        this,
-        "SwitchModeKey",
-        N_("Phím tắt chuyển chế độ gõ"),
-        {fcitx::Key("Alt+space")},
-        fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
+    fcitx::HiddenOption<PresentationMode> presentationMode{
+        this, "PresentationMode", N_("Chế độ hiển thị"),
+        PresentationMode::Rewrite};
+    fcitx::HiddenOption<fcitx::KeyList,
+                        fcitx::ListConstrain<fcitx::KeyConstrain>>
+        switchModeKey{
+            this,
+            "SwitchModeKey",
+            N_("Phím tắt chuyển chế độ gõ"),
+            {},
+            fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
     fcitx::KeyListOption selectBackendKey{
         this,
         "SelectBackendKey",

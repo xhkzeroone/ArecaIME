@@ -1233,8 +1233,8 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        inputMethodAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod, charsetAction_.get());
-  statusArea.addAction(fcitx::StatusGroup::InputMethod,
-                       presentationModeAction_.get());
+  // statusArea.addAction(fcitx::StatusGroup::InputMethod,
+  //                      presentationModeAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
                        spellcheckAction_.get());
   statusArea.addAction(fcitx::StatusGroup::InputMethod,
@@ -1321,17 +1321,17 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     // từ ký tự đầu tiên
 
     const auto key = event.key().normalize();
-    if (key.sym() != FcitxKey_None &&
-        key.checkKeyList(config_.switchModeKey.value())) {
-      if (inputContext->capabilityFlags().test(
-              fcitx::CapabilityFlag::Password)) {
-        handlerFor(*inputContext).handleKeyEvent(event);
-        return;
-      }
-      event.filterAndAccept();
-      switchPresentationMode(*inputContext);
-      return;
-    }
+    // if (key.sym() != FcitxKey_None &&
+    //     key.checkKeyList(config_.switchModeKey.value())) {
+    //   if (inputContext->capabilityFlags().test(
+    //           fcitx::CapabilityFlag::Password)) {
+    //     handlerFor(*inputContext).handleKeyEvent(event);
+    //     return;
+    //   }
+    //   event.filterAndAccept();
+    //   switchPresentationMode(*inputContext);
+    //   return;
+    // }
 
     if (key.sym() != FcitxKey_None &&
         key.checkKeyList(config_.selectBackendKey.value())) {

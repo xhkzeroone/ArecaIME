@@ -158,7 +158,7 @@ namespace areca::settings {
 
     void drawBasic(
         ConfigStore& config, const std::vector<std::string>& inputMethods, const std::vector<std::string>& charsets,
-        bool& listeningShortcut
+        [[maybe_unused]] bool& listeningShortcut
     ) {
         drawPageIntro("Thiết lập bộ gõ", "Điều chỉnh cách Areca nhận phím và hiển thị tiếng Việt.");
 
@@ -196,39 +196,39 @@ namespace areca::settings {
             config.main.spellcheckMode.setValue(static_cast<areca::SpellcheckMode>(spellcheck));
         }
 
-        constexpr std::array<const char*, 3> presentationNames = {"Rewrite trực tiếp", "Preedit", "Redirect (EN)"};
-        int presentation = static_cast<int>(config.main.presentationMode.value());
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Chế độ hiển thị");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(comboWidth);
-        if (ImGui::Combo(
-                "##PresentationMode", &presentation, presentationNames.data(),
-                static_cast<int>(presentationNames.size())
-            )) {
-            config.main.presentationMode.setValue(static_cast<areca::PresentationMode>(presentation));
-        }
+        // constexpr std::array<const char*, 3> presentationNames = {"Rewrite trực tiếp", "Preedit", "Redirect (EN)"};
+        // int presentation = static_cast<int>(config.main.presentationMode.value());
+        // ImGui::AlignTextToFramePadding();
+        // ImGui::TextUnformatted("Chế độ hiển thị");
+        // ImGui::SameLine(labelWidth);
+        // ImGui::SetNextItemWidth(comboWidth);
+        // if (ImGui::Combo(
+        //         "##PresentationMode", &presentation, presentationNames.data(),
+        //         static_cast<int>(presentationNames.size())
+        //     )) {
+        //     config.main.presentationMode.setValue(static_cast<areca::PresentationMode>(presentation));
+        // }
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Phím chuyển chế độ:");
-        ImGui::SameLine(labelWidth);
-        std::string currentShortcut = formatKeyList(config.main.switchModeKey.value());
-        if (currentShortcut.empty()) {
-            currentShortcut = "Chưa gán";
-        }
+        // ImGui::AlignTextToFramePadding();
+        // ImGui::TextUnformatted("Phím chuyển chế độ:");
+        // ImGui::SameLine(labelWidth);
+        // std::string currentShortcut = formatKeyList(config.main.switchModeKey.value());
+        // if (currentShortcut.empty()) {
+        //     currentShortcut = "Chưa gán";
+        // }
 
-        if (listeningShortcut) {
-            pushAttentionButtonColors();
-            if (ImGui::Button("Đang chờ bấm phím... (Esc để hủy)")) {
-                listeningShortcut = false;
-            }
-            ImGui::PopStyleColor(3);
-        } else {
-            std::string buttonLabel = currentShortcut + "  [Đổi phím]";
-            if (ImGui::Button(buttonLabel.c_str())) {
-                listeningShortcut = true;
-            }
-        }
+        // if (listeningShortcut) {
+        //     pushAttentionButtonColors();
+        //     if (ImGui::Button("Đang chờ bấm phím... (Esc để hủy)")) {
+        //         listeningShortcut = false;
+        //     }
+        //     ImGui::PopStyleColor(3);
+        // } else {
+        //     std::string buttonLabel = currentShortcut + "  [Đổi phím]";
+        //     if (ImGui::Button(buttonLabel.c_str())) {
+        //         listeningShortcut = true;
+        //     }
+        // }
         endSettingsCard();
 
         beginSettingsCard(
