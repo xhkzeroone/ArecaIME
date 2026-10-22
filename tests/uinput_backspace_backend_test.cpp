@@ -24,19 +24,19 @@ int main() {
   // GNOME Text Editor: phím xóa quay lại với cùng time/code và cờ Repeat.
   tracker.reset(1);
   assert(tracker.observePress(4392176, 22, false) == Action::Forward);
-  assert(tracker.observePress(4392176, 22, true) == Action::Forward);
+  assert(tracker.observePress(4392176, 22, true) == Action::Filter);
   assert(tracker.pressesSeen() == 1);
   assert(!tracker.shouldFilterRelease(4392176, 22));
-  assert(!tracker.shouldFilterRelease(4392176, 22));
+  assert(tracker.shouldFilterRelease(4392176, 22));
   assert(tracker.releasesSeen() == 1);
   assert(tracker.observePress(4392177, 22, false) ==
          Action::FilterAndAcknowledge);
   assert(tracker.shouldFilterRelease(4392177, 22));
   // Phím xác nhận gửi lại không được xác nhận lần nữa. Replay đến muộn
-  // của phím xóa vẫn giữ quyết định forward sau khi đã nhận phím xác nhận.
+  // của phím xóa bị lọc bỏ, không gửi lại thao tác xóa xuống ứng dụng.
   assert(tracker.observePress(4392177, 22, true) == Action::Filter);
-  assert(tracker.observePress(4392176, 22, true) == Action::Forward);
-  assert(!tracker.shouldFilterRelease(4392176, 22));
+  assert(tracker.observePress(4392176, 22, true) == Action::Filter);
+  assert(tracker.shouldFilterRelease(4392176, 22));
   assert(tracker.shouldFilterRelease(4392177, 22));
   assert(tracker.pressesSeen() == 2);
   assert(tracker.releasesSeen() == 2);

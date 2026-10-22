@@ -59,16 +59,16 @@ public:
   }
 
   // GTK có thể xử lý lại event chưa được IM nhận. Không tính lượt gửi lại
-  // thành phím xác nhận. Timestamp 0 không đủ để nhận diện event.
+  // thành phím xác nhận và lọc bỏ để tránh gửi lặp phím xóa xuống app.
+  // Timestamp 0 không đủ để nhận diện event.
   PressAction observePress(uint32_t time, uint32_t code, bool repeat) {
     if (!time || !code) {
       return observePress();
     }
     const auto id = std::make_pair(time, code);
     if (repeat) {
-      if (auto it = pressActions_.find(id); it != pressActions_.end()) {
-        return it->second == PressAction::Forward ? PressAction::Forward
-                                                 : PressAction::Filter;
+      if (pressActions_.find(id) != pressActions_.end()) {
+        return PressAction::Filter;
       }
     }
     const auto action = observePress();
@@ -83,8 +83,8 @@ public:
       return shouldFilterRelease();
     }
     const auto id = std::make_pair(time, code);
-    if (auto it = releaseActions_.find(id); it != releaseActions_.end()) {
-      return it->second;
+    if (releaseActions_.find(id) != releaseActions_.end()) {
+      return true;
     }
     const bool filter = shouldFilterRelease();
     releaseActions_[id] = filter;
