@@ -1292,19 +1292,24 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     const std::string program = resolveProgram(*inputContext, state);
 
-    // Reset trước phím nhấn tiếp theo vì click có thể đã đổi vị trí con trỏ.
-    // Nếu rewrite còn được bảo vệ, giữ cờ click cho lần sau thay vì làm mất nó
-    // hoặc xóa trạng thái giữa một chuỗi thao tác xóa/chèn đang chạy.
+    // Chỉ Rewrite cần bỏ buffer sau click vì chữ đã nằm trong ứng dụng.
+    // Preedit để app/frontend kết thúc composition, tránh xóa chữ chưa commit.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
-      if (scheduler_.shouldRejectReset()) {
+      const auto mode = effectivePresentationMode(*inputContext);
+      if (mode != PresentationMode::Rewrite) {
+        if (debugEnabled())
+          FCITX_INFO() << "areca: discard mouse reset mode="
+                       << presentationModeName(mode);
+        mouseTracker_->clearPendingClick();
+      } else if (scheduler_.shouldRejectReset()) {
+        // Giữ click cho lần sau nếu rewrite đang xóa/chèn chữ.
         if (debugEnabled())
           FCITX_INFO() << "areca: mouse reset deferred (rewrite protection)";
       } else {
         if (debugEnabled())
           FCITX_INFO() << "areca: applying mouse reset mode="
-                       << presentationModeName(
-                              effectivePresentationMode(*inputContext));
-        handlerFor(*inputContext).resetContext(*inputContext);
+                       << presentationModeName(mode);
+        rewriteHandler_.resetContext(*inputContext);
         clearBackendVerdictForLifecycle(*inputContext, "mouse-click");
         mouseTracker_->clearPendingClick();
       }
