@@ -191,11 +191,16 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           },
           [this]() { return config_.restoreSurroundingText.value(); }),
       preeditHandler_(
-          instance_->eventLoop(), preeditStateFactory_,
+          preeditStateFactory_,
           [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
           [this]() { return backspaceRecoveryEnabled(); },
-          [this]() { return config_.restoreSurroundingText.value(); }) {
+          [this]() { return config_.restoreSurroundingText.value(); },
+          [this](fcitx::InputContext &inputContext, uint32_t backspaceCount,
+                 PreeditModeHandler::FinalizedWordEraseDone onDone) {
+            return eraseFinalizedPreeditWord(inputContext, backspaceCount,
+                                             std::move(onDone));
+          }) {
   instance_->inputContextManager().registerProperty("arecaRewriteState",
                                                     &rewriteStateFactory_);
   instance_->inputContextManager().registerProperty("arecaPreeditState",
@@ -758,6 +763,66 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
 
 bool ArecaEngine::backspaceRecoveryEnabled() const {
   return config_.backspaceRecovery.value();
+}
+
+bool ArecaEngine::eraseFinalizedPreeditWord(
+    fcitx::InputContext &inputContext, uint32_t backspaceCount,
+    PreeditModeHandler::FinalizedWordEraseDone onDone) {
+  const std::string program = resolveProgram(inputContext, nullptr);
+  const bool preferHardware =
+      inputTypeDetector_.isTerminal(program, inputContext.frontend()) ||
+      !inputTypeDetector_.canForwardBackspaces(inputContext, program);
+  auto *backend = resolvePreferredBackspaceBackend(preferHardware);
+  if (!backend) {
+    return false;
+  }
+
+  const auto schedulerTiming = timing(inputContext);
+  RewritePlan plan;
+  plan.transactionId = nextPreeditRecoveryTransactionId_++;
+  if (!plan.transactionId) {
+    plan.transactionId = nextPreeditRecoveryTransactionId_++;
+  }
+  plan.backspaceCount = backspaceCount;
+  plan.backspaceDelayMs = schedulerTiming.backspaceDelayMs;
+  plan.uinputBackspaceAckTimeoutMs =
+      schedulerTiming.uinputBackspaceAckTimeoutMs;
+  plan.afterBackspaceWaitMs = schedulerTiming.afterBackspaceWaitMs;
+  plan.waylandAfterBackspaceWaitMs =
+      schedulerTiming.waylandAfterBackspaceWaitMs;
+  plan.ximAfterBackspaceWaitMs = schedulerTiming.ximAfterBackspaceWaitMs;
+  plan.fcitx4AfterBackspaceWaitMs =
+      schedulerTiming.fcitx4AfterBackspaceWaitMs;
+  plan.dbusAfterBackspaceWaitMs = schedulerTiming.dbusAfterBackspaceWaitMs;
+  plan.ibusAfterBackspaceWaitMs = schedulerTiming.ibusAfterBackspaceWaitMs;
+  plan.xtestBackspaceDelayMs = schedulerTiming.xtestBackspaceDelayMs;
+  plan.afterXTestBackspaceWaitMs = schedulerTiming.afterXTestBackspaceWaitMs;
+  plan.waylandAfterXTestBackspaceWaitMs =
+      schedulerTiming.waylandAfterXTestBackspaceWaitMs;
+  plan.ximAfterXTestBackspaceWaitMs =
+      schedulerTiming.ximAfterXTestBackspaceWaitMs;
+  plan.fcitx4AfterXTestBackspaceWaitMs =
+      schedulerTiming.fcitx4AfterXTestBackspaceWaitMs;
+  plan.dbusAfterXTestBackspaceWaitMs =
+      schedulerTiming.dbusAfterXTestBackspaceWaitMs;
+  plan.ibusAfterXTestBackspaceWaitMs =
+      schedulerTiming.ibusAfterXTestBackspaceWaitMs;
+  plan.timerAccuracyUsec = schedulerTiming.timerAccuracyUsec;
+
+  const auto status = backend->apply(
+      inputContext, plan,
+      [onDone](uint64_t, RewriteOutcome outcome) {
+        onDone(outcome == RewriteOutcome::Succeeded);
+      });
+  if (status == ApplyStatus::Completed) {
+    onDone(true);
+    return true;
+  }
+  if (status == ApplyStatus::Failed) {
+    onDone(false);
+    return false;
+  }
+  return true;
 }
 
 void ArecaEngine::notifyUinputUnavailable() {

@@ -18,6 +18,8 @@
 namespace areca {
 namespace {
 
+constexpr uint64_t kPostCommitResetProtectionUsec = 20 * 1000;
+
 fcitx::KeySym normalizePreeditKeypadSym(fcitx::KeySym sym) {
   if (sym >= FcitxKey_KP_0 && sym <= FcitxKey_KP_9) {
     return static_cast<fcitx::KeySym>(FcitxKey_0 + (sym - FcitxKey_KP_0));
@@ -78,18 +80,17 @@ PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
           this->revertMacroOnBackspace)) {}
 
 PreeditModeHandler::PreeditModeHandler(
-    fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
-    DebugProvider debugProvider, AutoCapitalizeProvider autoCapitalizeProvider,
+    StateFactory &stateFactory, DebugProvider debugProvider,
+    AutoCapitalizeProvider autoCapitalizeProvider,
     BackspaceRecoveryProvider backspaceRecoveryProvider,
-    RestoreSurroundingTextProvider restoreSurroundingTextProvider)
-    : eventLoop_(eventLoop), stateFactory_(stateFactory),
-      debugProvider_(std::move(debugProvider)),
+    RestoreSurroundingTextProvider restoreSurroundingTextProvider,
+    FinalizedWordEraser finalizedWordEraser)
+    : stateFactory_(stateFactory), debugProvider_(std::move(debugProvider)),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
       restoreSurroundingTextProvider_(
-          std::move(restoreSurroundingTextProvider)) {}
-
-PreeditModeHandler::~PreeditModeHandler() { lifetime_.reset(); }
+          std::move(restoreSurroundingTextProvider)),
+      finalizedWordEraser_(std::move(finalizedWordEraser)) {}
 
 PreeditInputState *
 PreeditModeHandler::stateFor(fcitx::InputContext &inputContext) const {
@@ -102,7 +103,6 @@ void PreeditModeHandler::activate(fcitx::InputContext &inputContext) {
 
 void PreeditModeHandler::deactivate(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
-    cancelProtectedReset(inputContext);
     commitComposition(inputContext, *state);
     state->sentenceCapitalization.reset();
   }
@@ -114,16 +114,40 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
   const auto rawKey = event.rawKey();
-  if (event.isRelease() || rawKey.isModifier()) {
-    return;
-  }
-
   auto *state = stateFor(*inputContext);
   if (!state || !state->engine) {
     event.forward();
     return;
   }
-  cancelProtectedReset(*inputContext);
+  const auto key = event.key();
+  const bool isBackspace =
+      key.check(FcitxKey_BackSpace) || rawKey.check(FcitxKey_BackSpace);
+  const bool isRepeat = key.states().test(fcitx::KeyState::Repeat) ||
+                        rawKey.states().test(fcitx::KeyState::Repeat);
+  if (event.isRelease()) {
+    if (isBackspace && state->finalizedWordRecovery ==
+                           FinalizedWordRecoveryState::AwaitingBackspaceRelease) {
+      if (isRepeat) {
+        event.filterAndAccept();
+      } else {
+        state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+        event.filterAndAccept();
+        if (!startFinalizedWordRecovery(*inputContext, *state)) {
+          state->engine->reset();
+        }
+      }
+    }
+    return;
+  }
+  if (rawKey.isModifier()) {
+    return;
+  }
+  // Backspace do backend bơm vào phải tiếp tục đi tới ứng dụng, nhưng không
+  // được làm thay đổi state Bamboo trong lúc từ cũ đang được xóa.
+  if (state->finalizedWordRecovery == FinalizedWordRecoveryState::Erasing) {
+    event.forward();
+    return;
+  }
 
   if (inputContext->capabilityFlags().test(fcitx::CapabilityFlag::Password)) {
     resetContext(*inputContext);
@@ -131,12 +155,9 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
 
-  const auto key = event.key();
   const auto normalizedKey = key.normalize();
   const auto rawSym = rawKey.sym();
   const auto textSym = normalizePreeditKeypadSym(normalizedKey.sym());
-  const bool isBackspace =
-      key.check(FcitxKey_BackSpace) || rawKey.check(FcitxKey_BackSpace);
   const bool isEnter = textSym == FcitxKey_Return ||
                        rawSym == FcitxKey_Return || rawSym == FcitxKey_KP_Enter;
 
@@ -174,13 +195,28 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       }
     }
     if (state->composing.empty()) {
+      if (state->finalizedWordRecovery ==
+          FinalizedWordRecoveryState::AwaitingBackspaceRelease) {
+        if (isRepeat) {
+          // Nhấn giữ Backspace có nghĩa là người dùng muốn xóa liên tục, không
+          // mở lại từ trong preedit. Hủy snapshot và để repeat đi xuống app.
+          state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+          state->engine->reset();
+          event.forward();
+        } else {
+          event.filterAndAccept();
+        }
+        return;
+      }
       try {
         // Adapter đếm các boundary đã commit. Backspace qua boundary trung gian
         // chỉ được forward; khi chạm tới snapshot từ, handler kéo từ lên preedit.
         state->engine->backspace();
         if (state->engine->currentText().empty()) {
           event.forward();
-        } else if (moveFinalizedWordIntoPreedit(*inputContext, *state)) {
+        } else if (fcitx::utf8::validate(state->engine->currentText())) {
+          state->finalizedWordRecovery =
+              FinalizedWordRecoveryState::AwaitingBackspaceRelease;
           event.filterAndAccept();
         } else {
           state->engine->reset();
@@ -272,6 +308,8 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
 
     if (!committed.empty()) {
+      state->resetProtectedUntilUsec =
+          fcitx::now(CLOCK_MONOTONIC) + kPostCommitResetProtectionUsec;
       inputContext->commitString(committed);
       updateSurroundingCacheAfterCommit(*inputContext, committed);
     }
@@ -294,12 +332,10 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
 }
 
-bool PreeditModeHandler::moveFinalizedWordIntoPreedit(
+bool PreeditModeHandler::startFinalizedWordRecovery(
     fcitx::InputContext &inputContext, PreeditInputState &state) {
   const auto &word = state.engine->currentText();
-  if (word.empty() || !fcitx::utf8::validate(word) ||
-      !inputContext.capabilityFlags().test(
-          fcitx::CapabilityFlag::SurroundingText)) {
+  if (word.empty() || !fcitx::utf8::validate(word)) {
     return false;
   }
   const auto wordLength = static_cast<uint32_t>(fcitx::utf8::length(word));
@@ -307,36 +343,43 @@ bool PreeditModeHandler::moveFinalizedWordIntoPreedit(
     return false;
   }
 
-  auto &surrounding = inputContext.surroundingText();
-  if (!surrounding.isValid() || surrounding.cursor() != surrounding.anchor() ||
-      !surrounding.cursor() ||
-      extractSurroundingRestoreCandidate(
-          surrounding.text(), surrounding.cursor(), surrounding.cursor())) {
-    return false;
-  }
-
-  const auto candidate = extractSurroundingRestoreCandidate(
-      surrounding.text(), surrounding.cursor() - 1,
-      surrounding.cursor() - 1);
-  if (!candidate || candidate->text != word) {
-    return false;
-  }
-
-  // Chỉ xóa khi snapshot chứng minh ngay trước con trỏ là đúng `từ + boundary`.
-  // Không có SurroundingText hoặc snapshot lệch thì để app xử lý Backspace gốc.
   const uint32_t deleteCount = wordLength + 1;
-  inputContext.deleteSurroundingText(-static_cast<int>(deleteCount),
-                                     deleteCount);
-  updateSurroundingCacheAfterDelete(inputContext,
-                                    -static_cast<int>(deleteCount),
-                                    deleteCount);
-  state.composing = word;
-  updatePreedit(inputContext, state);
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: preedit restored finalized word"
-                 << " text=" << word << " erase=surrounding";
+  if (!finalizedWordEraser_) {
+    return false;
   }
-  return true;
+  state.finalizedWordRecovery = FinalizedWordRecoveryState::Erasing;
+  const auto watchedContext = inputContext.watch();
+  const std::string recoveredWord = word;
+  const bool started = finalizedWordEraser_(
+      inputContext, deleteCount,
+      [this, watchedContext, recoveredWord](bool succeeded) {
+        auto *context = watchedContext.get();
+        if (!context) {
+          return;
+        }
+        auto *currentState = stateFor(*context);
+        if (!currentState || currentState->finalizedWordRecovery !=
+                                 FinalizedWordRecoveryState::Erasing) {
+          return;
+        }
+        currentState->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+        if (!succeeded) {
+          currentState->engine->reset();
+          currentState->composing.clear();
+          updatePreedit(*context, *currentState);
+          return;
+        }
+        currentState->composing = recoveredWord;
+        updatePreedit(*context, *currentState);
+        if (debugProvider_()) {
+          FCITX_INFO() << "areca: preedit restored finalized word"
+                       << " text=" << recoveredWord << " erase=backspace";
+        }
+      });
+  if (!started) {
+    state.finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+  }
+  return started;
 }
 
 bool PreeditModeHandler::tryRestoreFromSurroundingText(
@@ -424,19 +467,22 @@ void PreeditModeHandler::commitComposition(fcitx::InputContext &inputContext,
 
 void PreeditModeHandler::requestProtectedReset(
     fcitx::InputContext &inputContext) {
-  resetContext(inputContext);
-}
-
-void PreeditModeHandler::cancelProtectedReset(
-    fcitx::InputContext &inputContext) {
-  if (auto *state = stateFor(inputContext)) {
-    state->delayedResetTimer.reset();
+  if (auto *state = stateFor(inputContext);
+      state && fcitx::now(CLOCK_MONOTONIC) <=
+                   state->resetProtectedUntilUsec) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: preedit reset rejected"
+                   << " reason=post-commit-window";
+    }
+    return;
   }
+  resetContext(inputContext);
 }
 
 void PreeditModeHandler::resetContext(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
-    state->delayedResetTimer.reset();
+    state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
+    state->resetProtectedUntilUsec = 0;
     clearComposition(inputContext, *state);
     // Reset/focus/click có thể đặt con trỏ vào một từ đã commit. Cho phép phím
     // text kế tiếp thử chuyển từ đó vào preedit nếu người dùng bật tính năng.

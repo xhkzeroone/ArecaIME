@@ -108,6 +108,9 @@ private:
                                        const char *eventName);
   bool backendVerdictProtected(fcitx::InputContext &inputContext) const;
   bool backspaceRecoveryEnabled() const;
+  bool eraseFinalizedPreeditWord(
+      fcitx::InputContext &inputContext, uint32_t backspaceCount,
+      PreeditModeHandler::FinalizedWordEraseDone onDone);
   void notifyUinputUnavailable();
   void scheduleDeviceWarmup();
   void applyConfig();
@@ -136,6 +139,7 @@ private:
   MacroTableConfig macroTable_;
   AppProfilesConfig appProfiles_;
   uint64_t macroRevision_ = 1;
+  uint64_t nextPreeditRecoveryTransactionId_ = 1;
   std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
   void rebuildAppBackendOverridesMap();

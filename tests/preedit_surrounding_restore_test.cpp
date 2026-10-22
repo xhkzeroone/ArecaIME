@@ -45,7 +45,6 @@ public:
 } // namespace
 
 int main() {
-  fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
   areca::PreeditModeHandler::StateFactory factory(
       [](fcitx::InputContext &) {
@@ -56,9 +55,17 @@ int main() {
 
   bool enabled = true;
   bool backspaceRecovery = true;
+  uint32_t requestedBackspaces = 0;
+  areca::PreeditModeHandler::FinalizedWordEraseDone eraseDone;
   areca::PreeditModeHandler handler(
-      eventLoop, factory, [] { return false; }, [] { return false; },
-      [&] { return backspaceRecovery; }, [&] { return enabled; });
+      factory, [] { return false; }, [] { return false; },
+      [&] { return backspaceRecovery; }, [&] { return enabled; },
+      [&](fcitx::InputContext &, uint32_t count,
+          areca::PreeditModeHandler::FinalizedWordEraseDone done) {
+        requestedBackspaces = count;
+        eraseDone = std::move(done);
+        return true;
+      });
 
   TestInputContext context(manager);
   context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
@@ -81,14 +88,22 @@ int main() {
   assert(context.commits == std::vector<std::string>{"tướng "});
   assert(context.propertyFor(&factory)->composing.empty());
 
-  // Space đã commit ngay. Backspace dùng snapshot chính xác để xóa cả từ và
-  // boundary khỏi ứng dụng, sau đó đưa riêng từ trở lại preedit để sửa tiếp.
+  // Space đã commit ngay. Backspace dùng backend để xóa cả từ và boundary,
+  // sau đó đưa riêng từ trở lại preedit để sửa tiếp.
   fcitx::KeyEvent undoBoundary(&context, fcitx::Key(FcitxKey_BackSpace));
   handler.handleKeyEvent(undoBoundary);
   assert(undoBoundary.accepted());
-  assert(context.deletes.size() == 2);
-  assert(context.deletes[1].offset == -6);
-  assert(context.deletes[1].count == 6);
+  assert(context.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::AwaitingBackspaceRelease);
+  assert(requestedBackspaces == 0);
+  fcitx::KeyEvent undoBoundaryRelease(
+      &context, fcitx::Key(FcitxKey_BackSpace), true);
+  handler.handleKeyEvent(undoBoundaryRelease);
+  assert(undoBoundaryRelease.accepted());
+  assert(context.deletes.size() == 1);
+  assert(requestedBackspaces == 6);
+  assert(eraseDone);
+  eraseDone(true);
   assert(context.propertyFor(&factory)->composing == "tướng");
   fcitx::KeyEvent retone(&context, fcitx::Key(FcitxKey_f));
   handler.handleKeyEvent(retone);
@@ -126,8 +141,8 @@ int main() {
   assert(!macroBoundaryContext.propertyFor(&factory)
               ->surroundingRestoreArmed);
 
-  // App không có SurroundingText không bị xóa text phỏng đoán: kể cả adapter
-  // còn snapshot, handler reset nó và forward Backspace gốc cho ứng dụng.
+  // App không có SurroundingText dùng backend Backspace để xóa chính xác từ
+  // vừa commit cùng boundary rồi đưa từ trở lại preedit.
   TestInputContext noSurroundingContext(manager);
   handler.activate(noSurroundingContext);
   for (const char key : std::string("as")) {
@@ -144,6 +159,11 @@ int main() {
   assert(firstSpace.accepted());
   assert(noSurroundingContext.commits == std::vector<std::string>{"á "});
   assert(noSurroundingContext.propertyFor(&factory)->composing.empty());
+  // Frontend thường gửi reset ngay sau commit. Reset này không được xóa
+  // snapshot finalized cần cho Backspace quay lại sửa từ vừa gõ.
+  handler.requestProtectedReset(noSurroundingContext);
+  assert(noSurroundingContext.propertyFor(&factory)
+             ->resetProtectedUntilUsec != 0);
 
   for (int index = 0; index < 2; ++index) {
     fcitx::KeyEvent extraSpace(&noSurroundingContext,
@@ -161,9 +181,26 @@ int main() {
   fcitx::KeyEvent restoreWord(&noSurroundingContext,
                               fcitx::Key(FcitxKey_BackSpace));
   handler.handleKeyEvent(restoreWord);
-  assert(!restoreWord.accepted());
+  assert(restoreWord.accepted());
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::AwaitingBackspaceRelease);
+  fcitx::KeyEvent restoreWordRelease(
+      &noSurroundingContext, fcitx::Key(FcitxKey_BackSpace), true);
+  handler.handleKeyEvent(restoreWordRelease);
+  assert(restoreWordRelease.accepted());
+  assert(requestedBackspaces == 2);
+  assert(eraseDone);
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Erasing);
+  fcitx::KeyEvent injectedBackspace(&noSurroundingContext,
+                                    fcitx::Key(FcitxKey_BackSpace));
+  handler.handleKeyEvent(injectedBackspace);
+  assert(!injectedBackspace.accepted());
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Erasing);
+  eraseDone(true);
   assert(noSurroundingContext.forwardedBackspaces.empty());
-  assert(noSurroundingContext.propertyFor(&factory)->composing.empty());
+  assert(noSurroundingContext.propertyFor(&factory)->composing == "á");
 
   // Có SurroundingText thì snapshot vẫn sống qua nhiều Space đã commit/forward.
   // Backspace lùi hết boundary mới xóa chính xác `từ + Space` và mở lại preedit.
@@ -199,10 +236,40 @@ int main() {
                                      fcitx::Key(FcitxKey_BackSpace));
   handler.handleKeyEvent(restoreAfterSpaces);
   assert(restoreAfterSpaces.accepted());
-  assert(multipleSpacesContext.deletes.size() == 1);
-  assert(multipleSpacesContext.deletes[0].offset == -2);
-  assert(multipleSpacesContext.deletes[0].count == 2);
+  fcitx::KeyEvent restoreAfterSpacesRelease(
+      &multipleSpacesContext, fcitx::Key(FcitxKey_BackSpace), true);
+  handler.handleKeyEvent(restoreAfterSpacesRelease);
+  assert(restoreAfterSpacesRelease.accepted());
+  assert(multipleSpacesContext.deletes.empty());
+  assert(requestedBackspaces == 2);
+  assert(eraseDone);
+  eraseDone(true);
   assert(multipleSpacesContext.propertyFor(&factory)->composing == "á");
+
+  // Nhấn giữ Backspace hủy việc mở lại từ và cho repeat đi thẳng xuống app để
+  // người dùng tiếp tục xóa nhanh như trong Rewrite mode.
+  TestInputContext heldBackspaceContext(manager);
+  handler.activate(heldBackspaceContext);
+  for (const char key : std::string("as ")) {
+    fcitx::KeyEvent keyEvent(
+        &heldBackspaceContext,
+        fcitx::Key(fcitx::Key::keySymFromUnicode(
+            static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+  }
+  fcitx::KeyEvent heldPress(&heldBackspaceContext,
+                            fcitx::Key(FcitxKey_BackSpace));
+  handler.handleKeyEvent(heldPress);
+  assert(heldPress.accepted());
+  fcitx::KeyEvent heldRepeat(
+      &heldBackspaceContext,
+      fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
+  handler.handleKeyEvent(heldRepeat);
+  assert(!heldRepeat.accepted());
+  assert(heldBackspaceContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Idle);
+  assert(heldBackspaceContext.propertyFor(&factory)
+             ->engine->currentText().empty());
 
   // Phím kế tiếp bắt đầu composition mới; từ trước đó đã commit ngay từ Space,
   // không có trạng thái pending làm chậm trải nghiệm gõ.
