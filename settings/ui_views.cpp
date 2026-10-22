@@ -243,6 +243,8 @@ namespace areca::settings {
             ImGui::TableNextColumn();
             checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);
             ImGui::TableNextColumn();
+            checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
+            ImGui::TableNextColumn();
             checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
             ImGui::TableNextColumn();
             checkbox("Bật macro", config.main.enableMacro);
@@ -488,6 +490,7 @@ namespace areca::settings {
         beginSettingsCard(
             "CompatibilityCard", "Tương thích", "Các cơ chế fallback dành cho ứng dụng có hành vi nhập liệu đặc biệt."
         );
+        checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Dùng Surrounding v2 thay cho Surrounding v1", config.advanced.useSurroundingV2InsteadOfSurroundingV1);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
@@ -796,7 +799,8 @@ namespace areca::settings {
         const bool tab2Dirty = !(config.apps == savedConfig.apps)
             || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
 
-        const bool tab3Dirty = !(config.advanced == savedConfig.advanced);
+        const bool tab3Dirty = !(config.advanced == savedConfig.advanced)
+            || !(config.main.backspaceRecovery == savedConfig.main.backspaceRecovery);
 
         const bool tab4Dirty =
             (appConfig.theme != savedAppConfig.theme) || (appConfig.fontSize != savedAppConfig.fontSize);
@@ -815,7 +819,8 @@ namespace areca::settings {
         const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{})
             && (config.main.selectBackendKey == defaultMain.selectBackendKey);
 
-        const bool tab3IsDefault = (config.advanced == areca::AdvancedConfig{});
+        const bool tab3IsDefault = (config.advanced == areca::AdvancedConfig{})
+            && (config.main.backspaceRecovery == defaultMain.backspaceRecovery);
 
         const bool tab4IsDefault = (appConfig.theme == AppTheme::Light) && (appConfig.fontSize == kDefaultFontSize);
 
@@ -877,6 +882,7 @@ namespace areca::settings {
                 listeningBackendShortcut = false;
             } else if (activeTab == 3) {
                 config.advanced = savedConfig.advanced;
+                config.main.backspaceRecovery = savedConfig.main.backspaceRecovery;
             } else {
                 if (appConfig.theme != savedAppConfig.theme) {
                     needReapplyTheme = true;
@@ -926,6 +932,7 @@ namespace areca::settings {
                         : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 } else if (activeTab == 3) {
                     config.advanced = areca::AdvancedConfig{};
+                    config.main.backspaceRecovery = defaultMain.backspaceRecovery;
                     config.save();
                     savedConfig = config;
                     std::string reloadError;
