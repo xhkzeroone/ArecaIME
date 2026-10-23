@@ -183,3 +183,9 @@ nguồn tham khảo hữu ích trong quá trình phát triển Areca:
 - [VMK — Vietnamese Micro Key](https://github.com/thanhpy2009/VMK)
 - [Fcitx5 Lotus](https://github.com/LotusInputMethod/fcitx5-lotus)
 - [SKey / fcitx5-skey](https://github.com/collyn/skey)
+
+## License
+
+- Areca được phát hành theo giấy phép [MIT](LICENSE).
+- Thư viện [Bamboo Core](bamboo/bamboo-core) được phát hành theo giấy phép [MIT](bamboo/bamboo-core/LICENSE).
+
