@@ -17,10 +17,12 @@
     <meta property="og:image" content="assets/areca.svg" />
     <title>Areca IME — Bộ gõ tiếng Việt cho Linux</title>
     <link rel="icon" href="assets/areca.svg" type="image/svg+xml" />
+    <link rel="preload" href="assets/childhood-areca.jpg" as="image" />
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
   </head>
   <body>
+    <div class="fixed-bg-art" aria-hidden="true"></div>
     <a class="skip-link" href="#main">Đi tới nội dung chính</a>
 
     <header class="site-header">
@@ -58,61 +60,61 @@
 
     <main id="main">
       <section id="top" class="hero section-shell">
-        <div class="hero-copy reveal">
-          <p class="eyebrow"><span></span> Fcitx5 · Wayland-first · Bamboo core</p>
-          <h1>Gõ tiếng Việt trên Linux, <em>theo đúng nhịp của bạn.</em></h1>
-          <p class="hero-lead">
-            Areca là addon Fcitx5 viết bằng C++20. Mọi phím được xử lý tuần tự,
-            Bamboo lo phần tiếng Việt, còn Areca chọn cách rewrite phù hợp với
-            từng ô nhập liệu.
-          </p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="#install">Cài đặt Areca</a>
-            <a
-              class="button button-secondary"
-              href="https://github.com/xhkzeroone/ArecaIME/releases/latest"
-              target="_blank"
-              rel="noreferrer"
-              >Tải bản mới nhất <span aria-hidden="true">↓</span></a
-            >
-            <a
-              class="source-link"
-              href="https://github.com/xhkzeroone/ArecaIME"
-              target="_blank"
-              rel="noreferrer"
-              >Xem mã nguồn <span aria-hidden="true">↗</span></a
-            >
+          <div class="hero-copy reveal">
+            <p class="eyebrow"><span></span> Fcitx5 · Wayland-first · Bamboo core</p>
+            <h1>Gõ tiếng Việt trên Linux, <em>theo đúng nhịp của bạn.</em></h1>
+            <p class="hero-lead">
+              Areca là addon Fcitx5 viết bằng C++20. Mọi phím được xử lý tuần tự,
+              Bamboo lo phần tiếng Việt, còn Areca chọn cách rewrite phù hợp với
+              từng ô nhập liệu.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#install">Cài đặt Areca</a>
+              <a
+                class="button button-secondary"
+                href="https://github.com/xhkzeroone/ArecaIME/releases/latest"
+                target="_blank"
+                rel="noreferrer"
+                >Tải bản mới nhất <span aria-hidden="true">↓</span></a
+              >
+              <a
+                class="source-link"
+                href="https://github.com/xhkzeroone/ArecaIME"
+                target="_blank"
+                rel="noreferrer"
+                >Xem mã nguồn <span aria-hidden="true">↗</span></a
+              >
+            </div>
+
+            <p class="experimental-note">
+              <span aria-hidden="true">●</span> Dự án đang trong giai đoạn thử nghiệm
+            </p>
           </div>
 
-          <p class="experimental-note">
-            <span aria-hidden="true">●</span> Dự án đang trong giai đoạn thử nghiệm
-          </p>
-        </div>
-
-        <div class="hero-demo reveal" aria-label="Minh họa cách Areca xử lý từ được">
-          <div class="demo-window">
-            <div class="window-bar">
-              <span></span><span></span><span></span>
-              <small>areca · rewrite</small>
-            </div>
-            <div class="typing-stage">
-              <p class="stage-label">PHÍM ĐẦU VÀO</p>
-              <div class="keys" aria-label="d d u o w c j">
-                <kbd>d</kbd><kbd>d</kbd><kbd>u</kbd><kbd>o</kbd><kbd>w</kbd><kbd>c</kbd><kbd>j</kbd>
+          <div class="hero-demo reveal" aria-label="Minh họa cách Areca xử lý từ được">
+            <div class="demo-window">
+              <div class="window-bar">
+                <span></span><span></span><span></span>
+                <small>areca · rewrite</small>
               </div>
-              <div class="flow-arrow"><span></span></div>
-              <p class="stage-label">BAMBOO + ARECA</p>
-              <div class="result-word">được<span class="caret"></span></div>
+              <div class="typing-stage">
+                <p class="stage-label">PHÍM ĐẦU VÀO</p>
+                <div class="keys" aria-label="d d u o w c j">
+                  <kbd>d</kbd><kbd>d</kbd><kbd>u</kbd><kbd>o</kbd><kbd>w</kbd><kbd>c</kbd><kbd>j</kbd>
+                </div>
+                <div class="flow-arrow"><span></span></div>
+                <p class="stage-label">BAMBOO + ARECA</p>
+                <div class="result-word">được<span class="caret"></span></div>
+              </div>
+              <div class="demo-status">
+                <span><i class="status-dot"></i> FIFO tuần tự</span>
+                <span>Rewrite hoàn tất</span>
+              </div>
             </div>
-            <div class="demo-status">
-              <span><i class="status-dot"></i> FIFO tuần tự</span>
-              <span>Rewrite hoàn tất</span>
-            </div>
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
           </div>
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-        </div>
-      </section>
+        </section>
 
       <section id="features" class="section-block section-shell">
         <div class="section-heading reveal">
