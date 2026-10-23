@@ -12,7 +12,6 @@
 #include "event_loop_post.h"
 #include "rewrite_backend.h"
 #include "uinput_device.h"
-#include "uinput_key_ack_tracker.h"
 
 namespace areca {
 
@@ -65,7 +64,7 @@ private:
   uint32_t deletedCharacters_ = 0;
   uint32_t remainingBackspaces_ = 0;
   uint32_t sentBackspaces_ = 0;
-  UinputKeyAckTracker backspaceTracker_;
+  uint32_t backspacesSeen_ = 0;
   uint32_t backspaceDelayMs_ = 0;
   uint32_t ackTimeoutMs_ = 150;
   uint32_t afterBackspaceWaitMs_ = 0;
