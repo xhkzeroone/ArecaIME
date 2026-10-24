@@ -1,0 +1,14 @@
+title: Areca IME
+description: Bộ gõ tiếng Việt cho Linux
+url: "https://arecaime.github.io"
+baseurl: ""
+
+include:
+  - assets
+  - styles.css
+  - script.js
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
