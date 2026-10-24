@@ -1276,14 +1276,12 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
       return;
     }
   }
-  // Uinput-backspace dùng Backspace dư làm tín hiệu xác nhận. Backend phải
-  // nhận event trước RewriteMode để filter đúng phím dư và giữ nguyên state.
+  // Backend nhận phím inject trước RewriteMode để giữ nguyên state.
   if (uinputBackspaceBackend_.handleBackspace(event)) {
     return;
   }
-  // Shift-select tự đếm Left uinput quay lại. N Left đầu được forward, Left dư
-  // thứ N+1 bị filter và là tín hiệu an toàn để backend thả Shift.
-  if (uinputShiftSelectBackend_.handleSelectionLeft(event)) {
+  // Shift-select forward Left và chờ Shift up quay lại trước khi commit.
+  if (uinputShiftSelectBackend_.handleKeyEvent(event)) {
     return;
   }
   if (!event.isRelease()) {

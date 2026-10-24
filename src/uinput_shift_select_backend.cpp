@@ -9,8 +9,6 @@
 namespace areca {
 namespace {
 
-// Left xác nhận và timer này chạy đua trong cùng event loop. Bên nào tới trước
-// sẽ thả Shift; timeout đồng thời hủy bộ đếm để Left đến muộn không xử lý lại.
 bool isLeftKey(const fcitx::KeyEvent &event) {
   return event.key().sym() == FcitxKey_Left ||
          event.rawKey().sym() == FcitxKey_Left;
@@ -49,11 +47,8 @@ ApplyStatus UinputShiftSelectBackend::apply(fcitx::InputContext &inputContext,
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
   selectedCharacters_ = plan.backspaceCount;
-  // Phát dư một Left làm mốc xác nhận. Left cuối sẽ quay lại Fcitx và bị lọc,
-  // nhờ vậy Shift chỉ được thả sau khi N Left chọn thật đã đi qua hàng đợi.
-  selectionCount_ = selectedCharacters_ + 1;
-  leftTracker_.reset(selectedCharacters_);
-  leftAckTimedOut_ = false;
+  selectionCount_ = selectedCharacters_;
+  awaitingShiftUpAck_ = false;
   shiftSelectDelayMs_ = plan.uinputShiftSelectDelayMs;
   ackTimeoutMs_ = plan.uinputShiftSelectAckTimeoutMs;
   const char *frontend = inputContext.frontend();
@@ -88,8 +83,7 @@ void UinputShiftSelectBackend::beginSelection() {
 
   device_.sendKeyEvent(KEY_LEFTSHIFT, 1); // Shift down
   shiftHeld_ = true;
-  // Wait one shiftSelectDelayMs cycle before the first Left so the browser
-  // has time to flush the Shift modifier state (needed for React/Facebook).
+  // Cho frontend nhận Shift down trước khi phát Left.
   schedule(shiftSelectDelayMs_, TimerDispatch::TimerCallback,
            [this]() { sendNextSelectionLeft(); });
 }
@@ -106,85 +100,69 @@ void UinputShiftSelectBackend::sendNextSelectionLeft() {
   --selectionCount_;
 
   if (selectionCount_) {
-    const uint32_t effectiveDelay =
-        adaptiveWait_ ? adaptiveWait_->effectiveBackspaceDelayMs(shiftSelectDelayMs_)
-                      : shiftSelectDelayMs_;
-    schedule(effectiveDelay, TimerDispatch::TimerCallback,
+    schedule(shiftSelectDelayMs_, TimerDispatch::TimerCallback,
              [this]() { sendNextSelectionLeft(); });
     return;
   }
 
-  ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
-  schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
-    if (debugProvider_()) {
-      FCITX_INFO() << "areca: uinput-shift-select left ack timeout tx="
-                   << transactionId_ << " seen=" << leftTracker_.pressesSeen()
-                   << " expected=" << leftTracker_.expectedPresses();
-    }
-    leftAckTimedOut_ = true;
-    leftTracker_.clear();
-    if (adaptiveWait_) {
-      adaptiveWait_->observeAckTimeout();
-    }
-    releaseShiftThenCommit();
-  });
+  // Đã phát đủ N Left. Dùng chung delay trước khi thả Shift.
+  schedule(shiftSelectDelayMs_, TimerDispatch::TimerCallback,
+           [this]() { releaseShiftAndWaitForAck(); });
 }
 
-bool UinputShiftSelectBackend::handleSelectionLeft(fcitx::KeyEvent &event) {
-  if (!hasPending() || leftAckTimedOut_ ||
-      event.inputContext() != inputContext_.get() || !isLeftKey(event)) {
+bool UinputShiftSelectBackend::handleKeyEvent(fcitx::KeyEvent &event) {
+  if (!hasPending() || event.inputContext() != inputContext_.get()) {
+    return false;
+  }
+  const bool isShift = event.key().sym() == FcitxKey_Shift_L ||
+                       event.rawKey().sym() == FcitxKey_Shift_L;
+  if (!isLeftKey(event) && !isShift) {
     return false;
   }
 
-  if (event.isRelease()) {
-    const bool filter = leftTracker_.shouldFilterRelease();
+  // Left đến muộn vẫn đi tới app; Shift up là ACK duy nhất để chờ commit.
+  event.forward();
+  if (isShift && event.isRelease() && awaitingShiftUpAck_) {
+    awaitingShiftUpAck_ = false;
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: uinput-shift-select left release tx="
-                   << transactionId_ << " seen=" << leftTracker_.releasesSeen()
-                   << " expected=" << leftTracker_.expectedPresses()
-                   << " action=" << (filter ? "filter" : "forward");
+      FCITX_INFO() << "areca: uinput-shift-select shift-up ack tx="
+                   << transactionId_;
     }
-    if (filter) {
-      event.filterAndAccept();
-    } else {
-      event.forward();
-    }
-    return true;
-  }
-
-  const auto action = leftTracker_.observePress();
-  const bool forward = action == UinputKeyAckTracker::PressAction::Forward;
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-shift-select left press tx="
-                 << transactionId_ << " seen=" << leftTracker_.pressesSeen()
-                 << " expected=" << leftTracker_.expectedPresses()
-                 << " action=" << (forward ? "forward" : "filter");
-  }
-
-  if (forward) {
-    event.forward();
-  } else {
-    event.filterAndAccept();
-  }
-
-  if (action == UinputKeyAckTracker::PressAction::FilterAndAcknowledge) {
     if (ackSentAtUsec_ > 0 && adaptiveWait_) {
-      const uint64_t roundtripUsec = fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
-      ackSentAtUsec_ = 0;
-      adaptiveWait_->observeAckRoundtrip(roundtripUsec);
+      adaptiveWait_->observeAckRoundtrip(fcitx::now(CLOCK_MONOTONIC) -
+                                         ackSentAtUsec_);
     }
-    releaseShiftThenCommit();
+    ackSentAtUsec_ = 0;
+    scheduleCommit();
   }
   return true;
 }
 
-void UinputShiftSelectBackend::releaseShiftThenCommit() {
+void UinputShiftSelectBackend::releaseShiftAndWaitForAck() {
+  if (!inputContext_.get()) {
+    releaseShift();
+    completeWithoutCommit();
+    return;
+  }
+  awaitingShiftUpAck_ = true;
+  ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: uinput-shift-select shift-up sent tx="
+                 << transactionId_ << " ack_timeout_ms=" << ackTimeoutMs_;
+  }
+  schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
+    awaitingShiftUpAck_ = false;
+    ackSentAtUsec_ = 0;
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: uinput-shift-select shift-up ack timeout tx="
+                   << transactionId_;
+    }
+    if (adaptiveWait_) {
+      adaptiveWait_->observeAckTimeout();
+    }
+    scheduleCommit();
+  });
   releaseShift();
-  const uint32_t effectiveWait =
-      adaptiveWait_ ? adaptiveWait_->effectiveWaitMs(afterSelectWaitMs_)
-                    : afterSelectWaitMs_;
-  schedule(effectiveWait, TimerDispatch::PostEvent,
-           [this]() { commitSelectionAndComplete(); });
 }
 
 void UinputShiftSelectBackend::releaseShift() {
@@ -318,14 +296,13 @@ void UinputShiftSelectBackend::clearPending() {
   transactionId_ = 0;
   selectionCount_ = 0;
   selectedCharacters_ = 0;
-  leftTracker_.clear();
   shiftSelectDelayMs_ = 0;
   ackTimeoutMs_ = 150;
   afterSelectWaitMs_ = 0;
   timerAccuracyUsec_ = 1;
   ackSentAtUsec_ = 0;
   shiftHeld_ = false;
-  leftAckTimedOut_ = false;
+  awaitingShiftUpAck_ = false;
   commitText_.clear();
 }
 

@@ -13,12 +13,12 @@ public:
   explicit UinputDevice(
       DebugProvider debugProvider,
       UnavailableCallback unavailableCallback = {});
-  ~UinputDevice();
+  virtual ~UinputDevice();
 
   bool isAvailable();
-  bool ensureDevice();
+  virtual bool ensureDevice();
   void closeDevice();
-  void sendKeyEvent(uint16_t code, int value);
+  virtual void sendKeyEvent(uint16_t code, int value);
 
 private:
   DebugProvider debugProvider_;
