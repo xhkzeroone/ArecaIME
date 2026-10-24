@@ -9,8 +9,7 @@
 namespace areca {
 namespace {
 
-// Backspace xác nhận và timer chạy đua trong cùng event loop. Timeout hủy bộ
-// đếm để Backspace đến muộn không thể bắt đầu commit lần thứ hai.
+// ACK chỉ là mốc chờ tương đối; mọi Backspace vẫn đi tới ứng dụng.
 bool isBackspaceKey(const fcitx::KeyEvent &event) {
   return event.key().sym() == FcitxKey_BackSpace ||
          event.rawKey().sym() == FcitxKey_BackSpace;
@@ -95,6 +94,12 @@ void UinputBackspaceBackend::sendNextBackspace() {
 
   if (remainingBackspaces_) {
     scheduleNextBackspace();
+  } else if (commitWaitStarted_) {
+    // ACK sớm không được hủy chuỗi phát hay thay thế timer commit đang chạy.
+    // Nếu delay đã hết trước khi phát xong, chờ thêm sau phím cuối.
+    if (commitWaitElapsed_) {
+      scheduleCommit();
+    }
   } else {
     ackSentAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
     schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
@@ -145,7 +150,8 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
   // Chỉ kích hoạt commit đúng một lần khi vừa đếm đủ số lượng phím mong đợi.
   // Nếu đã timeout thì callback hẹn giờ đã gọi commit trước đó, cờ này ngăn
   // phím đến trễ kích hoạt commit lần thứ hai.
-  if (!backspaceAckTimedOut_ && backspacesSeen_ == deletedCharacters_) {
+  if (!commitWaitStarted_ && !backspaceAckTimedOut_ &&
+      backspacesSeen_ == deletedCharacters_) {
     if (ackSentAtUsec_ > 0) {
       const uint64_t roundtripUsec = fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
       ackSentAtUsec_ = 0;
@@ -160,10 +166,12 @@ void UinputBackspaceBackend::scheduleNextBackspace() {
   const uint32_t delayMs =
       adaptiveWait_.effectiveBackspaceDelayMs(backspaceDelayMs_);
   schedule(delayMs, TimerDispatch::TimerCallback,
-           [this]() { sendNextBackspace(); });
+           [this]() { sendNextBackspace(); }, true);
 }
 
 void UinputBackspaceBackend::scheduleCommit() {
+  commitWaitStarted_ = true;
+  commitWaitElapsed_ = false;
   const uint32_t extraWaitMs =
       adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
   const uint32_t effectiveWaitMs =
@@ -182,6 +190,10 @@ void UinputBackspaceBackend::scheduleCommit() {
 
 void UinputBackspaceBackend::commitAfterAdaptiveWait(
     uint32_t appliedExtraWaitMs) {
+  if (remainingBackspaces_) {
+    commitWaitElapsed_ = true;
+    return;
+  }
   const uint32_t currentExtraWaitMs =
       adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
   if (currentExtraWaitMs > appliedExtraWaitMs) {
@@ -246,16 +258,19 @@ void UinputBackspaceBackend::completeWithoutCommit() {
 
 void UinputBackspaceBackend::schedule(uint32_t delayMs,
                                       TimerDispatch dispatch,
-                                      std::function<void()> callback) {
-  timer_.reset();
+                                      std::function<void()> callback,
+                                      bool sending) {
+  auto &timer = sending ? sendTimer_ : timer_;
+  timer.reset();
   const uint64_t deadline =
       fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(delayMs) * 1000;
-  timer_ =
+  timer =
       eventLoop_.addTimeEvent(CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
-                              [this, deadline, dispatch,
+                              [this, deadline, dispatch, sending,
                                callback = std::move(callback)](
                                   fcitx::EventSourceTime *, uint64_t) mutable {
-                                auto completedTimer = std::move(timer_);
+                                auto completedTimer =
+                                    std::move(sending ? sendTimer_ : timer_);
                                 if (dispatch == TimerDispatch::PostEvent) {
                                   dispatchPostEvent(deadline,
                                                     std::move(callback));
@@ -264,7 +279,7 @@ void UinputBackspaceBackend::schedule(uint32_t delayMs,
                                 }
                                 return false;
                               });
-  if (!timer_) {
+  if (!timer) {
     if (dispatch == TimerDispatch::PostEvent) {
       dispatchPostEvent(deadline, std::move(callback));
     } else {
@@ -272,7 +287,7 @@ void UinputBackspaceBackend::schedule(uint32_t delayMs,
     }
     return;
   }
-  timer_->setOneShot();
+  timer->setOneShot();
 }
 
 void UinputBackspaceBackend::dispatchPostEvent(
@@ -300,6 +315,7 @@ void UinputBackspaceBackend::observeAndRun(
 
 void UinputBackspaceBackend::clearPending() {
   timer_.reset();
+  sendTimer_.reset();
   commitPost_.cancel();
   inputContext_.unwatch();
   onDone_ = {};
@@ -314,6 +330,8 @@ void UinputBackspaceBackend::clearPending() {
   timerAccuracyUsec_ = 1;
   ackSentAtUsec_ = 0;
   backspaceAckTimedOut_ = false;
+  commitWaitStarted_ = false;
+  commitWaitElapsed_ = false;
   commitText_.clear();
 }
 

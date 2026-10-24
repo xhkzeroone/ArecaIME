@@ -43,7 +43,7 @@ private:
   void commitAndComplete();
   void completeWithoutCommit();
   void schedule(uint32_t delayMs, TimerDispatch dispatch,
-                std::function<void()> callback);
+                std::function<void()> callback, bool sending = false);
   void dispatchPostEvent(uint64_t deadlineUsec,
                          std::function<void()> callback);
   void observeAndRun(uint64_t deadlineUsec,
@@ -58,6 +58,7 @@ private:
   DebugProvider debugProvider_;
 
   std::unique_ptr<fcitx::EventSourceTime> timer_;
+  std::unique_ptr<fcitx::EventSourceTime> sendTimer_;
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;
   RewriteDone onDone_;
   uint64_t transactionId_ = 0;
@@ -71,6 +72,8 @@ private:
   uint64_t timerAccuracyUsec_ = 1;
   uint64_t ackSentAtUsec_ = 0;
   bool backspaceAckTimedOut_ = false;
+  bool commitWaitStarted_ = false;
+  bool commitWaitElapsed_ = false;
   std::string commitText_;
 };
 

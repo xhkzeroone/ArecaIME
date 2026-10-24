@@ -55,7 +55,6 @@ SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
 | `UinputShiftSelectBackend` | Phát `Shift down` và `Left` × N+1 qua `/dev/uinput`; Fcitx forward N Left đầu, lọc lần xác nhận cuối, phát `Shift up`, chờ mặc định 5 ms trên Wayland hoặc 10 ms trên frontend khác rồi commit. Timeout xác nhận là 20 ms. |
 | `UinputBackspaceBackend` | Phát `KEY_BACKSPACE` × N+1 qua `/dev/uinput`; Fcitx forward N lần đầu, lọc lần xác nhận cuối rồi dùng settling delay thích ứng. Timeout xác nhận là 20 ms. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng settling delay thích ứng theo timer drift và commit chữ mới. |
-| `UinputKeyAckTracker` | Bộ đếm dùng chung cho Left và Backspace uinput; forward N cặp đầu, lọc cặp N+1 và chỉ báo hoàn tất một lần. |
 
 ---
 

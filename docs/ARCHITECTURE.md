@@ -30,7 +30,6 @@ Wayland và Fcitx5.
 | `ForwardBackspaceBackend` | Phát tuần tự Backspace press/release bằng `forwardKey()`, chờ settling delay thích ứng theo timer drift rồi commit text và hoàn tất transaction. |
 | `UinputBackspaceBackend` | Gửi `KEY_BACKSPACE` × N+1 qua `/dev/uinput`; Fcitx forward N lần đầu, lọc lần xác nhận cuối rồi dùng settling delay thích ứng trước khi commit. Timeout xác nhận là 20 ms. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `UinputShiftSelectBackend` | Gửi `Shift down` và `Left` × N+1 qua `/dev/uinput`. Fcitx forward N Left đầu, lọc Left xác nhận cuối rồi mới gửi `Shift up` và commit cho ứng dụng trình duyệt web. |
-| `UinputKeyAckTracker` | Bộ đếm dùng chung cho Left và Backspace uinput: forward N cặp press/release đầu, lọc cặp N+1 và phát tín hiệu hoàn tất đúng một lần. |
 
 ## Phân tách cấu hình
 
