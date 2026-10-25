@@ -430,15 +430,18 @@ bool PreeditModeHandler::tryRestoreFromSurroundingText(
   if (!surrounding.isValid()) {
     return false;
   }
-  const auto candidate = extractSurroundingRestoreCandidate(
+  auto candidate = extractSurroundingRestoreCandidate(
       surrounding.text(), surrounding.cursor(), surrounding.anchor());
-  if (!candidate ||
-      !state.engine->restoreFromRenderedText(candidate->text)) {
+  while (candidate &&
+         !state.engine->restoreFromRenderedText(candidate->text)) {
+    candidate = shortenSurroundingRestoreCandidate(*candidate);
+  }
+  if (!candidate) {
     return false;
   }
 
-  // Preedit sẽ tự hiển thị và commit lại cả từ. Xóa bản đã commit trước khi đưa
-  // nó vào composition để frontend không hiển thị hai bản giống nhau.
+  // Preedit sẽ tự hiển thị và commit lại đoạn Bamboo dựng được sát caret. Xóa
+  // đúng đoạn đó khỏi ứng dụng; prefix/suffix còn lại của từ được giữ nguyên.
   inputContext.deleteSurroundingText(
       -static_cast<int>(candidate->characterCount), candidate->characterCount);
   updateSurroundingCacheAfterDelete(
@@ -514,6 +517,23 @@ void PreeditModeHandler::resetContext(fcitx::InputContext &inputContext) {
     // text kế tiếp thử chuyển từ đó vào preedit nếu người dùng bật tính năng.
     state->surroundingRestoreArmed = true;
   }
+}
+
+bool PreeditModeHandler::prepareSurroundingRestoreAfterClick(
+    fcitx::InputContext &inputContext) {
+  auto *state = stateFor(inputContext);
+  if (!state || !state->engine || !state->composing.empty() ||
+      state->finalizedWordRecovery != FinalizedWordRecoveryState::Idle) {
+    return false;
+  }
+
+  // Preedit trống vẫn có thể giữ snapshot của từ vừa commit trong Bamboo.
+  // Bỏ snapshot đó để phím kế tiếp phục hồi phần từ nằm trước caret mới.
+  state->engine->reset();
+  state->sentenceCapitalization.reset();
+  state->resetProtectedUntilUsec = 0;
+  state->surroundingRestoreArmed = true;
+  return true;
 }
 
 } // namespace areca

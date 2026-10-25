@@ -1290,11 +1290,19 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     const std::string program = resolveProgram(*inputContext, state);
 
-    // Chỉ Rewrite cần bỏ buffer sau click vì chữ đã nằm trong ứng dụng.
-    // Preedit để app/frontend kết thúc composition, tránh xóa chữ chưa commit.
+    // Sau click, bỏ state của caret cũ để phím kế tiếp có thể phục hồi phần từ
+    // nằm trước caret mới. Preedit chỉ làm việc này khi composition đã trống,
+    // tránh làm mất chữ nếu frontend chưa kết thúc preedit đang hiển thị.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
       const auto mode = effectivePresentationMode(*inputContext);
-      if (mode != PresentationMode::Rewrite) {
+      if (mode == PresentationMode::Preedit) {
+        const bool prepared =
+            preeditHandler_.prepareSurroundingRestoreAfterClick(*inputContext);
+        if (debugEnabled())
+          FCITX_INFO() << "areca: preedit mouse restore "
+                       << (prepared ? "armed" : "skipped-active-composition");
+        mouseTracker_->clearPendingClick();
+      } else if (mode != PresentationMode::Rewrite) {
         if (debugEnabled())
           FCITX_INFO() << "areca: discard mouse reset mode="
                        << presentationModeName(mode);

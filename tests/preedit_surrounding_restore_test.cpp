@@ -115,6 +115,25 @@ int main() {
   assert(retone.accepted());
   assert(context.propertyFor(&factory)->composing == "tường");
 
+  // Click đặt caret giữa `tiến`, ngay sau `ế`: prefix `tiế` chưa hoàn chỉnh
+  // được thu hẹp tới `ế`. `ti` và `n` vẫn nằm trong app nên f tạo `tiền`.
+  TestInputContext middleContext(manager);
+  middleContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  middleContext.surroundingText().setText("tiến", 3, 3);
+  handler.activate(middleContext);
+  assert(handler.prepareSurroundingRestoreAfterClick(middleContext));
+  fcitx::KeyEvent middleTone(&middleContext, fcitx::Key(FcitxKey_f));
+  handler.handleKeyEvent(middleTone);
+  assert(middleTone.accepted());
+  assert(middleContext.deletes.size() == 1);
+  assert(middleContext.deletes[0].offset == -1);
+  assert(middleContext.deletes[0].count == 1);
+  assert(middleContext.propertyFor(&factory)->composing == "ề");
+
+  // Không được reset ngầm một preedit còn hiển thị chỉ vì tracker thấy click.
+  assert(!handler.prepareSurroundingRestoreAfterClick(middleContext));
+  assert(middleContext.propertyFor(&factory)->composing == "ề");
+
   // Khi tắt, cùng snapshot chỉ tạo preedit từ phím mới và tuyệt đối không xóa
   // phần text đã commit trước con trỏ.
   enabled = false;

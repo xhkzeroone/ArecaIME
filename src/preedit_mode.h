@@ -75,6 +75,11 @@ public:
   void requestProtectedReset(fcitx::InputContext &inputContext) override;
   void resetContext(fcitx::InputContext &inputContext) override;
 
+  // Chuẩn bị đọc lại từ quanh caret sau một click, nhưng không xóa preedit
+  // đang hiển thị nếu frontend chưa kết thúc composition cũ.
+  bool prepareSurroundingRestoreAfterClick(
+      fcitx::InputContext &inputContext);
+
   PreeditInputState *stateFor(fcitx::InputContext &inputContext) const;
 
 private:

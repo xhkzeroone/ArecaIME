@@ -81,10 +81,31 @@ extractSurroundingRestoreCandidate(const std::string &text, uint32_t cursor,
   }
 
   SurroundingRestoreCandidate candidate;
+  // Chỉ lấy phần từ bên trái caret. Nếu caret ở giữa `tiế|n`, Bamboo phục hồi
+  // `tiế`; phần `n` bên phải vẫn do ứng dụng giữ và không bị xóa/commit lại.
   candidate.text =
       text.substr(byteOffsets[begin], byteOffsets[cursor] - byteOffsets[begin]);
   candidate.characterCount = static_cast<uint32_t>(cursor - begin);
   return candidate;
+}
+
+std::optional<SurroundingRestoreCandidate>
+shortenSurroundingRestoreCandidate(
+    const SurroundingRestoreCandidate &candidate) {
+  if (candidate.characterCount <= 1 || candidate.text.empty() ||
+      !fcitx::utf8::validate(candidate.text)) {
+    return std::nullopt;
+  }
+
+  auto iterator = candidate.text.begin();
+  uint32_t ignored = 0;
+  iterator = fcitx::utf8::getNextChar(iterator, candidate.text.end(), &ignored);
+  if (iterator == candidate.text.end()) {
+    return std::nullopt;
+  }
+  return SurroundingRestoreCandidate{
+      std::string(iterator, candidate.text.end()),
+      candidate.characterCount - 1};
 }
 
 } // namespace areca

@@ -176,6 +176,14 @@ int main() {
   applyToDisplay(display, type(engine, 's'));
   assert(display == "tướng");
 
+  // Khi cả prefix `tiế` chưa phải âm tiết hoàn chỉnh, handler có thể thu hẹp
+  // tới nguyên âm sát caret. Suffix trong app vẫn tạo `tiế|n` + f -> `tiề|n`.
+  engine.reset();
+  assert(engine.restoreFromRenderedText("ế"));
+  display = "ế";
+  applyToDisplay(display, type(engine, 'f'));
+  assert(display == "ề");
+
   // Input rỗng bị từ chối và không được làm mất composition đang hoạt động.
   const auto beforeRejectedRestore = engine.currentText();
   assert(!engine.restoreFromRenderedText(""));

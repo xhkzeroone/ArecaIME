@@ -70,7 +70,7 @@ public:
     current_.clear();
   }
   bool restoreFromRenderedText(const std::string &text) override {
-    if (text.empty()) {
+    if (text.empty() || text == "tiế" || text == "iế") {
       return false;
     }
     current_ = text;
@@ -306,7 +306,9 @@ int main() {
   restoreManager.registerProperty("rewrite-restore-test", &restoreFactory);
   TestInputContext restoreContext(restoreManager, "org.gnome.TextEditor");
   restoreContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  restoreContext.surroundingText().setText("nh", 2, 2);
+  // Caret nằm giữa từ: Rewrite chỉ phục hồi prefix trước caret; suffix `n`
+  // tiếp tục nằm trong ứng dụng và không tham gia transaction xóa/chèn.
+  restoreContext.surroundingText().setText("tiến", 3, 3);
   areca::InputScheduler restoreScheduler(
       restoreLoop,
       [&](fcitx::InputContext &ic) {
@@ -332,7 +334,7 @@ int main() {
   assert(restoreKey.accepted());
   assert(restoreContext.events == std::vector<std::string>{"commit:a"});
   assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
-         "nha");
+         "ếa");
 
   fcitx::InputContextManager boundaryManager;
   areca::RewriteModeHandler::StateFactory boundaryFactory(

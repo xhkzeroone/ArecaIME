@@ -166,7 +166,7 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
     return;
   }
 
-  const auto candidate = extractSurroundingRestoreCandidate(
+  auto candidate = extractSurroundingRestoreCandidate(
       surrounding.text(), surrounding.cursor(), surrounding.anchor());
   if (!candidate) {
     if (debugProvider_())
@@ -174,11 +174,14 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
     return;
   }
 
-  if (!state.engine->restoreFromRenderedText(candidate->text)) {
+  while (candidate &&
+         !state.engine->restoreFromRenderedText(candidate->text)) {
+    candidate = shortenSurroundingRestoreCandidate(*candidate);
+  }
+  if (!candidate) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding restore rejected"
-                   << " reason=bamboo-cannot-rebuild"
-                   << " text=" << candidate->text;
+                   << " reason=bamboo-cannot-rebuild";
     }
     return;
   }

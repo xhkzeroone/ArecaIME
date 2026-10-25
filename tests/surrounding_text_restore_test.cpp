@@ -14,6 +14,17 @@ int main() {
   candidate = extractSurroundingRestoreCandidate("anh", 3, 3);
   assert(candidate && candidate->text == "anh");
 
+  candidate = extractSurroundingRestoreCandidate("tiến", 3, 3);
+  assert(candidate && candidate->text == "tiế" &&
+         candidate->characterCount == 3);
+  candidate = areca::shortenSurroundingRestoreCandidate(*candidate);
+  assert(candidate && candidate->text == "iế" &&
+         candidate->characterCount == 2);
+  candidate = areca::shortenSurroundingRestoreCandidate(*candidate);
+  assert(candidate && candidate->text == "ế" &&
+         candidate->characterCount == 1);
+  assert(!areca::shortenSurroundingRestoreCandidate(*candidate));
+
   assert(!extractSurroundingRestoreCandidate("chào", 4, 3));
   assert(!extractSurroundingRestoreCandidate("chào", 0, 0));
   assert(!extractSurroundingRestoreCandidate("chào", 99, 99));

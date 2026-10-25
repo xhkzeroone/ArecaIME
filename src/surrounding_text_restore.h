@@ -20,4 +20,11 @@ extractSurroundingRestoreCandidate(const std::string &text, uint32_t cursor,
                                    uint32_t anchor,
                                    std::size_t maxCharacters = 16);
 
+// Bỏ một ký tự đầu để thử phục hồi một suffix ngắn hơn sát caret. Cần cho
+// trường hợp prefix giữa từ (ví dụ `tiế|n`) chưa phải âm tiết hoàn chỉnh nên
+// Bamboo chỉ có thể dựng lại riêng nguyên âm `ế`.
+std::optional<SurroundingRestoreCandidate>
+shortenSurroundingRestoreCandidate(
+    const SurroundingRestoreCandidate &candidate);
+
 } // namespace areca
