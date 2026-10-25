@@ -104,6 +104,18 @@ bool BambooEngineAdapter::canProcessKey(uint32_t codepoint) const {
 
 BambooResult BambooEngineAdapter::process(uint32_t codepoint,
                                           const std::string &utf8Text) {
+  return processImpl(codepoint, utf8Text, true);
+}
+
+BambooResult
+BambooEngineAdapter::processWithoutMacro(uint32_t codepoint,
+                                         const std::string &utf8Text) {
+  return processImpl(codepoint, utf8Text, false);
+}
+
+BambooResult BambooEngineAdapter::processImpl(uint32_t codepoint,
+                                              const std::string &utf8Text,
+                                              bool allowMacro) {
   BambooResult result;
   result.currentText = renderedText_;
 
@@ -120,7 +132,7 @@ BambooResult BambooEngineAdapter::process(uint32_t codepoint,
       return result;
     }
 
-    char *raw = macroEnabled_
+    char *raw = allowMacro && macroEnabled_
                     ? ArecaBambooExpandMacro(handle_,
                                              capitalizeMacro_ ? 1 : 0)
                     : nullptr;

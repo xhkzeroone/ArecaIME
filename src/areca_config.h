@@ -9,6 +9,7 @@
 #include <fcitx-config/option.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
+#include <fcitx-utils/keysym.h>
 
 namespace areca {
 
@@ -20,6 +21,41 @@ enum class SpellcheckMode { Off, Basic, Realtime };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(SpellcheckMode, N_("Không kiểm tra (Tắt)"),
                                  N_("Khôi phục từ sau khi gõ xong"),
                                  N_("Khôi phục từ ngay trong lúc gõ"));
+
+enum class MacroBypassModifier { Disabled, Shift, Control, Alt, Super };
+FCITX_CONFIG_ENUM_NAME_WITH_I18N(MacroBypassModifier, N_("Tắt"), N_("Shift"),
+                                 N_("Ctrl"), N_("Alt"), N_("Super"));
+
+inline bool isMacroBypassSpace(const fcitx::Key &key,
+                               MacroBypassModifier modifier) {
+  const auto normalized = key.normalize();
+  if (normalized.sym() != FcitxKey_space &&
+      normalized.sym() != FcitxKey_KP_Space) {
+    return false;
+  }
+  const auto states = normalized.states();
+  const bool shift = states.test(fcitx::KeyState::Shift);
+  const bool control = states.test(fcitx::KeyState::Ctrl);
+  const bool alt = states.test(fcitx::KeyState::Alt);
+  const bool super = states.test(fcitx::KeyState::Super) ||
+                     states.test(fcitx::KeyState::Meta) ||
+                     states.test(fcitx::KeyState::Hyper) ||
+                     states.test(fcitx::KeyState::Super2) ||
+                     states.test(fcitx::KeyState::Hyper2);
+  switch (modifier) {
+  case MacroBypassModifier::Shift:
+    return shift && !control && !alt && !super;
+  case MacroBypassModifier::Control:
+    return control && !shift && !alt && !super;
+  case MacroBypassModifier::Alt:
+    return alt && !shift && !control && !super;
+  case MacroBypassModifier::Super:
+    return super && !shift && !control && !alt;
+  case MacroBypassModifier::Disabled:
+    return false;
+  }
+  return false;
+}
 
 struct StringListAnnotation : public fcitx::EnumAnnotation {
   void setList(std::vector<std::string> list) { list_ = std::move(list); }
@@ -289,6 +325,11 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> revertMacroOnBackspace{
         this, "RevertMacroOnBackspace", N_("Hoàn tác macro khi nhấn Backspace"),
         true};
+    fcitx::OptionWithAnnotation<MacroBypassModifier, fcitx::EnumAnnotation>
+        macroBypassModifier{
+            this, "MacroBypassModifier",
+            N_("Phím giữ để tạm bỏ qua macro khi nhấn Space"),
+            MacroBypassModifier::Shift};
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};

@@ -19,6 +19,10 @@ public:
   virtual bool canProcessKey(uint32_t codepoint) const = 0;
   virtual BambooResult process(uint32_t codepoint,
                                const std::string &utf8Text) = 0;
+  virtual BambooResult processWithoutMacro(uint32_t codepoint,
+                                           const std::string &utf8Text) {
+    return process(codepoint, utf8Text);
+  }
   virtual BambooResult processBackspace() = 0;
   virtual void backspace() = 0;
   virtual void reset() = 0;
@@ -48,6 +52,8 @@ public:
   bool canProcessKey(uint32_t codepoint) const override;
   BambooResult process(uint32_t codepoint,
                        const std::string &utf8Text) override;
+  BambooResult processWithoutMacro(uint32_t codepoint,
+                                   const std::string &utf8Text) override;
   BambooResult processBackspace() override;
   void backspace() override;
   void reset() override;
@@ -65,6 +71,8 @@ public:
   static std::vector<std::string> charsetNames();
 
 private:
+  BambooResult processImpl(uint32_t codepoint, const std::string &utf8Text,
+                           bool allowMacro);
   std::string encode(const std::string &text) const;
 
   uint64_t handle_ = 0;

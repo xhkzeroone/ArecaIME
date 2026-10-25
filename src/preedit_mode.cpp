@@ -85,12 +85,14 @@ PreeditModeHandler::PreeditModeHandler(
     AutoCapitalizeProvider autoCapitalizeProvider,
     BackspaceRecoveryProvider backspaceRecoveryProvider,
     RestoreSurroundingTextProvider restoreSurroundingTextProvider,
+    MacroBypassMatcher macroBypassMatcher,
     FinalizedWordEraser finalizedWordEraser)
     : stateFactory_(stateFactory), debugProvider_(std::move(debugProvider)),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
       restoreSurroundingTextProvider_(
           std::move(restoreSurroundingTextProvider)),
+      macroBypassMatcher_(std::move(macroBypassMatcher)),
       finalizedWordEraser_(std::move(finalizedWordEraser)) {}
 
 PreeditInputState *
@@ -159,13 +161,15 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   const auto normalizedKey = key.normalize();
   const auto rawSym = rawKey.sym();
   const auto textSym = normalizePreeditKeypadSym(normalizedKey.sym());
+  const bool suppressMacro = !state->engine->currentText().empty() &&
+                             macroBypassMatcher_(normalizedKey);
   const bool isEnter = textSym == FcitxKey_Return ||
                        rawSym == FcitxKey_Return || rawSym == FcitxKey_KP_Enter;
 
   // Modified and unsupported keys are not rebuilt. Commit the current Bamboo
   // preedit, then let Fcitx forward the original event with its exact modifier
   // and frontend metadata.
-  if (hasPreeditShortcutModifier(normalizedKey)) {
+  if (!suppressMacro && hasPreeditShortcutModifier(normalizedKey)) {
     commitComposition(*inputContext, *state);
     state->sentenceCapitalization.reset();
     event.forward();
@@ -312,7 +316,13 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     state->surroundingRestoreArmed = false;
   }
   try {
-    const auto result = state->engine->process(codepoint, utf8Text);
+    if (suppressMacro && debugProvider_()) {
+      FCITX_INFO() << "areca: preedit macro expansion bypassed";
+    }
+    const auto result = suppressMacro
+                            ? state->engine->processWithoutMacro(codepoint,
+                                                                utf8Text)
+                            : state->engine->process(codepoint, utf8Text);
     if (!result.newText.empty()) {
       state->composing = result.newText;
       updatePreedit(*inputContext, *state);

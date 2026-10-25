@@ -250,10 +250,9 @@ namespace areca::settings {
             checkbox("Bật macro", config.main.enableMacro);
             ImGui::TableNextColumn();
             checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);
-            ImGui::TableNextColumn();
-            checkbox("Hoàn tác macro khi nhấn Backspace", config.main.revertMacroOnBackspace);
             ImGui::EndTable();
         }
+
         endSettingsCard();
 
         beginSettingsCard("DiagnosticsCard", "Chẩn đoán");
@@ -265,6 +264,31 @@ namespace areca::settings {
 
     bool drawMacros(ConfigStore& config, size_t& pendingDeleteIndex) {
         drawPageIntro("Macro", "Mở rộng từ viết tắt thành nội dung thường dùng khi đang gõ.");
+
+        beginSettingsCard(
+            "MacroBehaviorCard", "Hành vi macro",
+            "Giữ modifier đã chọn rồi nhấn Space để giữ nguyên từ viết tắt trong lần đó."
+        );
+        constexpr std::array<const char*, 5> macroBypassNames = {
+            "Tắt", "Shift", "Ctrl", "Alt", "Super"
+        };
+        int macroBypass = static_cast<int>(config.main.macroBypassModifier.value());
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Phím giữ để tạm bỏ qua:");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(180.0F);
+        if (ImGui::Combo(
+                "##MacroBypassModifier", &macroBypass,
+                macroBypassNames.data(), static_cast<int>(macroBypassNames.size())
+            )) {
+            config.main.macroBypassModifier.setValue(
+                static_cast<areca::MacroBypassModifier>(macroBypass));
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("+ Space");
+        checkbox("Hoàn tác macro khi nhấn Backspace", config.main.revertMacroOnBackspace);
+        endSettingsCard();
+
         beginSettingsCard("MacroListCard", "Danh sách macro", "Các mục bên dưới được lưu cùng cấu hình Fcitx5.");
         auto& entries = *config.macros.macros.mutableValue();
 
@@ -794,7 +818,9 @@ namespace areca::settings {
 
         const bool tab0Dirty = !(config.main == savedConfig.main);
 
-        const bool tab1Dirty = !(config.macros == savedConfig.macros);
+        const bool tab1Dirty = !(config.macros == savedConfig.macros)
+            || !(config.main.macroBypassModifier == savedConfig.main.macroBypassModifier)
+            || !(config.main.revertMacroOnBackspace == savedConfig.main.revertMacroOnBackspace);
 
         const bool tab2Dirty = !(config.apps == savedConfig.apps)
             || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
@@ -814,7 +840,9 @@ namespace areca::settings {
         const areca::ArecaConfig defaultMain{};
         const bool tab0IsDefault = (config.main == defaultMain);
 
-        const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{});
+        const bool tab1IsDefault = (config.macros == areca::MacroTableConfig{})
+            && (config.main.macroBypassModifier == defaultMain.macroBypassModifier)
+            && (config.main.revertMacroOnBackspace == defaultMain.revertMacroOnBackspace);
 
         const bool tab2IsDefault = (config.apps == areca::AppProfilesConfig{})
             && (config.main.selectBackendKey == defaultMain.selectBackendKey);
@@ -875,6 +903,8 @@ namespace areca::settings {
                 listeningShortcut = false;
             } else if (activeTab == 1) {
                 config.macros = savedConfig.macros;
+                config.main.macroBypassModifier = savedConfig.main.macroBypassModifier;
+                config.main.revertMacroOnBackspace = savedConfig.main.revertMacroOnBackspace;
                 pendingDeleteIndex = SIZE_MAX;
             } else if (activeTab == 2) {
                 config.apps = savedConfig.apps;
@@ -914,6 +944,8 @@ namespace areca::settings {
                         : "Đã khôi phục và lưu, nhưng Areca chưa áp dụng: " + reloadError;
                 } else if (activeTab == 1) {
                     config.macros = areca::MacroTableConfig{};
+                    config.main.macroBypassModifier = defaultMain.macroBypassModifier;
+                    config.main.revertMacroOnBackspace = defaultMain.revertMacroOnBackspace;
                     config.save();
                     savedConfig = config;
                     std::string reloadError;

@@ -75,7 +75,7 @@ public:
                  RewriteBackendSelector rewriteBackendSelector);
 
   void enqueue(fcitx::InputContext &inputContext, uint32_t codepoint,
-               std::string utf8Text);
+               std::string utf8Text, bool suppressMacro = false);
   // Cho editor web nhận phím đầu qua frontend thay vì commitString để mở chế độ
   // soạn thảo. Vẫn xử lý Bamboo một lần để giữ trạng thái ghép dấu cho phím
   // sau. false: chưa sửa engine/event, caller có thể enqueue theo luồng thông

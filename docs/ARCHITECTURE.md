@@ -214,6 +214,13 @@ hoa, key viết hoa chữ đầu tạo replacement viết hoa chữ đầu mỗi
 còn các kiểu mixed-case khác giữ nguyên value cấu hình. Adapter reset Bamboo sau
 match, nối boundary, encode theo charset rồi tính delta rewrite. Vì thế macro
 không có đường commit đặc biệt và vẫn tuân thủ mọi queue/pending invariant.
+`MacroBypassModifier` cho phép chọn `Shift`, `Ctrl`, `Alt`, `Super` hoặc tắt.
+Khi composition đang có chữ và người dùng giữ modifier đã chọn rồi nhấn
+`Space`, handler vẫn xử lý Space như boundary nhưng gắn `suppressMacro` vào
+đúng phần tử FIFO. Scheduler gọi `processWithoutMacro()` cho riêng boundary
+đó; việc finalize, spell-check, bảng mã và commit Space vẫn giữ nguyên. Cờ nằm
+trên từng `QueuedKey`, không phải state one-shot dùng chung, nên gõ nhanh không
+thể làm nó áp nhầm sang phím kế tiếp.
 Nếu nhấn Backspace ngay sau khi macro mở rộng và `RevertMacroOnBackspace` bật, adapter hoàn tác nội dung mở
 rộng về lại key viết tắt ban đầu kèm boundary qua delta rewrite. Khi `RevertMacroOnBackspace` tắt, `canUndoMacro()` trả về `false` và Backspace xử lý như thường.
 

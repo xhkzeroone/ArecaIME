@@ -101,7 +101,8 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                        ContextBoolProvider
                                            forwardFirstCharacterProvider,
                                        BoolProvider
-                                           restoreSurroundingTextProvider)
+                                           restoreSurroundingTextProvider,
+                                       MacroBypassMatcher macroBypassMatcher)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
@@ -109,7 +110,8 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
       backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
       forwardFirstCharacterProvider_(std::move(forwardFirstCharacterProvider)),
       restoreSurroundingTextProvider_(
-          std::move(restoreSurroundingTextProvider)) {}
+          std::move(restoreSurroundingTextProvider)),
+      macroBypassMatcher_(std::move(macroBypassMatcher)) {}
 
 RewriteModeHandler::~RewriteModeHandler() {}
 
@@ -340,6 +342,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
 
+  const bool suppressMacro = !state->engine->currentText().empty() &&
+                             macroBypassMatcher_(normalizedKey);
+
   if (isBackspace) {
     if (!scheduler_.shouldRejectReset()) {
       backendVerdictProtector_(*inputContext, "user-backspace");
@@ -360,7 +365,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   const bool resetAndForward =
       key.isCursorMove() || rawSym == FcitxKey_Tab ||
       rawSym == FcitxKey_KP_Tab || rawSym == FcitxKey_ISO_Left_Tab ||
-      rawSym == FcitxKey_Escape || hasRewriteShortcutModifier(rawKey);
+      rawSym == FcitxKey_Escape ||
+      (!suppressMacro && hasRewriteShortcutModifier(rawKey));
   if (resetAndForward) {
     if (scheduler_.shouldRejectReset()) {
       // Cursor/modifier keys injected by uinput during or within post-commit window of a rewrite.
@@ -500,7 +506,10 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
   event.filterAndAccept();
-  scheduler_.enqueue(*inputContext, codepoint, utf8Text);
+  if (suppressMacro && debugProvider_()) {
+    FCITX_INFO() << "areca: rewrite macro expansion bypassed";
+  }
+  scheduler_.enqueue(*inputContext, codepoint, utf8Text, suppressMacro);
 }
 
 void RewriteModeHandler::requestProtectedReset(

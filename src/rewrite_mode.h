@@ -61,6 +61,7 @@ public:
   using StateFactory = fcitx::FactoryFor<RewriteInputState>;
   using BoolProvider = std::function<bool()>;
   using ContextBoolProvider = std::function<bool(fcitx::InputContext &)>;
+  using MacroBypassMatcher = std::function<bool(const fcitx::Key &)>;
   using BackendVerdictProtector =
       std::function<void(fcitx::InputContext &, const char *)>;
   using BackspaceRecoveryProvider = std::function<bool()>;
@@ -71,7 +72,8 @@ public:
                      BackendVerdictProtector backendVerdictProtector,
                      BackspaceRecoveryProvider backspaceRecoveryProvider,
                      ContextBoolProvider forwardFirstCharacterProvider,
-                     BoolProvider restoreSurroundingTextProvider);
+                     BoolProvider restoreSurroundingTextProvider,
+                     MacroBypassMatcher macroBypassMatcher);
   ~RewriteModeHandler();
 
   RewriteInputState *stateFor(fcitx::InputContext &inputContext) const;
@@ -104,6 +106,7 @@ private:
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
   ContextBoolProvider forwardFirstCharacterProvider_;
   BoolProvider restoreSurroundingTextProvider_;
+  MacroBypassMatcher macroBypassMatcher_;
 };
 
 } // namespace areca

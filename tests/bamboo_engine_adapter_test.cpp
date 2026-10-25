@@ -272,6 +272,16 @@ int main() {
   }
   assert(display == "be there ");
 
+  macroEngine.reset();
+  display.clear();
+  for (const char key : std::string("bt")) {
+    applyToDisplay(display, type(macroEngine, key));
+  }
+  const auto bypassedMacro = macroEngine.processWithoutMacro(' ', " ");
+  assert(!bypassedMacro.macroExpanded);
+  applyToDisplay(display, bypassedMacro);
+  assert(display == "bt ");
+
   areca::BambooEngineAdapter uppercaseMacroEngine(
       "Telex 2", true, true, true, "Unicode", true, true, macros);
   display.clear();

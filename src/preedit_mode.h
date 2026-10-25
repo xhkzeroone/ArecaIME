@@ -59,6 +59,7 @@ public:
   using AutoCapitalizeProvider = std::function<bool()>;
   using BackspaceRecoveryProvider = std::function<bool()>;
   using RestoreSurroundingTextProvider = std::function<bool()>;
+  using MacroBypassMatcher = std::function<bool(const fcitx::Key &)>;
   using FinalizedWordEraseDone = std::function<void(bool)>;
   using FinalizedWordEraser = std::function<bool(
       fcitx::InputContext &, uint32_t, FinalizedWordEraseDone)>;
@@ -68,6 +69,7 @@ public:
                      BackspaceRecoveryProvider backspaceRecoveryProvider,
                      RestoreSurroundingTextProvider
                          restoreSurroundingTextProvider,
+                     MacroBypassMatcher macroBypassMatcher,
                      FinalizedWordEraser finalizedWordEraser);
   void activate(fcitx::InputContext &inputContext) override;
   void deactivate(fcitx::InputContext &inputContext) override;
@@ -99,6 +101,7 @@ private:
   AutoCapitalizeProvider autoCapitalizeProvider_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
   RestoreSurroundingTextProvider restoreSurroundingTextProvider_;
+  MacroBypassMatcher macroBypassMatcher_;
   FinalizedWordEraser finalizedWordEraser_;
 };
 

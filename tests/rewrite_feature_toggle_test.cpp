@@ -58,6 +58,12 @@ public:
     return result;
   }
 
+  areca::BambooResult processWithoutMacro(
+      uint32_t codepoint, const std::string &text) override {
+    ++withoutMacroProcessCount;
+    return process(codepoint, text);
+  }
+
   areca::BambooResult processBackspace() override {
     ++backspaceProcessCount;
     macroUndoAvailable = false;
@@ -81,6 +87,7 @@ public:
 
   int backspaceProcessCount = 0;
   int plainBackspaceCount = 0;
+  int withoutMacroProcessCount = 0;
   bool macroUndoAvailable = false;
 
 private:
@@ -128,7 +135,11 @@ int main() {
     areca::RewriteModeHandler handler(
         loop, factory, scheduler, [] { return false; }, [] { return false; },
         [](fcitx::InputContext &, const char *) {}, [] { return true; },
-        [](fcitx::InputContext &) { return false; }, [] { return false; });
+        [](fcitx::InputContext &) { return false; }, [] { return false; },
+        [](const fcitx::Key &key) {
+          return key.normalize().sym() == FcitxKey_space &&
+                 key.states().test(fcitx::KeyState::Shift);
+        });
 
     auto *state = context.propertyFor(&factory);
     auto *engine = static_cast<TestEngine *>(state->engine.get());
@@ -219,6 +230,15 @@ int main() {
     assert(!restoredRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->backspaceProcessCount == 1);
+
+    engine->reset();
+    engine->process('b', "b");
+    engine->process('t', "t");
+    fcitx::KeyEvent bypassSpace(
+        &context, fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift));
+    handler.handleKeyEvent(bypassSpace);
+    assert(bypassSpace.accepted());
+    assert(engine->withoutMacroProcessCount == 1);
   }
 
   // So sánh handler với luồng accept/enqueue cũ, dùng cùng loại engine giả.
@@ -247,7 +267,7 @@ int main() {
         [&](fcitx::InputContext &ic) {
           return enabled && ic.program() == "google-chrome";
         },
-        [] { return false; });
+        [] { return false; }, [](const fcitx::Key &) { return false; });
     if (enabled) {
       fcitx::KeyEvent first(&context, fcitx::Key(FcitxKey_a));
       handler.handleKeyEvent(first);
@@ -327,7 +347,7 @@ int main() {
       restoreLoop, restoreFactory, restoreScheduler, [] { return false; },
       [] { return false; }, [](fcitx::InputContext &, const char *) {},
       [] { return false; }, [](fcitx::InputContext &) { return false; },
-      [] { return true; });
+      [] { return true; }, [](const fcitx::Key &) { return false; });
   restoreHandler.activate(restoreContext);
   fcitx::KeyEvent restoreKey(&restoreContext, fcitx::Key(FcitxKey_a));
   restoreHandler.handleKeyEvent(restoreKey);
@@ -368,7 +388,7 @@ int main() {
       restoreLoop, boundaryFactory, boundaryScheduler, [] { return false; },
       [] { return false; }, [](fcitx::InputContext &, const char *) {},
       [] { return false; }, [](fcitx::InputContext &) { return false; },
-      [] { return true; });
+      [] { return true; }, [](const fcitx::Key &) { return false; });
   boundaryHandler.activate(boundaryContext);
   auto *boundaryState = boundaryContext.propertyFor(&boundaryFactory);
   assert(boundaryState->wordSerial == 0);
@@ -403,4 +423,18 @@ int main() {
   assert(advancedConfig.useUinputInsteadOfForwardKey.value());
   assert(!advancedConfig.useXTestInsteadOfUinput.value());
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
+
+  areca::ArecaConfig mainConfig;
+  assert(mainConfig.macroBypassModifier.value() ==
+         areca::MacroBypassModifier::Shift);
+  assert(areca::isMacroBypassSpace(
+      fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift),
+      mainConfig.macroBypassModifier.value()));
+  assert(!areca::isMacroBypassSpace(
+      fcitx::Key(FcitxKey_space), mainConfig.macroBypassModifier.value()));
+  assert(!areca::isMacroBypassSpace(
+      fcitx::Key(FcitxKey_space,
+                 fcitx::KeyStates{fcitx::KeyState::Shift,
+                                  fcitx::KeyState::Ctrl}),
+      mainConfig.macroBypassModifier.value()));
 }

@@ -54,7 +54,8 @@ int main() {
   areca::PreeditModeHandler::StateFactory factory(
       [](fcitx::InputContext &) {
         return new areca::PreeditInputState("Telex 2", true, true, true,
-                                            "Unicode", false, false, 1, {});
+                                            "Unicode", true, false, 1,
+                                            {{"bt", "Be There"}});
       });
   manager.registerProperty("preedit-surrounding-restore-test", &factory);
 
@@ -65,6 +66,10 @@ int main() {
   areca::PreeditModeHandler handler(
       factory, [] { return false; }, [] { return false; },
       [&] { return backspaceRecovery; }, [&] { return enabled; },
+      [](const fcitx::Key &key) {
+        return key.normalize().sym() == FcitxKey_space &&
+               key.states().test(fcitx::KeyState::Shift);
+      },
       [&](fcitx::InputContext &, uint32_t count,
           areca::PreeditModeHandler::FinalizedWordEraseDone done) {
         requestedBackspaces = count;
@@ -114,6 +119,25 @@ int main() {
   handler.handleKeyEvent(retone);
   assert(retone.accepted());
   assert(context.propertyFor(&factory)->composing == "tường");
+
+  // Giữ modifier đã chọn rồi nhấn Space phải finalize nguyên từ viết tắt mà
+  // không expand macro; Space vẫn được commit như boundary bình thường.
+  TestInputContext macroBypassContext(manager);
+  handler.activate(macroBypassContext);
+  for (const char key : std::string("bt")) {
+    fcitx::KeyEvent keyEvent(
+        &macroBypassContext,
+        fcitx::Key(fcitx::Key::keySymFromUnicode(
+            static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+    assert(keyEvent.accepted());
+  }
+  fcitx::KeyEvent bypassSpace(
+      &macroBypassContext,
+      fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift));
+  handler.handleKeyEvent(bypassSpace);
+  assert(bypassSpace.accepted());
+  assert(macroBypassContext.commits == std::vector<std::string>{"bt "});
 
   // Click đặt caret giữa `tiến`, ngay sau `ế`: prefix `tiế` chưa hoàn chỉnh
   // được thu hẹp tới `ế`. `ti` và `n` vẫn nằm trong app nên f tạo `tiền`.

@@ -189,13 +189,21 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             return inputTypeDetector_.isBrowser(
                 resolveProgram(inputContext, state));
           },
-          [this]() { return config_.restoreSurroundingText.value(); }),
+          [this]() { return config_.restoreSurroundingText.value(); },
+          [this](const fcitx::Key &key) {
+            return isMacroBypassSpace(
+                key, config_.macroBypassModifier.value());
+          }),
       preeditHandler_(
           preeditStateFactory_,
           [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
           [this]() { return backspaceRecoveryEnabled(); },
           [this]() { return config_.restoreSurroundingText.value(); },
+          [this](const fcitx::Key &key) {
+            return isMacroBypassSpace(
+                key, config_.macroBypassModifier.value());
+          },
           [this](fcitx::InputContext &inputContext, uint32_t backspaceCount,
                  PreeditModeHandler::FinalizedWordEraseDone onDone) {
             return eraseFinalizedPreeditWord(inputContext, backspaceCount,

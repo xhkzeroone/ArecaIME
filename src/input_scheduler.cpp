@@ -21,15 +21,18 @@ InputScheduler::InputScheduler(fcitx::EventLoop &eventLoop,
       rewriteBackendSelector_(std::move(rewriteBackendSelector)) {}
 
 void InputScheduler::enqueue(fcitx::InputContext &inputContext,
-                             uint32_t codepoint, std::string utf8Text) {
+                             uint32_t codepoint, std::string utf8Text,
+                             bool suppressMacro) {
   QueuedKey key;
   key.sequence = nextSequence_++;
   key.codepoint = codepoint;
   key.utf8Text = std::move(utf8Text);
+  key.suppressMacro = suppressMacro;
   key.inputContext = inputContext.watch();
   if (debugProvider_()) {
     FCITX_INFO() << "areca: queue push kind=text seq=" << key.sequence
                  << " text=" << key.utf8Text
+                 << " suppress_macro=" << key.suppressMacro
                  << " depth_before=" << queue_.size();
   }
   queue_.push(std::move(key));
@@ -167,8 +170,11 @@ void InputScheduler::processNext() {
     if (key.isBackspace) {
       applyResult(*inputContext, *engine, engine->processBackspace(), "");
     } else {
-      applyResult(*inputContext, *engine,
-                  engine->process(key.codepoint, key.utf8Text), key.utf8Text);
+      const auto result = key.suppressMacro
+                              ? engine->processWithoutMacro(key.codepoint,
+                                                            key.utf8Text)
+                              : engine->process(key.codepoint, key.utf8Text);
+      applyResult(*inputContext, *engine, result, key.utf8Text);
     }
   } catch (const std::exception &error) {
     FCITX_ERROR() << "areca: Bamboo processing failed: " << error.what();
