@@ -122,12 +122,14 @@ Khi log có `rewrite select backend=uinput-shift-select`, kiểm tra:
 
 Khi log có `rewrite select backend=uinput-backspace`, kiểm tra tương tự:
 
-1. `backspaces=N` phải đi cùng `emit_backspaces=N+1`.
-2. N Backspace đầu phải có `action=forward`; Backspace N+1 phải là
-   `action=filter`.
-3. `ack timeout` nghĩa là tín hiệu xác nhận không quay lại trong 20 ms. Sau xác
-   nhận hoặc timeout, backend vẫn chạy settling wait theo frontend và
-   AdaptiveWait trước khi commit.
+1. `backspaces=N` phải đi cùng `emit_backspaces=N`.
+2. Mọi press/release quay lại đều có `action=forward`; `seen` chỉ là bộ đếm ACK
+   tương đối, không dùng để lọc event.
+3. Khi `seen=N`, settling wait có thể bắt đầu trong lúc timer phát phím riêng
+   vẫn tiếp tục gửi đủ N Backspace. Backend không commit trước khi phát xong.
+4. `ack timeout` nghĩa là bộ đếm chưa đạt N trong timeout cấu hình (mặc định
+   150 ms). Sau đó backend vẫn chạy settling wait theo frontend và
+   `AdaptiveWait` trước khi commit.
 
 ## Cấu hình cũ che default mới
 

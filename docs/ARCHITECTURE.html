@@ -4147,7 +4147,7 @@ Wayland và Fcitx5.</p>
 </tr>
 <tr>
 <td><code>UinputBackspaceBackend</code></td>
-<td>Gửi <code>KEY_BACKSPACE</code> × N+1 qua <code>/dev/uinput</code>; Fcitx forward N lần đầu, lọc lần xác nhận cuối rồi chờ settling delay thích ứng. Timeout xác nhận là 20 ms.</td>
+<td>Gửi đúng <code>KEY_BACKSPACE</code> × N qua <code>/dev/uinput</code> và forward mọi event Backspace quay lại Fcitx. Bộ đếm ACK chỉ là mốc tương đối để bắt đầu settling wait; timer phát phím chạy độc lập với timer commit và commit luôn đợi phát hết N phím. Nếu chưa đủ ACK, timeout cấu hình (mặc định 150 ms) vẫn chuyển sang settling wait.</td>
 </tr>
 <tr>
 <td><code>UinputShiftSelectBackend</code></td>
@@ -4445,24 +4445,27 @@ frontend, vì không đủ dữ liệu để ép an toàn.</li>
 
     S-&gt;&gt;B: apply(inputContext, plan, onDone)
     
-    loop N+1 lần
+    loop N lần
         B-&gt;&gt;DEV: sendKeyEvent(KEY_BACKSPACE, 1) -&gt; (KEY_BACKSPACE, 0)
-        B-&gt;&gt;EL: addTimeEvent(BackspaceDelayMs)
+        B-&gt;&gt;EL: sendTimer.addTimeEvent(BackspaceDelayMs)
         EL--&gt;&gt;B: Timer callback
     end
 
-    B-&gt;&gt;EL: addTimeEvent(AckTimeout = 20ms)
-    alt Backspace thứ N+1 về trước timeout
-        DEV--&gt;&gt;IC: N Backspace đầu quay lại Fcitx
-        IC--&gt;&gt;B: forward N Backspace
-        DEV--&gt;&gt;IC: Backspace thứ N+1 quay lại Fcitx
-        IC--&gt;&gt;B: filter Backspace dư và hủy timeout
-    else Timeout về trước
+    DEV--&gt;&gt;IC: Backspace quay lại Fcitx
+    IC--&gt;&gt;B: forward mọi press/release và tăng seen
+    alt seen đạt N
+        B-&gt;&gt;EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
+    else Chưa đạt N sau phím phát cuối
+        B-&gt;&gt;EL: commitTimer.addTimeEvent(AckTimeoutMs)
         EL--&gt;&gt;B: Ack timeout
-        B-&gt;&gt;B: clear backspace tracker
+        B-&gt;&gt;EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
     end
-    B-&gt;&gt;EL: addTimeEvent(AfterBackspaceWaitMs)
-    EL--&gt;&gt;B: Timer callback (Settling wait hoàn tất)
+    EL--&gt;&gt;B: Settling wait hoàn tất
+    alt Vẫn còn Backspace chưa phát
+        B-&gt;&gt;B: Đánh dấu wait đã hết
+        B-&gt;&gt;EL: Phát hết rồi chờ lại AfterBackspaceWaitMs
+        EL--&gt;&gt;B: Settling wait sau phím cuối hoàn tất
+    end
     B-&gt;&gt;IC: commitString(commitText)
     B-&gt;&gt;B: clearPending()
     B-&gt;&gt;S: onDone(transactionId)

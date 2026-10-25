@@ -28,7 +28,7 @@ Wayland và Fcitx5.
 | `RewriteBackend` | Interface chung cho thao tác apply một `RewritePlan`. |
 | `SurroundingTextBackend` | Gọi `deleteSurroundingText()` và `commitString()`. |
 | `ForwardBackspaceBackend` | Phát tuần tự Backspace press/release bằng `forwardKey()`, chờ settling delay thích ứng theo timer drift rồi commit text và hoàn tất transaction. |
-| `UinputBackspaceBackend` | Gửi `KEY_BACKSPACE` × N+1 qua `/dev/uinput`; Fcitx forward N lần đầu, lọc lần xác nhận cuối rồi dùng settling delay thích ứng trước khi commit. Timeout xác nhận là 20 ms. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
+| `UinputBackspaceBackend` | Gửi đúng `KEY_BACKSPACE` × N qua `/dev/uinput` và forward mọi event Backspace quay lại Fcitx. Bộ đếm ACK chỉ là mốc tương đối để bắt đầu settling wait; timer phát phím chạy độc lập với timer commit và commit không được phép xảy ra trước khi phát hết N phím. Nếu chưa đủ ACK, timeout cấu hình (mặc định 150 ms) vẫn chuyển sang settling wait. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
 | `UinputShiftSelectBackend` | Gửi `Shift down` và `Left` × N+1 qua `/dev/uinput`. Fcitx forward N Left đầu, lọc Left xác nhận cuối rồi mới gửi `Shift up` và commit cho ứng dụng trình duyệt web. |
 
 ## Phân tách cấu hình
@@ -398,24 +398,27 @@ sequenceDiagram
 
     S->>B: apply(inputContext, plan, onDone)
     
-    loop N+1 lần
+    loop N lần
         B->>DEV: sendKeyEvent(KEY_BACKSPACE, 1) -> (KEY_BACKSPACE, 0)
-        B->>EL: addTimeEvent(BackspaceDelayMs)
+        B->>EL: sendTimer.addTimeEvent(BackspaceDelayMs)
         EL-->>B: Timer callback
     end
 
-    B->>EL: addTimeEvent(AckTimeout = 20ms)
-    alt Backspace thứ N+1 về trước timeout
-        DEV-->>IC: N Backspace đầu quay lại Fcitx
-        IC-->>B: forward N Backspace
-        DEV-->>IC: Backspace thứ N+1 quay lại Fcitx
-        IC-->>B: filter Backspace dư và hủy timeout
-    else Timeout về trước
+    DEV-->>IC: Backspace quay lại Fcitx
+    IC-->>B: forward mọi press/release và tăng seen
+    alt seen đạt N
+        B->>EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
+    else Chưa đạt N sau phím phát cuối
+        B->>EL: commitTimer.addTimeEvent(AckTimeoutMs)
         EL-->>B: Ack timeout
-        B->>B: clear backspace tracker
+        B->>EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
     end
-    B->>EL: addTimeEvent(AfterBackspaceWaitMs)
-    EL-->>B: Timer callback (Settling wait hoàn tất)
+    EL-->>B: Settling wait hoàn tất
+    alt Vẫn còn Backspace chưa phát
+        B->>B: Đánh dấu wait đã hết
+        B->>EL: Phát hết rồi chờ lại AfterBackspaceWaitMs
+        EL-->>B: Settling wait sau phím cuối hoàn tất
+    end
     B->>IC: commitString(commitText)
     B->>B: clearPending()
     B->>S: onDone(transactionId)
