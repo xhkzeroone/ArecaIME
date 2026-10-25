@@ -16,6 +16,27 @@ tự chọn cách sửa từ phù hợp với từng ứng dụng.
 
 ## Cài đặt
 
+### 1. Cài Fcitx5
+
+Areca là addon của Fcitx5, vì vậy máy phải có Fcitx5 và công cụ cấu hình trước.
+Chọn lệnh tương ứng với bản phân phối:
+
+```bash
+# Ubuntu / Debian
+sudo apt install fcitx5 fcitx5-config-qt fcitx5-frontend-all
+
+# Arch Linux / CachyOS
+sudo pacman -S fcitx5-im
+
+# Fedora
+sudo dnf install fcitx5 fcitx5-autostart fcitx5-configtool fcitx5-gtk fcitx5-qt
+```
+
+Nếu bản phân phối không có đúng tên gói trên, hãy cài tối thiểu `fcitx5`, công
+cụ cấu hình Fcitx5 và module GTK/Qt từ kho phần mềm của bản phân phối.
+
+### 2. Cài Areca
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xhkzeroone/ArecaIME/main/install.sh | bash
 ```
@@ -40,6 +61,143 @@ paru -S fcitx5-areca-git
 # hoặc
 yay -S fcitx5-areca-git
 ```
+
+### 3. Thiết lập desktop và biến môi trường
+
+Chỉ làm theo **một** mục phù hợp với phiên desktop đang dùng. Có thể kiểm tra
+bằng `echo "$XDG_CURRENT_DESKTOP / $XDG_SESSION_TYPE"`.
+
+#### KDE Plasma Wayland
+
+1. Mở **System Settings → Keyboard → Virtual Keyboard** và chọn **Fcitx 5**.
+   KWin sẽ tự khởi động Fcitx5, không cần thêm lệnh autostart khác.
+2. Để dùng ổn định cả ứng dụng Wayland native, XWayland và ứng dụng GTK/Qt
+   cũ, tạo `~/.config/environment.d/fcitx.conf` với nội dung:
+
+   ```ini
+   XMODIFIERS=@im=fcitx
+   GTK_IM_MODULE=fcitx
+   QT_IM_MODULE=fcitx
+   SDL_IM_MODULE=fcitx
+   ```
+
+Đây là cấu hình tương thích được khuyên dùng cho Areca trên phiên Plasma có
+lẫn ứng dụng XWayland. Khuyến nghị thuần Wayland của Fcitx5 chỉ cần
+`XMODIFIERS`, nhưng một số ứng dụng XWayland/GTK/Qt sẽ không nhận input method
+nếu thiếu module tương ứng. Nếu riêng một ứng dụng Wayland native bị nhấp nháy
+hoặc sai vị trí cửa sổ gợi ý, hãy chạy thử ứng dụng đó với biến module bị bỏ
+trống thay vì gỡ cấu hình cho toàn phiên, ví dụ:
+
+```bash
+env -u GTK_IM_MODULE ten-ung-dung
+# hoặc
+env -u QT_IM_MODULE ten-ung-dung
+```
+
+#### GNOME Wayland
+
+Tạo `~/.config/environment.d/fcitx.conf`:
+
+```ini
+XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+SDL_IM_MODULE=fcitx
+```
+
+Sau đó bảo đảm Fcitx5 tự chạy cùng phiên đăng nhập:
+
+```bash
+mkdir -p ~/.config/autostart
+cp /usr/share/applications/org.fcitx.Fcitx5.desktop ~/.config/autostart/
+```
+
+Cấu hình đầy đủ này ưu tiên khả năng hoạt động đồng đều giữa ứng dụng Wayland,
+XWayland, GTK, Qt và SDL.
+
+#### Hyprland
+
+Thêm vào `~/.config/hypr/hyprland.conf`:
+
+```ini
+env = XMODIFIERS,@im=fcitx
+env = GTK_IM_MODULE,fcitx
+env = QT_IM_MODULE,fcitx
+env = SDL_IM_MODULE,fcitx
+exec-once = fcitx5 -d
+```
+
+Nếu dùng UWSM hoặc đã bật XDG autostart, bỏ dòng `exec-once` để tránh chạy hai
+tiến trình Fcitx5.
+
+#### Niri
+
+Thêm vào `~/.config/niri/config.kdl`:
+
+```kdl
+environment {
+    XMODIFIERS "@im=fcitx"
+    GTK_IM_MODULE "fcitx"
+    QT_IM_MODULE "fcitx"
+    SDL_IM_MODULE "fcitx"
+}
+
+spawn-at-startup "fcitx5" "-d"
+```
+
+Phiên Niri chạy qua systemd đã hỗ trợ XDG autostart. Nếu Fcitx5 đã tự chạy từ
+`/etc/xdg/autostart` hoặc `~/.config/autostart`, không thêm
+`spawn-at-startup` nữa.
+
+#### Sway và Wayland WM khác
+
+Tạo `~/.config/environment.d/fcitx.conf`:
+
+```ini
+XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+SDL_IM_MODULE=fcitx
+```
+
+Sau đó thêm `exec fcitx5 -d` vào cấu hình Sway, hoặc lệnh khởi động tương đương
+của compositor.
+
+#### Phiên X11
+
+Thêm vào `~/.xprofile` (hoặc file khởi động phiên X11 tương đương):
+
+```bash
+export XMODIFIERS=@im=fcitx
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export SDL_IM_MODULE=fcitx
+fcitx5 -d
+```
+
+Nếu desktop đã tự khởi động Fcitx5 thì bỏ dòng cuối. Sau khi đổi biến môi
+trường, hãy đăng xuất rồi đăng nhập lại; khởi động lại máy là cách chắc chắn
+nhất để mọi ứng dụng nhận cấu hình mới.
+
+### 4. Thêm Areca vào Fcitx5
+
+1. Mở `fcitx5-configtool`.
+2. Bỏ chọn **Only Show Current Language** nếu chưa thấy bộ gõ.
+3. Tìm **Areca (Bamboo)** và thêm vào danh sách bên phải.
+4. Chọn Areca từ biểu tượng Fcitx5 hoặc dùng phím tắt chuyển bộ gõ.
+
+Kiểm tra nhanh nếu không gõ được:
+
+```bash
+pgrep -a fcitx5
+fcitx5-diagnose
+printenv | grep -E '^(XMODIFIERS|GTK_IM_MODULE|QT_IM_MODULE|SDL_IM_MODULE)='
+```
+
+Chỉ nên có một tiến trình Fcitx5. Không chạy đồng thời IBus và Fcitx5 trong
+cùng ứng dụng. Xem thêm tài liệu chính thức về
+[thiết lập Fcitx5](https://fcitx-im.org/wiki/Setup_Fcitx_5/en) và
+[Fcitx5 trên Wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland/en).
 
 ## Cài từ mã nguồn
 
@@ -91,16 +249,6 @@ sudo usermod -aG input "$USER"
 
 Nhóm `input` có quyền đọc/ghi thiết bị đầu vào ở mức thấp. Có thể bỏ qua bước
 này nếu không muốn cấp quyền; Areca sẽ dùng backend dự phòng.
-
-### Thiết lập Fcitx5
-
-1. Mở `fcitx5-configtool`.
-2. Bỏ chọn **Only Show Current Language** nếu chưa thấy bộ gõ.
-3. Tìm **Areca (Bamboo)** và thêm vào danh sách bên phải.
-4. Chọn Areca từ biểu tượng Fcitx5 hoặc dùng phím tắt chuyển bộ gõ.
-
-Nếu addon chưa xuất hiện, hãy đăng xuất rồi đăng nhập lại. Trên Wayland, cũng
-nên chắc chắn phiên desktop đang dùng Fcitx5 làm input method.
 
 ## Xem log
 
@@ -188,4 +336,3 @@ nguồn tham khảo hữu ích trong quá trình phát triển Areca:
 
 - Areca được phát hành theo giấy phép [MIT](LICENSE).
 - Thư viện [Bamboo Core](bamboo/bamboo-core) được phát hành theo giấy phép [MIT](bamboo/bamboo-core/LICENSE).
-

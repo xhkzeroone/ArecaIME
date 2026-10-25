@@ -539,6 +539,108 @@ cd ArecaIME
           </div>
         </div>
 
+        <div class="fcitx-setup reveal">
+          <div class="setup-heading">
+            <p class="eyebrow"><span></span> Thiết lập Fcitx5</p>
+            <h3>Chọn đúng hướng dẫn cho desktop của bạn.</h3>
+            <p>
+              Areca cần Fcitx5, công cụ cấu hình và cách khởi động phù hợp với
+              phiên desktop. Sau khi thay đổi biến môi trường, hãy đăng xuất
+              rồi đăng nhập lại.
+            </p>
+          </div>
+
+          <div class="fcitx-package-command">
+            <p><b>Cài Fcitx5 trước khi cài Areca</b></p>
+            <pre><code># Ubuntu / Debian
+sudo apt install fcitx5 fcitx5-config-qt fcitx5-frontend-all
+
+# Arch Linux / CachyOS
+sudo pacman -S fcitx5-im
+
+# Fedora
+sudo dnf install fcitx5 fcitx5-autostart fcitx5-configtool fcitx5-gtk fcitx5-qt</code></pre>
+          </div>
+
+          <div class="desktop-setup-grid">
+            <article class="desktop-setup-card">
+              <h4>KDE Plasma Wayland</h4>
+              <p>Chọn <b>Fcitx 5</b> tại <b>System Settings → Keyboard → Virtual Keyboard</b>. Tạo <code>~/.config/environment.d/fcitx.conf</code>:</p>
+              <pre><code>XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+SDL_IM_MODULE=fcitx</code></pre>
+              <p class="setup-note">Cấu hình tương thích này hỗ trợ cả app Wayland, XWayland và GTK/Qt cũ. Không thêm autostart thứ hai.</p>
+            </article>
+
+            <article class="desktop-setup-card">
+              <h4>GNOME Wayland</h4>
+              <p>Tạo <code>~/.config/environment.d/fcitx.conf</code>:</p>
+              <pre><code>XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+SDL_IM_MODULE=fcitx</code></pre>
+              <p>Chép <code>org.fcitx.Fcitx5.desktop</code> từ <code>/usr/share/applications</code> vào <code>~/.config/autostart/</code>.</p>
+              <p class="setup-note">Dùng đủ module để tương thích cả ứng dụng Wayland, XWayland, GTK, Qt và SDL.</p>
+            </article>
+
+            <article class="desktop-setup-card">
+              <h4>Hyprland</h4>
+              <p>Thêm vào <code>~/.config/hypr/hyprland.conf</code>:</p>
+              <pre><code>env = XMODIFIERS,@im=fcitx
+env = GTK_IM_MODULE,fcitx
+env = QT_IM_MODULE,fcitx
+env = SDL_IM_MODULE,fcitx
+exec-once = fcitx5 -d</code></pre>
+              <p class="setup-note">Nếu UWSM/XDG autostart đã chạy Fcitx5 thì bỏ dòng exec-once.</p>
+            </article>
+
+            <article class="desktop-setup-card">
+              <h4>Niri</h4>
+              <p>Thêm vào <code>~/.config/niri/config.kdl</code>:</p>
+              <pre><code>environment {
+    XMODIFIERS "@im=fcitx"
+    GTK_IM_MODULE "fcitx"
+    QT_IM_MODULE "fcitx"
+    SDL_IM_MODULE "fcitx"
+}
+spawn-at-startup "fcitx5" "-d"</code></pre>
+              <p class="setup-note">Không thêm spawn-at-startup nếu phiên systemd đã dùng XDG autostart.</p>
+            </article>
+
+            <article class="desktop-setup-card">
+              <h4>Sway / Wayland WM khác</h4>
+              <p>Đặt trong <code>~/.config/environment.d/fcitx.conf</code>:</p>
+              <pre><code>XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+SDL_IM_MODULE=fcitx</code></pre>
+              <p>Thêm <code>exec fcitx5 -d</code> hoặc lệnh khởi động tương đương vào cấu hình compositor.</p>
+            </article>
+
+            <article class="desktop-setup-card">
+              <h4>X11</h4>
+              <p>Thêm vào <code>~/.xprofile</code>:</p>
+              <pre><code>export XMODIFIERS=@im=fcitx
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export SDL_IM_MODULE=fcitx
+fcitx5 -d</code></pre>
+              <p class="setup-note">Bỏ dòng cuối nếu desktop đã tự khởi động Fcitx5.</p>
+            </article>
+          </div>
+
+          <div class="setup-finish">
+            <p>
+              Cuối cùng mở <code>fcitx5-configtool</code>, bỏ chọn
+              <b>Only Show Current Language</b>, tìm <b>Areca (Bamboo)</b> và
+              thêm vào danh sách. Nếu gặp lỗi, chạy <code>fcitx5-diagnose</code>
+              và kiểm tra máy chỉ có một tiến trình Fcitx5.
+            </p>
+            <a href="https://github.com/xhkzeroone/ArecaIME#3-thiết-lập-desktop-và-biến-môi-trường" target="_blank" rel="noreferrer">Đọc hướng dẫn đầy đủ trên GitHub <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+
       </section>
 
       <section id="credits" class="credits section-block section-shell reveal">
