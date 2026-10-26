@@ -975,6 +975,12 @@ kbd {
 .text-link:hover span { transform: translateX(4px); }
 .light-link { color: #75d9a9; }
 
+.architecture-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+
 .install {
   display: grid;
   grid-template-columns: 0.82fr 1.18fr;
