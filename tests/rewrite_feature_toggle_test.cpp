@@ -135,7 +135,8 @@ int main() {
     areca::RewriteModeHandler handler(
         loop, factory, scheduler, [] { return false; }, [] { return false; },
         [](fcitx::InputContext &, const char *) {}, [] { return true; },
-        [](fcitx::InputContext &) { return false; }, [] { return false; },
+        [](fcitx::InputContext &) { return false; },
+        [](fcitx::InputContext &) { return false; },
         [](const fcitx::Key &key) {
           return key.normalize().sym() == FcitxKey_space &&
                  key.states().test(fcitx::KeyState::Shift);
@@ -267,7 +268,8 @@ int main() {
         [&](fcitx::InputContext &ic) {
           return enabled && ic.program() == "google-chrome";
         },
-        [] { return false; }, [](const fcitx::Key &) { return false; });
+        [](fcitx::InputContext &) { return false; },
+        [](const fcitx::Key &) { return false; });
     if (enabled) {
       fcitx::KeyEvent first(&context, fcitx::Key(FcitxKey_a));
       handler.handleKeyEvent(first);
@@ -347,7 +349,10 @@ int main() {
       restoreLoop, restoreFactory, restoreScheduler, [] { return false; },
       [] { return false; }, [](fcitx::InputContext &, const char *) {},
       [] { return false; }, [](fcitx::InputContext &) { return false; },
-      [] { return true; }, [](const fcitx::Key &) { return false; });
+      [](fcitx::InputContext &ic) {
+        return !ic.capabilityFlags().test(fcitx::CapabilityFlag::Url);
+      },
+      [](const fcitx::Key &) { return false; });
   restoreHandler.activate(restoreContext);
   fcitx::KeyEvent restoreKey(&restoreContext, fcitx::Key(FcitxKey_a));
   restoreHandler.handleKeyEvent(restoreKey);
@@ -355,6 +360,21 @@ int main() {
   assert(restoreContext.events == std::vector<std::string>{"commit:a"});
   assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
          "ếa");
+
+  // Tạm thời không restore trong address bar: Chromium có thể giữ snapshot
+  // getText() cũ sau khi nội dung hiển thị đã bị Backspace xóa sạch.
+  TestInputContext addressBarContext(restoreManager, "google-chrome");
+  fcitx::CapabilityFlags addressBarCapabilities;
+  addressBarCapabilities |= fcitx::CapabilityFlag::SurroundingText;
+  addressBarCapabilities |= fcitx::CapabilityFlag::Url;
+  addressBarContext.setCapabilityFlags(addressBarCapabilities);
+  addressBarContext.surroundingText().setText("stale", 5, 5);
+  restoreHandler.activate(addressBarContext);
+  fcitx::KeyEvent addressBarKey(&addressBarContext, fcitx::Key(FcitxKey_a));
+  restoreHandler.handleKeyEvent(addressBarKey);
+  assert(addressBarKey.accepted());
+  assert(addressBarContext.propertyFor(&restoreFactory)->engine->currentText() ==
+         "a");
 
   fcitx::InputContextManager boundaryManager;
   areca::RewriteModeHandler::StateFactory boundaryFactory(
@@ -388,7 +408,8 @@ int main() {
       restoreLoop, boundaryFactory, boundaryScheduler, [] { return false; },
       [] { return false; }, [](fcitx::InputContext &, const char *) {},
       [] { return false; }, [](fcitx::InputContext &) { return false; },
-      [] { return true; }, [](const fcitx::Key &) { return false; });
+      [](fcitx::InputContext &) { return true; },
+      [](const fcitx::Key &) { return false; });
   boundaryHandler.activate(boundaryContext);
   auto *boundaryState = boundaryContext.propertyFor(&boundaryFactory);
   assert(boundaryState->wordSerial == 0);

@@ -68,7 +68,7 @@ public:
                      BackendVerdictProtector backendVerdictProtector,
                      BackspaceRecoveryProvider backspaceRecoveryProvider,
                      ContextBoolProvider forwardFirstCharacterProvider,
-                     BoolProvider restoreSurroundingTextProvider,
+                     ContextBoolProvider restoreSurroundingTextProvider,
                      MacroBypassMatcher macroBypassMatcher);
   ~RewriteModeHandler();
 
@@ -101,7 +101,7 @@ private:
   BackendVerdictProtector backendVerdictProtector_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
   ContextBoolProvider forwardFirstCharacterProvider_;
-  BoolProvider restoreSurroundingTextProvider_;
+  ContextBoolProvider restoreSurroundingTextProvider_;
   MacroBypassMatcher macroBypassMatcher_;
 };
 

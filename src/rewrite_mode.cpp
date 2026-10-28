@@ -88,7 +88,7 @@ RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
                                            backspaceRecoveryProvider,
                                        ContextBoolProvider
                                            forwardFirstCharacterProvider,
-                                       BoolProvider
+                                       ContextBoolProvider
                                            restoreSurroundingTextProvider,
                                        MacroBypassMatcher macroBypassMatcher)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
@@ -123,7 +123,7 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
   }
   state.surroundingRestoreArmed = false;
 
-  const bool enabled = restoreSurroundingTextProvider_();
+  const bool enabled = restoreSurroundingTextProvider_(inputContext);
   const bool supported = enabled && state.outputCharset == "Unicode" &&
                          state.engine &&
                          state.engine->currentText().empty() &&

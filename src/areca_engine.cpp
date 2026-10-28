@@ -189,7 +189,17 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             return inputTypeDetector_.isBrowser(
                 resolveProgram(inputContext, state));
           },
-          [this]() { return config_.restoreSurroundingText.value(); },
+          [this](fcitx::InputContext &inputContext) {
+            if (!config_.restoreSurroundingText.value()) {
+              return false;
+            }
+            auto *state = inputContext.propertyFor(&rewriteStateFactory_);
+            const std::string program = resolveProgram(inputContext, state);
+            // TODO: Chromium đôi khi giữ getText()/SurroundingText cũ sau khi
+            // người dùng Backspace sạch address bar. Tạm tắt restore tại đây
+            // cho đến khi có shadow snapshot đồng bộ được từng lần xóa.
+            return !inChromiumAddressBar(inputContext, program, state);
+          },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(
                 key, config_.macroBypassModifier.value());
