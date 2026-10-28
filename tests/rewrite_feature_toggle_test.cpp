@@ -425,6 +425,7 @@ int main() {
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
 
   areca::ArecaConfig mainConfig;
+  assert(!mainConfig.shiftSelectFallbackForBrowser.value());
   assert(mainConfig.useBackspaceForUrl.value());
   assert(areca::shouldForceBackspaceForUrl(
       mainConfig.useBackspaceForUrl.value(),

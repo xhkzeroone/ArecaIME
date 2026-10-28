@@ -359,7 +359,7 @@ FCITX_CONFIGURATION(
         this, "ShiftSelectFallbackForBrowser",
         N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "
            "surrounding text"),
-        true};
+        false};
     fcitx::Option<bool> useBackspaceForUrl{
         this, "UseBackspaceForUrl",
         N_("Xử lý riêng ô URL và thanh địa chỉ"), true};
