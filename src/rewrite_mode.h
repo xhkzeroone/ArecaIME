@@ -49,11 +49,7 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   uint32_t wordSerial = 0;
   bool wordBoundaryPending = false;
   std::string resolvedProgram;
-  // Bắt đầu: Theo dõi trạng thái thanh địa chỉ Chromium và từ đầu tiên
   uint64_t addrBarUiVerdictAtUsec = 0;
-  bool addrBarIsFirstWord = true;
-  bool addrBarHadSpace = false;
-  // Kết thúc: Theo dõi trạng thái thanh địa chỉ Chromium và từ đầu tiên
 };
 
 class RewriteModeHandler final : public InputModeHandler {

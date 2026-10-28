@@ -262,16 +262,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     return;
   }
   auto &backend = *selection.backend;
-  // Bắt đầu: FullReplace xóa sạch từ cũ cùng gợi ý Omnibox và chèn lại toàn bộ từ mới
-  if (selection.fullReplace && !result.newText.empty()) {
-    const auto currentLen =
-        static_cast<uint32_t>(fcitx::utf8::length(result.currentText));
-    plan.backspaceCount = currentLen + selection.additionalBackspaces;
-    plan.commitText = result.newText;
-  } else {
-    plan.backspaceCount = result.deleteCount + selection.additionalBackspaces;
-  }
-  // Kết thúc: FullReplace xóa sạch từ cũ cùng gợi ý Omnibox và chèn lại toàn bộ từ mới
+  plan.backspaceCount = result.deleteCount + selection.additionalBackspaces;
   plan.probeSurrounding = selection.probeSurrounding;
   if (selection.surroundingProbeTimeoutMs > 0) {
     plan.surroundingProbeTimeoutMs = selection.surroundingProbeTimeoutMs;
@@ -281,7 +272,6 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
                  << " tx=" << plan.transactionId
                  << " bamboo_delete=" << result.deleteCount
                  << " additional_backspaces=" << selection.additionalBackspaces
-                 << " full_replace=" << selection.fullReplace
                  << " probe_timeout_ms=" << plan.surroundingProbeTimeoutMs
                  << " plan_backspaces=" << plan.backspaceCount;
   }

@@ -50,11 +50,6 @@ struct SchedulerTiming {
 struct RewriteBackendSelection {
   RewriteBackend *backend = nullptr;
   uint32_t additionalBackspaces = 0;
-  // Bắt đầu: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu
-  // tiên trong thanh địa chỉ Chromium
-  bool fullReplace = false;
-  // Kết thúc: FullReplace xóa toàn bộ từ cũ và chèn trọn vẹn từ mới cho từ đầu
-  // tiên trong thanh địa chỉ Chromium
   bool probeSurrounding = false;
   // 0 giữ timing chung. Probe tự động đặt 150 ms cho lần đầu và 80 ms cho lần
   // retry ở từ kế tiếp.

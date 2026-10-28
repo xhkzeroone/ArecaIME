@@ -552,18 +552,14 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                                      surrounding.cursor(), surrounding.anchor(),
                                      result.currentText);
 
+  // Chỉ xử lý autocomplete đặc biệt khi frontend cung cấp surrounding text
+  // đủ để quan sát selection. Với address bar không có surrounding, chỉ chọn
+  // Backspace backend ở nhánh URL phía dưới và không đoán ký tự cần xóa thêm.
   if (decision.browserAutocomplete || collapsedFirefoxAutocomplete ||
-      hasActiveSelection || inAddressBar) {
+      hasActiveSelection) {
     uint32_t additional = 0;
-    bool fullReplace = false;
-    // Bắt đầu: FullReplace và 1 Backspace phụ cho từ đầu tiên trong thanh địa
-    // chỉ
-    if (inAddressBar && state && state->addrBarIsFirstWord &&
-        !state->addrBarHadSpace) {
-      additional = 1;
-      fullReplace = true;
-    } else if (selectionMatchesCurrentText || decision.browserAutocomplete ||
-               collapsedFirefoxAutocomplete) {
+    if (selectionMatchesCurrentText || decision.browserAutocomplete ||
+        collapsedFirefoxAutocomplete) {
       additional = 1;
     }
     RewriteBackend *backend = resolvePreferredBackspaceBackend(preferHardware);
@@ -578,15 +574,14 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << " active_selection=" << hasActiveSelection
                    << " selection_matches_current="
                    << selectionMatchesCurrentText
-                   << " full_replace=" << fullReplace
                    << " additional_backspaces=" << additional
                    << " bamboo_delete=" << result.deleteCount;
     }
-    return {backend, additional, fullReplace};
+    return {backend, additional};
   }
 
-  // Autocomplete, active selection và address bar phải được xử lý trước vì
-  // các nhánh đó có thể cần Backspace bổ sung hoặc full-replace. URL flag chỉ
+  // Autocomplete và active selection phải được xử lý trước vì các nhánh đó có
+  // thể cần Backspace bổ sung. URL flag chỉ
   // ép dùng Backspace backend sau khi các chiến lược đặc biệt không khớp.
   if (forceUrlBackspace) {
     RewriteBackend *backend =
@@ -621,7 +616,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                          << surBackend->name() << " program=" << program
                          << " probe_timeout_ms=" << probeTimeoutMs;
           }
-          return {surBackend, 0, false, backendVerdict_.probePending,
+          return {surBackend, 0, backendVerdict_.probePending,
                   probeTimeoutMs};
         }
         if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
@@ -687,7 +682,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << " probe=" << backendVerdict_.probePending
                    << " probe_timeout_ms=" << probeTimeoutMs;
     }
-    return {surBackend, 0, false, backendVerdict_.probePending,
+    return {surBackend, 0, backendVerdict_.probePending,
             probeTimeoutMs};
   }
 

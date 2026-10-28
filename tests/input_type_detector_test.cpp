@@ -224,44 +224,6 @@ int main() {
       assert(verdictUsec == 0);
     }
 
-    // Test Address Bar First Word tracking logic
-    {
-      bool addrBarIsFirstWord = true;
-      bool addrBarHadSpace = false;
-
-      const auto computeAdditional = [&](bool inAddrBar) -> uint32_t {
-        if (inAddrBar && addrBarIsFirstWord && !addrBarHadSpace) {
-          addrBarIsFirstWord = false;
-          return 1;
-        }
-        return 0;
-      };
-
-      // Initial first word replacement in address bar
-      assert(computeAdditional(true) == 1);
-      assert(!addrBarIsFirstWord);
-
-      // Subsequent replacement within same first word
-      assert(computeAdditional(true) == 0);
-
-      // Space typed: next word is not first word
-      addrBarIsFirstWord = false;
-      addrBarHadSpace = true;
-      assert(computeAdditional(true) == 0);
-
-      // Backspacing when space had been typed does not re-arm first word
-      if (!addrBarHadSpace) {
-        addrBarIsFirstWord = true;
-      }
-      assert(!addrBarIsFirstWord);
-      assert(computeAdditional(true) == 0);
-
-      // Reset / Clear shortcut re-arms first word
-      addrBarIsFirstWord = true;
-      addrBarHadSpace = false;
-      assert(computeAdditional(true) == 1);
-      assert(!addrBarIsFirstWord);
-    }
   }
 
   // Case 5: Tracker focus must not leak to another application.
