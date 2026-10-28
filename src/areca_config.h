@@ -7,6 +7,7 @@
 #include <fcitx-config/configuration.h>
 #include <fcitx-config/enum.h>
 #include <fcitx-config/option.h>
+#include <fcitx-utils/capabilityflags.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
@@ -55,6 +56,13 @@ inline bool isMacroBypassSpace(const fcitx::Key &key,
     return false;
   }
   return false;
+}
+
+inline bool shouldForceBackspaceForUrl(
+    bool enabled, const fcitx::CapabilityFlags &capabilities,
+    bool inAddressBar = false) {
+  return enabled &&
+         (capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar);
 }
 
 struct StringListAnnotation : public fcitx::EnumAnnotation {
@@ -347,6 +355,9 @@ FCITX_CONFIGURATION(
         N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "
            "surrounding text"),
         true};
+    fcitx::Option<bool> useBackspaceForUrl{
+        this, "UseBackspaceForUrl",
+        N_("Luôn dùng Backspace backend khi ô nhập có URL flag"), true};
     fcitx::SubConfigOption advancedEditor{
         this, "AdvancedEditor", N_("Cấu hình nâng cao"),
         "fcitx://config/addon/areca/advanced"};

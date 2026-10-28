@@ -247,6 +247,8 @@ namespace areca::settings {
             ImGui::TableNextColumn();
             checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
             ImGui::TableNextColumn();
+            checkbox("Dùng Backspace backend cho ô có URL flag", config.main.useBackspaceForUrl);
+            ImGui::TableNextColumn();
             checkbox("Bật macro", config.main.enableMacro);
             ImGui::TableNextColumn();
             checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);

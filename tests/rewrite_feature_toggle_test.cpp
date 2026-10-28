@@ -425,6 +425,18 @@ int main() {
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
 
   areca::ArecaConfig mainConfig;
+  assert(mainConfig.useBackspaceForUrl.value());
+  assert(areca::shouldForceBackspaceForUrl(
+      mainConfig.useBackspaceForUrl.value(),
+      fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));
+  assert(areca::shouldForceBackspaceForUrl(
+      true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));
+  assert(!areca::shouldForceBackspaceForUrl(
+      true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::SurroundingText)));
+  assert(areca::shouldForceBackspaceForUrl(
+      true, fcitx::CapabilityFlags{}, true));
+  assert(!areca::shouldForceBackspaceForUrl(
+      false, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url), true));
   assert(mainConfig.macroBypassModifier.value() ==
          areca::MacroBypassModifier::Shift);
   assert(areca::isMacroBypassSpace(

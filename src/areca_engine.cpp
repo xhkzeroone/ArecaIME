@@ -536,6 +536,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   // dụng hoặc không hợp lệ
   const bool isUrl =
       capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar;
+  const bool forceUrlBackspace = shouldForceBackspaceForUrl(
+      config_.useBackspaceForUrl.value(), capabilities, inAddressBar);
   const auto decision =
       evaluateReliability(inputContext, result.currentText, program);
   const bool hasActiveSelection =
@@ -581,6 +583,22 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << " bamboo_delete=" << result.deleteCount;
     }
     return {backend, additional, fullReplace};
+  }
+
+  // Autocomplete, active selection và address bar phải được xử lý trước vì
+  // các nhánh đó có thể cần Backspace bổ sung hoặc full-replace. URL flag chỉ
+  // ép dùng Backspace backend sau khi các chiến lược đặc biệt không khớp.
+  if (forceUrlBackspace) {
+    RewriteBackend *backend =
+        resolvePreferredBackspaceBackend(preferHardware);
+    if (!program.empty()) {
+      lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
+    }
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: url flag selected backspace backend="
+                   << backend->name() << " program=" << program;
+    }
+    return {backend};
   }
 
   if (!program.empty()) {
