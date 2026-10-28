@@ -582,7 +582,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 
   // URL/address bar không có surrounding dùng Shift+Select để thay đúng phần
   // Bamboo yêu cầu. Nếu backend này không khả dụng mới lùi về Backspace.
-  if (shouldUseShiftSelectForUrl(forceUrlBackspace, hasSurrounding)) {
+  if (shouldUseShiftSelectForUrl(isUrl, hasSurrounding,
+                                 inputTypeDetector_.isBrowser(program))) {
     if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
       if (!program.empty()) {
         lastAutoBackendByApp_[program] = AppBackendMode::ShiftSelect;

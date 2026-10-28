@@ -65,9 +65,9 @@ inline bool shouldForceBackspaceForUrl(
          (capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar);
 }
 
-inline bool shouldUseShiftSelectForUrl(bool urlHandlingEnabled,
-                                       bool hasSurrounding) {
-  return urlHandlingEnabled && !hasSurrounding;
+inline bool shouldUseShiftSelectForUrl(bool isUrl, bool hasSurrounding,
+                                       bool isBrowser) {
+  return isUrl && !hasSurrounding && isBrowser;
 }
 
 struct StringListAnnotation : public fcitx::EnumAnnotation {
