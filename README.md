@@ -321,8 +321,9 @@ Areca cũng trân trọng ghi nhận những công trình đặt nền móng cho
 Những đóng góp của các tác giả đã giúp hệ sinh thái bộ gõ tiếng Việt nguồn mở
 ngày càng phong phú và tạo điều kiện để các dự án như Areca tiếp tục phát triển.
 
-Mã nguồn cùng thông tin giấy phép nguyên bản của Bamboo được giữ nguyên trong
-submodule [`bamboo/bamboo-core`](bamboo/bamboo-core) để thể hiện đầy đủ nguồn
+[Mã nguồn Bamboo Core](https://github.com/BambooEngine/bamboo-core) cùng
+[thông tin giấy phép MIT nguyên bản](https://github.com/BambooEngine/bamboo-core?tab=MIT-1-ov-file)
+được giữ nguyên trong submodule `bamboo/bamboo-core` để thể hiện đầy đủ nguồn
 gốc và sự ghi nhận đối với các tác giả.
 
 Xin cảm ơn các dự án bộ gõ tiếng Việt cho Fcitx5 đã cung cấp nhiều ý tưởng và
@@ -332,7 +333,8 @@ nguồn tham khảo hữu ích trong quá trình phát triển Areca:
 - [Fcitx5 Lotus](https://github.com/LotusInputMethod/fcitx5-lotus)
 - [SKey / fcitx5-skey](https://github.com/collyn/skey)
 
-## License
+## Giấy phép
 
 - Areca được phát hành theo giấy phép [MIT](LICENSE).
-- Thư viện [Bamboo Core](bamboo/bamboo-core) được phát hành theo giấy phép [MIT](bamboo/bamboo-core/LICENSE).
+- Thư viện [Bamboo Core](https://github.com/BambooEngine/bamboo-core)
+  được phát hành theo [giấy phép MIT](https://github.com/BambooEngine/bamboo-core?tab=MIT-1-ov-file).
