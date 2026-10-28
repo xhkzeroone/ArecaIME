@@ -437,6 +437,9 @@ int main() {
       true, fcitx::CapabilityFlags{}, true));
   assert(!areca::shouldForceBackspaceForUrl(
       false, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url), true));
+  assert(areca::shouldUseShiftSelectForUrl(true, false));
+  assert(!areca::shouldUseShiftSelectForUrl(true, true));
+  assert(!areca::shouldUseShiftSelectForUrl(false, false));
   assert(mainConfig.macroBypassModifier.value() ==
          areca::MacroBypassModifier::Shift);
   assert(areca::isMacroBypassSpace(

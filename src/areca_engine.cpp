@@ -553,8 +553,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                                      result.currentText);
 
   // Chỉ xử lý autocomplete đặc biệt khi frontend cung cấp surrounding text
-  // đủ để quan sát selection. Với address bar không có surrounding, chỉ chọn
-  // Backspace backend ở nhánh URL phía dưới và không đoán ký tự cần xóa thêm.
+  // đủ để quan sát selection. Không đoán ký tự autocomplete khi surrounding
+  // không khả dụng.
   if (decision.browserAutocomplete || collapsedFirefoxAutocomplete ||
       hasActiveSelection) {
     uint32_t additional = 0;
@@ -580,9 +580,26 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {backend, additional};
   }
 
-  // Autocomplete và active selection phải được xử lý trước vì các nhánh đó có
-  // thể cần Backspace bổ sung. URL flag chỉ
-  // ép dùng Backspace backend sau khi các chiến lược đặc biệt không khớp.
+  // URL/address bar không có surrounding dùng Shift+Select để thay đúng phần
+  // Bamboo yêu cầu. Nếu backend này không khả dụng mới lùi về Backspace.
+  if (shouldUseShiftSelectForUrl(forceUrlBackspace, hasSurrounding)) {
+    if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
+      if (!program.empty()) {
+        lastAutoBackendByApp_[program] = AppBackendMode::ShiftSelect;
+      }
+      if (debugEnabled()) {
+        FCITX_INFO() << "areca: url without surrounding selected shift-select "
+                        "backend="
+                     << shiftBackend->name() << " is_url=" << isUrl
+                     << " in_address_bar=" << inAddressBar
+                     << " program=" << program;
+      }
+      return {shiftBackend};
+    }
+  }
+
+  // Khi URL có surrounding, giữ Backspace backend theo cấu hình hiện tại.
+  // Nhánh này cũng là fallback nếu Shift+Select không khả dụng.
   if (forceUrlBackspace) {
     RewriteBackend *backend =
         resolvePreferredBackspaceBackend(preferHardware);
@@ -590,8 +607,10 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
     }
     if (debugEnabled()) {
-      FCITX_INFO() << "areca: url flag selected backspace backend="
-                   << backend->name() << " program=" << program;
+      FCITX_INFO() << "areca: url selected backspace backend="
+                   << backend->name() << " has_surrounding=" << hasSurrounding
+                   << " shift_select_fallback=" << !hasSurrounding
+                   << " program=" << program;
     }
     return {backend};
   }

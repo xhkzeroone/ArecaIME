@@ -65,6 +65,11 @@ inline bool shouldForceBackspaceForUrl(
          (capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar);
 }
 
+inline bool shouldUseShiftSelectForUrl(bool urlHandlingEnabled,
+                                       bool hasSurrounding) {
+  return urlHandlingEnabled && !hasSurrounding;
+}
+
 struct StringListAnnotation : public fcitx::EnumAnnotation {
   void setList(std::vector<std::string> list) { list_ = std::move(list); }
 
@@ -357,7 +362,7 @@ FCITX_CONFIGURATION(
         true};
     fcitx::Option<bool> useBackspaceForUrl{
         this, "UseBackspaceForUrl",
-        N_("Luôn dùng Backspace backend khi ô nhập có URL flag"), true};
+        N_("Xử lý riêng ô URL và thanh địa chỉ"), true};
     fcitx::SubConfigOption advancedEditor{
         this, "AdvancedEditor", N_("Cấu hình nâng cao"),
         "fcitx://config/addon/areca/advanced"};
