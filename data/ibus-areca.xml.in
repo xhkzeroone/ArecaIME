@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <name>org.freedesktop.IBus.Areca</name>
+  <description>Areca Vietnamese Input Method for IBus</description>
+  <version>@PROJECT_VERSION@</version>
+  <license>MIT</license>
+  <author>ArecaIME contributors</author>
+  <homepage>https://github.com/xhkzeroone/ArecaIME</homepage>
+  <exec>@CMAKE_INSTALL_FULL_LIBEXECDIR@/ibus-areca</exec>
+  <textdomain>ibus-areca</textdomain>
+  <engines>
+    <engine>
+      <name>areca</name>
+      <longname>Areca</longname>
+      <description>Bộ gõ tiếng Việt Areca</description>
+      <language>vi</language>
+      <license>MIT</license>
+      <author>ArecaIME contributors</author>
+      <icon>@CMAKE_INSTALL_FULL_DATADIR@/icons/hicolor/scalable/apps/areca.svg</icon>
+      <layout>default</layout>
+      <rank>99</rank>
+      <symbol>A</symbol>
+    </engine>
+  </engines>
+</component>

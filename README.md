@@ -292,6 +292,35 @@ fcitx5 -rd
 Nếu backend `uinput` chưa hoạt động sau khi cài từ mã nguồn, làm theo mục
 [Khởi nạp uinput và cấp quyền](#khởi-nạp-uinput-và-cấp-quyền).
 
+## Bản IBus thử nghiệm
+
+`ibus-areca` là engine IBus độc lập dành cho GNOME và các desktop dùng IBus.
+Bản này giữ ba backend rewrite: surrounding text, uinput Backspace và uinput
+Shift+Select. Phím đầu của mỗi từ luôn được forward trực tiếp để kích hoạt đúng
+editor web; cơ chế này được bật cố định và không có cờ tắt. Engine không yêu
+cầu Fcitx5 khi build hoặc chạy.
+
+Cài từ mã nguồn:
+
+```bash
+./scripts/install-ibus.sh
+```
+
+Sau khi cài, đăng xuất rồi đăng nhập lại nếu installer vừa thêm tài khoản vào
+nhóm `input`. Mở phần **Keyboard / Input Sources** của desktop và thêm
+**Vietnamese → Areca**.
+
+Cấu hình mặc định được cài tại `/usr/share/ibus-areca/config.ini`. Có thể tạo
+bản cấu hình riêng tại `~/.config/ibus-areca/config.ini`; engine sẽ ưu tiên
+file của người dùng. Khởi động lại IBus sau khi sửa:
+
+```bash
+ibus restart
+```
+
+Đây là bản thử nghiệm. Cần kiểm tra thêm uinput loopback và surrounding text
+trên từng ứng dụng trước khi dùng làm bộ gõ chính.
+
 ## Xem log
 
 Để có log chi tiết, bật `Debug=True` trong phần cấu hình nâng cao của Areca,

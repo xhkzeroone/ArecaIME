@@ -5,27 +5,35 @@ project(fcitx5-areca VERSION 0.1.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 include(CTest)
 
-find_package(Fcitx5Core REQUIRED)
-find_package(Fcitx5Config REQUIRED)
-find_package(Fcitx5Utils REQUIRED)
+option(ARECA_BUILD_FCITX "Build the fcitx5-areca addon" ON)
+option(ARECA_BUILD_SETTINGS "Build the standalone Areca settings application" ON)
+option(ARECA_BUILD_IBUS "Build the ibus-areca engine when libibus is available" OFF)
+
+if(ARECA_BUILD_FCITX OR ARECA_BUILD_SETTINGS OR BUILD_TESTING)
+    find_package(Fcitx5Core REQUIRED)
+    find_package(Fcitx5Config REQUIRED)
+    find_package(Fcitx5Utils REQUIRED)
+endif()
 find_program(GO_EXECUTABLE go REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DBUS REQUIRED dbus-1)
-pkg_check_modules(LIBINPUT REQUIRED IMPORTED_TARGET libinput)
-pkg_check_modules(UDEV REQUIRED IMPORTED_TARGET libudev)
-pkg_check_modules(X11_CLIENT REQUIRED IMPORTED_TARGET x11)
-pkg_check_modules(XTEST REQUIRED IMPORTED_TARGET xtst)
-pkg_check_modules(LIBEI QUIET IMPORTED_TARGET libei-1.0>=1.0)
-pkg_check_modules(LIBPORTAL QUIET IMPORTED_TARGET libportal>=0.7.1)
+if(ARECA_BUILD_FCITX OR ARECA_BUILD_SETTINGS OR ARECA_BUILD_IBUS)
+    pkg_check_modules(DBUS REQUIRED dbus-1)
+endif()
+if(ARECA_BUILD_FCITX)
+    pkg_check_modules(LIBINPUT REQUIRED IMPORTED_TARGET libinput)
+    pkg_check_modules(UDEV REQUIRED IMPORTED_TARGET libudev)
+    pkg_check_modules(X11_CLIENT REQUIRED IMPORTED_TARGET x11)
+    pkg_check_modules(XTEST REQUIRED IMPORTED_TARGET xtst)
+    pkg_check_modules(LIBEI QUIET IMPORTED_TARGET libei-1.0>=1.0)
+    pkg_check_modules(LIBPORTAL QUIET IMPORTED_TARGET libportal>=0.7.1)
 
-add_executable(areca-mouse-monitor tools/mouse_monitor.cpp)
-target_compile_features(areca-mouse-monitor PRIVATE cxx_std_20)
-target_compile_options(areca-mouse-monitor PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig::UDEV)
-install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
-install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
-
-option(ARECA_BUILD_SETTINGS "Build the standalone Areca settings application" ON)
+    add_executable(areca-mouse-monitor tools/mouse_monitor.cpp)
+    target_compile_features(areca-mouse-monitor PRIVATE cxx_std_20)
+    target_compile_options(areca-mouse-monitor PRIVATE -Wall -Wextra -Wpedantic)
+    target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig::UDEV)
+    install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
+    install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
+endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
@@ -51,6 +59,34 @@ add_library(areca-bamboo STATIC IMPORTED GLOBAL)
 set_target_properties(areca-bamboo PROPERTIES IMPORTED_LOCATION "${BAMBOO_ARCHIVE}")
 add_dependencies(areca-bamboo areca-bamboo-bridge)
 
+if(ARECA_BUILD_IBUS)
+    pkg_check_modules(IBUS QUIET IMPORTED_TARGET ibus-1.0)
+    if(IBUS_FOUND)
+        add_executable(ibus-areca
+            ibus/ibus_areca.cpp
+            src/bamboo_engine_adapter.cpp
+            src/program_compatibility.cpp
+            src/window_focus_tracker.cpp)
+        add_dependencies(ibus-areca areca-bamboo-bridge)
+        target_compile_features(ibus-areca PRIVATE cxx_std_20)
+        target_compile_options(ibus-areca PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_definitions(ibus-areca PRIVATE
+            ARECA_IBUS_CONFIG_PATH="${CMAKE_INSTALL_FULL_DATADIR}/ibus-areca/config.ini")
+        target_include_directories(ibus-areca PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src"
+            ${DBUS_INCLUDE_DIRS})
+        target_link_libraries(ibus-areca PRIVATE
+            areca-bamboo
+            PkgConfig::IBUS
+            ${DBUS_LIBRARIES}
+            pthread dl m)
+        install(TARGETS ibus-areca DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
+    else()
+        message(STATUS "libibus not found; ibus-areca target disabled")
+    endif()
+endif()
+
+if(ARECA_BUILD_FCITX)
 add_library(areca MODULE
     src/adaptive_wait_monitor.cpp
     src/areca_engine.cpp
@@ -111,6 +147,7 @@ target_link_libraries(areca PRIVATE
     PkgConfig::X11_CLIENT
     PkgConfig::XTEST
     pthread dl m)
+endif()
 
 if(ARECA_BUILD_SETTINGS)
     find_package(SDL3 QUIET CONFIG)
@@ -186,50 +223,74 @@ if(ARECA_BUILD_SETTINGS)
     target_include_directories(areca-settings PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
 endif()
 
-configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
-configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)
+if(ARECA_BUILD_FCITX)
+    configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
+    configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)
+endif()
+if(IBUS_FOUND)
+    configure_file(data/ibus-areca.xml.in ibus-areca.xml @ONLY)
+endif()
 
+if(ARECA_BUILD_FCITX)
 install(TARGETS areca DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
+endif()
 if(ARECA_BUILD_SETTINGS)
     install(TARGETS areca-settings DESTINATION "${CMAKE_INSTALL_BINDIR}")
     install(FILES "data/areca-settings.desktop"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
 endif()
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-addon.conf"
-        RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/addon")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-inputmethod.conf"
-        RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/inputmethod")
+if(ARECA_BUILD_FCITX)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-addon.conf"
+            RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/addon")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-inputmethod.conf"
+            RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/inputmethod")
+endif()
+if(IBUS_FOUND)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ibus-areca.xml"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/ibus/component")
+    install(FILES "data/ibus-areca-config.ini"
+            RENAME config.ini
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/ibus-areca")
+endif()
 
 set(ARECA_SCALABLE_ICON
     "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor/scalable/apps/fcitx-areca.svg")
-foreach(ARECA_ICON_NAME
-        fcitx-areca
-        areca
-        org.fcitx.Fcitx5.fcitx-areca)
-    install(FILES "${ARECA_SCALABLE_ICON}"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
-            RENAME "${ARECA_ICON_NAME}.svg")
-endforeach()
+install(FILES "${ARECA_SCALABLE_ICON}"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+        RENAME "areca.svg")
+if(ARECA_BUILD_FCITX)
+    foreach(ARECA_ICON_NAME
+            fcitx-areca
+            org.fcitx.Fcitx5.fcitx-areca)
+        install(FILES "${ARECA_SCALABLE_ICON}"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+                RENAME "${ARECA_ICON_NAME}.svg")
+    endforeach()
+endif()
 
 # Icon riêng cho areca-settings — DE dùng tên này theo desktop file.
 set(ARECA_SETTINGS_ICON
     "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor/scalable/apps/areca-settings.svg")
-install(FILES "${ARECA_SETTINGS_ICON}"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
-# /usr/share/pixmaps: fallback cuối cùng, mọi DE (GTK, Qt, XFCE, LXDE...) đều kiểm tra.
-install(FILES "${ARECA_SETTINGS_ICON}"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/pixmaps")
+if(ARECA_BUILD_SETTINGS)
+    install(FILES "${ARECA_SETTINGS_ICON}"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
+    # /usr/share/pixmaps: fallback cuối cùng, mọi DE (GTK, Qt, XFCE, LXDE...) đều kiểm tra.
+    install(FILES "${ARECA_SETTINGS_ICON}"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/pixmaps")
+endif()
 
 set(ARECA_SYMBOLIC_ICON
     "${CMAKE_CURRENT_SOURCE_DIR}/icons/hicolor/symbolic/apps/fcitx-areca-symbolic.svg")
-foreach(ARECA_ICON_NAME
-        fcitx-areca-symbolic
-        areca-symbolic
-        org.fcitx.Fcitx5.fcitx-areca-symbolic)
-    install(FILES "${ARECA_SYMBOLIC_ICON}"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps"
-            RENAME "${ARECA_ICON_NAME}.svg")
-endforeach()
+if(ARECA_BUILD_FCITX)
+    foreach(ARECA_ICON_NAME
+            fcitx-areca-symbolic
+            areca-symbolic
+            org.fcitx.Fcitx5.fcitx-areca-symbolic)
+        install(FILES "${ARECA_SYMBOLIC_ICON}"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps"
+                RENAME "${ARECA_ICON_NAME}.svg")
+    endforeach()
+endif()
 
 install(FILES "data/99-uinput-areca.rules"
         DESTINATION "lib/udev/rules.d")

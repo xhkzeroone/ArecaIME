@@ -5,8 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include <fcitx-utils/utf8.h>
-
 extern "C" {
 uint64_t ArecaBambooCreate(char *inputMethod, int modernStyle);
 void ArecaBambooDestroy(uint64_t id);
@@ -31,16 +29,47 @@ namespace {
 
 std::vector<std::pair<uint32_t, size_t>> codepoints(const std::string &text) {
   std::vector<std::pair<uint32_t, size_t>> result;
-  auto it = text.begin();
-  while (it != text.end()) {
-    const auto byteOffset = static_cast<size_t>(it - text.begin());
+  size_t offset = 0;
+  while (offset < text.size()) {
+    const size_t byteOffset = offset;
+    const auto first = static_cast<unsigned char>(text[offset++]);
     uint32_t codepoint = 0;
-    auto next = fcitx::utf8::getNextChar(it, text.end(), &codepoint);
-    if (!fcitx::utf8::isValidChar(codepoint)) {
+    size_t continuationCount = 0;
+    if (first < 0x80) {
+      codepoint = first;
+    } else if ((first & 0xe0) == 0xc0) {
+      codepoint = first & 0x1f;
+      continuationCount = 1;
+    } else if ((first & 0xf0) == 0xe0) {
+      codepoint = first & 0x0f;
+      continuationCount = 2;
+    } else if ((first & 0xf8) == 0xf0) {
+      codepoint = first & 0x07;
+      continuationCount = 3;
+    } else {
       throw std::runtime_error("Bamboo returned invalid UTF-8");
     }
+
+    if (offset + continuationCount > text.size()) {
+      throw std::runtime_error("Bamboo returned truncated UTF-8");
+    }
+    for (size_t i = 0; i < continuationCount; ++i) {
+      const auto next = static_cast<unsigned char>(text[offset++]);
+      if ((next & 0xc0) != 0x80) {
+        throw std::runtime_error("Bamboo returned invalid UTF-8 continuation");
+      }
+      codepoint = (codepoint << 6) | (next & 0x3f);
+    }
+
+    const bool overlong =
+        (continuationCount == 1 && codepoint < 0x80) ||
+        (continuationCount == 2 && codepoint < 0x800) ||
+        (continuationCount == 3 && codepoint < 0x10000);
+    if (overlong || codepoint > 0x10ffff ||
+        (codepoint >= 0xd800 && codepoint <= 0xdfff)) {
+      throw std::runtime_error("Bamboo returned invalid UTF-8 codepoint");
+    }
     result.emplace_back(codepoint, byteOffset);
-    it = next;
   }
   result.emplace_back(0, text.size());
   return result;
