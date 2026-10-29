@@ -310,6 +310,26 @@ Sau khi cài, đăng xuất rồi đăng nhập lại nếu installer vừa thê
 nhóm `input`. Mở phần **Keyboard / Input Sources** của desktop và thêm
 **Vietnamese → Areca**.
 
+Khi chưa gõ dở một từ, nhấn phím backtick (`) để mở menu chế độ:
+
+- `1`: Auto; `2`: Surrounding; `3`: Shift select; `4`: Backspace.
+- `A`: Preedit (soạn từ trước khi commit); `E`: Redirect (EN, chuyển phím trực tiếp).
+- Dùng ↑/↓ rồi Enter hoặc Space để chọn, hoặc bấm chuột vào lựa chọn.
+- Escape đóng menu; nhấn backtick lần nữa để nhập ký tự backtick.
+
+Mode được lưu theo tên tiến trình lấy qua AT-SPI tại
+`~/.config/ibus-areca/app-modes.ini`. Nếu không nhận diện được ứng dụng,
+mode chỉ áp dụng đến khi ô nhập mất focus. Ô mật khẩu không mở menu.
+Surrounding và Shift select dùng Backspace làm phương án dự phòng nếu
+backend tương ứng không khả dụng; các backend uinput cần quyền truy cập thiết bị.
+
+Có thể kiểm tra engine và menu sau khi build:
+
+```bash
+./build-ibus-release/ibus-areca --self-test
+dbus-run-session -- ./build-ibus-release/ibus-areca --self-test-menu
+```
+
 Cấu hình mặc định được cài tại `/usr/share/ibus-areca/config.ini`. Có thể tạo
 bản cấu hình riêng tại `~/.config/ibus-areca/config.ini`; engine sẽ ưu tiên
 file của người dùng. Khởi động lại IBus sau khi sửa:

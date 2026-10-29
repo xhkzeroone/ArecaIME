@@ -2,6 +2,9 @@
 #include <linux/input.h>
 #include <linux/uinput.h>
 
+#include <algorithm>
+#include <array>
+#include <unordered_set>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -189,6 +192,10 @@ private:
   bool initialized_ = false;
 };
 
+enum class Mode { Auto, Surrounding, ShiftSelect, Backspace, Preedit, Redirect };
+constexpr std::array<const char *, 6> kModeNames = {
+    "Auto", "Surrounding", "Shift select", "Backspace", "Preedit", "Redirect (EN)"};
+
 enum class Backend { None, Surrounding, Backspace, ShiftSelect };
 
 struct QueuedKey {
@@ -229,15 +236,23 @@ public:
       queue_.push_back({keyval, keycode, state});
       return true;
     }
-    if (release) {
-      return false;
-    }
-    return processKeyNow(keyval, keycode, state);
+    return processKeyEventNow(keyval, keycode, state);
   }
 
-  void focusOut() { reset(); }
+  void focusOut() {
+    if (mode_ == Mode::Preedit && !privateInput()) flushPreedit();
+    reset();
+    // An unidentified app must not leak its selection into the next focus.
+    if (modeProgram_.empty()) mode_ = Mode::Auto;
+  }
 
   void reset() {
+    hideMenu();
+    preedit_.clear();
+    updatePreedit();
+    consumedKeys_.clear();
+    backspaceAwaitingRelease_ = false;
+    backspaceKeycode_ = 0;
     cancelTransaction();
     clearForwardFirstBarrier();
     queue_.clear();
@@ -281,7 +296,152 @@ public:
     }
   }
 
+  static bool selfTestMenu(IBusEngine *engine) {
+    Config config;
+    config.spellCheck = false;
+    EngineState state(engine, config, nullptr);
+    auto press = [&](guint key) { return state.processKey(key, key, 0); };
+    auto release = [&](guint key) { return state.processKey(key, key, kReleaseMask); };
+    if (!press(IBUS_KEY_grave) || !state.menuVisible_ || !release(IBUS_KEY_grave)) return false;
+    if (!press(IBUS_KEY_a) || state.mode_ != Mode::Preedit || state.menuVisible_ || !release(IBUS_KEY_a)) return false;
+    for (char c : std::string_view("tieengs")) press(c);
+    if (state.preedit_ != "tiếng") return false;
+    press(IBUS_KEY_space);
+    if (!state.preedit_.empty() || !state.bamboo_.currentText().empty()) return false;
+    press(IBUS_KEY_grave);
+    press(IBUS_KEY_e);
+    if (state.mode_ != Mode::Redirect || press(IBUS_KEY_a)) return false;
+    press(IBUS_KEY_grave);
+    if (press(IBUS_KEY_grave) || state.menuVisible_) return false;
+    press(IBUS_KEY_grave);
+    press(IBUS_KEY_Down);
+    press(IBUS_KEY_Return);
+    if (state.mode_ != Mode::Auto) return false;
+    for (guint i = 0; i < 4; ++i) {
+      press(IBUS_KEY_grave);
+      press(IBUS_KEY_1 + i);
+      if (static_cast<guint>(state.mode_) != i) return false;
+    }
+    press(IBUS_KEY_grave);
+    press(IBUS_KEY_Escape);
+    if (state.menuVisible_) return false;
+    press(IBUS_KEY_grave);
+    state.focusOut();
+    if (state.menuVisible_) return false;
+    state.setContentType(IBUS_INPUT_PURPOSE_FREE_FORM,
+              IBUS_INPUT_HINT_PRIVATE | IBUS_INPUT_HINT_HIDDEN_TEXT);
+    if (!press(IBUS_KEY_grave) || !state.menuVisible_ ||
+      !release(IBUS_KEY_grave)) return false;
+    press(IBUS_KEY_Escape);
+    if (state.menuVisible_) return false;
+    state.setContentType(IBUS_INPUT_PURPOSE_PASSWORD, 0);
+    if (press(IBUS_KEY_grave) || state.menuVisible_) return false;
+    return true;
+  }
+
+  void selectMode(guint index) {
+    if (!menuVisible_ || index >= kModeNames.size()) return;
+    mode_ = static_cast<Mode>(index);
+    if (!menuProgram_.empty()) {
+      const std::string dir = std::string(g_get_user_config_dir()) + "/ibus-areca";
+      const std::string path = dir + "/app-modes.ini";
+      GKeyFile *file = g_key_file_new();
+      g_key_file_load_from_file(file, path.c_str(), G_KEY_FILE_NONE, nullptr);
+      // Encode the program name so arbitrary app identifiers are valid keys.
+      gchar *key = g_base64_encode(reinterpret_cast<const guchar *>(menuProgram_.data()), menuProgram_.size());
+      g_key_file_set_integer(file, "Applications", key, index);
+      GError *error = nullptr;
+      if (g_mkdir_with_parents(dir.c_str(), 0700) != 0 ||
+          !g_key_file_save_to_file(file, path.c_str(), &error)) {
+        g_warning("Cannot save Areca mode: %s", error ? error->message : g_strerror(errno));
+      }
+      g_clear_error(&error);
+      g_free(key);
+      g_key_file_unref(file);
+    }
+    bamboo_.reset();
+    hideMenu();
+  }
+
 private:
+  gboolean processKeyEventNow(guint keyval, guint keycode, guint state) {
+    const bool release = (state & kReleaseMask) != 0;
+    if (release) {
+      if (backspaceAwaitingRelease_ && keyval == IBUS_KEY_BackSpace &&
+          keycode == backspaceKeycode_) {
+        backspaceAwaitingRelease_ = false;
+        backspaceKeycode_ = 0;
+        processBackspaceNow(keycode, true);
+        return true;
+      }
+      return consumedKeys_.erase(keycode) != 0;
+    }
+    if (backspaceAwaitingRelease_ && keyval == IBUS_KEY_BackSpace) {
+      // IBus does not expose a repeat flag. A second press before release is
+      // therefore treated as a held Backspace, like Fcitx's rewrite handler.
+      backspaceAwaitingRelease_ = false;
+      backspaceKeycode_ = 0;
+      bamboo_.reset();
+      return false;
+    }
+    return processKeyNow(keyval, keycode, state);
+  }
+
+  std::string currentProgram() const {
+    return focusTracker_ && focusTracker_->isValid() ? focusTracker_->focusProgram() : "";
+  }
+
+  void refreshMode() {
+    const auto program = currentProgram();
+    if (program == modeProgram_) return;
+    modeProgram_ = program;
+    mode_ = Mode::Auto;
+    bamboo_.reset();
+    GKeyFile *file = g_key_file_new();
+    const std::string path = std::string(g_get_user_config_dir()) + "/ibus-areca/app-modes.ini";
+    if (!program.empty() && g_key_file_load_from_file(file, path.c_str(), G_KEY_FILE_NONE, nullptr)) {
+      gchar *key = g_base64_encode(reinterpret_cast<const guchar *>(program.data()), program.size());
+      const gint value = g_key_file_get_integer(file, "Applications", key, nullptr);
+      if (value >= 0 && value < static_cast<gint>(kModeNames.size())) mode_ = static_cast<Mode>(value);
+      g_free(key);
+    }
+    g_key_file_unref(file);
+  }
+
+  void hideMenu() {
+    if (!menuVisible_) return;
+    menuVisible_ = false;
+    ibus_engine_hide_lookup_table(engine_);
+    ibus_engine_hide_auxiliary_text(engine_);
+  }
+
+  void showMenu() {
+    IBusLookupTable *table = ibus_lookup_table_new(6, menuCursor_, true, true);
+    ibus_lookup_table_set_orientation(table, IBUS_ORIENTATION_VERTICAL);
+    constexpr const char *labels[] = {"1", "2", "3", "4", "A", "E"};
+    for (guint i = 0; i < kModeNames.size(); ++i) {
+      std::string title = kModeNames[i];
+      if (i == static_cast<guint>(mode_)) title += "  [Hiện tại]";
+      ibus_lookup_table_append_candidate(table, ibus_text_new_from_string(title.c_str()));
+      ibus_lookup_table_append_label(table, ibus_text_new_from_string(labels[i]));
+    }
+    const std::string title = "Chọn chế độ / backend: " +
+        (menuProgram_.empty() ? "ngữ cảnh hiện tại" : menuProgram_);
+    ibus_engine_update_auxiliary_text(engine_, ibus_text_new_from_string(title.c_str()), true);
+    ibus_engine_update_lookup_table(engine_, table, true);
+  }
+
+  void updatePreedit() {
+    ibus_engine_update_preedit_text(engine_, ibus_text_new_from_string(preedit_.c_str()),
+        g_utf8_strlen(preedit_.c_str(), -1), !preedit_.empty());
+  }
+
+  void flushPreedit() {
+    commit(preedit_);
+    preedit_.clear();
+    updatePreedit();
+    bamboo_.reset();
+  }
   static gboolean sourceThunk(gpointer data) {
     auto *callback = static_cast<std::function<void()> *>(data);
     (*callback)();
@@ -311,9 +471,7 @@ private:
 
   bool privateInput() const {
     return purpose_ == IBUS_INPUT_PURPOSE_PASSWORD ||
-           purpose_ == IBUS_INPUT_PURPOSE_PIN ||
-           (hints_ & IBUS_INPUT_HINT_HIDDEN_TEXT) != 0 ||
-           (hints_ & IBUS_INPUT_HINT_PRIVATE) != 0;
+           purpose_ == IBUS_INPUT_PURPOSE_PIN;
   }
 
   bool inChromiumAddressBar() {
@@ -345,23 +503,54 @@ private:
     if (privateInput()) {
       return false;
     }
+    if (bamboo_.currentText().empty() && !menuVisible_) refreshMode();
+    if (menuVisible_) {
+      if (keyval == IBUS_KEY_grave && !(state & (kModifierMask | IBUS_SHIFT_MASK))) {
+        hideMenu();
+        return false;
+      }
+      consumedKeys_.insert(keycode);
+      if (keyval == IBUS_KEY_Escape) hideMenu();
+      else if (!(state & kModifierMask)) {
+        if (keyval >= IBUS_KEY_1 && keyval <= IBUS_KEY_4) selectMode(keyval - IBUS_KEY_1);
+        else if (keyval == IBUS_KEY_a || keyval == IBUS_KEY_A) selectMode(4);
+        else if (keyval == IBUS_KEY_e || keyval == IBUS_KEY_E) selectMode(5);
+        else if (keyval == IBUS_KEY_Up || keyval == IBUS_KEY_Down) {
+          menuCursor_ = (menuCursor_ + (keyval == IBUS_KEY_Up ? 5 : 1)) % 6;
+          showMenu();
+        } else if (keyval == IBUS_KEY_Return || keyval == IBUS_KEY_KP_Enter || keyval == IBUS_KEY_space) selectMode(menuCursor_);
+      }
+      return true;
+    }
+    if (keyval == IBUS_KEY_grave && !(state & (kModifierMask | IBUS_SHIFT_MASK)) && bamboo_.currentText().empty()) {
+      menuVisible_ = true;
+      menuProgram_ = currentProgram();
+      menuCursor_ = static_cast<guint>(mode_);
+      consumedKeys_.insert(keycode);
+      showMenu();
+      return true;
+    }
+    if (mode_ == Mode::Redirect) return false;
     if ((state & kModifierMask) != 0) {
+      if (mode_ == Mode::Preedit) flushPreedit();
       bamboo_.reset();
       return false;
     }
     if (keyval == IBUS_KEY_BackSpace) {
-      if (bamboo_.currentText().empty() && !bamboo_.canUndoMacro()) {
-        bamboo_.reset();
-        return false;
+      if (mode_ != Mode::Preedit &&
+          (!bamboo_.currentText().empty() || bamboo_.canUndoMacro())) {
+        backspaceAwaitingRelease_ = true;
+        backspaceKeycode_ = keycode;
+        return true;
       }
-      applyResult(bamboo_.processBackspace());
-      return true;
+      return processBackspaceNow(keycode, false);
     }
     if (keyval >= 0xff00) {
+      if (mode_ == Mode::Preedit) flushPreedit();
       bamboo_.reset();
       return false;
     }
-    const gunichar codepoint = static_cast<gunichar>(keyval);
+    const gunichar codepoint = ibus_keyval_to_unicode(keyval);
     if (!g_unichar_validate(codepoint) || !g_unichar_isprint(codepoint)) {
       bamboo_.reset();
       return false;
@@ -374,12 +563,41 @@ private:
     }
     const bool firstCharacter = bamboo_.currentText().empty();
     const auto result = bamboo_.process(codepoint, text);
+    if (mode_ == Mode::Preedit) {
+      if (!bamboo_.canProcessKey(codepoint)) {
+        const auto count = g_utf8_strlen(preedit_.c_str(), -1);
+        const auto keep = count - std::min<glong>(count, result.deleteCount);
+        preedit_.resize(g_utf8_offset_to_pointer(preedit_.c_str(), keep) - preedit_.c_str());
+        preedit_ += result.commitText;
+        flushPreedit();
+      } else {
+        preedit_ = bamboo_.currentText();
+        updatePreedit();
+      }
+      return true;
+    }
     if (firstCharacter && result.deleteCount == 0 &&
         result.commitText == text && !result.macroExpanded) {
       beginForwardFirstBarrier(keyval, keycode);
       return false;
     }
     applyResult(result);
+    return true;
+  }
+
+  gboolean processBackspaceNow(guint keycode, bool releaseAlreadyConsumed) {
+    if (bamboo_.currentText().empty() && !bamboo_.canUndoMacro()) {
+      bamboo_.reset();
+      return false;
+    }
+    if (!releaseAlreadyConsumed) consumedKeys_.insert(keycode);
+    const auto result = bamboo_.processBackspace();
+    if (mode_ == Mode::Preedit) {
+      preedit_ = bamboo_.currentText();
+      updatePreedit();
+    } else {
+      applyResult(result);
+    }
     return true;
   }
 
@@ -421,10 +639,10 @@ private:
     const bool hasSurrounding =
         surroundingValid_ &&
         (capabilities_ & IBUS_CAP_SURROUNDING_TEXT) != 0;
-    if (!url && hasSurrounding && beginSurrounding()) {
+    if ((mode_ == Mode::Surrounding || (mode_ == Mode::Auto && !url)) && hasSurrounding && beginSurrounding()) {
       return;
     }
-    if (url && beginShiftSelect()) {
+    if ((mode_ == Mode::ShiftSelect || (mode_ == Mode::Auto && url)) && beginShiftSelect()) {
       return;
     }
     if (beginBackspace()) {
@@ -517,6 +735,7 @@ private:
     clearTimer(waitTimer_);
     backend_ = Backend::ShiftSelect;
     remainingEvents_ = deleteCount_;
+    awaitingShiftUpAck_ = false;
     shiftHeld_ = true;
     uinput_.send(KEY_LEFTSHIFT, 1);
     sendTimer_ = schedule(config_.timing.shiftSelectDelayMs, [this]() {
@@ -541,14 +760,17 @@ private:
     }
     sendTimer_ = schedule(config_.timing.shiftSelectDelayMs, [this]() {
       sendTimer_ = 0;
-      shiftHeld_ = false;
-      uinput_.send(KEY_LEFTSHIFT, 0);
+      awaitingShiftUpAck_ = true;
       ackStartedUsec_ = g_get_monotonic_time();
       waitTimer_ = schedule(config_.timing.shiftSelectAckTimeoutMs, [this]() {
         waitTimer_ = 0;
+        awaitingShiftUpAck_ = false;
+        ackStartedUsec_ = 0;
         adaptiveWait_.observeAckTimeout();
         scheduleCommit(config_.timing.afterShiftSelectMs);
       });
+      shiftHeld_ = false;
+      uinput_.send(KEY_LEFTSHIFT, 0);
     });
   }
 
@@ -564,7 +786,8 @@ private:
     if (backend_ == Backend::ShiftSelect) {
       const bool shift = keyval == IBUS_KEY_Shift_L;
       const bool left = keyval == IBUS_KEY_Left;
-      if (shift && release && !shiftHeld_) {
+      if (shift && release && awaitingShiftUpAck_) {
+        awaitingShiftUpAck_ = false;
         clearTimer(waitTimer_);
         observeAckRoundtrip();
         scheduleCommit(config_.timing.afterShiftSelectMs);
@@ -581,7 +804,37 @@ private:
       if (!pending_) {
         return;
       }
-      commit(commitText_);
+      if (backend_ == Backend::ShiftSelect) {
+        commitSelection();
+      } else {
+        commit(commitText_);
+        finishTransaction();
+      }
+    });
+  }
+
+  void commitSelection() {
+    if (commitText_.empty()) {
+      if (deleteCount_ > 0) {
+        uinput_.send(KEY_BACKSPACE, 1);
+        uinput_.send(KEY_BACKSPACE, 0);
+      }
+      finishTransaction();
+      return;
+    }
+    // Match Fcitx: replace the selection with one Unicode character first,
+    // then insert the remainder after the editor has handled that replacement.
+    const auto firstBytes = g_utf8_next_char(commitText_.c_str()) - commitText_.c_str();
+    const std::string remainder = commitText_.substr(firstBytes);
+    commit(commitText_.substr(0, firstBytes));
+    if (remainder.empty()) {
+      finishTransaction();
+      return;
+    }
+    waitTimer_ = schedule(5, [this, remainder]() {
+      waitTimer_ = 0;
+      if (!pending_ || backend_ != Backend::ShiftSelect) return;
+      commit(remainder);
       finishTransaction();
     });
   }
@@ -601,6 +854,7 @@ private:
     remainingEvents_ = 0;
     seenEvents_ = 0;
     shiftHeld_ = false;
+    awaitingShiftUpAck_ = false;
     commitText_.clear();
     expectedSurroundingText_.clear();
     ackStartedUsec_ = 0;
@@ -617,6 +871,7 @@ private:
     pending_ = false;
     backend_ = Backend::None;
     shiftHeld_ = false;
+    awaitingShiftUpAck_ = false;
     commitText_.clear();
     ackStartedUsec_ = 0;
     adaptiveWait_.cancelTransaction();
@@ -638,14 +893,20 @@ private:
     while (!pending_ && !forwardFirstBarrier_ && !queue_.empty()) {
       const auto key = queue_.front();
       queue_.pop_front();
-      const bool release = (key.state & kReleaseMask) != 0;
-      if (release || !processKeyNow(key.keyval, key.keycode, key.state)) {
+      if (!processKeyEventNow(key.keyval, key.keycode, key.state)) {
         ibus_engine_forward_key_event(engine_, key.keyval, key.keycode,
                                       key.state);
       }
     }
   }
 
+  Mode mode_ = Mode::Auto;
+  std::string modeProgram_;
+  std::string menuProgram_;
+  std::string preedit_;
+  bool menuVisible_ = false;
+  guint menuCursor_ = 0;
+  std::unordered_set<guint> consumedKeys_;
   IBusEngine *engine_ = nullptr;
   Config config_;
   areca::WindowFocusTracker *focusTracker_ = nullptr;
@@ -671,6 +932,7 @@ private:
   guint remainingEvents_ = 0;
   guint seenEvents_ = 0;
   bool shiftHeld_ = false;
+  bool awaitingShiftUpAck_ = false;
   std::string commitText_;
   std::string expectedSurroundingText_;
   guint expectedSurroundingCursor_ = 0;
@@ -681,6 +943,8 @@ private:
   guint forwardedKeyval_ = 0;
   guint forwardedKeycode_ = 0;
   guint forwardBarrierTimer_ = 0;
+  bool backspaceAwaitingRelease_ = false;
+  guint backspaceKeycode_ = 0;
 };
 
 EngineState *stateFor(IBusEngine *engine) {
@@ -691,6 +955,10 @@ EngineState *stateFor(IBusEngine *engine) {
 gboolean processKey(IBusEngine *engine, guint keyval, guint keycode,
                     guint state, gpointer) {
   return stateFor(engine)->processKey(keyval, keycode, state);
+}
+
+void candidateClicked(IBusEngine *engine, guint index, guint button, guint, gpointer) {
+  if (button == 1) stateFor(engine)->selectMode(index);
 }
 
 void focusOut(IBusEngine *engine, gpointer) { stateFor(engine)->focusOut(); }
@@ -728,6 +996,8 @@ IBusEngine *createEngine(IBusFactory *, const gchar *engineName, gpointer) {
                          });
   g_signal_connect(engine, "process-key-event", G_CALLBACK(processKey),
                    nullptr);
+  g_signal_connect(engine, "candidate-clicked", G_CALLBACK(candidateClicked), nullptr);
+  g_signal_connect(engine, "disable", G_CALLBACK(reset), nullptr);
   g_signal_connect(engine, "focus-out", G_CALLBACK(focusOut), nullptr);
   g_signal_connect(engine, "reset", G_CALLBACK(reset), nullptr);
   g_signal_connect(engine, "enable", G_CALLBACK(enable), nullptr);
@@ -760,6 +1030,21 @@ int main(int argc, char **argv) {
     return 0;
   }
   ibus_init();
+  if (argc > 1 && std::string_view(argv[1]) == "--self-test-menu") {
+    GError *error = nullptr;
+    auto *connection = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
+    if (!connection) {
+      g_printerr("Menu test requires a session bus: %s\n", error->message);
+      g_error_free(error);
+      return 1;
+    }
+    auto *engine = ibus_engine_new(kEngineName, "/org/freedesktop/IBus/TestAreca", connection);
+    const bool passed = EngineState::selfTestMenu(engine);
+    g_object_unref(engine);
+    g_object_unref(connection);
+    g_print("ibus-areca: menu self-test %s\n", passed ? "passed" : "FAILED");
+    return passed ? 0 : 1;
+  }
   gFocusTracker = std::make_unique<areca::WindowFocusTracker>();
   if (!gFocusTracker->start()) {
     gFocusTracker.reset();
