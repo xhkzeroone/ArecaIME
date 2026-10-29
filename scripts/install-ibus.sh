@@ -60,6 +60,26 @@ install_dependencies() {
   fi
 }
 
+switch_to_ibus() {
+  echo "[ibus-areca] Stopping Fcitx5..."
+  if command -v fcitx5-remote >/dev/null 2>&1; then
+    fcitx5-remote -e >/dev/null 2>&1 || true
+  fi
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user stop fcitx5.service org.fcitx.Fcitx5.service \
+      >/dev/null 2>&1 || true
+  fi
+  pkill -x fcitx5 >/dev/null 2>&1 || true
+
+  echo "[ibus-areca] Starting IBus..."
+  if command -v ibus >/dev/null 2>&1; then
+    ibus restart >/dev/null 2>&1 || true
+  fi
+  if ! pgrep -x ibus-daemon >/dev/null 2>&1; then
+    ibus-daemon --daemonize --replace --xim
+  fi
+}
+
 if [[ "$ARECA_INSTALL_DEPS" == 1 ]]; then
   install_dependencies
 fi
@@ -91,15 +111,14 @@ fi
 sudo udevadm control --reload-rules || true
 sudo udevadm trigger || true
 
-if command -v ibus >/dev/null 2>&1; then
-  ibus restart || true
-fi
+switch_to_ibus
 
 cat <<EOF
 [ibus-areca] Done.
 
 Next:
   - Log out and log in if the input group was added for the first time.
+  - Fcitx5 was stopped and IBus was started for the current session.
   - Open the desktop Keyboard/Input Sources settings.
   - Add Vietnamese → Areca.
 EOF
