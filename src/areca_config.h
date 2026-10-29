@@ -289,6 +289,29 @@ FCITX_CONFIGURATION(
         this, "ForwardFirstCharacter",
         N_("Chuyển tiếp phím đầu để tương thích trình duyệt"), true};);
 
+inline void applyBestPerformancePreset(AdvancedConfig &config) {
+  constexpr int rewriteWaitMs = 5;
+  constexpr int waylandWaitMs = 3;
+  constexpr int surroundingWaitMs = 1;
+
+  config.waylandAfterBackspaceWaitMs.setValue(waylandWaitMs);
+  config.dbusAfterBackspaceWaitMs.setValue(rewriteWaitMs);
+  config.ibusAfterBackspaceWaitMs.setValue(rewriteWaitMs);
+
+  config.waylandAfterUinputShiftSelectWaitMs.setValue(waylandWaitMs);
+  config.dbusAfterUinputShiftSelectWaitMs.setValue(rewriteWaitMs);
+  config.ibusAfterUinputShiftSelectWaitMs.setValue(rewriteWaitMs);
+
+  config.surroundingWaitMs.setValue(surroundingWaitMs);
+  config.surroundingDeleteDelayMs.setValue(surroundingWaitMs);
+  config.waylandSurroundingDeleteDelayMs.setValue(surroundingWaitMs);
+  config.afterSurroundingDeleteWaitMs.setValue(surroundingWaitMs);
+
+  config.waylandAfterXTestBackspaceWaitMs.setValue(waylandWaitMs);
+  config.dbusAfterXTestBackspaceWaitMs.setValue(rewriteWaitMs);
+  config.ibusAfterXTestBackspaceWaitMs.setValue(rewriteWaitMs);
+}
+
 FCITX_CONFIGURATION(
     ArecaConfig,
     fcitx::HiddenOption<PresentationMode> presentationMode{

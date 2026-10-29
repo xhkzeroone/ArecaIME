@@ -465,6 +465,18 @@ namespace areca::settings {
             "Thiết lập nâng cao", "Chỉ thay đổi các giá trị này khi một ứng dụng hoặc frontend cụ thể gặp lỗi timing."
         );
 
+        beginSettingsCard(
+            "BestPerformanceCard", "Preset hiệu năng",
+            "Đặt timing Wayland của Backspace/Shift+Left về 3 ms, DBus và IBus về 5 ms, timing xóa "
+            "surrounding về 1 ms; giữ nguyên timing chung, delay phát phím, XIM và Fcitx4."
+        );
+        pushPrimaryButtonColors();
+        if (ImGui::Button("Best performance")) {
+            applyBestPerformancePreset(config.advanced);
+        }
+        ImGui::PopStyleColor(4);
+        endSettingsCard();
+
         beginSettingsCard("BackspaceTimingCard", "uinput Backspace", "Độ trễ khi mô phỏng thao tác xoá ký tự.");
         inputInt("Delay giữa Backspace (ms)", config.advanced.backspaceDelayMs);
         inputInt("Chờ sau Backspace (ms)", config.advanced.afterBackspaceWaitMs);
