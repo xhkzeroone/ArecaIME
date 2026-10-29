@@ -609,18 +609,30 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     }
   }
 
-  // Khi URL có surrounding, giữ Backspace backend theo cấu hình hiện tại.
-  // Nhánh này cũng là fallback nếu Shift+Select không khả dụng.
+  // Khi cấu hình buộc xử lý URL, ưu tiên Shift+Select kể cả khi surrounding
+  // khả dụng. Chỉ lùi về Backspace nếu không có Shift+Select backend.
   if (forceUrlBackspace) {
+    if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
+      if (!program.empty()) {
+        lastAutoBackendByApp_[program] = AppBackendMode::ShiftSelect;
+      }
+      if (debugEnabled()) {
+        FCITX_INFO() << "areca: url selected shift-select backend="
+                     << shiftBackend->name()
+                     << " has_surrounding=" << hasSurrounding
+                     << " program=" << program;
+      }
+      return {shiftBackend};
+    }
+
     RewriteBackend *backend =
         resolvePreferredBackspaceBackend(preferHardware);
     if (!program.empty()) {
       lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
     }
     if (debugEnabled()) {
-      FCITX_INFO() << "areca: url selected backspace backend="
+      FCITX_INFO() << "areca: url shift-select unavailable, fallback backend="
                    << backend->name() << " has_surrounding=" << hasSurrounding
-                   << " shift_select_fallback=" << !hasSurrounding
                    << " program=" << program;
     }
     return {backend};
@@ -909,7 +921,9 @@ void ArecaEngine::scheduleDeviceWarmup() {
       CLOCK_MONOTONIC, deadline, 0,
       [this, warmUpNative](fcitx::EventSourceTime *, uint64_t) {
         auto timer = std::move(deviceWarmupTimer_);
-        const bool uinputAvailable = uinputDevice_.ensureDevice();
+        // Warmup chỉ chuẩn bị thiết bị. Chỉ báo lỗi khi routing thực sự thử
+        // chọn uinput cho một thao tác gõ/xoá.
+        const bool uinputAvailable = uinputDevice_.warmUp();
         const bool nativeStarted = warmUpNative && nativeDevice_.warmUp();
         if (debugEnabled()) {
           FCITX_INFO() << "areca: device warmup completed"

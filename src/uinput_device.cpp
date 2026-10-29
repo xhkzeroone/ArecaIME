@@ -21,10 +21,22 @@ UinputDevice::~UinputDevice() { closeDevice(); }
 
 bool UinputDevice::isAvailable() { return ensureDevice(); }
 
-bool UinputDevice::ensureDevice() {
+bool UinputDevice::ensureDevice() { return ensureDevice(true); }
+
+bool UinputDevice::warmUp() { return ensureDevice(false); }
+
+void UinputDevice::reportUnavailableOnce() {
+  if (unavailableReported_ || !unavailableCallback_) {
+    return;
+  }
+  unavailableReported_ = true;
+  unavailableCallback_();
+}
+
+bool UinputDevice::ensureDevice(bool reportUnavailable) {
   if (deviceInitialized_) {
-    if (uinputFd_ < 0 && unavailableCallback_) {
-      unavailableCallback_();
+    if (uinputFd_ < 0 && reportUnavailable) {
+      reportUnavailableOnce();
     }
     return uinputFd_ >= 0;
   }
@@ -38,8 +50,8 @@ bool UinputDevice::ensureDevice() {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput failed to open /dev/uinput";
     }
-    if (unavailableCallback_) {
-      unavailableCallback_();
+    if (reportUnavailable) {
+      reportUnavailableOnce();
     }
     return false;
   }
@@ -50,8 +62,8 @@ bool UinputDevice::ensureDevice() {
       ioctl(uinputFd_, UI_SET_KEYBIT, KEY_BACKSPACE) < 0 ||
       ioctl(uinputFd_, UI_SET_EVBIT, EV_SYN) < 0) {
     closeDevice();
-    if (unavailableCallback_) {
-      unavailableCallback_();
+    if (reportUnavailable) {
+      reportUnavailableOnce();
     }
     return false;
   }
@@ -77,8 +89,8 @@ bool UinputDevice::ensureDevice() {
     if (write(uinputFd_, &udev, sizeof(udev)) < 0 ||
         ioctl(uinputFd_, UI_DEV_CREATE) < 0) {
       closeDevice();
-      if (unavailableCallback_) {
-        unavailableCallback_();
+      if (reportUnavailable) {
+        reportUnavailableOnce();
       }
       return false;
     }

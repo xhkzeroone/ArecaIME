@@ -17,14 +17,19 @@ public:
 
   bool isAvailable();
   virtual bool ensureDevice();
+  bool warmUp();
   void closeDevice();
   virtual void sendKeyEvent(uint16_t code, int value);
 
 private:
+  bool ensureDevice(bool reportUnavailable);
+  void reportUnavailableOnce();
+
   DebugProvider debugProvider_;
   UnavailableCallback unavailableCallback_;
   int uinputFd_ = -1;
   bool deviceInitialized_ = false;
+  bool unavailableReported_ = false;
 };
 
 } // namespace areca
