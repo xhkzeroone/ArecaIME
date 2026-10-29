@@ -546,6 +546,41 @@ cd ArecaIME
           </div>
         </div>
 
+        <div id="uinput" class="uinput-check reveal">
+          <p class="eyebrow"><span></span> Khắc phục lỗi uinput</p>
+          <h3>Khởi nạp uinput và cấp quyền</h3>
+          <p>
+            Areca dùng <code>/dev/uinput</code> cho backend Backspace và
+            Shift+Select. Installer thường đã thiết lập sẵn; nếu Areca báo
+            không thể khởi tạo uinput, hãy chạy lần lượt các lệnh sau.
+          </p>
+
+          <h4>1. Nạp module và bật tự động sau khi khởi động</h4>
+          <pre><code>sudo modprobe uinput
+echo uinput | sudo tee /etc/modules-load.d/areca-uinput.conf</code></pre>
+
+          <h4>2. Nạp lại udev rule và cấp quyền cho tài khoản</h4>
+          <pre><code>sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo usermod -aG input "$USER"</code></pre>
+          <p>
+            Sau lệnh <code>usermod</code>, hãy đăng xuất rồi đăng nhập lại.
+            Nhóm <code>input</code> có quyền truy cập thiết bị đầu vào ở mức
+            thấp; có thể bỏ qua bước này và để Areca dùng backend dự phòng.
+          </p>
+
+          <h4>3. Kiểm tra và khởi động lại Fcitx5</h4>
+          <pre><code>lsmod | grep '^uinput'
+ls -l /dev/uinput
+test -w /dev/uinput &amp;&amp; echo "uinput: OK" || echo "uinput: chưa có quyền ghi"
+fcitx5 -rd</code></pre>
+          <p>
+            Xem thêm hướng dẫn và cách cài thủ công trong
+            <a href="https://github.com/xhkzeroone/ArecaIME#khởi-nạp-uinput-và-cấp-quyền"
+               target="_blank" rel="noreferrer">README trên GitHub</a>.
+          </p>
+        </div>
+
         <div class="fcitx-setup reveal">
           <div class="setup-heading">
             <p class="eyebrow"><span></span> Thiết lập Fcitx5</p>

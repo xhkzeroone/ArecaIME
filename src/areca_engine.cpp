@@ -898,7 +898,9 @@ void ArecaEngine::notifyUinputUnavailable() {
   notifications->call<fcitx::INotifications::sendNotification>(
       "Areca", 0, "fcitx-areca", "Areca không thể khởi tạo uinput",
       "Hãy kiểm tra quyền truy cập /dev/uinput và bảo đảm module uinput đã "
-      "được bật, sau đó khởi động lại Fcitx5.",
+      "được bật, sau đó khởi động lại Fcitx5. Xem hướng dẫn khởi nạp uinput "
+      "và cấp quyền tại https://github.com/xhkzeroone/ArecaIME#khởi-nạp-"
+      "uinput-và-cấp-quyền",
       std::vector<std::string>{}, 15000, fcitx::NotificationActionCallback{},
       fcitx::NotificationClosedCallback{});
 }

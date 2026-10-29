@@ -199,6 +199,55 @@ cùng ứng dụng. Xem thêm tài liệu chính thức về
 [thiết lập Fcitx5](https://fcitx-im.org/wiki/Setup_Fcitx_5/en) và
 [Fcitx5 trên Wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland/en).
 
+## Khởi nạp uinput và cấp quyền
+
+Areca dùng `/dev/uinput` cho backend Backspace và Shift+Select. Installer hoặc
+gói phân phối thường đã thiết lập phần này. Nếu Areca báo không thể khởi tạo
+uinput, trước tiên hãy nạp module:
+
+```bash
+sudo modprobe uinput
+```
+
+Để module tự được nạp sau mỗi lần khởi động:
+
+```bash
+echo uinput | sudo tee /etc/modules-load.d/areca-uinput.conf
+```
+
+Nạp lại udev rule đã được Areca cài và áp dụng quyền cho thiết bị:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Nếu tài khoản vẫn không có quyền ghi, thêm tài khoản hiện tại vào nhóm
+`input`, sau đó đăng xuất và đăng nhập lại:
+
+```bash
+sudo usermod -aG input "$USER"
+```
+
+Kiểm tra module, thiết bị và quyền ghi:
+
+```bash
+lsmod | grep '^uinput'
+ls -l /dev/uinput
+test -w /dev/uinput && echo "uinput: OK" || echo "uinput: chưa có quyền ghi"
+```
+
+Cuối cùng, khởi động lại Fcitx5 để Areca đóng trạng thái backend cũ và thử mở
+uinput lại:
+
+```bash
+fcitx5 -rd
+```
+
+Nhóm `input` có quyền truy cập thiết bị đầu vào ở mức thấp. Nếu không muốn cấp
+quyền này, có thể bỏ qua bước `usermod`; Areca sẽ tự chuyển sang backend dự
+phòng khi uinput không khả dụng.
+
 ## Cài từ mã nguồn
 
 Phần này dành cho người dùng có bản phân phối hoặc phiên bản chưa có gói dựng
@@ -240,15 +289,8 @@ sudo udevadm trigger
 fcitx5 -rd
 ```
 
-Để bật backend `uinput`, thêm tài khoản hiện tại vào nhóm `input`, sau đó đăng
-xuất và đăng nhập lại:
-
-```bash
-sudo usermod -aG input "$USER"
-```
-
-Nhóm `input` có quyền đọc/ghi thiết bị đầu vào ở mức thấp. Có thể bỏ qua bước
-này nếu không muốn cấp quyền; Areca sẽ dùng backend dự phòng.
+Nếu backend `uinput` chưa hoạt động sau khi cài từ mã nguồn, làm theo mục
+[Khởi nạp uinput và cấp quyền](#khởi-nạp-uinput-và-cấp-quyền).
 
 ## Xem log
 
