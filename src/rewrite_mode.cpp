@@ -202,6 +202,7 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
         fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
   }
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
+  state.forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
   event.forward();
 }
 
@@ -294,6 +295,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                  << " queue=" << scheduler_.queuedKeyCount();
   }
   if (event.isRelease()) {
+    if (isBackspace && state) state->forwardedBackspacePresses.clear();
     if (isBackspace && state && state->engine &&
         state->backspaceRecoveryAwaitingRelease) {
       if (isRepeat) {
@@ -372,6 +374,24 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       return;
     }
     state->sentenceCapitalization.reset();
+    if (!state->forwardedBackspacePresses.empty()) {
+      const bool replay = event.time() != 0 &&
+          state->forwardedBackspacePresses.contains(
+              {event.time(), event.rawKey().code()});
+      if (replay) {
+        if (debugProvider_()) {
+          FCITX_INFO() << "areca: backspace route=forward reason=replayed-press"
+                       << " event_time=" << event.time()
+                       << " keycode=" << event.rawKey().code()
+                       << " current=" << state->engine->currentText();
+        }
+        event.forward();
+      } else {
+        // A new held press stays forwarded and advances Bamboo exactly once.
+        forwardSyncedBackspace(event, *state);
+      }
+      return;
+    }
     if (state->backspaceRecoveryAwaitingRelease) {
       // IBus có thể gửi press lặp mà không có cờ Repeat. Press tiếp theo
       // trước release là nhấn giữ; phím inject đã được loại ở các guard trên.
@@ -387,6 +407,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                        << " program=" << inputContext->program();
         }
         resetContext(*inputContext);
+        state->forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
         event.forward();
         return;
       }
@@ -497,6 +518,7 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   scheduler_.resetContext(inputContext);
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
+    state->forwardedBackspacePresses.clear();
     state->resetProtectedUntilUsec = 0;
     state->sentenceCapitalization.reset();
     // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái

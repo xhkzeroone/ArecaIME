@@ -94,9 +94,84 @@ private:
   std::string current_;
 };
 
+// Reproduce GNOME's original press + replay after a committed word boundary.
+void testForwardedBackspaceReplay() {
+  fcitx::EventLoop loop;
+  fcitx::InputContextManager manager;
+  areca::RewriteModeHandler::StateFactory factory([](fcitx::InputContext &) {
+    return new areca::RewriteInputState(
+        "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+  });
+  manager.registerProperty("rewrite-backspace-replay-test", &factory);
+  TestInputContext context(manager, "gnome-text-editor", "dbus");
+  areca::InputScheduler scheduler(loop,
+      [&](fcitx::InputContext &ic) { return ic.propertyFor(&factory)->engine.get(); },
+      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+      [] { return false; },
+      [](fcitx::InputContext &, const areca::BambooResult &) {
+        return areca::RewriteBackendSelection{};
+      });
+  areca::RewriteModeHandler handler(loop, factory, scheduler,
+      [] { return false; }, [] { return false; },
+      [](fcitx::InputContext &, const char *) {}, [] { return true; },
+      [](fcitx::InputContext &) { return false; },
+      [](fcitx::InputContext &) { return false; },
+      [](const fcitx::Key &) { return false; });
+  auto *state = context.propertyFor(&factory);
+  auto prepare = [&]() {
+    handler.resetContext(context);
+    for (char c : std::string("ddungs "))
+      state->engine->process(c, std::string(1, c));
+    assert(state->engine->currentText().empty());
+  };
+  auto press = [&](int time, bool repeat) {
+    fcitx::KeyEvent event(&context,
+        fcitx::Key(FcitxKey_BackSpace, repeat ? fcitx::KeyState::Repeat
+                                            : fcitx::KeyState::NoState, 22),
+        false, time);
+    handler.handleKeyEvent(event);
+    assert(!event.filtered() && !event.accepted());
+    assert(!state->backspaceRecoveryAwaitingRelease);
+  };
+  auto release = [&]() {
+    fcitx::KeyEvent event(&context,
+        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::NoState, 22), true, 1100);
+    handler.handleKeyEvent(event);
+    assert(!event.accepted() && !event.filtered());
+    assert(state->forwardedBackspacePresses.empty());
+  };
+  for (bool repeatFlag : {false, true}) {
+    prepare();
+    press(1000, false); // Deletes the space, restores the finalized word.
+    assert(state->engine->currentText() == "đúng");
+    press(1000, repeatFlag); // Replay must not erase g or start recovery.
+    assert(state->engine->currentText() == "đúng");
+    release();
+    const auto result = state->engine->process('j', "j");
+    assert(result.newText == "đụng");
+    assert(result.deleteCount == 3 && result.commitText == "ụng");
+  }
+  for (bool repeatFlag : {false, true}) {
+    prepare();
+    press(1000, false);
+    press(1001, repeatFlag); // A real held press has a different timestamp.
+    assert(state->engine->currentText() == "đún");
+    press(1001, true);
+    assert(state->engine->currentText() == "đún");
+    press(1000, true); // A delayed old replay must also remain harmless.
+    assert(state->engine->currentText() == "đún");
+    release();
+  }
+  prepare();
+  press(1000, false);
+  handler.resetContext(context);
+  assert(state->forwardedBackspacePresses.empty());
+}
+
 } // namespace
 
 int main() {
+  testForwardedBackspaceReplay();
   // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
   // Backspace, giống BackspaceRecovery thường.
   // GNOME/IBus gửi các press lặp không kèm cờ Repeat.

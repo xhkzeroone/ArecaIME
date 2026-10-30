@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,6 +42,7 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   std::unique_ptr<VietnameseEngine> engine;
   SentenceCapitalizationState sentenceCapitalization;
   bool backspaceRecoveryAwaitingRelease = false;
+  std::set<std::pair<int, uint32_t>> forwardedBackspacePresses;
   // Frontend hoặc lifecycle reset đã thay đổi text/vị trí quanh con trỏ. Cờ
   // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một lần.
   bool surroundingRestoreArmed = false;
