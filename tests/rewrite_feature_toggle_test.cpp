@@ -242,6 +242,49 @@ int main() {
     assert(engine->withoutMacroProcessCount == 1);
   }
 
+  // Edge X11 sends reset immediately after a forwarded Backspace. Preserve
+  // the Bamboo snapshot restored while crossing a word boundary so the next
+  // key can still edit that word.
+  {
+    fcitx::EventLoop loop;
+    fcitx::InputContextManager manager;
+    areca::RewriteModeHandler::StateFactory factory(
+        [](fcitx::InputContext &) {
+          auto *state = new areca::RewriteInputState(
+              "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+          state->engine = std::make_unique<TestEngine>();
+          return state;
+        });
+    manager.registerProperty("rewrite-backspace-reset-test", &factory);
+    TestInputContext context(manager, "msedge", "dbus");
+    areca::InputScheduler scheduler(
+        loop,
+        [&](fcitx::InputContext &ic) {
+          return ic.propertyFor(&factory)->engine.get();
+        },
+        [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+        [] { return false; },
+        [](fcitx::InputContext &, const areca::BambooResult &) {
+          return areca::RewriteBackendSelection{};
+        });
+    areca::RewriteModeHandler handler(
+        loop, factory, scheduler, [] { return false; }, [] { return false; },
+        [](fcitx::InputContext &, const char *) {}, [] { return false; },
+        [](fcitx::InputContext &) { return false; },
+        [](fcitx::InputContext &) { return false; },
+        [](const fcitx::Key &) { return false; });
+    auto *state = context.propertyFor(&factory);
+    state->engine->process('a', "a");
+    fcitx::KeyEvent backspace(&context, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(backspace);
+    assert(!backspace.accepted());
+    assert(!state->engine->currentText().empty());
+    handler.requestProtectedReset(context);
+    assert(!state->engine->currentText().empty());
+    handler.deactivate(context);
+    assert(!state->engine->currentText().empty());
+  }
+
   // So sánh handler với luồng accept/enqueue cũ, dùng cùng loại engine giả.
   for (bool initiallyEnabled : {false, true}) {
     fcitx::EventLoop loop;

@@ -101,11 +101,31 @@ PreeditModeHandler::stateFor(fcitx::InputContext &inputContext) const {
 }
 
 void PreeditModeHandler::activate(fcitx::InputContext &inputContext) {
+  // Bắt đầu: Giữ finalized-word recovery qua lifecycle giả của Edge X11
+  if (auto *state = stateFor(inputContext);
+      state && state->finalizedWordRecovery ==
+                   FinalizedWordRecoveryState::Erasing) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: preedit activate reset rejected"
+                   << " reason=finalized-word-recovery";
+    }
+    return;
+  }
+  // Kết thúc: Giữ finalized-word recovery qua lifecycle giả của Edge X11
   resetContext(inputContext);
 }
 
 void PreeditModeHandler::deactivate(fcitx::InputContext &inputContext) {
   if (auto *state = stateFor(inputContext)) {
+    // Bắt đầu: Giữ finalized-word recovery qua lifecycle giả của Edge X11
+    if (state->finalizedWordRecovery == FinalizedWordRecoveryState::Erasing) {
+      if (debugProvider_()) {
+        FCITX_INFO() << "areca: preedit deactivate rejected"
+                     << " reason=finalized-word-recovery";
+      }
+      return;
+    }
+    // Kết thúc: Giữ finalized-word recovery qua lifecycle giả của Edge X11
     commitComposition(inputContext, *state);
     state->sentenceCapitalization.reset();
   }
@@ -391,11 +411,25 @@ bool PreeditModeHandler::startFinalizedWordRecovery(
       [this, watchedContext, recoveredWord](bool succeeded) {
         auto *context = watchedContext.get();
         if (!context) {
+          if (debugProvider_()) {
+            FCITX_INFO() << "areca: preedit finalized-word callback ignored"
+                         << " reason=context-lost";
+          }
           return;
         }
         auto *currentState = stateFor(*context);
         if (!currentState || currentState->finalizedWordRecovery !=
                                  FinalizedWordRecoveryState::Erasing) {
+          if (debugProvider_()) {
+            FCITX_INFO() << "areca: preedit finalized-word callback ignored"
+                         << " reason=state-changed"
+                         << " has_state=" << (currentState != nullptr)
+                         << " recovery_state="
+                         << (currentState
+                                 ? static_cast<int>(
+                                       currentState->finalizedWordRecovery)
+                                 : -1);
+          }
           return;
         }
         currentState->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
@@ -506,8 +540,18 @@ void PreeditModeHandler::commitComposition(fcitx::InputContext &inputContext,
 
 void PreeditModeHandler::requestProtectedReset(
     fcitx::InputContext &inputContext) {
-  if (auto *state = stateFor(inputContext);
-      state && fcitx::now(CLOCK_MONOTONIC) <=
+  auto *state = stateFor(inputContext);
+  // Bắt đầu: Giữ finalized-word recovery qua lifecycle giả của Edge X11
+  if (state && state->finalizedWordRecovery ==
+                   FinalizedWordRecoveryState::Erasing) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: preedit reset rejected"
+                   << " reason=finalized-word-recovery";
+    }
+    return;
+  }
+  // Kết thúc: Giữ finalized-word recovery qua lifecycle giả của Edge X11
+  if (state && fcitx::now(CLOCK_MONOTONIC) <=
                    state->resetProtectedUntilUsec) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: preedit reset rejected"

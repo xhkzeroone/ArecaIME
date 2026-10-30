@@ -180,7 +180,7 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
 }
 
 void RewriteModeHandler::deactivate(fcitx::InputContext &inputContext) {
-  resetContext(inputContext);
+  requestProtectedReset(inputContext);
 }
 
 bool RewriteModeHandler::syncEngineBackspace(RewriteInputState &state) {
@@ -196,7 +196,12 @@ bool RewriteModeHandler::syncEngineBackspace(RewriteInputState &state) {
 
 void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
                                                 RewriteInputState &state) {
-  syncEngineBackspace(state);
+  // Bắt đầu: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
+  if (syncEngineBackspace(state)) {
+    state.resetProtectedUntilUsec =
+        fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
+  }
+  // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   event.forward();
 }
 
@@ -468,6 +473,17 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
 
 void RewriteModeHandler::requestProtectedReset(
     fcitx::InputContext &inputContext) {
+  // Bắt đầu: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
+  if (auto *state = stateFor(inputContext);
+      state && fcitx::now(CLOCK_MONOTONIC) <=
+                   state->resetProtectedUntilUsec) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: reset rejected"
+                   << " reason=post-backspace-window";
+    }
+    return;
+  }
+  // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   if (scheduler_.shouldRejectReset()) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: reset rejected (active rewrite or 50ms post-commit window)";
@@ -481,6 +497,7 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   scheduler_.resetContext(inputContext);
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
+    state->resetProtectedUntilUsec = 0;
     state->sentenceCapitalization.reset();
     // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái
     // tạo trạng thái từ vị trí con trỏ mới nếu người dùng bật tính năng.

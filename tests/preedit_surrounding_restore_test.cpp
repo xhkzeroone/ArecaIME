@@ -246,6 +246,18 @@ int main() {
   assert(!injectedBackspace.accepted());
   assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
          areca::FinalizedWordRecoveryState::Erasing);
+  // Edge X11 sends reset after every injected Backspace. The erase transaction
+  // must keep its state until the backend callback restores the word.
+  noSurroundingContext.propertyFor(&factory)->resetProtectedUntilUsec = 0;
+  handler.requestProtectedReset(noSurroundingContext);
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Erasing);
+  handler.deactivate(noSurroundingContext);
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Erasing);
+  handler.activate(noSurroundingContext);
+  assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
+         areca::FinalizedWordRecoveryState::Erasing);
   eraseDone(true);
   assert(noSurroundingContext.forwardedBackspaces.empty());
   assert(noSurroundingContext.propertyFor(&factory)->composing == "á");

@@ -50,6 +50,9 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   bool wordBoundaryPending = false;
   std::string resolvedProgram;
   uint64_t addrBarUiVerdictAtUsec = 0;
+  // Một số frontend X11 gửi reset ngay sau Backspace đã được forward. Giữ
+  // snapshot Bamboo vừa đồng bộ để phím kế tiếp còn sửa được từ trước đó.
+  uint64_t resetProtectedUntilUsec = 0;
 };
 
 class RewriteModeHandler final : public InputModeHandler {
