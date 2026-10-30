@@ -198,12 +198,13 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             if (!config_.restoreSurroundingText.value()) {
               return false;
             }
-            auto *state = inputContext.propertyFor(&rewriteStateFactory_);
-            const std::string program = resolveProgram(inputContext, state);
             // TODO: Chromium đôi khi giữ getText()/SurroundingText cũ sau khi
             // người dùng Backspace sạch address bar. Tạm tắt restore tại đây
-            // cho đến khi có shadow snapshot đồng bộ được từng lần xóa.
-            return !inputTypeDetector_.inChromiumAddressBar(inputContext, program);
+            // cho đến khi có shadow snapshot đồng bộ được từng lần xóa. Chỉ
+            // tin CapabilityFlag::Url cho quyết định này; nhận diện Omnibox
+            // bằng AT-SPI có thể lẹm sang input khác khi focus chuyển nhanh.
+            return !inputContext.capabilityFlags().test(
+                fcitx::CapabilityFlag::Url);
           },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(
