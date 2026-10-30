@@ -168,6 +168,7 @@ void InputScheduler::processNext() {
   }
   try {
     if (key.isBackspace) {
+      backspaceRecoveryActive_ = true;
       applyResult(*inputContext, *engine, engine->processBackspace(), "");
     } else {
       const auto result = key.suppressMacro
@@ -321,6 +322,7 @@ void InputScheduler::rewriteDone(uint64_t transactionId,
 }
 
 void InputScheduler::finishKey() {
+  backspaceRecoveryActive_ = false;
   processing_ = false;
   scheduleNext();
 }

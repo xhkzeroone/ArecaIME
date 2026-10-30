@@ -309,6 +309,13 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
   if (isBackspace && scheduler_.rewritePending()) {
+    if (scheduler_.backspaceRecoveryActive()) {
+      if (debugProvider_()) {
+        FCITX_INFO() << "areca: filter trailing Backspace during recovery";
+      }
+      event.filterAndAccept();
+      return;
+    }
     if (debugProvider_()) {
       FCITX_INFO() << "areca: forward pending Backspace without mutating state";
     }

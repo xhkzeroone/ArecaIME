@@ -94,9 +94,87 @@ private:
   std::string current_;
 };
 
+class RecoveryEngine final : public areca::VietnameseEngine {
+public:
+  bool canProcessKey(uint32_t) const override { return true; }
+  areca::BambooResult process(uint32_t, const std::string &) override {
+    return {};
+  }
+  areca::BambooResult processBackspace() override {
+    areca::BambooResult result;
+    result.currentText = current_;
+    result.newText = "đún";
+    result.deleteCount = 1;
+    current_ = result.newText;
+    return result;
+  }
+  void backspace() override {}
+  void reset() override { current_.clear(); }
+  const std::string &currentText() const override { return current_; }
+
+private:
+  std::string current_ = "đúng";
+};
+
+class PendingBackend final : public areca::RewriteBackend {
+public:
+  const char *name() const override { return "pending"; }
+  areca::ApplyStatus apply(fcitx::InputContext &, const areca::RewritePlan &,
+                           areca::RewriteDone) override {
+    return areca::ApplyStatus::Pending;
+  }
+};
+
 } // namespace
 
 int main() {
+  // GNOME/DBus có thể gửi thêm Backspace sau khi release đã mở transaction
+  // recovery. Phím tới sau phải bị nuốt thay vì xóa thêm trong ứng dụng.
+  {
+    fcitx::EventLoop loop;
+    fcitx::InputContextManager manager;
+    areca::RewriteModeHandler::StateFactory factory(
+        [](fcitx::InputContext &) {
+          auto *state = new areca::RewriteInputState(
+              "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+          state->engine = std::make_unique<RecoveryEngine>();
+          return state;
+        });
+    manager.registerProperty("rewrite-trailing-backspace-test", &factory);
+    TestInputContext context(manager, "org.gnome.TextEditor", "dbus");
+    PendingBackend backend;
+    areca::InputScheduler scheduler(
+        loop,
+        [&](fcitx::InputContext &ic) {
+          return ic.propertyFor(&factory)->engine.get();
+        },
+        [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+        [] { return false; },
+        [&](fcitx::InputContext &, const areca::BambooResult &) {
+          return areca::RewriteBackendSelection{&backend};
+        });
+    areca::RewriteModeHandler handler(
+        loop, factory, scheduler, [] { return false; }, [] { return false; },
+        [](fcitx::InputContext &, const char *) {}, [] { return true; },
+        [](fcitx::InputContext &) { return false; },
+        [](fcitx::InputContext &) { return false; },
+        [](const fcitx::Key &) { return false; });
+
+    fcitx::KeyEvent press(&context, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(press);
+    assert(press.accepted());
+    fcitx::KeyEvent release(&context, fcitx::Key(FcitxKey_BackSpace), true);
+    handler.handleKeyEvent(release);
+    assert(release.accepted());
+    assert(scheduler.rewritePending());
+    assert(scheduler.backspaceRecoveryActive());
+
+    fcitx::KeyEvent trailing(&context, fcitx::Key(FcitxKey_BackSpace));
+    handler.handleKeyEvent(trailing);
+    assert(trailing.accepted());
+    assert(context.events.empty());
+  }
+
   // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
   // Backspace, giống BackspaceRecovery thường.
   // GNOME/IBus gửi các press lặp không kèm cờ Repeat.
