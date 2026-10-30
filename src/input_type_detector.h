@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 
 namespace fcitx {
@@ -24,12 +23,10 @@ public:
                            const std::string &program = "") const;
 
   bool inChromiumAddressBar(const fcitx::InputContext &inputContext,
-                           const std::string &program = "",
-                           uint64_t *addrBarUiVerdictAtUsec = nullptr) const;
+                           const std::string &program = "") const;
 
 private:
   const WindowFocusTracker *tracker_ = nullptr;
-  mutable uint64_t fallbackAddrBarUiVerdictAtUsec_ = 0;
 };
 
 } // namespace areca

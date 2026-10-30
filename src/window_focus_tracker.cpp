@@ -1,4 +1,5 @@
 #include "window_focus_tracker.h"
+#include "program_compatibility.h"
 
 #include <cctype>
 #include <chrono>
@@ -335,6 +336,53 @@ static const char *roleName(int role) {
     }
 }
 
+static std::string queryFocusClass(DBusConnection *bus, const char *sender,
+                                   const char *path) {
+    const auto started = std::chrono::steady_clock::now();
+    DBusMessage *reply = callMethod(bus, sender, path,
+        "org.a11y.atspi.Accessible", "GetAttributes");
+    const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - started).count();
+    std::string className;
+    const bool valid = reply && dbus_message_has_signature(reply, "a{ss}");
+    if (valid) {
+        DBusMessageIter iter, entries;
+        dbus_message_iter_init(reply, &iter);
+        dbus_message_iter_recurse(&iter, &entries);
+        while (dbus_message_iter_get_arg_type(&entries) == DBUS_TYPE_DICT_ENTRY) {
+            DBusMessageIter entry;
+            dbus_message_iter_recurse(&entries, &entry);
+            const char *key = nullptr, *value = nullptr;
+            dbus_message_iter_get_basic(&entry, &key);
+            dbus_message_iter_next(&entry);
+            dbus_message_iter_get_basic(&entry, &value);
+            if (strcmp(key, "class") == 0) {
+                className = value;
+                break;
+            }
+            dbus_message_iter_next(&entries);
+        }
+    }
+    if (reply) dbus_message_unref(reply);
+    FOCUS_LOG("Browser attributes: sender=%s path=%s status=%s class='%s' elapsed_us=%lld",
+              sender, path, valid ? "ok" : "unavailable", className.c_str(),
+              static_cast<long long>(elapsed));
+    return className;
+}
+
+static std::string programForPid(int pid) {
+    if (pid <= 0) return {};
+    char path[64], name[64] = {};
+    snprintf(path, sizeof(path), "/proc/%d/comm", pid);
+    FILE *file = fopen(path, "r");
+    if (!file) return {};
+    const bool read = fgets(name, sizeof(name), file) != nullptr;
+    fclose(file);
+    if (!read) return {};
+    name[strcspn(name, "\r\n")] = '\0';
+    return name;
+}
+
 static bool hasDocumentWebAncestor(DBusConnection *bus,
                                    const char *sender,
                                    const char *path) {
@@ -547,11 +595,11 @@ void WindowFocusTracker::connectionLost() {
 void WindowFocusTracker::clearFocus() {
     focusBus_.clear();
     focusPath_.clear();
-    browserUIFocused_.store(false);
     focusInTerminal_.store(false);
     {
         std::lock_guard<std::mutex> lock(focusProgramMutex_);
         focusProgram_.clear();
+        focusClass_.clear();
     }
 }
 
@@ -563,12 +611,8 @@ void WindowFocusTracker::loseFocus(const char *sender, const char *path) {
 
 bool WindowFocusTracker::start() {
     if (running_.load()) return valid_.load();
-    if (!isAvailable()) {
-        valid_.store(false);
-        return false;
-    }
     stopRequested_.store(false);
-    valid_.store(true);
+    valid_.store(false);
     thread_ = std::thread(&WindowFocusTracker::threadFunc, this);
     return true;
 }
@@ -730,48 +774,40 @@ void WindowFocusTracker::threadFunc() {
                     clearFocus();
                     focusBus_ = sender;
                     focusPath_ = path;
-                    int role = queryRole(bus, sender, path);
-                    bool isTerm = isTerminalNode(bus, sender, path, role);
-                    focusInTerminal_.store(isTerm,
-                                           std::memory_order_relaxed);
-                    bool hasDocWeb = !isTerm && hasDocumentWebAncestor(
-                        bus, sender, path);
-                    // Resolve the PID through the a11y registry first. This
-                    // avoids a potentially blocking call to browser UI nodes.
                     int procId = queryConnectionPid(bus, sender);
-                    if (procId <= 0 && hasDocWeb) {
-                        procId = queryProcessId(bus, sender, path);
+                    std::string program = programForPid(procId);
+                    if (program == "plasmashell" || program == "kwin_wayland" ||
+                        program == "gnome-shell" || program == "mutter") {
+                        clearFocus();
+                        dbus_message_unref(msg);
+                        continue;
                     }
-                    if (procId > 0) {
-                        char commBuf[64] = {};
-                        char commPath[64];
-                        snprintf(commPath, sizeof(commPath), "/proc/%d/comm", procId);
-                        FILE *cf = fopen(commPath, "r");
-                        if (cf) {
-                            if (fgets(commBuf, sizeof(commBuf), cf)) {
-                                size_t len = strlen(commBuf);
-                                while (len > 0 && (commBuf[len - 1] == '\n' || commBuf[len - 1] == '\r'))
-                                    commBuf[--len] = '\0';
-                            }
-                            fclose(cf);
-                        }
-                        if (commBuf[0] != '\0') {
-                            std::string_view commView(commBuf);
-                            if (commView == "plasmashell" || commView == "kwin_wayland" ||
-                                commView == "gnome-shell" || commView == "mutter") {
-                                clearFocus();
-                                dbus_message_unref(msg);
-                                continue;
-                            }
-                            {
-                                std::lock_guard<std::mutex> lock(focusProgramMutex_);
-                                focusProgram_ = commBuf;
-                            }
+                    int role = -1;
+                    bool isTerm = false, hasDocWeb = false;
+                    std::string className;
+                    if (isChromiumBrowser(program)) {
+                        // Cache Omnibox identity in this background worker.
+                        className = queryFocusClass(bus, sender, path);
+                    }
+                    // Omnibox is already identified. Other Chromium nodes
+                    // still need the regular terminal/document detection.
+                    if (className.find("Omnibox") == std::string::npos) {
+                        role = queryRole(bus, sender, path);
+                        isTerm = isTerminalNode(bus, sender, path, role);
+                        hasDocWeb = !isTerm && hasDocumentWebAncestor(bus, sender, path);
+                        if (procId <= 0 && hasDocWeb) {
+                            procId = queryProcessId(bus, sender, path);
+                            program = programForPid(procId);
+                            if (isChromiumBrowser(program))
+                                className = queryFocusClass(bus, sender, path);
                         }
                     }
-                    bool isUI = !hasDocWeb;
-                    browserUIFocused_.store(isUI,
-                                           std::memory_order_relaxed);
+                    focusInTerminal_.store(isTerm, std::memory_order_relaxed);
+                    {
+                        std::lock_guard<std::mutex> lock(focusProgramMutex_);
+                        focusProgram_ = std::move(program);
+                        focusClass_ = std::move(className);
+                    }
                     FOCUS_LOG("Focus: terminal=%d webDoc=%d role=%d(%s) "
                               "pid=%d path=%s",
                               isTerm, hasDocWeb, role, roleName(role), procId,

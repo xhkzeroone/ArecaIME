@@ -5,7 +5,6 @@
 #include <string_view>
 
 #include <fcitx-utils/capabilityflags.h>
-#include <fcitx-utils/event.h>
 #include <fcitx/inputcontext.h>
 
 #include "program_compatibility.h"
@@ -121,41 +120,19 @@ bool InputTypeDetector::canForwardBackspaces(
 }
 
 bool InputTypeDetector::inChromiumAddressBar(
-    const fcitx::InputContext &inputContext, const std::string &program,
-    uint64_t *addrBarUiVerdictAtUsec) const {
+    const fcitx::InputContext &inputContext, const std::string &program) const {
+  // Url is authoritative. AT-SPI only fills the gap for Chromium frontends
+  // that do not expose CapabilityFlag::Url.
   if (inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Url)) {
     return true;
   }
-
-  std::string prog = !program.empty() ? program : inputContext.program();
-  if (prog.empty() && tracker_ && tracker_->isValid()) {
-    prog = tracker_->focusProgram();
-  }
-
-  if (isChromiumBrowser(prog)) {
-    uint64_t &verdictTime = addrBarUiVerdictAtUsec
-                                ? *addrBarUiVerdictAtUsec
-                                : fallbackAddrBarUiVerdictAtUsec_;
-
-    if (tracker_ && tracker_->isValid() && tracker_->isBrowserUIFocused()) {
-      verdictTime = fcitx::now(CLOCK_MONOTONIC);
-      return true;
-    }
-
-    const uint64_t nowUsec = fcitx::now(CLOCK_MONOTONIC);
-    if (verdictTime != 0 && nowUsec - verdictTime <= 5000000) {
-      return true;
-    }
-    verdictTime = 0;
-
-    const auto &rect = inputContext.cursorRect();
-    if (rect.width() <= 2 && rect.height() >= 18 && rect.height() <= 24 &&
-        rect.top() >= 0 && rect.top() < 200) {
-      return true;
-    }
-  }
-
-  return false;
+  if (!tracker_ || !tracker_->isValid()) return false;
+  const auto focus = tracker_->browserFocus();
+  std::string prog = program.empty() ? inputContext.program() : program;
+  if (prog.empty()) prog = focus.program;
+  return isChromiumBrowser(prog) &&
+         isChromiumBrowser(focus.program) &&
+         focus.className.find("Omnibox") != std::string::npos;
 }
 
 } // namespace areca

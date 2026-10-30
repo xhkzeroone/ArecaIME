@@ -51,6 +51,11 @@ bool isInvalidSurrounding(const fcitx::SurroundingText &surrounding) {
                      [&](auto rule) { return rule(surrounding); });
 }
 
+bool isGnomeShellProxyProgram(std::string_view program) {
+  return program == "gnome-shell" || program == "mutter" ||
+         program == "org.gnome.Shell" || program == "org.gnome.Mutter";
+}
+
 std::string icUuidToHex(const fcitx::ICUUID &uuid) {
   static constexpr char hexChars[] = "0123456789abcdef";
   std::string result;
@@ -198,7 +203,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             // TODO: Chromium đôi khi giữ getText()/SurroundingText cũ sau khi
             // người dùng Backspace sạch address bar. Tạm tắt restore tại đây
             // cho đến khi có shadow snapshot đồng bộ được từng lần xóa.
-            return !inChromiumAddressBar(inputContext, program, state);
+            return !inputTypeDetector_.inChromiumAddressBar(inputContext, program);
           },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(
@@ -255,13 +260,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       BambooEngineAdapter::charsetNames());
   reloadConfig();
   focusTracker_ = std::make_unique<WindowFocusTracker>();
-  if (!focusTracker_->start() || !focusTracker_->isValid()) {
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: window focus tracker inactive, disabled";
-    }
-    focusTracker_->stop();
-    focusTracker_.reset();
-  }
+  // Keep AT-SPI monitoring alive in the background. The worker reconnects
+  // when the accessibility bus appears, so fallback data is cached before a
+  // Chromium frontend without CapabilityFlag::Url needs it.
+  focusTracker_->start();
   inputTypeDetector_.setFocusTracker(focusTracker_.get());
 
   initActions();
@@ -330,36 +332,34 @@ void ArecaEngine::clearBackendVerdictForLifecycle(
 
 std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
                                         RewriteInputState *state) {
-  std::string program = inputContext.program();
-  if (!program.empty()) {
-    return program;
+  const std::string reportedProgram = inputContext.program();
+  const bool needsTrackedProgram =
+      reportedProgram.empty() || isGnomeShellProxyProgram(reportedProgram);
+  if (!needsTrackedProgram) {
+    return reportedProgram;
   }
-  if (state && !state->resolvedProgram.empty()) {
-    return state->resolvedProgram;
-  }
+
   if (focusTracker_ && focusTracker_->isValid()) {
-    program = focusTracker_->focusProgram();
-    if (!program.empty()) {
+    const std::string trackedProgram = focusTracker_->focusProgram();
+    if (!trackedProgram.empty() &&
+        !isGnomeShellProxyProgram(trackedProgram)) {
       if (state) {
-        state->resolvedProgram = program;
+        state->resolvedProgram = trackedProgram;
       }
       if (debugEnabled()) {
         FCITX_INFO()
-            << "areca: resolved and cached empty program via focus tracker: "
-            << program;
+            << "areca: resolved and cached proxy program via focus tracker"
+            << " reported=" << reportedProgram
+            << " tracked=" << trackedProgram;
       }
-      return program;
+      return trackedProgram;
     }
   }
-  return {};
-}
 
-bool ArecaEngine::inChromiumAddressBar(fcitx::InputContext &inputContext,
-                                       const std::string &program,
-                                       RewriteInputState *state) {
-  uint64_t *verdictUsec = state ? &state->addrBarUiVerdictAtUsec : nullptr;
-  return inputTypeDetector_.inChromiumAddressBar(inputContext, program,
-                                                 verdictUsec);
+  if (state && !state->resolvedProgram.empty()) {
+    return state->resolvedProgram;
+  }
+  return reportedProgram;
 }
 
 RewriteBackend *ArecaEngine::resolvePreferredSurroundingBackend() {
@@ -541,7 +541,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   // Bắt đầu: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả
   // dụng hoặc không hợp lệ
   const bool inAddressBar =
-      !hasSurrounding && inChromiumAddressBar(inputContext, program, state);
+      !hasSurrounding && inputTypeDetector_.inChromiumAddressBar(inputContext, program);
   // Kết thúc: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả
   // dụng hoặc không hợp lệ
   const bool isUrl =
@@ -1374,7 +1374,7 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     // Resolve program một lần để nhận diện address bar dùng cùng verdict trong
     // toàn bộ lượt xử lý phím.
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
-    const std::string program = resolveProgram(*inputContext, state);
+    resolveProgram(*inputContext, state);
 
     // Sau click, bỏ state của caret cũ để phím kế tiếp có thể phục hồi phần từ
     // nằm trước caret mới. Preedit chỉ làm việc này khi composition đã trống,
@@ -1406,12 +1406,6 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
         mouseTracker_->clearPendingClick();
       }
     }
-    // Bắt đầu: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay
-    // từ ký tự đầu tiên
-    inChromiumAddressBar(*inputContext, program, state);
-    // Kết thúc: Làm nóng trạng thái nhận diện thanh địa chỉ và cửa sổ trễ ngay
-    // từ ký tự đầu tiên
-
     const auto key = event.key().normalize();
     // if (key.sym() != FcitxKey_None &&
     //     key.checkKeyList(config_.switchModeKey.value())) {

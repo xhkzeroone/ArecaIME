@@ -24,7 +24,13 @@ struct WindowFocusTrackerTestAccess {
     {
       std::lock_guard<std::mutex> lock(tracker.focusProgramMutex_);
       tracker.focusProgram_ = program;
+      tracker.focusClass_.clear();
     }
+  }
+
+  static void setClass(WindowFocusTracker &tracker, const std::string &className) {
+    std::lock_guard<std::mutex> lock(tracker.focusProgramMutex_);
+    tracker.focusClass_ = className;
   }
 
   static void loseFocus(WindowFocusTracker &tracker, const char *sender,
@@ -141,89 +147,76 @@ int main() {
     detector.setFocusTracker(nullptr);
   }
 
-  // Case 4: Chromium address bar detection
+  // Chromium variants can add prefixes or suffixes to the omnibox class.
   {
-    InputTypeDetector detector(nullptr);
     fcitx::InputContextManager manager;
-    fcitx::FocusGroup x11Group("x11::0", manager);
-    fcitx::FocusGroup waylandGroup("wayland:wayland-0", manager);
+    fcitx::FocusGroup group("x11::0", manager);
+    TestInputContext edge(manager, "microsoft-edge", "dbus");
+    edge.setFocusGroup(&group);
+    edge.setCapabilityFlags(fcitx::CapabilityFlag::Url);
+    edge.setCursorRect(fcitx::Rect(100, 50, 101, 70));
+    InputTypeDetector detector;
+    // Url is authoritative and does not depend on AT-SPI availability.
+    assert(detector.inChromiumAddressBar(edge));
 
-    // Method 1: Wayland with CapabilityFlag::Url
-    {
-      TestInputContext chromeWayland(manager, "google-chrome", "wayland");
-      chromeWayland.setFocusGroup(&waylandGroup);
-      chromeWayland.setCapabilityFlags(fcitx::CapabilityFlag::Url);
-      assert(detector.inChromiumAddressBar(chromeWayland, "google-chrome"));
+    edge.setCapabilityFlags(fcitx::CapabilityFlags{});
+    assert(!detector.inChromiumAddressBar(edge));
 
-      // Non-url capability without Omnibox cursor rect
-      chromeWayland.setCapabilityFlags(fcitx::CapabilityFlags{});
-      assert(!detector.inChromiumAddressBar(chromeWayland, "google-chrome"));
+    WindowFocusTracker tracker;
+    detector.setFocusTracker(&tracker);
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.53", "/omnibox", "msedge", false);
+    areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
+    assert(detector.inChromiumAddressBar(edge));
+    // Neither coordinates nor the Url capability are needed for a match.
+    edge.setCursorRect(fcitx::Rect(500, 600, 504, 640));
+    edge.setCapabilityFlags(fcitx::CapabilityFlags{});
+    assert(detector.inChromiumAddressBar(edge));
 
-      // Wayland also supports cursorRect fallback when compositor lacks Url flag
-      chromeWayland.setCursorRect(fcitx::Rect(100, 50, 101, 70));
-      assert(detector.inChromiumAddressBar(chromeWayland, "google-chrome"));
+    // Page inputs must not match the current Omnibox substring rule.
+    for (const auto *className : {"control   ", ""}) {
+      areca::WindowFocusTrackerTestAccess::setClass(tracker, className);
+      assert(!detector.inChromiumAddressBar(edge));
     }
-
-    // Method 2: X11 Tier 2 cursorRect fallback
-    {
-      TestInputContext chromeX11(manager, "google-chrome", "x11");
-      chromeX11.setFocusGroup(&x11Group);
-
-      // Default rect 0x0
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Valid Omnibox cursor rect: top < 200, width <= 2, 18 <= height <= 24
-      chromeX11.setCursorRect(fcitx::Rect(100, 50, 101, 70));
-      assert(detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Valid boundary values
-      chromeX11.setCursorRect(fcitx::Rect(0, 0, 2, 18));
-      assert(detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-      chromeX11.setCursorRect(fcitx::Rect(0, 199, 2, 223));
-      assert(detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Invalid top >= 200
-      chromeX11.setCursorRect(fcitx::Rect(100, 200, 101, 220));
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Invalid negative top
-      chromeX11.setCursorRect(fcitx::Rect(100, -1, 101, 19));
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Invalid width > 2
-      chromeX11.setCursorRect(fcitx::Rect(100, 50, 103, 70));
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Invalid height < 18
-      chromeX11.setCursorRect(fcitx::Rect(100, 50, 101, 67));
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Invalid height > 24
-      chromeX11.setCursorRect(fcitx::Rect(100, 50, 101, 75));
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome"));
-
-      // Non-Chromium browser on X11 does not match
-      TestInputContext firefoxX11(manager, "firefox", "x11");
-      firefoxX11.setFocusGroup(&x11Group);
-      firefoxX11.setCursorRect(fcitx::Rect(100, 50, 101, 70));
-      assert(!detector.inChromiumAddressBar(firefoxX11, "firefox"));
+    for (const auto *className : {"OmniboxResultView", "BraveOmniboxViewViews", "OmniboxViewViews extra",
+                                 "CustomOmniboxViewViewsSubclass"}) {
+      areca::WindowFocusTrackerTestAccess::setClass(tracker, className);
+      assert(detector.inChromiumAddressBar(edge));
     }
+    // Re-entering the page immediately clears the previous verdict.
+    areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
+    assert(detector.inChromiumAddressBar(edge));
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.53", "/page-input", "msedge", false);
+    assert(!detector.inChromiumAddressBar(edge));
 
-    // Grace Window 5 seconds
-    {
-      TestInputContext chromeX11(manager, "google-chrome", "x11");
-      chromeX11.setFocusGroup(&x11Group);
-      chromeX11.setCursorRect(fcitx::Rect(100, 500, 101, 520));
-
-      uint64_t verdictUsec = fcitx::now(CLOCK_MONOTONIC);
-      assert(detector.inChromiumAddressBar(chromeX11, "google-chrome", &verdictUsec));
-
-      // Expired grace window > 5s
-      verdictUsec = fcitx::now(CLOCK_MONOTONIC) - 6000000;
-      assert(!detector.inChromiumAddressBar(chromeX11, "google-chrome", &verdictUsec));
-      assert(verdictUsec == 0);
+    areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
+    // All browser identities use the existing Chromium list, without aliases.
+    for (const auto *program : {"microsoft-edge-stable", "msedge",
+                               "com.microsoft.Edge.desktop", "brave-browser",
+                               "brave", "google-chrome-beta", "chromium-browser"}) {
+      TestInputContext alias(manager, program);
+      assert(detector.inChromiumAddressBar(alias));
     }
+    TestInputContext chrome(manager, "google-chrome");
+    assert(detector.inChromiumAddressBar(chrome));
+    TestInputContext editor(manager, "gnome-text-editor");
+    assert(!detector.inChromiumAddressBar(editor));
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.54", "/omnibox", "chrome", false);
+    areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
+    assert(detector.inChromiumAddressBar(chrome));
+    assert(detector.inChromiumAddressBar(edge));
 
+    areca::WindowFocusTrackerTestAccess::loseFocus(tracker, ":1.54", "/omnibox");
+    assert(!detector.inChromiumAddressBar(chrome));
+    assert(tracker.browserFocus().className.empty());
+    areca::WindowFocusTrackerTestAccess::seedFocus(
+        tracker, ":1.54", "/omnibox", "chrome", false);
+    areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
+    areca::WindowFocusTrackerTestAccess::connectionLost(tracker);
+    assert(!detector.inChromiumAddressBar(chrome));
+    assert(tracker.browserFocus().className.empty());
   }
 
   // Case 5: Tracker focus must not leak to another application.
