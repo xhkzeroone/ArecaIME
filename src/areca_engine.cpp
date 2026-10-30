@@ -567,6 +567,25 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   // không khả dụng.
   if (decision.browserAutocomplete || collapsedFirefoxAutocomplete ||
       hasActiveSelection) {
+    if (isUrl) {
+      auto *shiftBackend = resolvePreferredShiftSelectBackend();
+      if (shiftBackend) {
+        if (!program.empty()) {
+          lastAutoBackendByApp_[program] = AppBackendMode::ShiftSelect;
+        }
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: autocomplete selected shift-select backend="
+                       << shiftBackend->name()
+                       << " collapsed_autocomplete="
+                       << collapsedFirefoxAutocomplete
+                       << " active_selection=" << hasActiveSelection
+                       << " bamboo_delete=" << result.deleteCount
+                       << " program=" << program;
+        }
+        return {shiftBackend};
+      }
+    }
+
     uint32_t additional = 0;
     if (selectionMatchesCurrentText || decision.browserAutocomplete ||
         collapsedFirefoxAutocomplete) {
