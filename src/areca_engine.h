@@ -18,6 +18,7 @@
 #include "event_loop_post.h"
 #include "forward_backspace_backend.h"
 #include "input_scheduler.h"
+#include "notification/input_method_announcement.h"
 #include "preedit_mode.h"
 #include "input_type_detector.h"
 #include "native_device.h"
@@ -172,6 +173,7 @@ private:
   std::unique_ptr<MouseClickTracker> mouseTracker_;
   std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
       surroundingTextWatcher_;
+  std::unique_ptr<InputMethodAnnouncement> inputMethodAnnouncement_;
 
   std::unique_ptr<fcitx::SimpleAction> inputMethodAction_;
   std::vector<std::unique_ptr<fcitx::SimpleAction>> inputMethodSubActions_;

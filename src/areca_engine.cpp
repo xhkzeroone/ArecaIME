@@ -1,4 +1,5 @@
 #include "areca_engine.h"
+#include "notification/dynamic_island_announcement.h"
 
 #include <algorithm>
 #include <array>
@@ -229,6 +230,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                                     &rewriteStateFactory_);
   instance_->inputContextManager().registerProperty("arecaPreeditState",
                                                     &preeditStateFactory_);
+  inputMethodAnnouncement_ = std::make_unique<DynamicIslandAnnouncement>(
+      *instance_, InputMethodIdentity{"areca", "Bộ gõ ArecaIME",
+                                      "org.fcitx.Fcitx5.fcitx-areca"});
   surroundingTextWatcher_ = instance_->watchEvent(
       fcitx::EventType::InputContextSurroundingTextUpdated,
       fcitx::EventWatcherPhase::PostInputMethod, [this](fcitx::Event &event) {

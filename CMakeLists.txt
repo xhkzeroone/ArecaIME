@@ -57,6 +57,8 @@ add_library(areca MODULE
     src/bamboo_engine_adapter.cpp
     src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp
+    src/notification/dynamic_island_announcement.cpp
+    src/notification/input_method_announcement.cpp
     src/input_scheduler.cpp
     src/input_type_detector.cpp
     src/preedit_mode.cpp
