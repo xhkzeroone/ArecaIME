@@ -23,8 +23,6 @@ public:
     AtspiFocusInfo inspectFocus(const char *sender, const char *path) const;
     void pokeApps() const;
 
-    static const char *roleName(int role);
-
 private:
     DBusConnection *bus_;
 };

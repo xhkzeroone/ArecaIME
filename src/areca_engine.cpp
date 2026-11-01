@@ -264,7 +264,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   config_.outputCharset.annotation().setList(
       BambooEngineAdapter::charsetNames());
   reloadConfig();
-  focusTracker_ = std::make_unique<WindowFocusTracker>();
+  focusTracker_ = std::make_unique<WindowFocusTracker>(debugEnabled());
   // Keep AT-SPI monitoring alive in the background. The worker reconnects
   // when the accessibility bus appears, so fallback data is cached before a
   // Chromium frontend without CapabilityFlag::Url needs it.
@@ -1642,6 +1642,7 @@ void ArecaEngine::rebuildAppBackendOverridesMap() {
 }
 
 void ArecaEngine::applyConfig() {
+  if (focusTracker_) focusTracker_->setDebugEnabled(debugEnabled());
   const auto previousOverrides = appBackendOverridesMap_;
   const PresentationMode previousDefaultMode = activePresentationMode_;
   const PresentationMode requestedMode = config_.presentationMode.value();

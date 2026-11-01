@@ -1,5 +1,4 @@
 #include "atspi_connection.h"
-#include "focus_log.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -36,7 +35,6 @@ std::string AtspiConnection::x11BusAddress() {
                 buffer[--length] = '\0';
             pclose(file);
             if (buffer[0]) {
-                FOCUS_LOG("Bus address from X11: %s", buffer);
                 return buffer;
             }
         } else {
@@ -104,7 +102,6 @@ DbusConnectionPtr AtspiConnection::connectToAddress(
     if (bus && !error.isSet() &&
         dbus_bus_register(bus.get(), error.get()) != FALSE &&
         !error.isSet() && pingRegistry(bus.get())) {
-        FOCUS_LOG("Connected to AT-SPI2 bus");
         return bus;
     }
     return {};
@@ -114,7 +111,6 @@ DbusConnectionPtr AtspiConnection::connectSessionBus() {
     DbusErrorGuard error;
     DbusConnectionPtr bus(dbus_bus_get(DBUS_BUS_SESSION, error.get()));
     if (bus && !error.isSet() && pingRegistry(bus.get())) {
-        FOCUS_LOG("Connected to session bus fallback");
         return bus;
     }
     return {};

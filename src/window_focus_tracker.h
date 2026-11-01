@@ -12,7 +12,7 @@ namespace areca {
 
 class WindowFocusTracker {
 public:
-  WindowFocusTracker();
+  explicit WindowFocusTracker(bool debugEnabled = false);
   ~WindowFocusTracker();
 
   WindowFocusTracker(const WindowFocusTracker &) = delete;
@@ -24,6 +24,9 @@ public:
   void stop();
   void requestAccessibilityPoke() {
     pokeRequested_.store(true, std::memory_order_relaxed);
+  }
+  void setDebugEnabled(bool enabled) {
+    debugEnabled_.store(enabled, std::memory_order_relaxed);
   }
 
   bool isValid() const {
@@ -53,6 +56,7 @@ private:
   friend struct WindowFocusTrackerTestAccess;
   void connectionEstablished();
   void connectionLost();
+  void reportConnectionUnavailable(const char *reason);
   void clearFocus();
   void loseFocus(const char *sender, const char *path = nullptr);
   struct PokeSchedule;
@@ -77,6 +81,8 @@ private:
   std::atomic<bool> running_{false};
   std::atomic<bool> stopRequested_{false};
   std::atomic<bool> pokeRequested_{false};
+  std::atomic<bool> debugEnabled_{false};
+  std::atomic<bool> connectionFailureReported_{false};
   std::atomic<bool> focusInTerminal_{false};
 
   mutable std::mutex focusProgramMutex_;

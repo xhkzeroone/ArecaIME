@@ -1,6 +1,5 @@
 #include "atspi_accessible.h"
 
-#include "focus_log.h"
 #include "program_compatibility.h"
 
 #include <cctype>
@@ -139,11 +138,8 @@ bool queryParent(DBusConnection *bus, const char *sender, const char *path,
 
 std::string queryFocusClass(DBusConnection *bus, const char *sender,
                             const char *path) {
-    const auto started = std::chrono::steady_clock::now();
     DbusMessagePtr reply = callMethod(bus, sender, path,
                                       "org.a11y.atspi.Accessible", "GetAttributes");
-    const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::steady_clock::now() - started).count();
     std::string className;
     const bool valid = reply && dbus_message_has_signature(reply.get(), "a{ss}");
     if (valid) {
@@ -165,9 +161,6 @@ std::string queryFocusClass(DBusConnection *bus, const char *sender,
             dbus_message_iter_next(&entries);
         }
     }
-    FOCUS_LOG("Browser attributes: sender=%s path=%s status=%s class='%s' elapsed_us=%lld",
-              sender, path, valid ? "ok" : "unavailable", className.c_str(),
-              static_cast<long long>(elapsed));
     return className;
 }
 
@@ -203,8 +196,6 @@ bool hasDocumentWebAncestor(DBusConnection *bus, const char *sender,
         }
 
         const int role = queryRole(bus, parentSender.c_str(), parentPath.c_str());
-        FOCUS_LOG("  ancestor[%d]: role=%d path=%s", depth, role,
-                  parentPath.c_str());
         if (role == ROLE_DOCUMENT_WEB || role == ROLE_DOCUMENT_FRAME) return true;
 
         currentSender = parentSender;
@@ -308,35 +299,6 @@ bool isWindowManagerProcess(const std::string &program) {
 
 } // namespace
 
-const char *AtspiAccessible::roleName(int role) {
-    switch (role) {
-    case 11: return "combo_box";
-    case 20: return "filler";
-    case 23: return "frame";
-    case 30: return "layered_pane";
-    case 31: return "list";
-    case 32: return "list_item";
-    case 35: return "menu_item";
-    case 37: return "page_tab";
-    case 39: return "panel";
-    case 40: return "password_text";
-    case 41: return "popup_menu";
-    case 43: return "button";
-    case 55: return "table";
-    case 56: return "table_cell";
-    case 60: return "terminal";
-    case 61: return "text";
-    case 73: return "paragraph";
-    case 79: return "entry";
-    case 82: return "document_frame";
-    case 85: return "section";
-    case 94: return "document_text";
-    case 95: return "document_web";
-    case 110: return "description_list";
-    default: return "?";
-    }
-}
-
 AtspiFocusInfo AtspiAccessible::inspectFocus(const char *sender,
                                              const char *path) const {
     AtspiFocusInfo info;
@@ -395,12 +357,9 @@ void AtspiAccessible::pokeApps() const {
         }
 
         if (appBus && appPath && appPath[0] == '/') {
-            std::string name = queryName(bus_, appBus, appPath);
             DbusMessagePtr poke = callMethod(
                 bus_, appBus, appPath, "org.a11y.atspi.Accessible",
                 "GetRelationSet", 500);
-            FOCUS_LOG("Poked '%s' (%s) to enable native a11y",
-                      name.c_str(), appBus);
         }
         dbus_message_iter_next(&applications);
     }

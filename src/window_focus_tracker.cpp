@@ -2,11 +2,11 @@
 
 #include "atspi/atspi_accessible.h"
 #include "atspi/atspi_connection.h"
-#include "atspi/focus_log.h"
 
 #include <chrono>
 #include <cstring>
 #include <dbus/dbus.h>
+#include <fcitx-utils/log.h>
 
 namespace areca {
 
@@ -33,7 +33,8 @@ struct WindowFocusTracker::PokeSchedule {
     }
 };
 
-WindowFocusTracker::WindowFocusTracker() = default;
+WindowFocusTracker::WindowFocusTracker(bool debugEnabled)
+    : debugEnabled_(debugEnabled) {}
 
 WindowFocusTracker::~WindowFocusTracker() { stop(); }
 
@@ -43,12 +44,30 @@ bool WindowFocusTracker::isAvailable() {
 }
 
 void WindowFocusTracker::connectionEstablished() {
+    connectionFailureReported_.store(false, std::memory_order_relaxed);
     valid_.store(true, std::memory_order_relaxed);
+    if (debugEnabled_.load(std::memory_order_relaxed)) {
+        FCITX_INFO() << "areca: AT-SPI connected; focus events registered";
+    }
 }
 
 void WindowFocusTracker::connectionLost() {
-    valid_.store(false, std::memory_order_relaxed);
+    if (valid_.exchange(false, std::memory_order_relaxed)) {
+        connectionFailureReported_.store(true, std::memory_order_relaxed);
+        if (debugEnabled_.load(std::memory_order_relaxed)) {
+            FCITX_INFO() << "areca: AT-SPI connection lost";
+        }
+    }
     clearFocus();
+}
+
+void WindowFocusTracker::reportConnectionUnavailable(const char *reason) {
+    if (connectionFailureReported_.exchange(true, std::memory_order_relaxed))
+        return;
+    if (debugEnabled_.load(std::memory_order_relaxed)) {
+        FCITX_INFO() << "areca: AT-SPI unavailable: " << reason
+                     << "; retrying";
+    }
 }
 
 void WindowFocusTracker::clearFocus() {
@@ -115,6 +134,7 @@ void WindowFocusTracker::addEventMatches(DBusConnection *bus) {
 
 void WindowFocusTracker::runConnection(DBusConnection *bus) {
     if (!registerEvents(bus)) {
+        reportConnectionUnavailable("event registration failed");
         connectionLost();
         waitBeforeReconnect(20);
         return;
@@ -129,7 +149,6 @@ void WindowFocusTracker::runConnection(DBusConnection *bus) {
 void WindowFocusTracker::runEventLoop(DBusConnection *bus) {
     AtspiAccessible accessible(bus);
     connectionEstablished();
-    FOCUS_LOG("WindowFocusTracker started");
     accessible.pokeApps();
 
     PokeSchedule schedule;
@@ -241,9 +260,6 @@ void WindowFocusTracker::processFocusEvent(DBusConnection *bus,
         focusProgram_ = info.program;
         focusClass_ = info.className;
     }
-    FOCUS_LOG("Focus: terminal=%d webDoc=%d role=%d(%s) pid=%d path=%s",
-              info.terminal, info.documentWeb, info.role,
-              AtspiAccessible::roleName(info.role), info.processId, path);
 }
 
 void WindowFocusTracker::waitBeforeReconnect(int intervals) {
@@ -259,6 +275,7 @@ void WindowFocusTracker::threadFunc() {
         AtspiConnection connection;
         DBusConnection *bus = connection.get();
         if (!bus) {
+            reportConnectionUnavailable("bus connection failed");
             connectionLost();
             waitBeforeReconnect(20);
             continue;
@@ -268,7 +285,6 @@ void WindowFocusTracker::threadFunc() {
 
     connectionLost();
     running_.store(false);
-    FOCUS_LOG("WindowFocusTracker stopped");
 }
 
 } // namespace areca
