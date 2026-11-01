@@ -74,6 +74,8 @@ add_library(areca MODULE
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
+    src/atspi/atspi_connection.cpp
+    src/atspi/atspi_accessible.cpp
     src/window_focus_tracker.cpp
     src/mouse_click_tracker.cpp
     src/native_device.cpp
@@ -437,6 +439,8 @@ if(BUILD_TESTING)
         src/browser_autocomplete.cpp
         src/input_type_detector.cpp
         src/program_compatibility.cpp
+        src/atspi/atspi_connection.cpp
+        src/atspi/atspi_accessible.cpp
         src/window_focus_tracker.cpp)
     target_compile_features(areca-input-type-detector-test PRIVATE cxx_std_20)
     target_compile_options(areca-input-type-detector-test PRIVATE

@@ -1301,6 +1301,7 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &,
   if (!inputContext) {
     return;
   }
+  if (focusTracker_) focusTracker_->requestAccessibilityPoke();
   const PresentationMode presentationMode =
       effectivePresentationMode(*inputContext);
   if (presentationMode == PresentationMode::Rewrite) {

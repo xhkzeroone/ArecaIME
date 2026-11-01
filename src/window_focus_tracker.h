@@ -5,6 +5,9 @@
 #include <string>
 #include <thread>
 
+typedef struct DBusConnection DBusConnection;
+typedef struct DBusMessage DBusMessage;
+
 namespace areca {
 
 class WindowFocusTracker {
@@ -19,6 +22,9 @@ public:
 
   bool start();
   void stop();
+  void requestAccessibilityPoke() {
+    pokeRequested_.store(true, std::memory_order_relaxed);
+  }
 
   bool isValid() const {
     return valid_.load(std::memory_order_relaxed);
@@ -49,6 +55,17 @@ private:
   void connectionLost();
   void clearFocus();
   void loseFocus(const char *sender, const char *path = nullptr);
+  struct PokeSchedule;
+  bool registerEvents(DBusConnection *bus);
+  void addEventMatches(DBusConnection *bus);
+  void runConnection(DBusConnection *bus);
+  void runEventLoop(DBusConnection *bus);
+  void processMessage(DBusConnection *bus, DBusMessage *message,
+                      PokeSchedule &schedule);
+  bool processStateChanged(DBusMessage *message);
+  void processNameOwnerChanged(DBusMessage *message, PokeSchedule &schedule);
+  void processFocusEvent(DBusConnection *bus, DBusMessage *message);
+  void waitBeforeReconnect(int intervals);
   void threadFunc();
 
   // Owned by the monitor thread.
@@ -59,6 +76,7 @@ private:
   std::atomic<bool> valid_{false};
   std::atomic<bool> running_{false};
   std::atomic<bool> stopRequested_{false};
+  std::atomic<bool> pokeRequested_{false};
   std::atomic<bool> focusInTerminal_{false};
 
   mutable std::mutex focusProgramMutex_;
