@@ -34,6 +34,7 @@ ADVANCED_FILE = "areca-advanced.conf"
 THEMES = {
     "System": ("Theo hệ thống", None),
     "Light": ("Light", ('#f7f5ed', '#eceadd', '#fffef8', '#10211c', '#0b5f3a')),
+    "MacOS": ("macOS", ('#f5f5f7', '#e8e8ed', '#ffffff', '#1d1d1f', '#007aff')),
     "Dark": ("Dark", ('#121216', '#0c0c10', '#1e1f26', '#dcdee9', '#82aaff')),
     "ArecaDark": ("Areca Dark", ('#121a17', '#0e1512', '#1c2722', '#d2e4db', '#38c878')),
     "Gruvbox": ("Gruvbox", ('#282828', '#1d2021', '#3c3836', '#ebdbb2', '#d79921')),
@@ -421,7 +422,10 @@ class SettingsWindow(Gtk.ApplicationWindow):
         self.appearance = ConfigDocument(CONFIG_DIR / "areca-gtk-settings.conf")
         saved_theme = self.appearance.get("Appearance", "Theme", "Light")
         self.theme = saved_theme if saved_theme in THEMES else "Light"
+        saved_radius = self.appearance.get("Appearance", "WindowRadius", "24")
+        self.window_radius = saved_radius if saved_radius in {"0", "5", "15", "24"} else "24"
         self.theme_buttons: dict[str, Gtk.ToggleButton] = {}
+        self.radius_dropdown: Gtk.DropDown | None = None
         self.icon_buttons: dict[str, Gtk.ToggleButton] = {}
         self.icon_preview: Gtk.Image | None = None
         self.icon_label: Gtk.Label | None = None
@@ -460,6 +464,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             "BORDER": "@borders", "FIELD": "@theme_base_color", "SURFACE": "@theme_base_color",
             "HOVER": "@theme_fg_color", "ACCENT": "@accent_color",
             "ACCENT_TEXT": "@accent_color",
+            "RADIUS": f"{self.window_radius}px",
         }
         definitions = ""
         colors = THEMES[self.theme][1]
@@ -481,8 +486,11 @@ class SettingsWindow(Gtk.ApplicationWindow):
                 "theme_selected_bg_color": accent, "theme_selected_fg_color": on_accent,
             }.items():
                 definitions += f"@define-color {name} {value};\n"
+            definitions += f"@define-color theme_unfocused_fg_color {fg};\n"
         css = """
         window, .areca-content { background: BG; color: FG; }
+        window { border-radius: RADIUS; }
+        window:backdrop { background: BG; color: FG; }
         window.message .dialog-vbox { padding: 20px 24px; }
         window.message .dialog-action-box { margin-top: 16px; }
         window.message .dialog-action-area button { padding: 8px 16px; margin: 0 4px; border-radius: 6px; }
@@ -572,6 +580,17 @@ class SettingsWindow(Gtk.ApplicationWindow):
         popover row label, popover row image { color: inherit; }
         .macro-row, .app-row { padding: 8px; border: 1px solid alpha(BORDER, .75); border-radius: 6px; }
         """
+        css += """
+        .areca-brand-title:backdrop, .page-title:backdrop,
+        .section-title:backdrop, .setting-title:backdrop { color: FG; }
+        """
+        if self.theme == "MacOS":
+            css += """
+            .areca-sidebar { background: alpha(SIDEBAR, .88); }
+            .areca-content .settings-group { border-radius: 12px; }
+            .areca-content button, .status-line button,
+            .areca-content entry, .areca-content dropdown > button { border-radius: 9px; }
+            """
         for token in sorted(palette, key=len, reverse=True):
             css = css.replace(token, palette[token])
         for key, (_, colors) in THEMES.items():
@@ -1208,6 +1227,19 @@ class SettingsWindow(Gtk.ApplicationWindow):
             self.theme_buttons[key] = button
             grid.insert(button, -1)
         group.append(grid)
+
+        radius_group = self._section(content, "Bo góc cửa sổ")
+        radius_group.add_css_class("list-group")
+        radius_row = self._row(radius_group, "Độ bo góc", "Chọn độ bo cho khung cửa sổ Settings.")
+        radius_choices = ["Không bo", "5 px", "15 px", "24 px"]
+        radius_values = ["0", "5", "15", "24"]
+        radius_dropdown = Gtk.DropDown.new_from_strings(radius_choices)
+        radius_dropdown.set_selected(enum_index(self.window_radius, radius_values, 3))
+        radius_dropdown.set_size_request(205, -1)
+        radius_dropdown.set_valign(Gtk.Align.CENTER)
+        radius_dropdown.connect("notify::selected", self._select_window_radius, radius_values)
+        self.radius_dropdown = radius_dropdown
+        radius_row.append(radius_dropdown)
         return page
 
     def _select_theme(self, _button: Gtk.Button | None, key: str) -> None:
@@ -1226,6 +1258,32 @@ class SettingsWindow(Gtk.ApplicationWindow):
                 self._saved(f"Đã áp dụng: {THEMES[key][0]}")
         for name, button in self.theme_buttons.items():
             button.set_active(name == self.theme)
+
+    def _select_window_radius(
+        self, control: Gtk.DropDown, _param, values: list[str]
+    ) -> None:
+        index = control.get_selected()
+        if index >= len(values):
+            return
+        self._select_window_radius_value(values[index])
+
+    def _select_window_radius_value(self, radius: str) -> None:
+        if radius == self.window_radius:
+            return
+        document = ConfigDocument(self.appearance.path)
+        document.set("Appearance", "WindowRadius", radius)
+        try:
+            document.save()
+        except OSError as error:
+            self._saved(f"Lỗi lưu độ bo góc: {error}")
+            return
+        self.appearance = document
+        self.window_radius = radius
+        if self.radius_dropdown is not None:
+            self.radius_dropdown.set_selected({"0": 0, "5": 1, "15": 2, "24": 3}[radius])
+        self.css_provider.load_from_data(self._css())
+        label = "Không bo" if radius == "0" else f"{radius} px"
+        self._saved(f"Đã áp dụng độ bo góc {label}")
 
     def _selected_icon_path(self, target: str) -> Path:
         path = self.appearance.get("Icons", f"{target}Path")
@@ -1570,6 +1628,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
 
         if page == "appearance":
             self._select_theme(None, "Light")
+            self._select_window_radius_value("24")
             return
 
         documents = []
