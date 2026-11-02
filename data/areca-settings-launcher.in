@@ -1,0 +1,2 @@
+#!/bin/sh
+exec python3 "@CMAKE_INSTALL_FULL_DATADIR@/areca/gtk-settings/areca_settings.py" "$@"

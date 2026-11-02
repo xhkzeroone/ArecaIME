@@ -90,6 +90,10 @@ remove_installed_files_in_prefix() {
   done
 
   remove_path "$prefix/share/applications/areca-settings.desktop"
+  remove_path "$prefix/share/applications/io.github.areca.Settings.desktop"
+  remove_path "$prefix/share/areca/gtk-settings"
+  remove_path "$prefix/share/areca/icons/hicolor/scalable/apps/areca-settings.svg"
+  remove_path "$prefix/bin/areca-settings"
 
   remove_path "$prefix/share/fcitx5/addon/areca.conf"
   remove_path "$prefix/share/fcitx5/inputmethod/areca.conf"

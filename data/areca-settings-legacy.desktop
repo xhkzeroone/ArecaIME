@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Areca Settings (legacy launcher)
+Name[vi]=Cài đặt Areca (trình khởi chạy cũ)
+Exec=areca-settings
+Icon=areca-settings
+NoDisplay=true
+Terminal=false
+Categories=Settings;

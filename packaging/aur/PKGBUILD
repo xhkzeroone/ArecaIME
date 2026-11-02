@@ -7,6 +7,10 @@ url='https://github.com/xhkzeroone/ArecaIME'
 license=('MIT')
 depends=(
   'fcitx5'
+  'gtk4'
+  'python'
+  'python-gobject'
+  'gdk-pixbuf2'
   'libinput'
   'libei'
   'libportal'

@@ -16,6 +16,9 @@ pkgs.mkShell {
     libXtst
     SDL3
     fontconfig
+    gtk4
+    gdk-pixbuf
+    (python3.withPackages (ps: [ ps.pygobject3 ]))
     libei
     libportal
   ];

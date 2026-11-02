@@ -418,8 +418,8 @@ class SettingsWindow(Gtk.ApplicationWindow):
         self.set_size_request(860, 500)
         self.store = ConfigStore()
         self.appearance = ConfigDocument(CONFIG_DIR / "areca-gtk-settings.conf")
-        saved_theme = self.appearance.get("Appearance", "Theme", "System")
-        self.theme = saved_theme if saved_theme in THEMES else "System"
+        saved_theme = self.appearance.get("Appearance", "Theme", "Light")
+        self.theme = saved_theme if saved_theme in THEMES else "Light"
         self.theme_buttons: dict[str, Gtk.ToggleButton] = {}
         self.icon_buttons: dict[str, Gtk.ToggleButton] = {}
         self.icon_preview: Gtk.Image | None = None
@@ -1568,7 +1568,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             return
 
         if page == "appearance":
-            self._select_theme(None, "System")
+            self._select_theme(None, "Light")
             return
 
         documents = []

@@ -83,7 +83,8 @@ install_deps_debian() {
   sudo apt-get update
   local common=(build-essential cmake ninja-build pkg-config extra-cmake-modules
                 golang-go libinput-dev libudev-dev libdbus-1-dev libx11-dev
-                libxtst-dev libfontconfig-dev)
+                libxtst-dev libfontconfig-dev python3-gi gir1.2-gtk-4.0
+                gir1.2-gdkpixbuf-2.0)
   local fcitx=(fcitx5 fcitx5-config-qt libfcitx5core-dev
                libfcitx5config-dev libfcitx5utils-dev)
   if ! sudo apt-get install -y "${common[@]}" "${fcitx[@]}"; then
@@ -124,6 +125,7 @@ install_deps_debian() {
 
 install_deps_arch() {
   local packages=(base-devel cmake ninja pkgconf extra-cmake-modules go
+                  gtk4 python python-gobject gdk-pixbuf2
                   libinput systemd-libs dbus libx11 libxtst fcitx5
                   fcitx5-configtool sdl3 fontconfig)
   if [[ "$ARECA_UPDATE_SYSTEM" == 1 ]]; then
@@ -149,6 +151,7 @@ install_deps_fedora() {
   echo "[areca] Installing build dependencies with dnf"
   sudo dnf install -y \
     gcc-c++ cmake ninja-build pkgconf-pkg-config extra-cmake-modules go \
+    python3-gobject gtk4 gdk-pixbuf2 \
     libinput-devel systemd-devel dbus-devel SDL3-devel fontconfig-devel \
     libX11-devel libXtst-devel fcitx5 fcitx5-devel fcitx5-configtool
 }
@@ -157,6 +160,8 @@ install_deps_opensuse() {
   echo "[areca] Installing build dependencies with zypper"
   sudo zypper --non-interactive install --no-recommends \
     gcc-c++ cmake ninja pkg-config extra-cmake-modules go \
+    python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-4_0 \
+    libgtk-4-1 typelib-1_0-GdkPixbuf-2_0 \
     libinput-devel systemd-devel fcitx5 fcitx5-devel SDL3-devel \
     fontconfig-devel libX11-devel libXtst-devel dbus-1-devel libudev-devel
 }
@@ -339,8 +344,7 @@ export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu
 cmake -S "$ARECA_ROOT_DIR" -B "$ARECA_BUILD_DIR" \
   "${ARECA_GENERATOR_ARGS[@]}" \
   -DCMAKE_BUILD_TYPE="$ARECA_BUILD_TYPE" \
-  -DCMAKE_INSTALL_PREFIX="$ARECA_PREFIX" \
-  -DARECA_BUILD_SETTINGS=ON
+  -DCMAKE_INSTALL_PREFIX="$ARECA_PREFIX"
 
 echo "[areca] Building"
 cmake --build "$ARECA_BUILD_DIR" -j

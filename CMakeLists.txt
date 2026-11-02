@@ -25,7 +25,7 @@ target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig:
 install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
 install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
 
-option(ARECA_BUILD_SETTINGS "Build the standalone Areca settings application" ON)
+option(ARECA_BUILD_LEGACY_SETTINGS "Build the legacy ImGui Areca settings application" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
@@ -116,7 +116,7 @@ target_link_libraries(areca PRIVATE
     PkgConfig::XTEST
     pthread dl m)
 
-if(ARECA_BUILD_SETTINGS)
+if(ARECA_BUILD_LEGACY_SETTINGS)
     find_package(SDL3 QUIET CONFIG)
     if(NOT SDL3_FOUND)
         pkg_check_modules(SDL3 QUIET IMPORTED_TARGET sdl3)
@@ -156,7 +156,7 @@ if(ARECA_BUILD_SETTINGS)
         message(FATAL_ERROR "Dear ImGui source was not found at settings/imgui.")
     endif()
 
-    add_executable(areca-settings
+    add_executable(areca-settings-legacy
         settings/main.cpp
         settings/app_config.cpp
         settings/config_store.cpp
@@ -172,14 +172,14 @@ if(ARECA_BUILD_SETTINGS)
         "${ARECA_IMGUI_DIR}/imgui_widgets.cpp"
         "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdl3.cpp"
         "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdlrenderer3.cpp")
-    target_compile_features(areca-settings PRIVATE cxx_std_20)
-    target_compile_options(areca-settings PRIVATE -Wall -Wextra -Wpedantic)
-    target_include_directories(areca-settings PRIVATE
+    target_compile_features(areca-settings-legacy PRIVATE cxx_std_20)
+    target_compile_options(areca-settings-legacy PRIVATE -Wall -Wextra -Wpedantic)
+    target_include_directories(areca-settings-legacy PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
         "${ARECA_IMGUI_DIR}"
         "${ARECA_IMGUI_DIR}/backends"
         ${DBUS_INCLUDE_DIRS})
-    target_link_libraries(areca-settings PRIVATE
+    target_link_libraries(areca-settings-legacy PRIVATE
         areca-bamboo
         Fcitx5::Config
         Fcitx5::Utils
@@ -187,18 +187,28 @@ if(ARECA_BUILD_SETTINGS)
         ${DBUS_LIBRARIES}
         ${FONTCONFIG_LIBRARIES}
         pthread dl m)
-    target_include_directories(areca-settings PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
+    target_include_directories(areca-settings-legacy PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
 endif()
 
 configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
 configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)
 
 install(TARGETS areca DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
-if(ARECA_BUILD_SETTINGS)
-    install(TARGETS areca-settings DESTINATION "${CMAKE_INSTALL_BINDIR}")
-    install(FILES "data/areca-settings.desktop"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
-endif()
+install(FILES gtk-settings/areca_settings.py gtk-settings/icon_library.py
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/areca/gtk-settings")
+install(DIRECTORY gtk-settings/assets
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/areca/gtk-settings")
+install(FILES "icons/hicolor/scalable/apps/areca-settings.svg"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/areca/icons/hicolor/scalable/apps")
+configure_file(data/areca-settings-launcher.in areca-settings-launcher @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/areca-settings-launcher"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}" RENAME areca-settings)
+install(FILES "data/areca-settings.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+        RENAME "io.github.areca.Settings.desktop")
+install(FILES "data/areca-settings-legacy.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+        RENAME "areca-settings.desktop")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-addon.conf"
         RENAME areca.conf DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/addon")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/areca-inputmethod.conf"
