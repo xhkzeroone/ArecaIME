@@ -93,8 +93,8 @@ def desktop_entry(icon_name: str) -> tuple[Path, bytes]:
         return '"' + escaped.replace('\\', '\\\\').replace('%', '%%') + '"'
     script = Path(__file__).resolve().parent / "areca_settings.py"
     text = (
-        "[Desktop Entry]\nType=Application\nName=Areca Settings (GTK)\n"
-        "Name[vi]=Cài đặt Areca (GTK)\n"
+        "[Desktop Entry]\nType=Application\nName=Areca Settings\n"
+        "Name[vi]=Cài đặt Areca\n"
         f"Exec={argument(sys.executable)} {argument(str(script))}\n"
         f"Icon={icon_name}\nStartupWMClass={APP_ID}\n"
         "Terminal=false\nCategories=Settings;\nStartupNotify=true\n"
