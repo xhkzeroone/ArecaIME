@@ -1006,9 +1006,14 @@ std::string ArecaEngine::subMode(const fcitx::InputMethodEntry &,
   return presentationModeName(effectivePresentationMode(inputContext));
 }
 
-std::string ArecaEngine::subModeIconImpl(const fcitx::InputMethodEntry &,
+std::string ArecaEngine::subModeIconImpl(const fcitx::InputMethodEntry &entry,
                                          fcitx::InputContext &) {
-  return "org.fcitx.Fcitx5.fcitx-areca";
+  return overrideIcon(entry);
+}
+
+std::string ArecaEngine::overrideIcon(const fcitx::InputMethodEntry &) {
+  const auto &icon = config_.trayIcon.value();
+  return icon.empty() ? "org.fcitx.Fcitx5.fcitx-areca" : icon;
 }
 
 std::string ArecaEngine::subModeLabelImpl(const fcitx::InputMethodEntry &,

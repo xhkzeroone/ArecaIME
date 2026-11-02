@@ -54,6 +54,7 @@ public:
                       fcitx::InputContext &inputContext) override;
   std::string subModeIconImpl(const fcitx::InputMethodEntry &entry,
                               fcitx::InputContext &inputContext) override;
+  std::string overrideIcon(const fcitx::InputMethodEntry &entry) override;
   std::string subModeLabelImpl(const fcitx::InputMethodEntry &entry,
                                fcitx::InputContext &inputContext) override;
   void activate(const fcitx::InputMethodEntry &entry,

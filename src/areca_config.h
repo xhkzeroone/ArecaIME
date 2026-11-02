@@ -341,6 +341,9 @@ FCITX_CONFIGURATION(
     fcitx::HiddenOption<int, fcitx::IntConstrain> legacyPostCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
+    fcitx::HiddenOption<std::string> trayIcon{
+        this, "TrayIcon", N_("Biểu tượng khay hệ thống"),
+        "org.fcitx.Fcitx5.fcitx-areca"};
     fcitx::OptionWithAnnotation<std::string, StringListAnnotation>
         bambooInputMethod{this, "BambooInputMethod", N_("Kiểu gõ Bamboo"),
                           "Telex 2"};

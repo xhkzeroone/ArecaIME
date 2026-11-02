@@ -6,3 +6,5 @@
 CMakeFiles/
 CMakeCache.txt
 /bamboo-bridge/bamboo-bridge
+__pycache__/
+*.pyc
