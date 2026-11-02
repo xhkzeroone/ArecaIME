@@ -374,6 +374,10 @@ jobs:
                 extra-cmake-modules \
                 fcitx5 \
                 go \
+                gtk4 \
+                python \
+                python-gobject \
+                gdk-pixbuf2 \
                 libei \
                 libinput \
                 libportal \

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(fcitx5-areca VERSION 0.1.0 LANGUAGES CXX)
+project(fcitx5-areca VERSION 8.3.1 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CTest)
