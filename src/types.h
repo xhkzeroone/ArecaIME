@@ -20,7 +20,7 @@ struct RewritePlan {
   uint32_t backspaceDelayMs = 1;
   uint32_t uinputBackspaceAckTimeoutMs = 150;
   uint32_t afterBackspaceWaitMs = 10;
-  uint32_t waylandAfterBackspaceWaitMs = 3;
+  uint32_t waylandAfterBackspaceWaitMs = 10;
   uint32_t ximAfterBackspaceWaitMs = 10;
   uint32_t fcitx4AfterBackspaceWaitMs = 10;
   uint32_t dbusAfterBackspaceWaitMs = 10;
@@ -42,7 +42,7 @@ struct RewritePlan {
   uint32_t afterSurroundingDeleteWaitMs = 1;
   uint32_t xtestBackspaceDelayMs = 1;
   uint32_t afterXTestBackspaceWaitMs = 10;
-  uint32_t waylandAfterXTestBackspaceWaitMs = 3;
+  uint32_t waylandAfterXTestBackspaceWaitMs = 10;
   uint32_t ximAfterXTestBackspaceWaitMs = 10;
   uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
   uint32_t dbusAfterXTestBackspaceWaitMs = 10;

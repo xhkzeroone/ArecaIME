@@ -163,7 +163,7 @@ int main() {
   areca::RewritePlan plan;
   assert(plan.xtestBackspaceDelayMs == 1);
   assert(plan.afterXTestBackspaceWaitMs == 10);
-  assert(plan.waylandAfterXTestBackspaceWaitMs == 3);
+  assert(plan.waylandAfterXTestBackspaceWaitMs == 10);
   assert(plan.ximAfterXTestBackspaceWaitMs == 10);
   assert(plan.fcitx4AfterXTestBackspaceWaitMs == 10);
   assert(plan.dbusAfterXTestBackspaceWaitMs == 10);

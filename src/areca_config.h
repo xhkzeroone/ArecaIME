@@ -171,7 +171,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> waylandAfterBackspaceWaitMs{
         this, "WaylandAfterBackspaceWaitMs",
-        N_("Chờ sau Backspace cuối Wayland (ms)"), 3,
+        N_("Chờ sau Backspace cuối Wayland (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> ximAfterBackspaceWaitMs{
         this, "XimAfterBackspaceWaitMs", N_("Chờ sau Backspace cuối XIM (ms)"),
@@ -250,7 +250,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> waylandAfterXTestBackspaceWaitMs{
         this, "WaylandAfterXTestBackspaceWaitMs",
-        N_("Chờ sau Backspace cuối Native Wayland (ms)"), 3,
+        N_("Chờ sau Backspace cuối Native Wayland (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> ximAfterXTestBackspaceWaitMs{
         this, "XimAfterXTestBackspaceWaitMs",
