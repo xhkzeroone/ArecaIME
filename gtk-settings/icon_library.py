@@ -100,3 +100,19 @@ def desktop_entry(icon_name: str) -> tuple[Path, bytes]:
         "Terminal=false\nCategories=Settings;\nStartupNotify=true\n"
     )
     return data_home() / f"applications/{APP_ID}.desktop", text.encode()
+
+
+def refresh_launcher_name() -> None:
+    """Update labels in an existing per-user launcher from older releases."""
+    path = data_home() / f"applications/{APP_ID}.desktop"
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    updated = content.replace("Name=Areca Settings (GTK)", "Name=Areca Settings")
+    updated = updated.replace("Name[vi]=Cài đặt Areca (GTK)", "Name[vi]=Cài đặt Areca")
+    if updated != content:
+        try:
+            atomic_write(path, updated.encode("utf-8"))
+        except OSError:
+            pass

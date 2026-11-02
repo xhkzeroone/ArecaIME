@@ -19,7 +19,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 
 from icon_library import (
     APP_ID, DEFAULT_TRAY_ICON, ORIGINAL_ICON, PRESETS, atomic_write,
-    desktop_entry, icon_button, prepare_icon, ui_icon,
+    desktop_entry, icon_button, prepare_icon, refresh_launcher_name, ui_icon,
 )
 
 
@@ -413,6 +413,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
 
     def __init__(self, application: Gtk.Application):
         super().__init__(application=application, title="Areca Settings")
+        refresh_launcher_name()
         self.set_decorated(False)
         self.set_default_size(1024, 720)
         self.set_size_request(860, 500)
