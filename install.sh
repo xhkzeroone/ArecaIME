@@ -62,19 +62,70 @@ update_existing_arch_package() {
   [[ "$ARECA_PACKAGE_TYPE" == pacman ]] || return 1
   require_command pacman
 
+  # Remove existing builds first so the release package can take over files
+  # left behind by installations that were not tracked by pacman.
+  if version="$(pacman -Q fcitx5-areca 2>/dev/null | awk '{print $2}')"; then
+    log "Đã phát hiện fcitx5-areca ${version:-không rõ phiên bản}; sẽ cài bản release mới để nâng cấp."
+    return 1
+  fi
+
   for package in fcitx5-areca-bin fcitx5-areca-git; do
     if version="$(pacman -Q "$package" 2>/dev/null | awk '{print $2}')"; then
       log "Đã phát hiện $package ${version:-không rõ phiên bản}."
-      if ! ask_yes_no "Bạn có muốn gỡ $package và thay bằng bản GitHub release không?"; then
-        log "Đã giữ nguyên phiên bản hiện tại."
-        exit 0
-      fi
-
       ARECA_AUR_PACKAGE="$package"
       return 1
     fi
   done
   return 1
+}
+
+log_existing_package() {
+  local version=""
+  case "$ARECA_PACKAGE_TYPE" in
+    deb)
+      if command -v dpkg-query >/dev/null 2>&1; then
+        version="$(dpkg-query -W -f='${Version}' fcitx5-areca 2>/dev/null || true)"
+      fi ;;
+    rpm)
+      if command -v rpm >/dev/null 2>&1; then
+        version="$(rpm -q --qf '%{VERSION}-%{RELEASE}' fcitx5-areca 2>/dev/null || true)"
+      fi ;;
+  esac
+
+  if [[ -n "$version" ]]; then
+    log "Đã phát hiện fcitx5-areca ${version}; sẽ cài gói release mới để nâng cấp."
+  fi
+}
+
+remove_unowned_package_conflicts() {
+  local file
+  local -a stale_files=()
+  case "$ARECA_PACKAGE_TYPE" in
+    deb)
+      require_command dpkg-deb
+      require_command tar
+      while IFS= read -r file; do
+        file="/${file#./}"
+        [[ "$file" == /* && ( -f "$file" || -L "$file" ) ]] || continue
+        if ! dpkg-query -S "$file" >/dev/null 2>&1; then
+          stale_files+=("$file")
+        fi
+      done < <(dpkg-deb --fsys-tarfile "$ARECA_PACKAGE_PATH" | tar -tf -) ;;
+    rpm)
+      require_command rpm
+      while IFS= read -r file; do
+        [[ "$file" == /* && ( -f "$file" || -L "$file" ) ]] || continue
+        if ! rpm -qf "$file" >/dev/null 2>&1; then
+          stale_files+=("$file")
+        fi
+      done < <(rpm -qp --qf '[%{FILENAMES}\n]' "$ARECA_PACKAGE_PATH") ;;
+    *) return 0 ;;
+  esac
+
+  if (( ${#stale_files[@]} > 0 )); then
+    log "Đang thay ${#stale_files[@]} file Areca cũ chưa được trình quản lý gói theo dõi."
+    run_root rm -f -- "${stale_files[@]}"
+  fi
 }
 
 stop_fcitx_for_profile() {
@@ -283,15 +334,47 @@ install_package() {
   local package_path="$ARECA_PACKAGE_PATH"
   log "Đang cài đặt (hệ thống có thể hỏi mật khẩu)..."
   case "$ARECA_PACKAGE_TYPE" in
-    deb) require_command apt-get; run_root apt-get install -y "$package_path" ;;
-    pacman)
-      require_command pacman
-      if [[ -n "$ARECA_AUR_PACKAGE" ]]; then
-        log "Đang gỡ $ARECA_AUR_PACKAGE để thay bằng gói GitHub release..."
-        run_root pacman -R --noconfirm "$ARECA_AUR_PACKAGE"
+    deb)
+      if dpkg-query -W -f='${Status}' fcitx5-areca 2>/dev/null | grep -q 'install ok installed'; then
+        log "Đang gỡ fcitx5-areca cũ..."
+        run_root apt-get remove -y fcitx5-areca
       fi
-      run_root pacman -U --needed --noconfirm "$package_path" ;;
+      remove_unowned_package_conflicts
+      require_command apt-get
+      run_root apt-get install -y "$package_path" ;;
+    pacman)
+      local file
+      local -a overwrite_args=()
+      require_command pacman
+      if [[ -n "$ARECA_AUR_PACKAGE" ]] || pacman -Qq fcitx5-areca >/dev/null 2>&1; then
+        local old_package="${ARECA_AUR_PACKAGE:-fcitx5-areca}"
+        log "Đang gỡ $old_package cũ..."
+        run_root pacman -R --noconfirm "$old_package"
+      fi
+
+      # Older/manual installs can leave Areca files on disk without pacman
+      # tracking them. Allow replacing only unowned paths from this package.
+      while IFS= read -r file; do
+        [[ -e "$file" || -L "$file" ]] || continue
+        if ! pacman -Qo "$file" >/dev/null 2>&1; then
+          overwrite_args+=(--overwrite "$file")
+        fi
+      done < <(pacman -Qlp "$package_path" | awk 'NF >= 2 { print $2 }')
+
+      if (( ${#overwrite_args[@]} > 0 )); then
+        log "Đang thay thế ${#overwrite_args[@]} file Areca cũ chưa được pacman quản lý."
+      fi
+      run_root pacman -U --needed --noconfirm "${overwrite_args[@]}" "$package_path" ;;
     rpm)
+      if rpm -q fcitx5-areca >/dev/null 2>&1; then
+        log "Đang gỡ fcitx5-areca cũ..."
+        if command -v dnf >/dev/null 2>&1; then
+          run_root dnf remove -y fcitx5-areca
+        elif command -v zypper >/dev/null 2>&1; then
+          run_root zypper --non-interactive remove fcitx5-areca
+        fi
+      fi
+      remove_unowned_package_conflicts
       if command -v dnf >/dev/null 2>&1; then run_root dnf install -y "$package_path"
       elif command -v zypper >/dev/null 2>&1; then run_root zypper --non-interactive install "$package_path"
       else die "Không tìm thấy dnf hoặc zypper để cài gói RPM."; fi ;;
@@ -341,6 +424,7 @@ main() {
   select_platform
   log "Hệ điều hành: $ARECA_OS_NAME"
   find_release_asset
+  log_existing_package
   if ! update_existing_arch_package; then
     download_release_asset
     prepare_uinput
