@@ -24,7 +24,7 @@ from icon_library import (
 
 
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fcitx5" / "conf"
-APP_VERSION = "v8.3.1"  # Update manually when preparing a release.
+APP_VERSION = "v8.3.2"  # Update manually when preparing a release.
 MAIN_FILE = "areca.conf"
 MACRO_FILE = "areca-macro-table.conf"
 APPS_FILE = "areca-apps.conf"
