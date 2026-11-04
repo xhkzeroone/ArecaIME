@@ -131,6 +131,7 @@ private:
   void updateModernStyleAction(fcitx::InputContext *ic);
   void updateMacroAction(fcitx::InputContext *ic);
   void updateAutoCapitalizeAction(fcitx::InputContext *ic);
+  void syncInputMethodEntryIcon(const fcitx::InputMethodEntry &entry);
 
   fcitx::Instance *instance_;
   ArecaConfig config_;
@@ -143,6 +144,7 @@ private:
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
   void rebuildAppBackendOverridesMap();
   PresentationMode activePresentationMode_ = PresentationMode::Rewrite;
+  std::string inputMethodEntryIcon_;
   fcitx::FactoryFor<RewriteInputState> rewriteStateFactory_;
   fcitx::FactoryFor<PreeditInputState> preeditStateFactory_;
   bool backendVerdictContextKnown_ = false;

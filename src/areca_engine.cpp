@@ -1301,12 +1301,13 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
   return true;
 }
 
-void ArecaEngine::activate(const fcitx::InputMethodEntry &,
+void ArecaEngine::activate(const fcitx::InputMethodEntry &entry,
                            fcitx::InputContextEvent &event) {
   auto *inputContext = event.inputContext();
   if (!inputContext) {
     return;
   }
+  syncInputMethodEntryIcon(entry);
   if (focusTracker_) focusTracker_->requestAccessibilityPoke();
   const PresentationMode presentationMode =
       effectivePresentationMode(*inputContext);
@@ -2058,6 +2059,16 @@ void ArecaEngine::updateAutoCapitalizeAction(fcitx::InputContext *ic) {
   autoCapitalizeAction_->setChecked(
       config_.autoCapitalizeAfterPunctuation.value());
   autoCapitalizeAction_->update(ic);
+}
+
+void ArecaEngine::syncInputMethodEntryIcon(
+    const fcitx::InputMethodEntry &entry) {
+  const std::string icon = overrideIcon(entry);
+  if (icon == inputMethodEntryIcon_) {
+    return;
+  }
+  const_cast<fcitx::InputMethodEntry &>(entry).setIcon(icon);
+  inputMethodEntryIcon_ = icon;
 }
 
 class ArecaEngineFactory final : public fcitx::AddonFactory {
