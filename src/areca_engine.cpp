@@ -1248,7 +1248,8 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
     return false;
   }
 
-  if (sym == FcitxKey_Escape) {
+  if (sym == FcitxKey_Escape || sym == FcitxKey_BackSpace ||
+      sym == FcitxKey_Delete) {
     inputContext.inputPanel().reset();
     inputContext.updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
                                      true);

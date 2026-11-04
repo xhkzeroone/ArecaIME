@@ -237,7 +237,7 @@ namespace areca::settings {
         const int behaviorColumns = ImGui::GetContentRegionAvail().x >= 760.0F ? 2 : 1;
         if (ImGui::BeginTable("TypingBehaviorGrid", behaviorColumns, ImGuiTableFlags_SizingStretchSame)) {
             ImGui::TableNextColumn();
-            checkbox("Cho phép sửa từ đã commit (thử nghiệm)", config.main.restoreSurroundingText);
+            checkbox("Cho phép sửa từ đã commit", config.main.restoreSurroundingText);
             ImGui::TableNextColumn();
             checkbox("Đặt dấu kiểu mới (oà, uý)", config.main.modernStyle);
             ImGui::TableNextColumn();

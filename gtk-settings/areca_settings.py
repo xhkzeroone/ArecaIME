@@ -73,7 +73,7 @@ MAIN_DEFAULTS = {
     "RevertMacroOnBackspace": True,
     "MacroBypassModifier": "Shift",
     "BackspaceRecovery": True,
-    "RestoreSurroundingText": False,
+    "RestoreSurroundingText": True,
     "ShiftSelectFallbackForBrowser": False,
     "UseBackspaceForUrl": True,
     "Debug": False,
@@ -432,6 +432,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
         self.navigation: dict[str, Gtk.ToggleButton] = {}
         self.pages: dict[str, Gtk.Widget] = {}
         self.advanced_spins: dict[str, Gtk.SpinButton] = {}
+        self.shortcut_capture: tuple[Gtk.Entry, Gtk.Button, Gtk.EventControllerKey] | None = None
         self._applying_preset = False
         self._toast_timeout_id = 0
         self.status_label = Gtk.Label(xalign=0)
@@ -875,7 +876,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Đặt dấu kiểu mới (oà, uý)", "ModernStyle", "Tắt để dùng kiểu dấu cũ (òa, úy)."),
             ("Tự viết hoa sau dấu kết câu", "AutoCapitalizeAfterPunctuation", ". ! ?"),
             ("Bật khôi phục chính tả khi nhấn Backspace", "BackspaceRecovery", "Khôi phục từ vừa sửa khi xoá ngược."),
-            ("Cho phép sửa từ đã commit", "RestoreSurroundingText", "Tính năng thử nghiệm dùng surrounding text."),
+            ("Cho phép sửa từ đã commit", "RestoreSurroundingText", "Sửa từ vừa gõ dựa trên văn bản xung quanh con trỏ."),
             ("Shift+Left fallback cho trình duyệt", "ShiftSelectFallbackForBrowser", "Dùng khi trình duyệt không hỗ trợ surrounding text."),
             ("Xử lý riêng ô URL và thanh địa chỉ", "UseBackspaceForUrl", "Chọn backend tương thích cho ô địa chỉ."),
         ]:
@@ -1039,6 +1040,11 @@ class SettingsWindow(Gtk.ApplicationWindow):
         entry.connect("activate", self._save_key_list, "SelectBackendKey")
         entry.connect("notify::has-focus", self._save_key_list, "SelectBackendKey")
         row.append(entry)
+        capture = Gtk.Button(label="Ghi phím")
+        capture.set_valign(Gtk.Align.CENTER)
+        capture.set_tooltip_text("Bấm để ghi lại tổ hợp phím trực tiếp")
+        capture.connect("clicked", self._start_shortcut_capture, entry)
+        row.append(capture)
         group = self._section(content, "Cấu hình theo ứng dụng")
         group.add_css_class("list-group")
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -1120,6 +1126,62 @@ class SettingsWindow(Gtk.ApplicationWindow):
         values = [part.strip() for part in entry.get_text().split(",") if part.strip()]
         self.store.main.replace_list_values(section, values)
         self._save_and_report("Đã lưu phím tắt", self.store.main)
+
+    def _start_shortcut_capture(self, button: Gtk.Button, entry: Gtk.Entry) -> None:
+        if self.shortcut_capture:
+            old_entry, old_button, old_controller = self.shortcut_capture
+            old_entry.remove_controller(old_controller)
+            old_button.set_label("Ghi phím")
+            self.shortcut_capture = None
+            if old_button is button:
+                return
+
+        button.set_label("Bấm tổ hợp…")
+        controller = Gtk.EventControllerKey()
+        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        controller.connect("key-pressed", self._capture_shortcut_key, entry, button)
+        entry.add_controller(controller)
+        self.shortcut_capture = (entry, button, controller)
+        entry.grab_focus()
+
+    def _capture_shortcut_key(self, _controller, keyval: int, _keycode: int,
+                              state: Gdk.ModifierType, entry: Gtk.Entry,
+                              button: Gtk.Button) -> bool:
+        if keyval == Gdk.KEY_Escape:
+            entry.remove_controller(_controller)
+            button.set_label("Ghi phím")
+            self.shortcut_capture = None
+            return True
+
+        modifier_names = []
+        for mask, name in (
+            (Gdk.ModifierType.CONTROL_MASK, "Ctrl"),
+            (Gdk.ModifierType.ALT_MASK, "Alt"),
+            (Gdk.ModifierType.SHIFT_MASK, "Shift"),
+            (Gdk.ModifierType.SUPER_MASK, "Super"),
+        ):
+            if state & mask:
+                modifier_names.append(name)
+
+        # Modifier-only presses wait for the actual key in the combination.
+        if keyval in (Gdk.KEY_Control_L, Gdk.KEY_Control_R, Gdk.KEY_Alt_L,
+                      Gdk.KEY_Alt_R, Gdk.KEY_Shift_L, Gdk.KEY_Shift_R,
+                      Gdk.KEY_Super_L, Gdk.KEY_Super_R, Gdk.KEY_Meta_L,
+                      Gdk.KEY_Meta_R):
+            return True
+
+        key_name = Gdk.keyval_name(keyval)
+        if not key_name:
+            return True
+        key_name = key_name.lower() if len(key_name) == 1 else key_name
+        shortcut = "+".join([*modifier_names, key_name])
+        entry.set_text(shortcut)
+        self.store.main.replace_list_values("SelectBackendKey", [shortcut])
+        self._save_and_report("Đã lưu phím tắt", self.store.main)
+        entry.remove_controller(_controller)
+        button.set_label("Ghi phím")
+        self.shortcut_capture = None
+        return True
 
     def _build_advanced(self) -> Gtk.Widget:
         page, content = self._page("Nâng cao", "Các giá trị timing và tương thích. Chỉ đổi khi ứng dụng gặp lỗi nhập liệu.")
