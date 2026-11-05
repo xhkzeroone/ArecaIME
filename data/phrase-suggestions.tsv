@@ -1,0 +1,3421 @@
+# Phrase<TAB>priority. Traditional oral sayings, common Vietnamese collocations,
+# and names curated for offline next-phrase completion.
+Cộng hòa xã hội chủ nghĩa Việt Nam	50
+Cộng hoà xã hội chủ nghĩa Việt Nam	50
+Độc lập tự do hạnh phúc	45
+Thành phố Hồ Chí Minh	45
+Thủ đô Hà Nội	40
+Thành phố Hà Nội	35
+Thành phố Đà Nẵng	35
+Thành phố Hải Phòng	35
+Thành phố Cần Thơ	35
+Thành phố Huế	30
+Thành phố Huế trực thuộc Trung ương	35
+Vịnh Hạ Long	45
+Vườn quốc gia Cúc Phương	35
+Vườn quốc gia Phong Nha Kẻ Bàng	40
+Quần thể di tích Cố đô Huế	30
+Phố cổ Hội An	40
+Đồng bằng sông Cửu Long	45
+Tây Nguyên đại ngàn	25
+Biển Đông Việt Nam	35
+Quần đảo Hoàng Sa	40
+Quần đảo Trường Sa	40
+Sông Hồng Hà Nội	25
+Sông Cửu Long	35
+Sông Sài Gòn	25
+Núi Fansipan cao nhất	30
+Đất nước Việt Nam ta	25
+Người Việt Nam chúng ta	25
+Tiếng Việt giàu đẹp	30
+Tiếng Việt của chúng ta	20
+Mặt trận Tổ quốc Việt Nam	35
+Đảng Cộng sản Việt Nam	30
+Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam	35
+Chính phủ nước Cộng hòa xã hội chủ nghĩa Việt Nam	35
+Ủy ban nhân dân thành phố	25
+Ủy ban nhân dân tỉnh	25
+Trường Đại học Quốc gia	25
+Đại học Bách khoa Hà Nội	30
+Đại học Quốc gia Thành phố Hồ Chí Minh	30
+Học viện Chính trị Quốc gia	25
+Tổ chức Y tế Thế giới	35
+Liên Hợp Quốc Việt Nam	25
+Hiệp hội các quốc gia Đông Nam Á	30
+Tổ chức Giáo dục Khoa học và Văn hóa Liên Hợp Quốc	25
+Ngân hàng Nhà nước Việt Nam	30
+Tập đoàn Điện lực Việt Nam	25
+Tổng công ty Đường sắt Việt Nam	25
+Sân bay quốc tế Nội Bài	30
+Sân bay quốc tế Tân Sơn Nhất	35
+Nhà hát lớn Hà Nội	25
+Bảo tàng Lịch sử Việt Nam	25
+Thành nhà Hồ Thanh Hóa	25
+Đền Hùng Phú Thọ	30
+Chợ Bến Thành Sài Gòn	30
+Cầu Long Biên Hà Nội	25
+Cầu Rồng Đà Nẵng	25
+Thác Bản Giốc Cao Bằng	30
+Mũi Cà Mau Việt Nam	30
+Rừng quốc gia U Minh	25
+Nông nghiệp nông thôn Việt Nam	20
+Khoa học công nghệ hiện đại	20
+Văn hóa xã hội Việt Nam	20
+Kinh tế thị trường định hướng xã hội chủ nghĩa	35
+An ninh quốc phòng toàn dân	20
+Giáo dục đào tạo Việt Nam	20
+Chăm sóc sức khỏe cộng đồng	20
+Phòng chống thiên tai bão lũ	20
+Phát triển bền vững đất nước	25
+Hòa bình hợp tác và phát triển	25
+Hòa bình độc lập tự do	25
+Tình đoàn kết hữu nghị	20
+Tình hữu nghị Việt Nam Lào	20
+Tình hữu nghị Việt Nam Campuchia	20
+Quan hệ Việt Nam Nhật Bản	20
+Quan hệ Việt Nam Hàn Quốc	20
+Quan hệ Việt Nam Trung Quốc	20
+Quan hệ Việt Nam Hoa Kỳ	20
+Tỉnh Cao Bằng	30
+Tỉnh Điện Biên	30
+Tỉnh Hà Tĩnh	30
+Tỉnh Lai Châu	30
+Tỉnh Lạng Sơn	30
+Tỉnh Nghệ An	30
+Tỉnh Quảng Ninh	30
+Tỉnh Sơn La	30
+Tỉnh Thanh Hóa	30
+Tỉnh Tuyên Quang	30
+Tỉnh Lào Cai	30
+Tỉnh Thái Nguyên	30
+Tỉnh Bắc Ninh	30
+Tỉnh Phú Thọ	30
+Tỉnh Hưng Yên	30
+Tỉnh Ninh Bình	30
+Tỉnh Quảng Trị	30
+Tỉnh Quảng Ngãi	30
+Tỉnh Gia Lai	30
+Tỉnh Khánh Hòa	30
+Tỉnh Đắk Lắk	30
+Tỉnh Lâm Đồng	30
+Tỉnh Đồng Nai	30
+Tỉnh Tây Ninh	30
+Tỉnh Đồng Tháp	30
+Tỉnh Vĩnh Long	30
+Tỉnh An Giang	30
+Tỉnh Cà Mau	30
+
+cá voi xanh đại dương	30
+cá voi xanh Nam Cực	25
+cá heo mũi chai	30
+cá heo trắng Trung Quốc	25
+cá mập trắng lớn	30
+cá mập voi khổng lồ	25
+cá sấu nước mặn	25
+cá sấu Xiêm quý hiếm	25
+cá ngựa vằn biển	20
+cá hề Nemo nhỏ	20
+cá kiếm đại dương	20
+cá mặt trăng khổng lồ	20
+cá tra dầu khổng lồ	20
+cá basa sông Mekong	20
+cá chép vượt vũ môn	25
+voi châu Á hoang dã	30
+voi châu Phi khổng lồ	25
+hổ Đông Dương quý hiếm	30
+hổ Bengal hoang dã	25
+sư tử châu Phi hoang dã	25
+báo hoa mai săn mồi	25
+báo tuyết vùng núi	25
+gấu trúc lớn Trung Quốc	30
+gấu Bắc Cực trắng	25
+gấu ngựa châu Á	20
+khỉ đột núi rừng	25
+đười ươi Borneo hoang dã	20
+vượn cáo đuôi vòng	20
+chó sói xám Bắc Mỹ	25
+chó nhà trung thành	20
+mèo rừng châu Á	20
+mèo nhà lông ngắn	20
+thỏ trắng mắt đỏ	20
+chuột túi kangaroo đỏ	25
+ngựa vằn đồng cỏ	25
+hươu cao cổ châu Phi	25
+tê giác trắng phương Nam	25
+tê giác Java quý hiếm	25
+linh dương đầu bò	20
+rái cá vuốt bé	20
+rái cá biển California	20
+chồn hương Việt Nam	20
+chồn bay Sunda	20
+nhím đuôi dài	20
+dơi quạ khổng lồ	20
+chim đại bàng vàng	25
+chim công xanh Ấn Độ	25
+chim hồng hạc lớn	20
+chim cánh cụt hoàng đế	30
+chim cánh cụt châu Phi	20
+chim thiên đường lộng lẫy	20
+chim bói cá sông	20
+chim én báo xuân	20
+chim sơn ca đồng ruộng	20
+chim cú mèo đêm	20
+chim gõ kiến đầu đỏ	20
+chim sẻ đồng quê	20
+chim bồ câu trắng	20
+chim trĩ đỏ Việt Nam	20
+chim yến phụng nhiều màu	20
+ếch cây mắt đỏ	20
+ếch giun châu Á	20
+rùa biển xanh đại dương	25
+rùa Hồ Gươm Hà Nội	25
+trăn gấm Đông Nam Á	20
+thằn lằn bay Draco	20
+bướm phượng cánh chim	20
+ong mật chăm chỉ	20
+kiến lửa nhiệt đới	20
+ve sầu mùa hạ	20
+đom đóm lập lòe đêm	20
+cây tre Việt Nam	30
+cây lúa nước Việt Nam	25
+cây hoa sen Việt Nam	25
+cây cà phê Tây Nguyên	25
+cây chè Thái Nguyên	20
+cây dừa Bến Tre	20
+cây cao su Đông Nam Á	20
+cây xương rồng sa mạc	20
+cây phong lá đỏ	20
+cây bao báp châu Phi	20
+
+Có công mài sắt có ngày nên kim	50
+Có chí thì nên	45
+Có thực mới vực được đạo	40
+Có đi mới đến có học mới hay	35
+Có làm thì mới có ăn	30
+Có thờ có thiêng có kiêng có lành	40
+Có mới nới cũ	35
+Có tiền mua tiên cũng được	30
+Có bột mới gột nên hồ	30
+Có lửa mới có khói	30
+Có qua có lại mới toại lòng nhau	35
+Có cây mới có rừng	25
+Có danh có vọng có người	20
+Ăn quả nhớ kẻ trồng cây	50
+Ăn cây nào rào cây ấy	40
+Ăn vóc học hay	30
+Ăn trông nồi ngồi trông hướng	40
+Ăn chắc mặc bền	30
+Ăn quả nhớ người trồng cây	35
+Ăn không ngồi rồi	20
+Ăn một bát cháo chạy ba quãng đồng	25
+Ăn mặn nói ngay còn hơn ăn chay nói dối	25
+Uống nước nhớ nguồn	50
+Uống nước nhớ người đào giếng	35
+Đi một ngày đàng học một sàng khôn	50
+Đi với bụt mặc áo cà sa đi với ma mặc áo giấy	35
+Đi hỏi già về nhà hỏi trẻ	35
+Đi đâu mà vội mà vàng	25
+Đi cho biết đó biết đây	30
+Ở hiền gặp lành	45
+Ở bầu thì tròn ở ống thì dài	35
+Ở chọn nơi chơi chọn bạn	35
+Ở nhà nhất mẹ nhì con	25
+Ở có đức mặc sức mà ăn	30
+Một con ngựa đau cả tàu bỏ cỏ	50
+Một cây làm chẳng nên non ba cây chụm lại nên hòn núi cao	50
+Một giọt máu đào hơn ao nước lã	45
+Một mặt người bằng mười mặt của	35
+Một miếng khi đói bằng một gói khi no	45
+Một chữ cũng là thầy nửa chữ cũng là thầy	35
+Một sự nhịn chín sự lành	35
+Một nghề cho chín còn hơn chín nghề	35
+Một lời nói dối sám hối bảy ngày	25
+Một lần bất tín vạn lần bất tin	30
+Nước chảy đá mòn	45
+Nước đến chân mới nhảy	35
+Nước đổ lá khoai	30
+Nước trong quá thì không có cá	30
+Nước mắt cá sấu	25
+Lửa thử vàng gian nan thử sức	45
+Lửa gần rơm lâu ngày cũng bén	35
+Lửa cháy đổ thêm dầu	25
+Gần mực thì đen gần đèn thì sáng	50
+Gần nhà xa ngõ	25
+Gần mặt cách lòng	30
+Xa mặt cách lòng	35
+Xa thơm gần thối	25
+Lá lành đùm lá rách	50
+Lá rụng về cội	40
+Lá vàng còn ở trên cây lá xanh rụng xuống trời hay chăng trời	25
+Chớ thấy sóng cả mà ngã tay chèo	45
+Chớ thấy đỏ mà ngỡ chín	25
+Chớ thấy người sang bắt quàng làm họ	25
+Chim khôn kêu tiếng rảnh rang người khôn nói tiếng dịu dàng dễ nghe	40
+Chim có tổ người có tông	35
+Chim trời cá nước	25
+Chim sa cá lặn	25
+Trăm nghe không bằng một thấy	45
+Trăm hay không bằng tay quen	40
+Trăm bó đuốc cũng bắt được con ếch	30
+Trăm trận trăm thắng	25
+Trăm năm bia đá thì mòn ngàn năm bia miệng vẫn còn trơ trơ	35
+Tốt gỗ hơn tốt nước sơn	45
+Tốt danh hơn lành áo	35
+Tốt đời đẹp đạo	25
+Tốt mã rã đám	25
+Khôn ngoan đối đáp người ngoài gà cùng một mẹ chớ hoài đá nhau	40
+Khôn nhà dại chợ	30
+Khôn ba năm dại một giờ	35
+Khôn đâu đến trẻ khỏe đâu đến già	30
+Khôn ngoan chẳng lọ thật thà	35
+Thương người như thể thương thân	50
+Thương nhau củ ấu cũng tròn ghét nhau quả bồ hòn cũng méo	45
+Thương cho roi cho vọt ghét cho ngọt cho bùi	30
+Thương người người lại thương ta ghét người người lại hóa ra ghét mình	30
+Thương nhau mấy núi cũng trèo mấy sông cũng lội mấy đèo cũng qua	35
+Thật thà là cha quỷ quái	35
+Thật thà thường thua thiệt	25
+Thẳng như ruột ngựa	25
+Thẳng mực tàu đau lòng gỗ	25
+Thua keo này bày keo khác	40
+Thất bại là mẹ thành công	45
+Thời gian là vàng	35
+Thức khuya mới biết đêm dài ở lâu mới biết lòng người có nhân	30
+Tiên học lễ hậu học văn	40
+Tiên trách kỷ hậu trách nhân	35
+Tiếng lành đồn xa tiếng dữ đồn xa	25
+Tiền nào của nấy	35
+Tiền trao cháo múc	35
+Tiền mất tật mang	35
+Tai vách mạch rừng	30
+Tay làm hàm nhai tay quai miệng trễ	40
+Tay trắng làm nên	25
+Tấc đất tấc vàng	40
+Tấc đất tấc vàng tấc người tấc của	25
+Trâu buộc ghét trâu ăn	35
+Trâu chậm uống nước đục	35
+Trâu bò húc nhau ruồi muỗi chết	35
+Trâu ta ăn cỏ đồng ta	25
+Tre già măng mọc	40
+Tre non dễ uốn	30
+Đói cho sạch rách cho thơm	50
+Đói ăn vụng túng làm càn	30
+Đói thì đầu gối phải bò	30
+Đói lòng ăn nửa trái sim uống lưng bát nước đi tìm người thương	25
+Đói bụng thì đầu gối phải bò	25
+Đầu xuôi đuôi lọt	35
+Đầu voi đuôi chuột	35
+Đầu tắt mặt tối	30
+Đầu xuôi đuôi lọt việc gì cũng suôn sẻ	20
+Đẽo cày giữa đường	40
+Đèn nhà ai nấy rạng	35
+Đèn nào cũng có dầu ấy	20
+Đất lành chim đậu	45
+Đất có thổ công sông có hà bá	35
+Đất khách quê người	25
+Đánh kẻ chạy đi không ai đánh người chạy lại	35
+Đánh chó phải ngó chủ nhà	25
+Đánh trống bỏ dùi	30
+Đời cha ăn mặn đời con khát nước	40
+Đời người có một gang tay ai hay ngủ ngày còn được nửa gang	30
+Đường dài mới biết ngựa hay	40
+Đường đi khó không khó vì ngăn sông cách núi mà khó vì lòng người ngại núi e sông	25
+Người tính không bằng trời tính	40
+Người đẹp vì lụa lúa tốt vì phân	35
+Người sống đống vàng	35
+Người khôn của khó	25
+Người ta là hoa đất	30
+Người dưng có ngãi ta đãi người dưng anh em không ngãi ta đừng anh em	25
+Người có lúc vinh lúc nhục nước có lúc đục lúc trong	25
+Ngày lành tháng tốt	30
+Ngày tháng mười chưa cười đã tối	30
+Ngày vui ngắn chẳng tày gang	25
+Non xanh nước biếc	30
+Non sông gấm vóc	35
+Non cao cũng có đường trèo	25
+Nói có sách mách có chứng	45
+Nói lời phải giữ lấy lời đừng như con bướm đậu rồi lại bay	40
+Nói trước bước không qua	35
+Nói ngọt lọt đến xương	35
+Nói một đằng làm một nẻo	30
+Nói phải củ cải cũng nghe	25
+Nói dối như cuội	25
+Nói gần nói xa chẳng qua nói thật	30
+Mất bò mới lo làm chuồng	40
+Mất lòng trước được lòng sau	35
+Mất cả chì lẫn chài	30
+Mưa dầm thấm lâu	40
+Mưa tháng bảy gãy cành trám nắng tháng tám rám trái bưởi	25
+Mưa thuận gió hòa	35
+Mưa to gió lớn	25
+Mèo khen mèo dài đuôi	40
+Mèo mả gà đồng	30
+Mèo nhỏ bắt chuột con	25
+Mèo nào cũng là mèo	20
+Mèo tha miếng thịt xôn xao cả làng	25
+Mèo già hóa cáo	35
+May hơn khôn	25
+Máu chảy ruột mềm	40
+Máu loãng hơn nước lã	30
+Lời nói gói vàng	45
+Lời nói chẳng mất tiền mua lựa lời mà nói cho vừa lòng nhau	50
+Lời chào cao hơn mâm cỗ	40
+Lời thật mất lòng	35
+Lời nói đi đôi với việc làm	35
+Lắm mối tối nằm không	35
+Lắm thầy thối ma nhiều cha con khó lấy chồng	20
+Lắm thóc nhọc xay	25
+Làm phúc phải tội	25
+Làm ơn mắc oán	35
+Làm khi lành để dành khi đau	35
+Làm ngày không đủ tranh thủ làm đêm	30
+Làm việc có đầu có đuôi	25
+Lên thác xuống ghềnh	30
+Lên voi xuống chó	30
+Lấy vợ xem tông lấy chồng xem giống	35
+Lấy độc trị độc	30
+Lấy ngắn nuôi dài	30
+Lấy vải thưa che mắt thánh	30
+Lợn lành chữa thành lợn què	25
+Lợn cưới áo mới	30
+Không thầy đố mày làm nên	50
+Không có lửa làm sao có khói	35
+Không vào hang cọp sao bắt được cọp con	40
+Không ai giàu ba họ không ai khó ba đời	40
+Không biết thì dựa cột mà nghe	35
+Không có gì quý hơn độc lập tự do	35
+Khéo ăn thì no khéo co thì ấm	40
+Khéo tay hay làm	30
+Khéo ăn nói sẽ có được thiên hạ	25
+Khó người khó ta	25
+Khó bó cái khôn	30
+Khác máu tanh lòng	30
+Kính trên nhường dưới	35
+Kính già yêu trẻ	35
+Kiến tha lâu cũng đầy tổ	45
+Kiến bò miệng chén	25
+Kẻ tám lạng người nửa cân	30
+Kẻ cắp gặp bà già	30
+Kẻ ăn không hết người lần chẳng ra	25
+Khi yêu củ ấu cũng tròn khi ghét quả bồ hòn cũng méo	35
+Khi nên trời cũng chiều người	25
+Khi vui muốn khóc buồn tênh lại cười	20
+Gieo gió gặt bão	45
+Gieo nhân nào gặt quả nấy	45
+Gừng càng già càng cay	40
+Giận cá chém thớt	30
+Giấy rách phải giữ lấy lề	40
+Giàu vì bạn sang vì vợ	35
+Giàu đổi bạn sang đổi vợ	25
+Giàu nứt đố đổ vách	25
+Giặc đến nhà đàn bà cũng đánh	40
+Gan vàng dạ sắt	30
+Góp gió thành bão	30
+Góp công góp sức xây dựng quê hương	20
+Gạn đục khơi trong	30
+Gạo chợ nước sông	25
+Gà cùng một mẹ chớ hoài đá nhau	35
+Gà què ăn quẩn cối xay	30
+Gà trống nuôi con	25
+Gái có công chồng chẳng phụ	25
+Gái thương chồng đương đông buổi chợ trai thương vợ nắng quái chiều hôm	25
+Em ngã chị nâng	40
+Em thuận anh hòa là nhà có phúc	30
+Ếch ngồi đáy giếng	40
+Ếch chết tại miệng	30
+Ếch tháng mười người tháng giêng	25
+Ếch kêu uôm uôm ao chuôm đầy nước	25
+Đừng thấy người sang bắt quàng làm họ	25
+Đừng trông mặt mà bắt hình dong	40
+Đừng ham nhà ngói ba tòa ham vì một nỗi mẹ cha hiền lành	25
+Đừng như con bướm đậu rồi lại bay	20
+Được voi đòi tiên	35
+Được mùa chớ phụ ngô khoai đến khi thất bát lấy ai bạn cùng	30
+Được làm vua thua làm giặc	30
+Được ăn cả ngã về không	35
+Được lòng ta xót xa lòng người	25
+Đẹp nết hơn đẹp người	35
+Đẹp như tiên	20
+Đêm tháng năm chưa nằm đã sáng ngày tháng mười chưa cười đã tối	30
+Đêm nằm năm ở	20
+Đá mòn nhưng dạ chẳng mòn tình dân nghĩa nước một lòng sắt son	30
+Đá ném ao bèo	25
+Đá thử vàng vàng thử lửa	30
+Đánh rắn động cỏ	35
+Đánh trống ghi tên	25
+Đàn gảy tai trâu	40
+Đàn ông xây nhà đàn bà xây tổ ấm	35
+Đàn ông miệng rộng thì sang đàn bà miệng rộng tan hoang cửa nhà	20
+Đã nghèo còn mắc cái eo	30
+Đã sinh ra kiếp ở đời trai thời trung hiếu đôi vai cho tròn	25
+Đã thương thì thương cho chắc đã trục trặc thì trục trặc cho luôn	20
+Đã quyết thì hành đã đánh thì thắng	25
+Đã có chí thì nên	30
+Đã chót thì phải trét	30
+Đã biết thì thưa thốt chưa biết thì dựa cột mà nghe	40
+Đầu năm mua muối cuối năm mua vôi	30
+Đầu cua tai nheo	25
+Đầu đội trời chân đạp đất	30
+Đầu bạc răng long	30
+Đầu chày đít thớt	20
+Đạo nào cũng có đường tu	20
+Đại đoàn kết toàn dân tộc	25
+An cư lạc nghiệp	35
+Bầu ơi thương lấy bí cùng tuy rằng khác giống nhưng chung một giàn	50
+Bán anh em xa mua láng giềng gần	45
+Bán mặt cho đất bán lưng cho trời	35
+Bắt cá hai tay	30
+Bắt phong trần phải phong trần cho thanh cao mới được phần thanh cao	25
+Bệnh từ miệng vào họa từ miệng ra	40
+Bên trọng bên khinh	25
+Bền người bền của	25
+Bút sa gà chết	35
+Bụt chùa nhà không thiêng	30
+Bụng làm dạ chịu	30
+Bụng đói đầu gối phải bò	30
+Bụng bảo dạ	20
+Bảy nổi ba chìm	35
+Bão táp mưa sa	25
+Bới lông tìm vết	30
+Bóng câu qua cửa sổ	25
+Bóng chim tăm cá	25
+Bới bèo ra bọ	25
+Bao giờ cho đến tháng mười	20
+Bao giờ dân nổi can qua con vua thất thế lại ra quét chùa	20
+Bạn bè là nghĩa tương tri	25
+Bạn cũ bạn mới	20
+Bạn vàng bạn bạc	20
+Buôn có bạn bán có phường	40
+Buôn tàu bán bè không bằng ăn dè hà tiện	30
+Buôn may bán đắt	30
+Buồn ngủ gặp chiếu manh	35
+Buồn như chó cắn	20
+Buồn tình cha chả buồn tình	20
+Bao giờ cho đến ngày xưa	20
+Bao giờ cây cải làm đình gỗ lim làm ghém thì mình lấy ta	20
+Bao giờ cho chuối có cành cho sung có nụ cho hành có hoa	20
+Bao giờ cho cá bò lên cây	20
+Bao giờ cho đến tháng ba hoa gạo rụng xuống bà già cất chăn	20
+Bao giờ Ngàn Hống hết cây sông Rum hết nước họ này hết quan	20
+Bao giờ lúa chín đầy đồng cho quê em gặt cho lòng anh vui	20
+Bao giờ cho đến bao giờ	20
+Bao giờ cho đến mùa đông thiếp đi lấy chồng chàng ở vậy không	20
+Bao giờ cho đến tháng tư ếch cắn cổ rắn tha ra ngoài đồng	20
+
+# Thành ngữ, cụm nói quen miệng và cách nói đời sống
+Ăn không nói có	45
+Ngựa quen đường cũ	45
+Đèn nhà ai nấy sáng	35
+Vua chúa cũng chỉ sướng đến thế là cùng	35
+Lời ăn tiếng nói	45
+Vào ba ra bảy	35
+Ai làm nấy chịu	30
+Ăn cướp còn la làng	35
+Ăn nhờ ở đậu	30
+Ăn cháo đá bát	40
+Ăn cây táo rào cây sung	35
+Ăn tục nói phét	35
+Ăn xổi ở thì	30
+Ăn cơm nhà vác tù và hàng tổng	35
+Ăn một miếng trả một miếng	30
+Ăn no vác nặng	25
+Ăn ngay nói thật	40
+Ăn ngay nói thẳng	35
+Ăn nói có đầu có đuôi	35
+Ăn nói nhỏ nhẹ	30
+Ăn nói vô duyên	30
+Ăn nói hàm hồ	30
+Ăn nói cộc lốc	30
+Ăn nói trước sau	25
+Ăn không nên đọi nói không nên lời	30
+Ăn vụng không biết chùi mép	35
+Ba mặt một lời	30
+Ba đầu sáu tay	30
+Ba chìm bảy nổi	35
+Biết đâu ma ăn cỗ	30
+Biết người biết ta trăm trận trăm thắng	40
+Bỏ bóng đá người	30
+Cái nết đánh chết cái đẹp	40
+Cá trê chui ống	25
+Cạp đất mà ăn	30
+Chạy trời không khỏi nắng	40
+Chân ướt chân ráo	35
+Chân đất mắt toét	30
+Chuyện bé xé ra to	40
+Con sâu làm rầu nồi canh	40
+Cười không nhặt được mồm	30
+Dễ như ăn cháo	35
+Đánh lận con đen	35
+Đâm lao phải theo lao	35
+Đứng núi này trông núi nọ	40
+Gà chết vì tiếng gáy	30
+Gạo đã thành cơm	35
+Giang sơn dễ đổi bản tính khó dời	40
+Giặc bên Ngô không bằng bà cô bên chồng	35
+Gương tày liếp	30
+Kén cá chọn canh	35
+Khôn sống mống chết	30
+Lạ trước quen sau	30
+Lanh chanh như hành không muối	30
+Lòng người dạ thú	35
+Lọt sàng xuống nia	30
+Lợn nhà gà chợ	25
+Miệng nam mô bụng một bồ dao găm	45
+Miệng ăn núi lở	35
+Miệng nói tay làm	35
+Miệng nhà quan có gang có thép	25
+Mỗi người một nết	25
+Nói như rồng leo làm như mèo mửa	45
+Nói như đinh đóng cột	35
+Nói toạc móng heo	35
+Nói bóng nói gió	35
+Nói trước quên sau	30
+Nói không thành câu	25
+Không nói nên lời	30
+Nói năng lỗ mãng	30
+Nói năng mất lòng	30
+Nói năng nhỏ nhẹ	30
+Nói năng trước sau	25
+Nói năng có duyên	25
+Lời nói gió bay	40
+Chim khôn thử tiếng người ngoan thử lời	30
+Chơi thì chơi cho tới	20
+Chuyện đâu còn có đó	35
+Chuyện trong nhà chưa rõ ngoài ngõ đã tường	35
+Có đầu có đuôi	25
+Có trước có sau	35
+Của đâu mà dễ ăn không	25
+Đi đến nơi về đến chốn	35
+Đi guốc trong bụng	40
+Đèn nhà ai nhà nấy rạng	30
+Đúng người đúng việc	20
+Há miệng mắc quai	35
+Học ăn học nói học gói học mở	45
+Im như thóc	30
+Im thin thít như thịt nấu đông	30
+Khéo ăn khéo nói có được thiên hạ	30
+Làm trước quên sau	25
+Làm đâu chắc đấy	25
+Làm thì láo báo cáo thì hay	25
+Mạnh vì gạo bạo vì tiền	35
+Nắng chóng trưa mưa chóng tối	25
+Nắng tốt dưa mưa tốt lúa	25
+Ném đá giấu tay	35
+Ngậm đắng nuốt cay	30
+Ngậm máu phun người	35
+Ngựa non háu đá	30
+Người sống hơn đống vàng	35
+Nhà sạch thì mát bát sạch ngon cơm	35
+Nhất cử lưỡng tiện	25
+Nhất bên trọng nhất bên khinh	25
+Nói đi đôi với làm	35
+Nói lời phải giữ lấy lời	35
+Nước đổ đầu vịt	30
+Phép vua thua lệ làng	35
+Ra vào có phép	25
+Sáng nắng chiều mưa	30
+Sống chết có số	25
+Tham thì thâm	40
+Tránh vỏ dưa gặp vỏ dừa	40
+Trên trời dưới đất	25
+Trước sau như một	35
+Vui như Tết	30
+Vắng như chùa Bà Đanh	35
+Vào sinh ra tử	30
+Vạch áo cho người xem lưng	40
+Việc nhà thì nhác việc chú bác thì siêng	30
+Xấu hay làm tốt dốt hay nói chữ	30
+Yêu cho roi cho vọt ghét cho ngọt cho bùi	30
+
+# Ăn uống và sinh hoạt
+Cơm nhà áo vợ	35
+Cơm ngon canh ngọt	35
+Rau nào sâu nấy	30
+Cơm sôi nhỏ lửa	25
+Ăn bữa nay lo bữa mai	30
+Ăn sáng đầy đủ năng lượng	25
+Mâm cao cỗ đầy	30
+Một nắng hai sương	35
+Bữa cơm gia đình	40
+Bữa cơm sum họp	35
+Chén chú chén anh	30
+No cơm ấm cật	30
+Khách đến nhà không trà thì rượu	25
+Của ngon vật lạ	30
+Thức khuya dậy sớm	30
+
+# Nhà cửa và gia đình
+Nhà cao cửa rộng	30
+Nhà cửa gọn gàng sạch sẽ	30
+Trong ấm ngoài êm	35
+Gia đình hòa thuận êm ấm	40
+Anh em thuận hòa	35
+Con cháu đầy nhà	30
+Cha mẹ sinh con trời sinh tính	35
+Công cha như núi Thái Sơn	45
+Nghĩa mẹ như nước trong nguồn chảy ra	45
+Con hơn cha là nhà có phúc	35
+Con cái khỏe mạnh ngoan ngoãn	35
+Vợ chồng đồng lòng tát biển Đông cũng cạn	40
+Một mái nhà chung	30
+Tối lửa tắt đèn có nhau	40
+
+# Công việc và học hành
+Đầu xuôi việc thuận	30
+Học thầy không tày học bạn	40
+Học đi đôi với hành	40
+Học tài thi phận	35
+Văn ôn võ luyện	35
+Chăm chỉ cần cù chịu khó	35
+Làm việc có kế hoạch	30
+Làm hết sức chơi hết mình	30
+Nói được làm được	35
+Việc hôm nay chớ để ngày mai	35
+Một nghề cho chín	30
+Tích tiểu thành đại	35
+Siêng làm thì có siêng học thì hay	30
+Học hỏi không ngừng	30
+Làm ra làm chơi ra chơi	25
+
+# Đi lại và giao tiếp xã hội
+Thượng lộ bình an	40
+Đi xa về gần	30
+Đường đi lối lại	25
+Đường rộng thênh thang	25
+Đi một về hai	25
+Lên xe xuống ngựa	25
+Qua sông lụy đò	30
+Gặp nhau tay bắt mặt mừng	35
+Tứ hải giai huynh đệ	30
+Láng giềng tối lửa tắt đèn có nhau	40
+Ở sao cho vừa lòng người	30
+Kết bạn bốn phương	30
+Một câu nhịn chín câu lành	40
+
+# Thời tiết và thiên nhiên
+Trời quang mây tạnh	35
+Mây đen kéo đến	25
+Nắng như đổ lửa	35
+Mưa như trút nước	35
+Gió chiều nào theo chiều ấy	35
+Gió dập sóng dồi	30
+Nước non hữu tình	30
+Rừng vàng biển bạc	40
+Chim bay cá lặn	25
+Cây cao bóng cả	30
+Sau cơn mưa trời lại sáng	40
+
+# Sức khỏe và cảm xúc
+Khỏe như vâm	30
+Khỏe mạnh bình an	35
+Có sức khỏe là có tất cả	40
+Ăn ngon ngủ yên	35
+Ăn được ngủ được là tiên	40
+Đau đầu chóng mặt	25
+Mệt nhoài rã rời	25
+Lo ngay ngáy trong lòng	25
+Vui vẻ yêu đời	30
+Buồn vui lẫn lộn	30
+Cười ra nước mắt	35
+Khóc dở mếu dở	35
+Tâm an vạn sự an	35
+Giữ gìn sức khỏe nhé	35
+Bệnh nhẹ mau khỏi	30
+
+# Mua bán và tiền bạc
+Thuận mua vừa bán	40
+Mua may bán đắt	35
+Đắt xắt ra miếng	35
+Đồng tiền đi liền khúc ruột	40
+Liệu cơm gắp mắm	40
+Khéo co thì ấm	35
+Tằn tiện dành dụm	30
+Của ít lòng nhiều	35
+Mua rẻ bán đắt	30
+Lời ăn lỗ chịu	25
+Làm ăn phát đạt	35
+Buôn bán thuận lợi	35
+
+# Con vật và cây cối
+Nhanh như sóc	30
+Chậm như rùa	30
+Khỏe như trâu	35
+Hiền như bụt	30
+Dữ như cọp	30
+Khôn như cáo	30
+Nước đổ lá môn	30
+Chó cậy gần nhà	35
+Chó treo mèo đậy	35
+Cá lớn nuốt cá bé	35
+Cá không ăn muối cá ươn	40
+Cây ngay không sợ chết đứng	40
+Cây có cội nước có nguồn	40
+
+# Cách nói thường ngày
+Nói vậy mà không phải vậy	30
+Nói đi nói lại	25
+Nói có đầu có đuôi	35
+Nói gần nói xa	30
+Nói qua nói lại	25
+Nói nhỏ thôi hàng xóm nghe thấy	25
+Biết vậy đã không làm	25
+Thôi thì tới đâu hay tới đó	30
+Được ngày nào hay ngày ấy	30
+Chuyện thường ngày ở huyện	35
+Không có gì là không thể	35
+Đầu đuôi câu chuyện	25
+Chuyện dài nói ngắn	25
+Tùy cơ ứng biến	35
+
+# Mạng xã hội và công nghệ
+Kết nối mạng internet	30
+Mất kết nối mạng rồi	30
+Gửi tin nhắn cho mình	30
+Gọi điện lại sau nhé	30
+Chụp ảnh lưu niệm nhé	25
+Đăng bài lên mạng xã hội	25
+Xem điện thoại một chút	25
+Sạc pin điện thoại giúp mình	30
+Máy tính đang chạy chậm	30
+Lưu lại thành bản nháp	25
+Tìm kiếm trên mạng internet	25
+Đường truyền mạng không ổn định	30
+Cuộc gọi nhỡ từ bạn	25
+Thông báo mới vừa gửi đến	25
+Tài khoản chưa đăng nhập	25
+
+# Mua sắm và việc vặt
+Ra chợ mua ít rau	30
+Đi siêu thị cuối tuần	30
+Danh sách đồ cần mua	25
+Mua thêm một ít sữa	25
+Quên mang theo ví tiền	30
+Thanh toán bằng tiền mặt	30
+Thanh toán qua điện thoại	30
+Gói hàng giao tận nhà	30
+Đơn hàng đang được giao	25
+Đổi trả trong bảy ngày	25
+Mặc cả một chút nhé	25
+Hết hàng mất rồi bạn	25
+Giá cả phải chăng	30
+Mua vừa đủ dùng thôi	25
+Nhớ lấy hóa đơn nhé	25
+
+# Bạn bè và các mối quan hệ
+Bạn bè lâu ngày gặp lại	35
+Tình bạn quý hơn vàng	40
+Bạn tốt lúc khó khăn	40
+Có phúc cùng hưởng có họa cùng chia	40
+Thêm bạn bớt thù	40
+Chọn bạn mà chơi	40
+Bạn thân từ thuở nhỏ	30
+Giữ liên lạc thường xuyên nhé	25
+Hẹn gặp lại hôm nào	25
+Chuyện trò rôm rả cả buổi	25
+Mỗi người một tính cách	25
+Sống chan hòa với mọi người	35
+Đối xử chân thành với nhau	35
+Giúp nhau lúc hoạn nạn	40
+
+# Nếp sống thành thị và xóm giềng
+Sáng đi tối về	30
+Tan tầm đường đông nghẹt	30
+Kẹt xe giữa giờ cao điểm	30
+Phố xá lên đèn	25
+Hàng xóm láng giềng thân thiện	30
+Chung cư có thang máy	25
+Gửi xe dưới tầng hầm	25
+Rác đem ra đúng giờ	25
+Mất điện cả khu phố	30
+Nước sinh hoạt bị cúp	30
+Tiếng xe ngoài đường	25
+Quán quen đầu ngõ	25
+Ra đầu ngõ mua đồ	25
+Đi bộ quanh khu nhà	25
+Cuối tuần dọn dẹp nhà cửa	30
+
+# Nông thôn và công việc đồng áng
+Đồng xanh lúa tốt	30
+Lúa chín vàng ngoài đồng	30
+Cày sâu cuốc bẫm	35
+Mưa nắng thuận mùa	30
+Trâu ra đồng cày ruộng	25
+Gặt lúa chạy mưa	25
+Vườn rau sau nhà	25
+Ao cá trước sân	25
+Quê hương yên bình	30
+Làng trên xóm dưới	30
+Tình làng nghĩa xóm	40
+Chăn nuôi trồng trọt	25
+Được mùa được giá	35
+
+# Tâm trạng và ứng xử
+Vui vẻ cả ngày hôm nay	25
+Trong lòng thấy nhẹ nhõm	25
+Buồn một chút rồi thôi	25
+Bình tĩnh giải quyết vấn đề	30
+Nóng giận mất khôn	40
+Giận quá mất khôn	40
+Cả giận mất khôn	40
+Nghĩ trước nghĩ sau	30
+Cân nhắc thiệt hơn	30
+Nói lời dễ nghe	30
+Ăn nói thật thà chất phác	30
+Giữ lời hứa với nhau	35
+Xin lỗi vì đến muộn	25
+Cảm ơn đã giúp đỡ	30
+Không sao đâu đừng lo	25
+
+# Lễ tết và dịp sum họp
+Tết đến xuân về	40
+Chúc mừng năm mới	45
+Vạn sự như ý	40
+An khang thịnh vượng	40
+Sức khỏe dồi dào	35
+Phát tài phát lộc	40
+Sum vầy bên gia đình	35
+Đoàn viên ngày Tết	35
+Mừng tuổi đầu năm mới	30
+Lì xì lấy may đầu năm	30
+Cỗ bàn ngày giỗ	25
+Đám cưới vui cả xóm	25
+Sinh nhật vui vẻ nhé	30
+Tiệc tùng gặp mặt bạn bè	25
+Chúc hai bạn trăm năm hạnh phúc	35
+
+# Câu cửa miệng gia đình và lời trêu con cháu
+Con nhà người ta học giỏi lắm	40
+Ngày xưa bằng tuổi con mẹ đã biết làm hết rồi	30
+Ngày xưa bằng tuổi con bố đã đi làm rồi	30
+Mẹ nói có sai đâu	35
+Mẹ nói rồi mà không nghe	35
+Nói mãi mà vẫn không nhớ	30
+Mẹ không nhắc lần thứ hai đâu	30
+Đừng để mẹ phải nhắc	30
+Có mỗi việc học cũng không xong	30
+Học bài xong chưa con	35
+Đi học về nhớ ăn cơm	30
+Ăn nhanh còn đi học	30
+Ăn thêm bát nữa đi con	35
+Không ăn thì đói ráng chịu	30
+Ăn đi cho chóng lớn	30
+Lớn rồi tự lo đi con	30
+Con với cái thế đấy	30
+Cái gì cũng đến tay mẹ	30
+Làm như mẹ rảnh lắm ấy	30
+Mẹ có phải người giúp việc đâu	30
+Nhà này có nóc nhé con	35
+Tiền không phải lá mít đâu	35
+Tiền đâu mà lắm thế con	30
+Mới sáng ra đã xin tiền	30
+Đi đâu giờ này mới về	35
+Đi chơi nhớ đúng giờ về	30
+Mẹ chờ cửa mãi đây	30
+Ra đường nhớ nhìn trước ngó sau	30
+Đừng có đi tối về khuya	30
+Trời lạnh nhớ mặc thêm áo	30
+Mặc thêm áo vào kẻo lạnh	30
+Đã bảo mang ô đi rồi	30
+Đi đứng cẩn thận nghe chưa	30
+Có thế cũng hỏi mẹ	30
+Cái này mà cũng không biết	30
+Khôn đâu chưa thấy chỉ thấy lì	30
+Nói một câu cãi một câu	30
+Cấm có cãi mẹ nhé	30
+Mẹ nói nhẹ nhàng thôi đấy	30
+Chờ đấy rồi biết tay mẹ	30
+Liệu hồn mà học hành tử tế	30
+Học hành cho tử tế vào	30
+Đừng có học trước quên sau	30
+Sướng quá hóa hư đấy con	30
+Bây giờ sướng hơn ngày xưa nhiều	30
+Ngày xưa làm gì có điện thoại	30
+Suốt ngày chỉ biết ôm điện thoại	35
+Cất điện thoại đi rồi ăn cơm	35
+Ngồi ngay ngắn vào mà ăn	30
+Về nhà là có cơm ăn ngay	25
+Có đói mới biết quý cơm	30
+Không ai thương con bằng mẹ đâu	35
+Mẹ làm tất cả cũng vì con	30
+Lớn rồi mà còn để mẹ lo	30
+Bao giờ mới chịu lớn đây con	30
+Chú nói thế thôi đừng có tin	25
+Lớn lên rồi sẽ biết	30
+Ngày xưa chú cũng nghịch như con	30
+Cô nói thật chứ không đùa đâu	25
+Bố mẹ nói thì cứ để đấy	25
+Hỏi bài thì bảo biết rồi	25
+Đến lúc kiểm tra lại quên hết	30
+Miệng thì bảo con biết rồi	25
+Bảo dọn phòng mãi không xong	30
+Phòng con mà như bãi chiến trường	35
+Quần áo thay ra nhớ bỏ vào giỏ	25
+Dép để ngay ngắn vào con	25
+Tắm nhanh lên nước nóng sắp hết	25
+Rửa bát xong rồi hãy đi chơi	25
+Đi ngủ sớm mai còn đi học	30
+Sáng gọi mãi vẫn chưa dậy	30
+Gọi lần thứ năm mới chịu dậy	30
+
+# Giao tiếp công sở
+Chào anh chị buổi sáng	30
+Hôm nay mình có cuộc họp	35
+Mình xin phép bắt đầu nhé	35
+Mọi người nghe rõ không ạ	30
+Anh chị xem giúp em	35
+Nhờ bạn kiểm tra giúp mình	35
+Bạn gửi lại giúp mình nhé	35
+Mình gửi bạn tài liệu nhé	35
+Mình đã gửi qua email	35
+Bạn kiểm tra hộp thư nhé	30
+Mình vừa gửi bản cập nhật	30
+Mình xin gửi lại file	30
+Bạn nhận được email chưa	30
+Mình sẽ phản hồi sớm	35
+Mình sẽ trả lời trong hôm nay	35
+Cho mình xin thêm thông tin	35
+Mình cần thêm một chút thời gian	35
+Mình đang xử lý việc này	35
+Mình đang kiểm tra lại	35
+Mình sẽ cập nhật tiến độ	40
+Công việc đang đi đúng kế hoạch	35
+Phần này đã hoàn thành rồi	35
+Phần này vẫn đang xử lý	35
+Mình đã hoàn tất phần việc	35
+Mình sẽ gửi trước cuối ngày	35
+Mình gửi trước giờ nghỉ trưa	30
+Mình cần trao đổi thêm	30
+Mình xin phép hỏi thêm	30
+Cho mình hỏi một chút	35
+Mình có một câu hỏi	30
+Bạn giải thích thêm giúp mình	30
+Ý bạn ở đây là gì	25
+Mình hiểu ý bạn rồi	35
+Mình đồng ý với đề xuất này	35
+Mình xin góp thêm một ý	30
+Theo mình thì nên như vậy	30
+Mình nghĩ chúng ta nên trao đổi	30
+Chúng ta cùng xem lại nhé	35
+Mình thống nhất phương án này	35
+Mình xin phép bổ sung thêm	30
+Để mình kiểm tra lại đã	35
+Để mình xác nhận lại thông tin	35
+Mình sẽ kiểm tra và phản hồi	35
+Có gì mình báo lại nhé	30
+Mình sẽ báo lại sau cuộc họp	30
+Bạn cho mình xin ý kiến	35
+Mọi người có ý kiến gì không	35
+Anh chị có góp ý gì thêm	30
+Mình xin ghi nhận góp ý	30
+Cảm ơn bạn đã góp ý	35
+Cảm ơn mọi người đã tham gia	35
+Cảm ơn anh chị đã hỗ trợ	40
+Cảm ơn bạn đã phản hồi	35
+Xin lỗi vì phản hồi muộn	35
+Xin lỗi mình đến hơi muộn	30
+Xin lỗi vì đã làm phiền	30
+Mong bạn thông cảm giúp mình	30
+Phiền bạn hỗ trợ việc này	35
+Bạn giúp mình việc này nhé	35
+Nhờ anh chị hỗ trợ thêm	35
+Bạn có thể hỗ trợ mình không	35
+Mình có thể giúp gì không	30
+Bạn cần mình hỗ trợ gì	30
+Mình sẽ phối hợp cùng bạn	35
+Mình phối hợp với bộ phận liên quan	30
+Mình sẽ liên hệ bộ phận đó	30
+Mình chuyển bạn phụ trách nhé	30
+Việc này thuộc bộ phận nào	25
+Mình cần xác nhận với quản lý	30
+Mình sẽ hỏi ý kiến quản lý	30
+Mình xin phép báo cáo nhanh	35
+Mình xin cập nhật tình hình	35
+Tình hình hiện tại như sau	30
+Mình xin báo cáo tiến độ	35
+Việc này có phát sinh vấn đề	30
+Mình đang gặp một chút vướng mắc	30
+Có vấn đề cần trao đổi thêm	30
+Mình đã xử lý xong vấn đề	30
+Mình sẽ tìm hướng giải quyết	35
+Chúng ta cần chốt việc này	35
+Mình xin chốt lại nội dung	35
+Để mình tổng hợp lại nhé	30
+Mình gửi biên bản cuộc họp	35
+Mình đã ghi nhận nội dung	30
+Mình xin nhắc lại thời hạn	30
+Hạn chót là cuối tuần này	30
+Mình sẽ hoàn thành đúng hạn	35
+Xin vui lòng phản hồi trước thứ Sáu	30
+Bạn sắp xếp thời gian giúp mình	30
+Mình đặt lịch họp chiều nay	30
+Mình xin dời lịch cuộc họp	30
+Cuộc họp bắt đầu lúc mấy giờ	30
+Mình tham gia họp trực tuyến	30
+Mình đang vào cuộc họp	30
+Mình xin phép chia sẻ màn hình	30
+Bạn bật micro giúp mình nhé	25
+Mình nghe hơi nhỏ tiếng	25
+Mình bị mất kết nối một chút	25
+Mình xin phép rời cuộc họp	30
+Mình sẽ tham gia sau ít phút	25
+Mình đang bận cuộc họp khác	30
+Mình có thể trao đổi sau không	30
+Mình xin phép nghỉ phép ngày mai	30
+Hôm nay mình làm việc từ xa	30
+Chúc mọi người một ngày làm việc tốt	30
+Chúc anh chị buổi chiều vui vẻ	30
+Mình xin phép kết thúc ở đây	30
+
+# Tán tỉnh và yêu đương
+Gặp em anh thấy vui hơn	30
+Hôm nay em đẹp quá	35
+Nụ cười của em thật đẹp	35
+Nói chuyện với em rất vui	35
+Anh thích cách em cười	35
+Em có người yêu chưa	35
+Cho anh làm quen nhé	35
+Mình làm quen được không	35
+Anh xin số điện thoại nhé	30
+Cho mình xin liên lạc nhé	30
+Em có rảnh cuối tuần này không	30
+Cuối tuần mình đi cà phê nhé	35
+Tối nay mình đi ăn nhé	35
+Anh mời em một ly cà phê	35
+Đi dạo với anh nhé	35
+Mình đi xem phim nhé	35
+Anh đưa em về nhé	30
+Em về đến nhà chưa	35
+Về nhà nhớ nhắn anh nhé	35
+Anh đang nhớ em đấy	40
+Em có nhớ anh không	35
+Nhớ em nhiều lắm đó	35
+Anh nhớ nụ cười của em	35
+Nói chuyện với em quên cả giờ	35
+Gặp em là ngày vui rồi	35
+Có em ngày nào cũng vui	35
+Ở cạnh em thấy bình yên	35
+Ở bên em anh thấy vui	35
+Em làm ngày anh đẹp hơn	35
+Em khiến anh vui cả ngày	35
+Anh thích ở cạnh em	35
+Anh muốn gặp em mỗi ngày	35
+Anh muốn tìm hiểu về em	35
+Mình tìm hiểu nhau nhé	35
+Cho anh cơ hội nhé	35
+Em cho anh cơ hội nhé	35
+Anh có thể tán em không	30
+Anh nói thật lòng đó	35
+Anh không nói đùa đâu	30
+Anh chỉ muốn làm em vui	30
+Anh sẽ luôn ở bên em	35
+Có anh ở đây rồi	35
+Anh luôn lắng nghe em	35
+Em cứ kể anh nghe nhé	30
+Có chuyện gì cứ nói anh	30
+Anh sẽ bên em lúc khó khăn	35
+Mình cùng nhau cố gắng nhé	35
+Mình nắm tay nhau nhé	35
+Cho anh nắm tay em nhé	35
+Em làm bạn gái anh nhé	35
+Làm người yêu anh nhé	35
+Anh muốn ở bên em	35
+Mình ở bên nhau nhé	35
+Mình yêu nhau nhé em	35
+Anh thương em nhiều lắm	40
+Em là điều tuyệt vời nhất	35
+Em là người đặc biệt	35
+Em là ngoại lệ của anh	35
+Anh thích em mất rồi	40
+Anh lỡ thích em rồi	35
+Tim anh đập nhanh quá	30
+Tim anh lỡ nhịp rồi	30
+Anh say nắng em mất rồi	40
+Em làm anh đứng hình	30
+Gặp em anh quên mất lời	30
+Thấy em anh vui như Tết	35
+Em cười một cái anh vui cả ngày	30
+Nhìn em một chút cũng vui	25
+Em có biết em dễ thương không	30
+Dễ thương như em hiếm lắm	30
+Em đáng yêu quá đi mất	30
+Anh xin phép được nhớ em	30
+Cho anh nhớ em một chút	25
+Em có biết anh đang nghĩ gì không	30
+Anh đang nghĩ về em đó	30
+Em có muốn đi cùng anh không	30
+Đi với anh một đoạn nhé	25
+Mình hẹn hò thử nhé	35
+Cho anh một buổi hẹn nhé	30
+Anh muốn mời em đi chơi	30
+Mình đi ăn món em thích nhé	30
+Hôm nay em muốn đi đâu	30
+Em thích uống cà phê gì	25
+Anh mua trà sữa cho em nhé	30
+Anh để dành chỗ cạnh anh	30
+Ngồi cạnh em thấy vui ghê	25
+Em đến làm ngày vui hơn	30
+Anh thấy chúng mình hợp nhau	30
+Hai đứa mình nói chuyện hợp ghê	30
+Ở với em không thấy chán	30
+Mình cứ nói chuyện mãi nhé	25
+Anh muốn nghe giọng em	30
+Chúc em ngủ ngon nhé	35
+Mơ đẹp nhé cô gái	30
+Sáng mai nhớ nhắn anh nhé	30
+Chúc em một ngày vui vẻ	30
+Ngày mới vui vẻ nhé em	30
+Ngủ ngon và mơ thấy anh nhé	35
+Anh gửi em một cái ôm	30
+Ôm em một cái được không	30
+Em là người anh thương	35
+Yêu em hơn hôm qua	35
+Yêu em nhiều hơn mỗi ngày	35
+Càng gặp càng thấy thương	35
+Thương em từ những điều nhỏ	30
+Thích em từ cái nhìn đầu tiên	35
+Tình yêu bắt đầu từ tình bạn	35
+Từ bạn thân thành người yêu	30
+Đúng người đúng thời điểm	35
+Mình gặp nhau thật đúng lúc	35
+Có duyên thì mình gặp lại	30
+Trái tim anh có chủ rồi	30
+Anh đã có người thương	30
+Người thương của anh đâu rồi	30
+Em là cô gái anh thích	30
+Anh là chàng trai tốt đó	25
+Đừng cười nữa anh rung động mất	30
+Em cười nữa là anh thích đó	30
+Nói chuyện với em dễ nghiện thật	30
+Gặp em xong anh vui cả tối	30
+Tán em có cần xếp hàng không	30
+Anh đứng đây chờ em gật đầu	25
+Cho anh xin một cơ hội yêu	30
+Em đồng ý đi chơi với anh nhé	35
+# Selected VIVID idioms and proverbs; archaic-tagged items are downranked
+cơm sung, cháo giền	14
+Gội gió tắm mưa	4
+Võng tía lọng đào	14
+Đàn ông là nhà, đàn bà là cửa	4
+Năng may hơn dày giẻ	4
+Cần ăn cuống, muống ăn lá	4
+Phúc đức khán tử tôn	4
+Tiếng bấc tiếng chì	14
+Giàu hai con mắt, khó hai bàn tay	4
+Giàu vẻ vang, sang lịch sự	4
+Ngang tai chướng mắt	14
+Chạy hộc tốc dốc gan	14
+có trăng, tình phụ lòng đèn	14
+Chạy rống Bái công	14
+có đức, mặc sức mà ăn	14
+Vô tửu, bất thành lễ	4
+Đồng lỗ đồng lãi	4
+Hòn đất ném đi, hòn chì ném lại	14
+Ngậm ngải tìm trầm	4
+Có trăng phụ đèn	14
+co co cỏm cỏm	14
+Thẳng như kẻ chỉ	4
+chửa đặt mình nằm	14
+chửa con so làm lo láng giềng	4
+Thăng thiên độn thổ	14
+Già sinh tật, đất sinh cỏ	4
+chưa lại người	14
+có trông không được cậy	14
+Của nhà giàu có nọc	4
+Dòm bóng vẽ beo	4
+Chồng cưới vợ cheo	14
+Cá thìa quen chậu, chồn đèn quen hang	4
+Kém phấn thua hương	14
+Bán bò tậu ruộng mua dê về cày	4
+Ơn làng giấy trắng, ơn vua giấy vàng	14
+Bú mớm bù trì	14
+con ông cống, cháu ông nghè	14
+con nuôi cha không bằng bà nuôi ông	4
+Chim trời bạt gió	14
+con như con ngô con khoai	4
+Ghé đầu chịu báng	4
+con mẹ đẻ con con	14
+Rượu cổ be, chè đáy ấm	4
+con gái là cái bòn	4
+con đóng khố, bố cởi truồng	14
+con công cái bán	4
+Phải thuốc phải bùa	4
+Giàu ăn, khó chịu	4
+Có cháo ăn cháo, có rau ăn rau	4
+Chùa tranh bụt đất	14
+Gạo chợ nước sông, củi đồng trầu miếng	4
+Đầu chưa ráo máu	14
+Đất có gấu thì gấu lại mọc	4
+Đắt may hơn giàu giẻ	4
+chặt to kho nhừ	14
+Tiếc lục tham hồng	14
+chết trẻ, khỏe ma	14
+Cốt nhục tử sinh	14
+Đầu năm buôn muối, cuối năm buôn vôi	4
+Của miếng chín là đầu thuốc câm	4
+chén tạc, chén thù	14
+Xanh đầu thì bỏ, đỏ đầu thì nuôi	4
+chè ngon ngọt giọng, thuốc ngon quyện đờm	14
+Mau tay hơn tày đũa	4
+Hồ thỉ tang bồng	14
+chị em nắm nem ba đồng	14
+Đánh đòn không so gậy	14
+Đánh như đánh dê tế đền	4
+Đạo chồng nghĩa vợ	14
+chẳng cơm, chẳng cháo, mạnh bạo gì thầy	14
+Kẻ cả thời ngả mặt lên	4
+Mất mặn mất nhạt	14
+chảy máu sáu quan, chảy mủ đủ chục	14
+chát ngấm chát ngầm	14
+Cá lứa chim đàn	4
+Chồng học trò, vợ con hát	4
+chí tang bồng	14
+Tưng hửng như mèo bị cắt tai	14
+Én bắc nhạn nam	14
+Ruột tằm bối rối	14
+chuông già đồng điếu chuông kêu	14
+Chạm đến vong linh	14
+Chết đường chết chợ	14
+Cá nước sum vầy	14
+Không bà gia cũng quá cha dì ghẻ	14
+chồng đường, vợ sá	14
+Trận đồ tám quẻ	14
+Con non hàng nằm	4
+Đan thúng giữa đàng	4
+Chiền chiện vào rừng xanh	14
+Thắm lắm phai nhiều	14
+Duyên ưa phận đẹp	4
+Đấy quan tổng đốc, đây bà quận công	14
+Đỏ như hoa vông, đông như miếng tiết	4
+Đôi gáo một chĩnh	14
+Sống chỉ mặt, chết chỉ mồ	14
+Rát ruột như bào	14
+chìm cá, rơi chim	14
+Thỏ lặn, ác tà	14
+Ăn gửi nằm nhờ	14
+Đánh như đập đất	14
+Đào nào kép ấy	14
+Duyên ngư thuỷ	14
+Đầu mâm đĩa muối, cuối mâm đĩa rau	14
+Giọt châu thánh thót	14
+dốt đặc hơn hay chữ lông	14
+Làm bỡn ăn thật	14
+đám hội nhà chay	14
+đái tội lập công	14
+đá thúng, đụng nia	14
+Gồng nặng gánh nhẹ	4
+dương gian làm sao, âm phủ làm vậy	4
+dở giăng, dở đèn	14
+dông tố phũ phàng	14
+dịp nhặt kịp khoan	14
+Chín bỏ làm mười	4
+Chồng chúa vợ tôi	14
+Bóng nguyệt xế mành	14
+dây oan nghiệt	14
+dây cà ra dây muống	14
+dâu vô nhà, mụ gia ra ngõ	14
+Đói đảo ngói mà ăn	4
+dập liễu, vùi hoa	14
+dẫn thủy nhập điền	14
+Bé đi câu, lớn đi hầu	4
+dân sinh quốc kế	14
+Chuột khôn có mèo hay	14
+Ăn chưa sạch, bạch chưa thông	14
+dân chỉ công bộc	14
+đạp tuyết tầm mai	14
+Cá có lứa, chim có đàn	4
+Bần thanh hơn phú trọc	14
+Cơm ngang khách tạm	4
+Cơm ba bát, áo ba manh	14
+Cơm ăn, tiền lấy, giấy trả quan	14
+Cướp quan thì tha, cướp ma thì bắt	14
+Bể bạc non vàng	14
+Lộn nài bẻ ống	14
+đau thiết, thiệt van	14
+Chạy như chó phải lói	4
+đau chóng, đã chầy	4
+Trướng rủ màn che	14
+đau bụng lấy bụng mà chườm	14
+đạp sói, giày sành	4
+Ăn đưa xuống, uống đưa lên	4
+Chạy thầy chạy thợ	4
+Chắc như cua gạch	4
+Sáng ba chiều bốn	14
+Một chốn đôi nơi	4
+Bón phân làm cỏ chẳng bỏ đi đâu	4
+đạn đâu bắn sẻ, gươm đâu chém ruồi	14
+Chợ trần gian sớm họp chiều tan	14
+dân chỉ phụ mẫu	14
+Đạo vợ nghĩa chồng	14
+Áo cứ tràng, làng cứ lí trưởng	4
+Voi cày chim nhặt	4
+cơm vua, nợ dân	14
+cơm vào dạ như vạ vào miệng	14
+cơm thì chia nhau, rau thì tháo khoán	14
+Hải yến hà thanh	14
+cơm lam, muối ống	4
+Làm tướng hay quân, làm chồng hay vợ	4
+cơm hầu, cháo dẫn	14
+cơm gạo mùa, thổi đầu: chùa cũng chín	4
+cú kêu cho ma ăn	14
+Bụt chẳng thèm ăn mày ma	14
+Bè ngổ đi trước, bè dừa đi sau	4
+cờ tiên rượu thánh	14
+cờ cao Đế Thích	14
+cờ bạc về sáng	4
+Chẳng thiêng ai gọi là thần	14
+Ăn trầu quên vôi, làm tôi quên chúa	4
+Ghét đào đất đổ đi	14
+cổ hoặc nhân tâm	14
+cô thân chích ảnh	14
+Thua búng quay, xoay đáo lỗ	14
+Phỉ chí tang bồng	14
+Chọn đá thử vàng	4
+cưa sừng, xẻ tai	14
+dày như mo	14
+Lộn nài bẻ ách	14
+Ăn cỗ là tổ việc làng	4
+Ngành ngọn tiêu hao	14
+Giàu ăn, khó nhịn	4
+da nọ ấp da kia	14
+cứu khổ cứu nạn	14
+Gió trúc mưa mai	14
+cưới chạy tang	14
+Đói rau đau thuốc	4
+cửa Khổng, sân Trình	14
+cửa cấm, lầu son	14
+Nói như thánh phán	14
+của anh anh mang, của nàng nàng xách	14
+cút ca cút kít	14
+Xong chay, quẳng thầy xuống ao	14
+cùng bất đắc dĩ	14
+cung nga, thể nữ	14
+Lông phượng gót lân	14
+của một đồng, công một nén	4
+của mòn, con lớn	14
+của đời muôn sự của chung	14
+của ăn, ngăn để	14
+cây nhà lá vườn	14
+cây cao chẳng quản gió rung	14
+Hay ở, dở đi	4
+bẻ đũa cả nắm	14
+bè ngổ đi trước, bè dừa theo sau	14
+Hạt gạo cắn đôi	4
+Đói không ai tha, giàu ra số phận	4
+Khô như ngói	14
+bắt chân chữ ngũ	14
+Chết kèn trống, sống dầu đèn	4
+Bệnh gấp hay uống thuốc bừa	14
+Áo vải khăn thâm	14
+Tang bồng hồ thỉ	14
+bạo thiên nghịch địa	14
+bạo hổ, bằng hà	14
+Đo đầu thửa mũ	14
+Bấm ra sữa	14
+No ba ngày tết, đói ba tháng hè	4
+Đóng móng cho ve sầu	14
+Đắng như quả bồ hòn	14
+bán sấp bán ngửa	14
+Chẳng đẻ chẳng thương	4
+Đụt nắng che mưa	14
+bán đồ nhi phế	14
+bàn cứ nhất phương	14
+Bắt cua bỏ giỏ	4
+Như ma xó	14
+người khôn bởi vị giống dòng mới khôn	4
+Vịt giời, hươu sao, gà làng Hồ	14
+Tiền lưng gạo bị	4
+Cả cây nây buồng	4
+Có chuông chùa niệm Phật	14
+Rách như tàu lá chuối	4
+bốn chín chửa qua, năm ba đã đến	4
+Đắm ngọc chìm hương	14
+bốc tay sốt, đổ tay nguội	14
+bố chồng là lông con lợn	14
+Canh chung chẳng ai cho muối	4
+Cấy chay, cày gãi, bừa chùi	4
+bồ dục chấm nước mắm cáy	14
+bóng quáng đến loà	14
+Dãi nguyệt dầu hoa	14
+Câm như thóc trầm ba mùa	4
+bỏ phóng sinh	14
+bỏ đường bỏ xá	14
+bỏ bùn sang ao	14
+bò ăn mạ thì dạ bò hay	14
+Kim chưa mài, chưa ai ăn cắp	4
+Biết mày ngang mũi dọc	14
+biết sự trời, mười đời chẳng khó	14
+biết đâu là tổ chuồn chuồn	14
+hùm, nhà hướng nam không làm cũng ăn	4
+bí rì rì	14
+bì bà bì bạch	14
+Khôn khéo bánh dày, vụng dại chày cối	4
+Hạ bút thành chương	14
+Hạt châu mắt cá	14
+bạc thì dân, bất nhân thì lính	14
+Yểm mục bổ tước	14
+ăn như Nam-Hạ vác đất	14
+Khôn làm cột cái, dại làm cột con	4
+Xanh nhà, lợn gà người	4
+Cổ cong mặt lệnh	14
+Có nội hoa hèn	14
+Khó bó đến xương	4
+Ruột ngựa phổi bò	14
+Có nhân nhân nở, vô nhân nhân trẩm	14
+Voi chéo ngà, đàn bà một mắt	4
+Giải cấu tương phùng	14
+ăn cơm nhà, thổi tù và hàng tổng	14
+ăn chửa no, lo chửa đến	14
+Chạy long tóc gáy	4
+ăn cây táo, rào cây xoan dâu	14
+Đồng rau đồng muối	4
+Con cá, lá rau, chà già, que củi	14
+áo đơn lồng áo kép	14
+Đi ngang về tắt	14
+Xa chùa vắng tiếng, gần chùa điếc tai	14
+Gà nhà lại bới bếp nhà	14
+Giàu hay mần, bần hay ăn	4
+Khô chân gân mặt, đắt tiền cũng mua	4
+Lạy cả nón	14
+ai dám đánh đu với tỉnh	14
+Vợ nhà gà chợ	14
+Đai vàng hốt ngọc	14
+ai biết mót đái mà hạ võng	14
+Tiền vàng xâu lõi lụa	14
+Cao ngày dày kén	4
+Nhặt che mưa, thưa che gió	14
+Thuốc đắng dã tật	4
+Áo thô giày cỏ	14
+Cái giá cắn làm đôi	14
+ba vua, bảy chúa	14
+ba tháng mười ngày	4
+Gió giật mưa tuôn	14
+ba mươi sáu cái nõn nường	14
+ba hồn bảy vía	4
+ba đời bảy họ	14
+Hai vợ chồng son đẻ một con	4
+Bát cơm phiếu mẫu	14
+Bình thi giảng võ, loạn thế độc thi	14
+ăn xưa chừa nay	14
+Tháng tám, nắng rám trái bưởi	4
+Lỗi tạ, vạ lạy	14
+Hương lạnh khói tàn	14
+Hồn tinh vệ	14
+Đàn bà quạ mổ	14
+Vô sừng vô sẹo	4
+ăn tái ăn tam	14
+Nể rừng chẳng dám động dây	14
+Chim công mồi, mèo công con	4
+ăn sau là đầu cất dọn	14
+ăn no chạy làng	14
+ăn nói một gióng	14
+Khăn gấm áo hồng, bế bồng kiếm sắc	14
+Của là cuống ruột	4
+Mặt tày lệnh, cổ tày cong	14
+Giấc mây mưa	14
+Con em kèm con chị	4
+buổn tình cháu rể khóc đưa bà	14
+Oản chùa cúng bụt	4
+Sung ngái một lòng, bưởi bòng một dạ	4
+bụt không thèm ăn mày ma	14
+Lớn vú bụ con	4
+Nhạt như canh cần nấu suông	14
+Cú kêu ra ma	4
+Chẻ tre qua đốt	4
+Năm ngày ba tật	14
+bụt nhiều oản ít	14
+Năm người mười làng	14
+Biết mày ngang mắt dọc	14
+ai ăn trầu nấy đó môi	14
+Trôn nồi năm cũng bằng cằm niêu mốt	4
+Cởi áo thành dân, mặc áo thành quan	14
+Ăn trứng thì đừng ăn con	4
+Cát lầm ngọc trắng	14
+cá chẳng bén câu	14
+Lời nói gói tội	4
+Chè ngon khan cổ, thuốc ngon lắm đờm	4
+Tóc đuôi gà, mày lá liễu	14
+Cưỡi ngựa đầu thềm	14
+Cầm vợ đợ con	14
+Vặn nài bẻ ống	14
+bương già nhà vững	14
+buồn tình như đĩ về già	14
+Sơn ăn tuỳ mặt, ma bắt tuỳ người	4
+buôn chín bán mười	14
+Đồng cân thiết cốt	14
+cây cao bóng mát	4
+Cơm vua, ngày thợ hoạn	4
+búi tóc củ hành làm anh thiên hạ	14
+câu hào thả rãnh	4
+Con tôm nhảy bờ là con tôm lớn	4
+Rày trông mai chờ	14
+bụng đói như bò bắt nợ	14
+cất lúa rụng thóc	14
+cái cú, cái cáo cũng nháo về rừng	14
+Bảy mươi không bằng đứa lên bảy	14
+Đứa ở giống tông chủ nhà	4
+Bạt núi ngăn sông	14
+Gặp hội rồng mây	14
+Ăn trầu không vôi	4
+Vênh váo như bố vợ cậu ấm	14
+Qua rào vỗ vế	14
+Anh hùng liệt nữ	14
+cả sông đông chợ, lắm vợ nhiều con	14
+cần công kiệm học	14
+Vật đến keo, trèo đến mái	4
+Lão giả an chi	14
+Vì cây dây cuốn	4
+Chó đen giữ mực	14
+Một ngày nên nghĩa, chuyến đò nên quen	14
+Ăn cơm làm cỏ chẳng bỏ đi đâu	4
+Vắng sao Hôm, có sao Mai	4
+Cục đất nặn ra ông Táo	4
+Cơm cày cơm cấy	4
+Ăn thì dùa, thua thì chịu	4
+Con đĩ đánh bồng	14
+Ăn chẳng nên, làm chẳng ra	14
+Đĩ có tông, ai trồng nên đĩ	4
+Thả chà cá mới ở ao	4
+Đầu gối dính cằm	14
+Trâu he cũng bằng bò khoẻ	4
+Trời sinh trời dưỡng, khắc đẻ khắc nuôi	4
+Cây tróc lá, cá tróc vây	4
+Áo mặc chẳng quá đầu	4
+Chim liền cánh, cây liền cành	4
+Đi vặn mình xà, mặt sa chữ nãi	14
+Trẻ muối cà, già muối dưa	4
+Ngựa hươu thay đổi	14
+Mạ úa thì lúa chóng xanh	4
+Người làm sao, của chiêm bao làm vậy	4
+Chẳng ưa dưa khú bầu già	14
+Le te như ghe lộn ngược	14
+Có rau ăn rau, có cháo ăn cháo	4
+Sớm đào tối mận	14
+Động chà cá nhảy	4
+Được bụng no, còn no cật ấm	14
+Dặm liễu sương sa	14
+Đi đến đâu chết trâu đến đấy	14
+Lao tâm khổ tứ	14
+Có máu có xót	4
+Áo chân cáy, váy chân sứa	4
+Bốn mươi có cháu, sáu mươi có chắt	4
+Thả chim thả cá, không khá cũng giàu	4
+Buôn mây bán gió	14
+Giận con bọ chó, đốt cả đống rấm	14
+Cỏ nào chạy tới miệng voi	4
+Sáng bể chớ mừng, tối rừng chớ lo	4
+Có đầu có đuôi, nuôi lâu cũng lớn	4
+Tốt mã mà giã đám	14
+Chăn ấm gối êm	14
+To đầu khó chui	4
+Trời đánh thánh vật	14
+Dứa đầu mít cuối	4
+Cắt dài đáp ngắn	4
+Cua nhà nọ, rọ nhà kia	14
+Bẻ ách lộn nài	4
+Lơ láo như chó thấy thóc	14
+Chán gà nhà, chuốc cò nội	4
+Chiêm se ré rụi	4
+Đũa bếp khuấy nồi bung	4
+Nấu xáo voi	14
+Con biết ngồi, mẹ rời tay	4
+Người sống về gạo, cá bạo về nước	4
+Sù sì da cóc, lắm thóc thì hơn	4
+Chồng như đó, vợ như hom	4
+Trai khôn tìm vợ, gái ngoan tìm chồng	4
+Chợ chưa họp kẻ cướp đã tới	4
+Hà tiện húp cháo hoa	4
+Van thay lạy mướn	4
+Chớp chằng chớp chão chẳng bão thì mưa	4
+Đầu gối còn gần hơn mắt cá chân	4
+Miệng ông cai, vai đầy tớ	4
+Mua danh ba vạn, bán danh ba đồng	14
+Ra ngắm vào vuốt	14
+Nhăng nhẳng như chó cắn ma	14
+Vảy cá còn hơn lá rau	4
+Dương dương đắc ý	14
+Năm tao bảy tiết	14
+Xôi giả vạ thật	4
+Điều nọ tiếng kia	14
+Quá mù ra mưa	14
+Chê lê chẳng được	14
+Quầng hạn tán mưa	4
+Tô lục chuốt hồng	14
+Rượu cheo, cháo thí, nghe hát nhờ	4
+Người sống của còn, người chết của hết	4
+Chai da lì đòn	14
+Để hòn đất, nặn nên ông bụt	4
+Gìn vàng giữ ngọc	14
+Chiếc bách sóng đào	14
+Rán sành ra mỡ	14
+Ác tà, thỏ lặn	14
+Lấc láo như quạ vào chuồng lợn	14
+Đồng nát lại về Cầu Nôm	4
+Võng dù nghênh ngang	14
+Gần chùa gọi bụt bằng anh	14
+Sân còn gần hơn ngõ	4
+Chiêm cấy to tẽ, mùa cấy nhẻ con	4
+Duyên hương lửa	14
+Cửa chẳng qua, nhà chẳng đến	14
+Nhanh như thổi	4
+Miệng nhà giàu nói đâu ra đấy	14
+Tháng tám, ăn ốc trông trăng	4
+Sóng trước bổ sao, sóng sau bổ vậy	4
+Cuốn chiếu hết nhân tình	14
+Đá đưa đầu lưỡi	14
+Của trời trả Phật	4
+Phận đẹp duyên may	4
+Phong đăng hoà cốc	4
+Quan cần dân trễ	14
+Phận cua cua máy, phận cáy cáy đào	4
+Quen ăn bén mùi	4
+Ra tấm ra miếng	4
+Quen mặt cắt đau	4
+Quen dái dạ, lạ dái áo	4
+Tậu ruộng thì gia, làm nhà thì tốn	4
+Ăn lấy đặc, mặc lấy dày	4
+Ăn như Thuỷ Tề đánh vực	14
+Chửi trùm chửi lợp	14
+Dao sắc không bằng chắc kê	4
+Gá nghĩa Châu Trần	14
+Giàu một lọ, khó một niêu	4
+Bán gạo tháng tám, mua vải tháng ba	4
+Đỉa đeo chân hạc	14
+Néo phẳng dệt dày là thầy khôn khéo	4
+Chơi thủng trống long dùi	14
+Vườn trên ao dưới	4
+Áo ngắn giũ chẳng nên dài	4
+Vợ cái con cột	4
+Cơm nhà chúa, múa tối ngày	4
+Đất Thổ Công, sông Hà Bá	4
+Đầu hôm suốt sáng	4
+Tha cày cuốc góc, nghỉ nhọc chăn trâu	4
+Bút Nam Tào, dao thày thuốc	4
+Ruộng không phân như thân không của	4
+Gieo mạ cần phải kén giống	4
+Người ba đấng, của ba loài	4
+Cóc nghiến răng, đang nắng thì mưa	4
+Trăm kẻ bán, vạn người mua	4
+Cổ tày cong, mặt tày lệnh	14
+Quỳ gối ôm chân	14
+Trâu bò cùng đàn	14
+Giả mù pha mưa	14
+Phong gấm rủ là	14
+Thuốc phiện hết nhà, thuốc trà hết phên	4
+Quạ tắm thì ráo, sáo tắm thì mưa	4
+Cửa miệng có thần	14
+Chó nào lại chê cứt	14
+Mảng lo khó, bó không chặt	4
+Nước mặn đồng chua	14
+Giàu làm phúc, khó làm duyên	4
+Có của thì rửa trăm dơ	14
+Xa sân hơn gần ngõ	4
+Bệnh quỷ có thuốc tiên	14
+Ở đình quét đình, ở chùa quét chùa	4
+Hát khi xay lúa, múa khi tắt đèn	14
+Đệm gấm chiếu hoa	14
+Hạt gạo trốc sàng	4
+Ăn tôm cắn đầu, ăn trầu nhả bã	4
+Chùa nát bụt vàng	4
+Gà kị hổ mang, lúa kị màng rạp	4
+Đàn ông quện nhà, đàn bà quện bếp	4
+Rét tháng tư, nắng dư tháng tám	4
+Trái duyên trái kiếp như kèo đục vênh	4
+Thứ nhất leo rễ, thứ nhì trễ cành	4
+Dây lang bò, rau muống cũng bò	14
+Ăn cơm với cà là nhà có phúc	4
+Ăn cùng chó, nói xó cùng ma	14
+Đàn ông như giỏ, đàn bà như hom	4
+ác tắm thì ráo, sáo tắm thì mưa	4
+Có tịch thì hay nhúc nhích	14
+Phải tội cửa sau, luồn vào cửa trước	4
+Năm thìn năm tị, chị chẳng nhìn em	4
+Buông mối chỉ hồng	14
+Cá kể đầu, rau kể mớ	4
+Bắt cóc phú ông	14
+Nắng trưa, mưa tối	14
+Ngày đàng gang nước	4
+nhà nông cấy cày, ngô lúa bội thu	4
+Nước lụt, chó nhảy bàn độc	14
+Miệng đọc khoán, tay bẻ măng	14
+Một con sa bằng ba con đẻ	4
+Cha cầm khoán, con bẻ măng	14
+Nhiều con giòn mẹ	4
+Cơm kể ngày, cày kể buổi	4
+Lợn đầu cau cuối	4
+Lưới tay le, te chân gộc	4
+Gió sa heo, mía trèo lên ngọn	4
+Bào không trơn như hờn không nói	4
+Năm trước được cau, năm sau được lúa	4
+Ăn trước bước mau, ăn sau bước thưa	4
+Nước sông công lính	14
+Rậm người hơn rậm của	4
+Nóng tay bắt lỗ tai	4
+Đá nát vàng phai	14
+Oan Thị Màu	14
+Bụng tỉnh mình gầy	4
+Đứt tay hay thuốc	4
+Đà đao sắp sẵn	14
+Ăn cây táo, rào cây bồ quân	14
+Năm chắp bảy nối	14
+Bắt mạch người trong bong ra người ngoài	14
+Bé người chơi trèo	14
+Róc ria như cá lòng tong	14
+Ba mau sáu cơn	14
+Ba ngày béo, bảy ngày gầy	4
+Bán thế nhân duyên	14
+Bát lưng bát vực	4
+Bắc bậc cửa quyền	14
+Sống gửi nạc, thác gửi xương	4
+Mâm cao đánh ngã bát đầy	4
+Phận cải duyên kim	14
+Nhờ gió bẻ măng	14
+Tháng ba đau máu, tháng sáu đau lưng	4
+Rùa dùng cân, trạnh dùng lạng	4
+Phách quế hồn mai	14
+Cái dò đang tìm chân lợn	4
+Uốn gối mềm lưng	14
+Chẵn mưa thừa nắng	4
+Trọc đầu càng mát	14
+Chó ló đuôi hại chủ nhà	4
+Chồng bắc vợ đông	4
+Chồng cheo vợ cưới	4
+Ông thần đi khỏi, ông giỏi cũng dư	14
+Con giàu một bó, con khó một nén	4
+Chậm miệng khoan chân	14
+Huyên cỗi xuân già	14
+Kẻ Tấn người Tần	14
+Lụt thì lút cả làng	14
+Chùa có đói, rút ngói mà ăn	14
+Chưa đánh mõ đã băm thịt	14
+Đầu tro mặt muội	4
+Hết nhang còn khói	4
+Bầu chủ củ rũ trong cùm	4
+Kẻ chặt cây người ăn trái	14
+Vợ chồng hàng xáo	4
+Qua truông trổ bòi vào khái	14
+Làm như thịt trâu toi	4
+Cán cuốc bằng vai, cán mai bằng đầu	4
+Lão bạng sinh châu	14
+Lạt tre lại buộc tre	14
+Không tuần chay nào thiếu nước mắt	14
+Kín tranh hơn lành gió	4
+Lành rán sành ra mỡ	14
+Sấm ra cà trổ	4
+Hổ chết chẳng hết vằn	14
+Cầm dầu hòng ướt tay	14
+Cầm dầu phòng ướt tay	4
+Cầm khoán bẻ măng	14
+Hàng bấc thì qua, hàng quà thì nhớ	4
+Chen vai thích cánh	14
+Chiêm đùa mùa sâu	4
+Chiêm khô mo, mùa co chân diều	4
+Chiêm trở đôi, mùa dôi trở	4
+Cát nóng ngô nở	4
+Cha vàng, mẹ bạc, bác đồng đen	14
+Nhện đen đắt hàng, nhện vàng đem tin	4
+Đắt vàng giả, ế vũng cày	4
+Gáo nước lửa thành	14
+Gá thổ đổ hồ	14
+Cơm ăn tiền lấy	14
+Cần tái cải nhừ	4
+Trăm hay xoay vào lòng	14
+Tin ong sứ điệp	4
+Giải chiếu lấy chỗ	4
+Đồng bấc thì qua, đồng quà thì nhớ	4
+Hoa mùa nhị nở	4
+Con mống trống mang	4
+Đếm bụt đóng oản	4
+Chân ngay bắt cò, chân co bắt chuột	4
+Còng lưng uốn gối	14
+Trống mồm trống miệng	14
+Bồ cu nhân nhện	4
+Bè chuối trôi sông	4
+Đệm lệch gối nghiêng	14
+Đá kêu rêu mọc	14
+Dược khổ lợi bệnh	4
+Gai ngọn nhọn hơn gai gốc	4
+Bọ nẹt có giẻ cùi	4
+Ở đâu âu đấy	4
+Rày ước mai ao	14
+Trai lành chưa vội, trai thối trời mưa	4
+Vô thuỷ nghỉ ăn	4
+Con chấy cắn đôi	4
+Đậu nành là anh nước lã	4
+Đầu lâu cuối lấu	14
+Đầu công, mình cốc, cánh vỏ trai	4
+Đất vua cơm trời	4
+Cô loan độc phượng	14
+Đa nhân ức quả	14
+Gió bắt mưa cầm	14
+Đực dài cái vuông	4
+Đầu dần cuối dậu	4
+Chắp mối xích thằng	14
+Cây chạm lá, cá chạm vây	4
+Trên Bộc trong dâu	14
+Buôn trầm bán hương	14
+Vào cửa tà, ra cửa mạch	14
+Vào cửa mạch, ra cửa tà	14
+Nhất hồ, nhì hoa, thứ ba dệt	4
+Thịt thăn cơm ré	4
+Ác khuất non đoài	14
+Cao kì bắc bậc	14
+Đồng mọc đồng lặn	4
+Múa tay trong bị	14
+Một đố mấy ngàm	4
+Buôn Sở bán Tần	14
+Đi chạ, cái giá cắn đôi	4
+Bắn sẻ bình phong	14
+Đầu trâu trán khí	4
+Cha căng chú kiết	14
+Bù trì yêu dấu	4
+người ta là khách vãng lai một thời	14
+Sẵn đâu xâu đấy	14
+Đâm ba chày củ	14
+Nứt đố đổ vách	14
+Gió Sở mưa Tần	14
+Hoa nở có thì	4
+Trời đánh không chết	14
+Ăn mày quen ngõ	4
+Chiêm hơn sướng, mùa hơn đêm	4
+Ăn bún thang, cả làng đòi cà cuống	4
+Bắc bậc cao kì	14
+Bắn sẻ chưa thuận giương ná	14
+Cái giá cắn đôi	14
+Mắt trắng môi thâm	4
+Cái tóc cái tội	4
+Ruột bỏ ra, da gói vào	4
+Tháng năm hơn đêm, tháng mười hơn bữa	4
+Tắt nhang còn khói	4
+Đắp tai cài trốc	14
+Ăn treo hai, ngồi dai treo một	4
+Buôn Tần bán Sở	14
+Quai xanh, vành chảo	14
+Nằm giá khóc măng	14
+Ăn hàng con gái, đái hàng bà lão	14
+Nhà trò giữ nhịp	14
+Bắt đỉa tôi vôi	14
+Lát xát như bát vỡ	14
+Cá kể đầu, trầu kể mớ	4
+Chân đăm đá chân chiêu	14
+Ở lỗ nẻ mà chui lên	14
+Có sừng có gạc	4
+Chôn sấp liệm ngửa	4
+Gẫy góc bánh chưng	14
+Chăn tằm ba lứa, làm ruộng ba mùa	4
+Chắp mối dây tơ	14
+Ngày nắng chóng trưa, ngày mưa chóng tối	4
+Mưa tránh chỗ trắng, nắng tránh chỗ đen	4
+Đồng quan đồng quách	14
+Vàng đỏ nhọ lòng son	14
+Lảng vảng như thành hoàng xuất ngoại	14
+Khôn làm dại ăn	4
+Mua vải bán áo	4
+Lòi tĩ mới phải dịt lá vông	4
+Vét nồi ba mươi cũng đầy niêu mốt	4
+Chân không có rễ, đất không nể ai	4
+Ăn như phát tấu, làm như trấu vãi	14
+Cao lễ dễ thưa	4
+Cầm đã bén dây	14
+Cây gẫy chẳng tại gió	14
+Sáng mưa trưa nắng	4
+Áo rách tày sàng	4
+Lót đó luồn đây	14
+Chẳng ăn cũng thiệt, chẳng chơi cũng già	14
+Cháy như cây đình liệu	14
+Mái già đực non	4
+Cha lươn chẳng đào mà cho lươn ở	4
+Đừng chờm có ngày chấn móng	4
+Hăng bọ xít	14
+Hiền, cắn tiền cũng vỡ	14
+Hơn thóc nhọc xay	4
+Đan đi không tày giặm lại	4
+Chồng ngày vợ bữa	14
+Chồng như cái đăng, vợ như cái đó	4
+Ăn chẳng hết, thết chẳng khắp	14
+Kết duyên Châu Trần	14
+Khách ai nấy bán, bạn ai nấy chào	14
+Nước lọ cơm niêu	4
+Sóng gầm con bú, sóng hú mẹ ăn	4
+Khoai đất lạ, mạ đất quen	4
+Gỗ hồng làm vậy, gỗ cậy bỏ đi	4
+Chết trẻ càng khoẻ ma	14
+Chiêm lùa mùa cuốc	4
+Mạ úa cấy lúa chóng xanh	4
+Mắt có mắt chọi, răng có răng chọi	14
+Chó chạy đường quai	4
+Nói như ông Bành Tổ	14
+Gió heo may, mía bay lên ngọn	4
+Ấu tròn, bồ hòn méo	14
+Ăn chẳng có, khó đến mình	4
+Có sừng có mỏ thì gõ với nhau	4
+Thứ nhất phân ngấu, thứ nhì táu tươi	4
+Rủi một ngày, may một giờ	4
+Rượu chua bán cho người nhỡ	4
+Quyến gió rủ mây	14
+Tam quan cao hơn chùa	14
+Chiêm hơn chiêm sít, mùa ít mùa nở	4
+Khom lưng uốn gối	14
+Được vài đấu thóc, khấn trời làm mưa	14
+Cú đậu cành mai	14
+Lì lì như đì anh hàng thịt	14
+Mấy đời sấm trước có mưa	4
+Ở goá ba đông, lấy chồng hay ngủ	4
+Nhiều no lòng, ít mát ruột	4
+Chiêm xấp xới, mùa đợi nhau	4
+Ăn ở trần, mần mặc áo	4
+Ăn xứ Bắc, mặc xứ Kinh	4
+Bò con theo mẹ	14
+Gia luỵ viễn du	14
+Lưng chữ cụ, vú chữ tâm	4
+Chiêm cập cời, mùa đợi nhau	4
+Cần xuống muống lên	4
+Bắt cóc bỏ nong	14
+Người làm sao, chiêm bao làm vậy	14
+Mua đầu chợ, bán cuối chợ	4
+Bầu leo, dây bí cũng leo	14
+Bốc mũi bỏ lái	4
+Cọ già bà lim	4
+Chiêm thừa cấy nỏ, ré thừa bỏ đi	4
+Bán phấn buôn son	14
+Bắc đồng cân đồng lạng	4
+Trâu già chẳng nệ dao phay	14
+Ăn ít no lâu	4
+Gọt gáy bôi vôi	4
+Có cứt thì có chó	4
+Có cơm ăn cơm, có cháo ăn cháo	4
+Đá đổ mồ hôi, mưa trôi đầy đồng	4
+Đan giậm giật giàm	14
+Đực cụp cái xoè	4
+Tam khoanh tứ đốm	4
+Mài mực ru con, mài son đánh giặc	4
+Ấp mận ôm đào	14
+Đi đầu ghe đái tè xuống biển	14
+Có nơi có chốn	4
+Kẻ Việt người Tần	14
+Đất ruộng be bờ	4
+Đầu có chấy đầu ngứa	14
+Phượng chạ loan chung	14
+Đa tài tốn chí	14
+Túng nồi đồng chứ không túng nồi đất	4
+Cơm quanh rá, mạ quanh bờ	4
+Ăn khoai cả vỏ	14
+Cua máy cáy đào	4
+Voi biết voi, ngựa biết ngựa	4
+Vợ ba con, ở chưa hết lòng chồng	4
+Vợ tấm cám, vợ tao khang	4
+Uống nước chè tàu, ăn trầu cơi thiếc	14
+Dâm vô tang, đạo vô tích	14
+Chưa đặt trôn đã đặt miệng	14
+Động rừng mang tác	4
+Khôn khéo chẳng bằng léo bờ	4
+Khôn mọc lông trong bụng	14
+Thắt lưng bó que	4
+Tốt mốc ngon tương	4
+Trăm chắp ngàn nối	4
+Thóc hoa dâu, trầu lá mặt	4
+Đan nia sẩy đá	14
+Trâu co bò duỗi	4
+Trồng sung ra vả	4
+Uốn như sâu đo	14
+Cùng nghề đan thúng, túng nghề đan nia	4
+Cứt ai vừa mũi người ấy	14
+Đường cái ở cửa miệng	4
+Con đầu gối, con cánh tay	4
+Vợ chồng phường chèo	14
+Con đà mọc răng, nói năng gì nữa	4
+Sống lâu lên lão làng	14
+Như chó cắn ma	14
+Giàu lái buôn, khôn thằng dốt	4
+Ngỗng ông lễ ông	14
+Kết ngãi Châu Trần	14
+Mùa bớt ra, chiêm tra vào	4
+Bán thỏ buôn hùm	4
+Cơm niêu nước lọ	4
+Con vua vua dấu, con triều triều yêu	4
+Cơm cày cơm cấy, ai thấy thì ăn	4
+Cơm sống tại vung	14
+Cơm thầy cơm cô	4
+Có Hôm mà chẳng có Mai	14
+Giàu làm chay, khó vay thì đừng	4
+Giấc kê vàng	14
+Được mùa trước, ước mùa sau	4
+Đương yên đương lành, đọc canh phải tội	14
+Gà người gáy, gà ta sáng	4
+Đầu ruồi còn hơn đuôi trâu	4
+Con đàn như tre ấm bụi	4
+Chớ đánh lửa mà đau lòng khói	4
+Chuột chù phải khói	14
+Đông đồng vắng chợ	4
+Đồ tể đánh nhau nong thịt	14
+Cua có óc, cóc có gan	4
+Đói năm không ai đói bữa	4
+Đông miếng ít tay	4
+Chùa đất phật vàng	4
+Dai như chão	14
+Thơm tay may miệng	4
+Rủi tay may vai	4
+Ăn cưới chẳng tày lại mặt	4
+Đòi nợ tháng ba, đốt nhà tháng tám	4
+Đá đổ mồ hôi	4
+Đố lại vào ngàm	14
+Đau ai nấy khóc, nhọc ai nấy van	4
+Đánh chẳng được, tha làm phúc	14
+Đánh đu với tinh	14
+Đánh nhau vỡ đầu mới nhận họ	14
+Dâu vào nhà như gà bỏ rọ	4
+Dốt có đuôi	14
+Duyên Châu Trần	14
+Đang chuyện nọ, xọ chuyện kia	14
+Cá nước duyên ưa	14
+Chiêm khô ré rụi	4
+chẳng vò mà rối, chẳng dần mà đau	14
+chân tốt vì hài, tai tốt vì hoãn	14
+chân lấm vảy càn	14
+chân không đến đất, cật chẳng đến giời	14
+chân đi vòng kiểng	14
+chân đi chữ bát	14
+chân co, chân duỗi	14
+chân chỉ hột bột	14
+chẳng-xanh cũng tựa màu chàm	14
+chấp kinh tòng quyền	14
+chẳng cái dại nào giống cái dại nào	14
+chân vòng kiềng	14
+chật chà chật chưỡng	14
+chỉ li từng tí	14
+chiêm gon tìm đòn mà gánh	4
+chiêm cứng, ré mềm	4
+chiêm bóc vỏ, mùa xỏ tay	4
+chiếc bóng song the	14
+chiếc bóng năm canh	14
+chí tái, chí tam	14
+chí cha chí chát	14
+chỉ non, thể bể	14
+chỉ hồ giả dã	14
+châu chấu thấy đỏ lửa thì vào	14
+chất thèm, chết nhạt	14
+chết thằng gian, chẳng chết người ngay	14
+chết cả đống hơn sống một người	4
+chèo bẻo đánh quạ	14
+chém cây sống, trồng cây chết	14
+chẻ vỏ không bằng đồ vận	14
+chạy xợp đầu	14
+cao không với tới, thấp không thông	14
+cau già dao sắc lại non	4
+cát liền tay, thịt chầy ngày	4
+cát dập sóng vùi	14
+cáo giả oai hùm	14
+cáo chẳng chịu mèo, mèo lại hóa cáo	14
+cao thành, nở ngọn	14
+cao tằng tổ khảo	14
+cao lêu đêu như cò hương	14
+cao đan hoàn tán	14
+chạy xoạc móng heo	4
+cạnh tranh sinh tổn	14
+cảnh chiều người	14
+cành la, cành bổng	14
+canh một chưa nằm, canh năm đã dậy	14
+càng treo giá ngọc, càng cao phẩm người	14
+cạn dòng lá thắm, dứt đường chim xanh	14
+cái quan định luận	14
+cày ruộng tháng năm, xem rằm tháng	4
+cày sâu tốt lúa	4
+cắm chông chỗ lội	14
+cắn chẳng vỡ hột cơm	14
+chác dữ mua hờn	14
+cậy thần phải nể cây đa	14
+cấy lúa dược lạ, gieo mạ dược quen	4
+cây khô chưa dễ mọc chổi	14
+cây chọn mất lá, cá chọn mất vảy	4
+cậu lậu bình vôi	14
+câu chuôm, thả ao	4
+cập bà lời	14
+cân quắc anh hùng	14
+cầm đũa tay chiêu, đập niêu không vỡ	14
+cầm cương nảy mực	14
+cầm bằng con trẻ chơi diều đứt dây	14
+câm hầu tắc cổ	14
+cắn rốn lôi ruột	14
+cắn hột cơm chẳng vỡ	14
+cắn rơm cắn có	14
+chiếu miến, chăn đào	14
+chim mắc lưới hồng	14
+Đẹp đẽ phô ra, xấu xa đậy lại	14
+có cây, dây mới leo	14
+có ít xít ra nhiều	14
+có hương án, bàn độc	14
+có hàng, có ngũ	14
+có của thời có người làm	14
+có bí chê bầu là hôi	14
+cò kè bớt một thêm hai	14
+cò bợ phải trời mưa	14
+chực như chó chực máu giác	14
+chửa được ăn bánh, bóc lá đã từng	14
+chửa con so, làm cho láng giềng	14
+chưa tối đã vội đi nằm	14
+chưa qua cầu đã cất nhịp	14
+chưa nóng nước đã đó gọng	14
+có mặt, ông sứ; vắng mặt, thằng Ngô	14
+chim ra khỏi lồng, không tròng trở lại	14
+cọ già là bà lim	4
+con chúa, chúa yêu; con triều, triều dấu	14
+con bò cạp có nọc nơi đuôi	14
+coi nhà còn nóc, coi thóc còn nong	14
+coi miếng ăn như cái tàn cái tán	14
+cóc mở mồm	14
+cóc đi quốc, khỉ đeo hoa	14
+có mặt thì cô, vắng mặt thì đĩ	14
+có vàng, vàng nó hay phô	14
+có trăng, quên đèn	14
+có tích mới dịch nên tuổng	14
+có thủy có chung	14
+có thóc mới dốc ra gạo	4
+có thóc mới cho vay gạo	14
+có rế thì đỡ bỏng tay	4
+có nửa tháng gạo khấn trời làm mưa	14
+chữ tốt xem tay, ngựa hay xem xoáy	4
+chuột chù nếm giấm	14
+chó nhảy bàn độc	14
+chồng chắp, vợ nối	14
+chồng chài, vợ lưới, con câu	14
+chồng bát còn có khi xô	4
+chổi cùn, rế rách	14
+chọc bát cơm, đơm bát cháo	14
+choại vỏ dưa, vỏ dừa phải tránh	14
+chó ông thánh cắn ra chữ	14
+chó ngồi bàn độc	14
+chó già, gà non	4
+chó ghẻ có mỡ đằng đuôi	14
+chó cùng rứt giậu	14
+cho xôi không tày đòi đĩa	14
+chín quá hóa nẫu	4
+chín phương trời, mười phương Phật	14
+chuồn chuồn mắc phải nhện vương	14
+chuồn chuồn được mấy hột thịt	14
+chuồn chuồn có cánh thì bay	4
+chú khi ni, mi khi khác	14
+chơi chó, chó liếm mặt	14
+chờ được mã thì rã đám	14
+chống gối quá tai	14
+chồng yêu, xổ chân lỗ mũi	14
+cái lưng thước mốt, cái giò thước hai	14
+cái già sồng sộc nó đi theo sau	14
+cai đầu dài	14
+ăn trầu thì ngỏ trầu ra	4
+ba dãy bảy toà	14
+ba chớp, bảy nhoáng	14
+ba bị chín quai, mười hai con mắt	14
+ẩn bóng cây tùng	14
+ậm à ậm ạch	14
+ắng cổ, ắng họng	14
+ăn vụng chóng no	14
+ăn vặt quen mồm	14
+ăn trắng mặc trơn	14
+ba mươi sáu chước	14
+ăn tại phủ, ngủ tại công đường	14
+ăn tái ăn hồi	14
+ăn se sẻ đẻ con voi	14
+ăn no tắm mát	4
+ăn no giậm chuồng	14
+ăn no dửng mỡ	14
+ba mũi giáp công	14
+ba tấc lưỡi	14
+cách vật trí tri	14
+bạc ba quan tha hồ mở bát	14
+bán ngôi bán thứ	14
+bán ngày làm đêm	14
+bàn dày bàn mồng	14
+bại tục, đổi phong	14
+bạch ốc xuất công khanh	14
+bách tuế vi kỳ	14
+bách tuế chỉ hậu	14
+bách chiết thiên ma	14
+bác xác bác xơ	14
+ba trợn ba trạo	14
+bả vinh hoa	14
+bà vãi chẳng khỏi lần lên chùa	14
+bà tiền, bà thóc, bà cóc gì ai	14
+bà dì xù xì xó bếp	14
+bà cốt ngửi mùi tàn hương	4
+bà cô, ông mãnh	14
+ba vành sơn son	14
+ba vành bảy vẻ	14
+ăn như mồ khoét	14
+ăn như con tằm lại rút ruột ra	14
+anh khố son bòn anh khố nâu	14
+ăn cá, bỏ lờ	14
+ăn bóng nói gió	14
+áo dài, chớ ngại quần thưa	14
+áo buông chùng, quần lá toạ	14
+áo buông chùng, quần đóng gót	14
+anh hùng mạt lộ	14
+ăn mướp bỏ xơ	4
+anh em gạo, đạo nghĩa tiền	14
+áng đào kiểm	14
+ai nói làm sao bào hao làm vậy	14
+ai đội mũ lệch, người ấy xấu	14
+ai chết trước được ấm mồ	14
+ai biết uốn câu cho vừa miệng cá	14
+ăn cáy, bưng tai	14
+ăn chẳng bén mùi	14
+ăn chẳng bõ nhả	14
+ăn cho thủng nổi trôi rế	14
+ăn muối còn hơn ăn chuối chát	4
+ăn mót ăn nhặt	14
+ăn mít bỏ xơ	4
+ăn mặc dở chợ dở quê	14
+ăn mày hoàn bị gậy	14
+ăn mày ăn nhặt	14
+ăn liều, tiêu càn	14
+ăn lại bữa	14
+ăn kiêng ăn khem	4
+ăn hết nhiều, ở hết bao nhiêu	14
+ăn giỗ ăn chạp	14
+ăn gio bọ trấu	14
+ăn giả bữa	14
+ăn đấu trả bồ	14
+ăn dỗ mổi	4
+ăn dỗ ăn dành	14
+bán quạt mùa đông, buôn hồng mùa hè	14
+bán thượng bán hạ	14
+bán tự vi sư	14
+bốn tấm dài hai tấm ngắn	14
+bụng cao dạ dốc	14
+bụng bồ kết	14
+bùa tu bùa túi	4
+bới bát mát mặt	14
+bới tóc củ hành làm anh thiên hạ	14
+bơ thừa sữa cặn	14
+bơ bải chẳng bằng phải thì	14
+bồng bồng bế bế	14
+bốn dài hai ngắn	14
+bói chẳng ra, sờ chẳng thấy	14
+bộc tuệch bộc toạc	14
+bồ trong bịch ngoài	14
+bồ sứt cạp	14
+bổ nông dài mô khó kiếm ăn	14
+bồ dục đâu đến bàn thứ năm	14
+bổ còn, thóc hết	14
+bòn tro đãi sạn	14
+bụng đói miệng khát	14
+bụng như bàn mai	14
+bụng ỏng đít teo	14
+buồn ngủ lại gặp chiếu manh	14
+cá chuối đắm đuối vì con	14
+cả xốc, cả vác	14
+cả vú lấp miệng em	14
+cả sóng ngả tay chèo	14
+cà răng căng tai	4
+cà khẳng cà kheo	14
+bức tranh vân cẩu	14
+bụt trên tòa, gà nào mổ mắt	14
+bụt Nam Sang lại từ oản chiêm	14
+buông rồng, thả dài	14
+bòn nơi khố bện, đãi nơi quần hồng	14
+bóc vỏ bỏ hột	4
+bàng già bà lim	14
+bày đường chuột chạy	14
+bất học vô thuật	14
+bất đắc chí	14
+bất cố lai vãng	14
+bắt chẳng được, tha làm phúc	14
+bắn bụi tre, đè bụi hóp	14
+băm bầu, băm bí, băm chị thằng Ngô	14
+bay la bay chuyền	14
+bóc áo tháo cày	14
+bạt vía kinh hồn	14
+bạt sơn cử đỉnh	14
+bạt ngàn man dã	14
+bảo hoàng hơn nhà vua	14
+bao dung hạt cải, rộng rãi trôn kim	14
+bánh sáp đi, bánh chì lại	14
+bánh giầy nếp cái, con gái họ	4
+bất li tri thù	14
+bầu đoàn thê tử	14
+bấy gan bẩy tiết	14
+bóc áo bụt nọ mặc cho bụt kia	14
+bó mo thì thiếu, bó chiếu thì thừa	14
+bò đàn, rơm mục	14
+bo bo bỏm bỏm	14
+bình công chấm điểm	14
+biệt tịch chi đồ	14
+bi ca khẳng khái	14
+bệnh Tề Tuyên	14
+bên tình, bên hiếu	14
+bên cha cũng kính, bên mẹ cũng vái	14
+bẹp như đầu trê	14
+béo ngầy, gầy tanh	14
+bé người đòi chơi trèo	14
+bé chẳng vin, cả gẫy cành	14
+bẻ hành bẻ tôi	14
+bè lim, sào sậy	14
+con đã mọc răng, nói năng gì nữa	14
+con em đè lên con chị	14
+con gà tốt mã vì lông	14
+Nhịn thuốc mua trâu, nhịn trầu mua ruộng	4
+Ăn cơm nhà, tuổi tù và hàng tổng	4
+Ăn cho sạch, bạch cho thông	4
+Ăn chẳng có, khó đến thân	14
+Oan oan tương báo	14
+Đánh vật phải giữ miếng	4
+Giấu gươm đầu lưỡi	14
+Im như thóc trầm ba mùa	14
+Vú thõng dưa ngang	14
+Lù đù có ông Cù độ mạng	14
+Rễ si thấy trắng, đương nắng cũng mưa	4
+Bùa yêu thuốc dấu	14
+Ỏn ẻn như quan thị	14
+Ỏn ẻn như cô đồng	14
+Ăn dùa, thua chịu	4
+Đo chân đóng giày	4
+Cầm vàng chịu đói	14
+Đi buôn có số, làm ruộng có mùa	4
+Oan hồn, hồn hiện	14
+Có mồm thì cắp, có nắp thì đậy	4
+Đồng tiền bát gạo	4
+Đồng nổi trôi gio, đồng bể no lòng	4
+Đi lạy quan, về van dân	14
+Để là hòn đất, cất là ông bụt	4
+Đố nào ngàm ấy	4
+Rày trông mai đợi	14
+Mũ ni che tai	14
+Ba chốn bốn nơi	14
+Té nước theo mưa	14
+Chợ chưa họp kẻ cắp đã đến	14
+Dặn ngọc thề vàng	14
+Quỳ gối cúi đầu	14
+Đắp đập be bờ	14
+Ăn ráy ngứa miệng	4
+Bắt khoan bắt nhặt	14
+Chì khoe chì nặng hơn đồng	14
+Khôn sống, bống chết	14
+Bèo mây tan hợp	14
+Cỏ gà màu trắng, điềm nắng đã hết	4
+Đầu gối tay ấp	14
+Tay nem tay chạo	4
+Tạc sắt ghi son	14
+Cơm chéo áo, gạo chéo khăn	14
+Bỉ sắc tư phong	14
+Đục vênh chênh kèo	4
+Xoan chân chó, bà già bó chăn	4
+Cá ngoi mặt nước là trời sắp mưa	4
+Của trọng người khinh	14
+Mặc áo lính làm việc quan	14
+Có bỏng mới mó đến tai	4
+Con độc cháu đàn	4
+Sống quê cha, ma quê chồng	4
+Đường xa cái bánh đa cũng nặng	4
+Lọng tía võng đào	14
+Chướng mắt ngang tai	14
+Trồng cây theo gió, cấy lúa theo mưa	4
+Số ăn mày cầm tinh bị gậy	4
+Sáp đút miệng voi	14
+Rỗ chằng rỗ chịt	14
+Giữ tiếng chẳng tày giữ miếng	14
+Cơm tấm ổ rơm	4
+Lầm rầm như đĩ khấn tiên sư	14
+Đến đâu chết trâu đến đó	14
+Tháng ba dâu trốn, tháng bốn dâu về	4
+Thiên ma bách chiết	14
+Rao ngọc bán đá	14
+Hà tiện cùng bụt, thế phát cùng ma	14
+Lang đuôi thì bán, lang trán thì cày	4
+Phật tại tâm	14
+Cơn đằng nam vừa làm vừa chơi	4
+Nấu sử sôi kinh	14
+Buôn tận gốc bán tận ngọn	4
+Gắn bó tất giao	14
+Sống dầu đèn, chết kèn trống	4
+Tay đứt ruột xót	14
+Sáng mưa trưa tạnh	4
+Nắng đan đó, mưa gió đan gầu	4
+chịu ơn nên tạc vào lòng chớ quên	14
+Lời hay lẽ phải	14
+Gần thờ cha, xa thờ chúa	14
+Chân không đến đất, cật không đến trời	14
+Mắt to hơn bụng	4
+Có phúc có phận	4
+Cá nước duyên may	14
+Tượng chết về ngà, điểu chết về lông	14
+Chín chữ cao sâu	14
+Học khôn đi lính, học tính đi buôn	4
+Chạy như cờ lông công	4
+Cấy thưa hơn bừa kĩ	4
+Chăn loan gối phượng	14
+Dấm dẳng như chó cắn ma	14
+Chiêm khô ré lụt	4
+Tháng hè, đóng bè làm phúc	4
+Khoai sợ chìm sâu, gừng sợ lộ thiên	4
+Cứt cá hơn lá rau	4
+Chùa rách bụt vàng	4
+Cậu ấm sứt vòi	14
+Con cá, lá rau, cành rào, que củi	14
+Hà tiện ăn cháo hoa	4
+Lấy thịt đâu cho vừa hổ đói	14
+Khôn có nọc	14
+Không đẻ không đau	4
+Rau muống sâu đen, rau giền sâu trắng	4
+Giàu thiên tải vạn ức	14
+Đang cái nọ, xọ cái kia	14
+Ép như ép giò	14
+Lại mặt to hơn đám cưới	4
+Mềm nắn rắn buông	14
+Bò chết chờ khi khế rụng	4
+May mùa đông, trồng mùa xuân	4
+Ma to giỗ lớn	14
+lư, dưỡng nữ bất giáo như dưỡng trư	14
+Gà sống nuôi con	4
+Giàu điếc sang đui	14
+Hoa nở lỡ thì	14
+Khum lưng uốn gối	14
+Quầng cạn tán mưa	4
+Khen nhà giàu lắm thóc	14
+Làm đầy tậu ruộng, làm vơi ăn quà	4
+Mắm tươi, nước cất, đô vật ba năm	4
+Vui đâu chầu đấy	14
+Năm ngón tay có ngón dài ngón ngắn	4
+Mua quan tám, bán quan tư	14
+Làm ruộng có năm, chăn tằm có lứa	4
+Mềm lưng uốn gối	14
+Dòm như cú dòm nhà bệnh	4
+Chửi cho vàng cây héo lá	14
+Kén chọn lọc lừa	14
+Một đồng một giỏ chẳng bỏ nghề dâu	4
+Quỳ gối uốn lưng	14
+Chùa rách phật vàng	4
+Chớp bể mưa nguồn	4
+Đói đầu gối phải bò	4
+Chiêm khô mùa thối	4
+Lấy vợ đàn bà, làm nhà hướng nam	4
+Hay gặp bở, dở gặp sượng	14
+Vịt chê lúa lép không ăn	14
+Kéo dây kéo nhợ	14
+Mưa nguồn chớp bể	4
+Già đời còn mang tơi chữa cháy	4
+Con đĩ thập thành	14
+Gạo da ngà, nhà gỗ lim	4
+con gái chấy rận	4
+dao chém đằng dọng	14
+dại làm cột con, khôn làm cột cái	14
+dại, dễ bán mà ăn	14
+dài lưng tốn vải	14
+cửu hạn phùng cam vũ	14
+cứt nát có chóp	14
+cưới vợ không cheo, tiền gieo xuống suối	4
+cưới chẳng tày lại mặt	4
+cười ba tháng, không ai cười ba năm	4
+day tay, mắm miệng	14
+cưa lắm càng sẩy vấy	14
+cưa mạch nào, đứt mạch ấy	4
+cuốc kêu mùa hè	14
+của đồng quyến của nhà	4
+cua thâm càng, nàng thâm môi	14
+củ tỏi giắt lưng	4
+dao thử trầu héo, kéo thứ lụa sô	14
+dạy bà lang bốc thuốc	14
+Thục viết không bằng biết ruộng	4
+dĩ trường kích đoản	14
+đan lỗ, hóa miếng trám	14
+đan gàu tát biển	14
+đã nhổ lại liếm, làm sao cho đành	14
+dừng mạch vách tai	14
+dở ngọng dở nghịu	14
+dở hơi dở hám	14
+di tình dưỡng tính	14
+dân ngu, khu đen	14
+di dưỡng tánh tình	14
+dễ lòa yếm thắm, khôn lòn trôn kim	14
+dễ dò rốn bể, khôn lường đáy sông	14
+dé chân chèo	14
+dây mực mất lòng cây gỗ cong	4
+dẫn thần xác	14
+củ rủ cù rù	14
+cù mì cục mịch	14
+cù lao cúc dục	14
+cổ hâm cổ hi	14
+cô lô, cô lốc	14
+cong môi hay hớt, móng môi hay hờn	14
+còn mồ ma	14
+duyên như tổ ong tàng ngày mưa	14
+con trâu là đầu cơ nghiệp	4
+cù đỉnh thiên pháo	14
+con ruồi đậu nặng đồng cân	14
+con nít may ra, mẹ già may vào	4
+con mống, sống mang	4
+con kiến kiện củ khoai	14
+cố cựu chỉ giao	14
+cộc lông lốc	14
+cởi xiêm, lột áo	14
+cơn ông chửa qua, cơn bà đã tới	14
+cơn đằng Tây vừa cày vừa ăn	4
+cơn đằng Bắc, lắc rắc vài hột	4
+cơm ráo, cháo dừ	4
+cơm nhà, việc người	14
+cơm kể miệng chẳng ăn	14
+cơm chéo áo, gạo chéo chăn	4
+cơm cả rá, cá cả nồi	14
+cơ nào, ngũ ấy	14
+cơ hàn thiết thân	14
+cơ cầu ác nghiệt	14
+công tử, công tôn	14
+công danh bánh vẽ, sang giàu chiêm bao	14
+đàn bà cạn lòng như đĩa	14
+đàn hạc tiêu dao	14
+Nước mưa là cưa trời	4
+Trái nắng trở trời	4
+Đàn anh có mả, kẻ cả có dòng	14
+Hữu thân hữu khổ	14
+Đầu gối má kề	4
+Giàu về bạn, sang về vợ	4
+Chiêm chết se, mùa chết nước	4
+Ngứa tai gai mắt	14
+Nhọn gai mít dai, tẹt gai mít mật	4
+Mống cao gió táp, mống áp mưa rào	4
+Chết không giấy đắp mặt	14
+Chén thù chén tạc	14
+Không cơm thế cháo, vô mễ thế khoai	4
+Hà tiện cúng bụt thì phải cúng ma	14
+Đánh gẫy gối tối mặt	14
+Cháy nhà cùng sưởi	14
+Xấu lá xấu nem, xấu em xấu chị	14
+Gái mạnh về chồng	14
+Nắng tháng tám, rám trái bưởi	4
+Thứ nhất nêu cao, thứ nhì pháo kêu	4
+Chớ đi ngày bảy, chớ về ngày ba	4
+Một lần không chín, chín lần chẳng nên	14
+Văn có bài, võ có trận	14
+Trâu ra mạ vào	4
+Vị cây dây cuốn	4
+Nàng Ban ả Tạ	14
+Qua sông đấm bòi vào sóng	14
+Lúa xới ba lần, ải chần ba đêm	4
+Nghèo ngáy sâu, giàu lâu ngáy	14
+Rào đường đón ngõ	14
+Ả Tạ nàng Ban	14
+Cháo tấm cũng hỏng, cháo lòng cũng trơ	14
+Chả có cá, lấy rau má làm trọng	14
+Được cả khoang lẫn khoáy	4
+Thứ nhất quan sai, thứ hai nợ đòi	4
+Đói chửa qua, xít xa đã đến	4
+Con nhà lính, tính nhà quan	14
+Bè ta, gỗ chú nó	14
+Bắt nọn trẻ con, dỗ non người dại	14
+Bắc bậc kiêu sa	14
+đau răng ăn cốm	14
+đào ngạch, khoét vách	14
+đánh rắn phải đánh giập đầu	4
+Chồng đần dễ khiến, chồng khôn khó chiều	4
+đánh lệnh dắt bò nhà	14
+đánh ghen gái dại	14
+đánh đu với tỉnh	14
+đánh bấy, lại chê đực, cái	14
+đàng cưa vạy, trách lưỡi cưa không ngay	4
+Đa thọ đa nhục	14
+Dĩ nông vi bản	14
+Kẻ nâng bị, người cắt quai	14
+Trời đang nắng, cỏ gà trắng thì mưa	4
+Chim khôn đậu nóc nhà quan	14
+Chưa khỏi rên đã quên thầy	14
+Cấp thời bão phật cước	14
+Chẳng lấy cũng quấy cho hôi	14
+Có đỏ mà nỏ có thơm	14
+Nốt ruồi ở cổ, có lỗ tiền chôn	4
+Cấy thưa thừa thóc, cấy mau dốc bồ	4
+Cá nhảy, ốc cũng nhảy	14
+Cả ăn cả mặc lại càng cả lo	14
+Binh hùng tướng mạnh	14
+Mặn mắm chết dòi	4
+# Selected Wikiquote idiom and proverb titles
+Ác giả ác báo	16
+Ai lỡ thì ăn	16
+Ai cười hở mười cái răng	16
+Ai đội mũ lệch xấu mặt người ấy	16
+Ai giàu ba họ, ai khó ba đời	16
+Áo gấm đi đêm	16
+Anh em ai đầy nồi ấy	16
+Anh em khinh trước, làng nước khinh sau	16
+Anh em nắm nem	16
+Anh em như chân như tay	16
+Ăn cơm trước kèng	16
+Ăn cơm hớt	16
+Ăn của đút	16
+Ăn da đầu	16
+Ăn đằng sóng, nói đằng gió	16
+Ăn đời ở kiếp	16
+Ăn gan giời, trứng trâu, râu bể	16
+Ăn gian nói dối	16
+Ăn hối lộ	16
+Ăn mày mà đòi xôi gấc	16
+Ăn miếng trả miếng	16
+Ăn ngon mặc đẹp	16
+Ăn như hùm đổ đó	16
+Ăn như mỏ khoét	16
+Ăn như tằm ăn rỗi	16
+Ăn như Thủy Tề đánh vực	16
+Ăn no mặc ấm	16
+Ăn sung mặc sướng	16
+Ăn sung trả ngái	16
+Ăn tẹt ga	16
+Ăn thật làm giả	16
+Ăn tối lo mai	16
+Ăn trên ngồi trốc	16
+Ăn thô nói tục	16
+Âm dương cách biệt	16
+Ân đoạn nghĩa tuyệt	16
+Ba chân bốn cẳng	16
+Bách chiến bách thắng	16
+Bách nhân bách khẩu	16
+Bán trôn nuôi miệng	16
+Bầu dục chấm mắm cáy	16
+Biết thân biết phận	16
+Bó đũa chọn cột cờ	16
+Bỏ con tép bắt con tôm	16
+Bóc ngắn cắn dài	16
+Bóng đi qua, người ở lại	16
+Báo ân báo oán	16
+Buôn ngược bán xuôi	16
+Bầm gan tím ruột	16
+Canh cánh trong lòng	16
+Cản mũi kỳ đà	16
+Cạn tàu ráo máng	16
+Cạn tình cạn nghĩa	16
+Chạm dây nói	16
+Chạy mất dép	16
+Chạy qua hàng thịt	16
+Chạy rẽ tóc	16
+Chắc như bắp	16
+Chặt đôi trôi ghe	16
+Chân cứng đá mềm	16
+Chân trời góc biển	16
+Chém đinh chặt sắt	16
+Chết bỏ làng	16
+Chết đứng như Từ Hải	16
+Chết nửa mùa	16
+Chiến thuật ruồi bâu	16
+Chỉ bằng cái móng tay	16
+Cho lỗ mũi ăn trầu	16
+Chơi sát ván	16
+Chờ sung rụng	16
+Chưa biết chưa chịu	16
+Chửi như mất gà	16
+Có kiêng có lành	16
+Có tật giật mình	16
+Có tịch thì rục rịch	16
+Cò hến tranh công, ngư ông thủ lợi	16
+Con dại cái mang	16
+Con ông cháu cha	16
+Con rồng cháu tiên	16
+Cốt nhục phân li	16
+Cơm tẻ mẹ ruột	16
+Của ăn của để	16
+Cười như được mùa	16
+Cười như xé vải	16
+Cưng như trứng mỏng	16
+Cướp cháo lá đa	16
+Có tiền sai được cả thần cả quỷ	16
+Dày công vun xới	16
+Dây máu ăn phần	16
+Dầu sôi lửa bỏng	16
+Dục tốc bất đạt	16
+Diễn hòa vi quý	16
+Dĩ thực vi tiên	16
+Dơ đầu chịu báng	16
+Dốt đặc cán mai	16
+Đá giò lài	16
+Đại công cáo thành	16
+Đánh chó phải coi mặt chủ	16
+Đánh hội đồng	16
+Đi bán muối	16
+Đi sớm về muộn	16
+Điếc không sợ súng	16
+Điệu hổ ly sơn	16
+Đen như củ tam thất	16
+Đen như mực	16
+Đòn hội chợ	16
+Đứng đắn như cột điện	16
+Đứng trên đôi chân của chính mình	16
+Đứng trên vai những người khổng lồ	16
+Gan bà cố	16
+Giả nhân giả nghĩa	16
+Giả thần giả quỷ	16
+Giấu đầu hở đuôi	16
+Giậu đổ bìm leo	16
+Gọi đích danh	16
+Há miệng chờ ho	16
+Há miệng chờ sung	16
+Hết tình hết nghĩa	16
+Hết xí quách	16
+Hữu dũng vô mưu	16
+Hát hay không bằng hay hát	16
+Im hơi lặng tiếng	16
+Im lặng là vàng	16
+Khách đến nhà không gà thì vịt	16
+Khẩu phật tâm xà	16
+Khôn bà cố	16
+Khôn đâu đến trẻ khoẻ đâu đến già	16
+Khổ trước sướng sau	16
+Kiếm một ăn mười	16
+Kiết nhân thiên tướng	16
+Kinh thiên động địa	16
+Kỳ phùng địch thủ	16
+Lá ngọc cành vàng	16
+Lạt mềm buộc chặt	16
+Lâm li bi đát	16
+Lên đàn diễn thuyết	16
+Lắp ba, lắp bắp	16
+Liệu bò đo chuồng	16
+Liệu sức đốn cây	16
+Lo bò trắng răng	16
+Lọ là con mắt tráo trưng mới giầu	16
+Lông thòi, đuôi thọt	16
+Lợi dụng cơ hội	16
+Lành ít dữ nhiều	16
+Lớn nhanh như thổi	16
+Lù đù vác lu chạy	16
+Lương khô có văn hóa	16
+Ma cũ bắt nạt ma mới	16
+Mã đáo thành công	16
+Mả táng hàm chó	16
+Mang con bỏ chợ	16
+Mãnh hổ nan địch quần hồ	16
+Mát cô đơn	16
+Mạt cưa mướp đắng	16
+Mặt gà chó đuổi	16
+Mắt nhắm mắt mở	16
+Mặt dày mày dạn	16
+Mất trộm mới lò rào dậu	16
+Mật ngọt chết ruồi	16
+Mây xanh thì nắng mây trắng thì mưa	16
+Mẹ cú con tiên, mẹ hiền con thảo	16
+Mẹ khen con hát hay	16
+Miệng bồ tát, bụng bồ dao găm	16
+Miệng bồ tát, dạ ớt ngâm	16
+Miệng nam mô, bụng bồ dao găm	16
+Mì có người lái	16
+Mì không người lái	16
+Mình đồng da sắt	16
+Môi hở răng lạnh	16
+Môi mỏng dính như cánh chuồn chuồn	16
+Mồm loa mép giải	16
+Một công đôi việc	16
+Một điều nhịn bằng chín điều lành	16
+Một liều ba bẩy cũng liều	16
+Một mất một còn	16
+Một mất mười ngờ	16
+Một vừa hai phải	16
+Mua tận gốc, bán tận ngọn	16
+Muốn ăn gắp bỏ cho người	16
+Muốn ăn thì lăn vào bếp	16
+Mượn hoa kính Phật	16
+Mượn gió bẻ măng	16
+Mượn gió đẩy thuyền	16
+Mừng như mở cờ trong bụng	16
+Nam vô tửu như kỳ vô phong	16
+Nhật minh yêu trần nhi	16
+Nằm gai nếm mật	16
+Năng nhặt chặt bị	16
+Năng nói năng lỗi	16
+Nem công chả phượng	16
+Ngang như cua	16
+Ngang tài ngang sức	16
+Nghề tay trái	16
+Nghĩa tử là nghĩa tận	16
+Nghiêng nước nghiêng thành	16
+Ngồi chưa nóng đít	16
+Ngư ông đắc lợi	16
+Người ăn thì còn, con ăn thì mất	16
+Nhàn cư vi bất thiện	16
+Nhăn như cái váy đụp	16
+Nhân định thắng thiên	16
+Nhạt như nước ốc ao bèo	16
+Nhất chín nhì sình	16
+Nhất lé, nhì lùn, tam hô, tứ sún	16
+Nhất nam viết hữu, thập nữ viết vô	16
+Nhất ngôn ký xuất, tứ mã nan truy	16
+Nhất xương, nhì da, thứ ba dạc lò	16
+Nhìn đui con mắt	16
+Nhìn trước ngó sau	16
+Nhũn như con chi chi	16
+Nó bé nhưng gié nó to	16
+Nó lú nhưng chú nó khôn	16
+Nói móc lò	16
+Nói một đường làm một nẻo	16
+Nồi nào úp vung nấy	16
+Nỗi đau mất mát	16
+Nước ngập tới chân	16
+Nước xa không cứu được lửa gần	16
+Ông mất tay giò, bà thò chai rượu	16
+Ông bảy mươi học ông bảy mốt	16
+Ở đâu biết đấy	16
+Ơn cha báo đáp, ơn mẹ dưỡng thành	16
+Ơn cha nghĩa mẹ	16
+Ơn trời biển	16
+Phi thương bất phú	16
+Phí của giời	16
+Phòng bệnh hơn chữa bệnh	16
+Qua cầu rút ván	16
+Qua sông đấm cò vào sóng	16
+Quần là áo lượt	16
+Quần lĩnh áo the	16
+Quốc sắc thiên hương	16
+Quỷ tha ma bắt	16
+Ráo nước bọt	16
+Râu ông nọ cắm cằm bà kia	16
+Rõ như ban ngày	16
+Rối như tơ vò	16
+Ruột để ngoài da	16
+Rút củi đáy nồi	16
+Rượu bất khả ép, ép bất khả từ	16
+Rượu mua thì uống, rượu cho thì đừng	16
+Rượu vào lời ra	16
+Sa cơ lỡ vận	16
+Sai một li, đi một dặm	16
+Sang sông phải lụy đò	16
+Sáng tai họ, điếc tai làm	16
+Sinh nghề tử nghiệp	16
+Sinh li tử biệt	16
+Sinh tử chi giao	16
+Sống để bụng chết mang theo	16
+Sờ mũi làm bố	16
+Sơn cùng thủy tận	16
+Sơn hào hải vị	16
+Sơn lam chướng khí	16
+Sông có khúc người có lúc	16
+Sống chết có nhau	16
+Sùi bọt mép	16
+Sự thật mất lòng	16
+Sức khỏe là vàng	16
+Sinh cư lập nghiệp	16
+Tắt lửa tối đèn	16
+Tận cùng sơn thủy	16
+Thả con săn sắt, bắt con cá rô	16
+Tham công tiếc việc	16
+Tham sống sợ chết	16
+Tham thì thâm, cổ nhân đã dạy	16
+Thâm sơn cùng cốc	16
+Thất điên bát đảo	16
+Thật thà như đếm	16
+Thầy bói xem voi	16
+Thấy đâu âu đấy	16
+Thấy người sang bắt quàng làm họ	16
+Thắng không kiêu, bại không nản	16
+Thời cơ chín mùi	16
+Thời giờ là vàng bạc	16
+Thua me gỡ bài cào	16
+Thuận nước đẩy thuyền	16
+Thừa nước đục thả câu	16
+Thừa thắng xông lên	16
+Thuốc đắng đả tật, nói thật mất lòng	16
+Thượng bất chính, hạ tắc loạn	16
+Thượng đội hạ đạp	16
+Thượng lộ bình an, nằm ngang giữa đường	16
+Tiếc hùi hụi	16
+Tiền lận lưng	16
+Tiền tươi thóc thật	16
+Tiểu phú do cần, đại phú do thiên	16
+Tình chàng ý thiếp	16
+Tình hết nghĩa còn	16
+Tình thuơng mến thương	16
+Trà dư tửu hậu	16
+Trà tam rượu tứ	16
+Trèo cao ngã đau	16
+Trêu hoa ghẹo nguyệt	16
+Tri pháp phạm pháp	16
+Trí thức nửa mùa	16
+Trói tay nộp mạng	16
+Trọn tình trọn nghĩa	16
+Trọng nam khinh nữ	16
+Trời long đất lở	16
+Trời tru đất diệt	16
+Trung quân ái quốc	16
+Từa lưa hạt dưa	16
+Tứ cố vô thân	16
+Tứ tử trình làng	16
+Tự cao tự đại	16
+Uống mặt gấu	16
+Ước cau non trái mùa	16
+Ước sao được vậy	16
+Vạn sự khởi đầu nan	16
+Vắng chủ nhà, gà vọc niêu tôm	16
+Văn sĩ nửa mùa	16
+Vắt chanh bỏ vỏ	16
+Vắt cổ chày ra nước	16
+Vật đổi sao dời	16
+Vẹn cả đôi đường	16
+Vỏ quýt dày, móng tay nhọn	16
+Vô pháp vô thiên	16
+Vô phương cứu chữa	16
+Vơ đũa cả nắm	16
+Vu oan giá họa	16
+Vùi hoa dập liễu	16
+Vụng chèo khéo chống	16
+Vụng múa chê đất lệch	16
+Vừa ăn cướp vừa la làng	16
+Vừa đánh trống vừa ăn cướp	16
+Vừa đặt đến môi đã trôi xuống bụng	16
+Vững như bàn thạch	16
+Xanh vỏ đỏ lòng	16
+Xích chó bụi rậm	16
+Xơi cả bù loong con tán	16
+Xuôi chèo mát mái	16
+Xuôi tai cho ngài xơi	16
+Xưa như trái đất	16
+# Areca-authored conversation phrases: work, family, daily chat, and dating
+Mình gửi lại cho bạn	26
+Bạn xem giúp mình nhé	26
+Bạn kiểm tra giúp mình với	26
+Mình cập nhật file rồi	26
+Mình gửi bản mới nhất	26
+Bên mình đang xử lý	26
+Em gửi anh tài liệu nhé	26
+Anh xem qua giúp em	26
+Chị duyệt giúp em nhé	26
+Mình chốt phương án này	26
+Mình thống nhất nội dung nhé	26
+Mình hẹn lại cuộc họp	26
+Tài liệu này cần chỉnh sửa	26
+Phần này mình sẽ bổ sung	26
+Deadline mình xin lùi lại	26
+Cho mình xin thêm thời gian	26
+Mình đang đợi phản hồi	26
+Khi nào có kết quả	26
+Có gì mình trao đổi thêm	26
+Mình báo lại sau nhé	26
+Nhờ bạn hỗ trợ phần này	26
+Bạn gửi mình đường dẫn nhé	26
+Mình chưa nhận được email	26
+Mình đã phản hồi email rồi	26
+Mình xin phép về trước	26
+Hôm nay mình làm ở nhà	26
+Mình tới văn phòng rồi	26
+Mình đang kẹt xe một chút	26
+Mình đổi lịch sang chiều	26
+Mình cần xác nhận lại	26
+Bên khách đã phản hồi chưa	26
+Khách hàng cần thêm thông tin	26
+Báo giá này còn hiệu lực không	26
+Hợp đồng đã được ký chưa	26
+Mình cần xin chữ ký	26
+Cho mình xin ý kiến nhé	26
+Ý kiến của bạn thế nào	26
+Mình thấy phương án ổn	26
+Phần này chưa rõ lắm	26
+Bạn nói rõ hơn được không	26
+Mình sẽ ghi lại ý này	26
+Mình bổ sung vào biên bản	26
+Mọi người có câu hỏi gì không	26
+Ai phụ trách đầu việc này	26
+Mình nhận phần này nhé	26
+Phần còn lại để mình xử lý	26
+Việc này cần ưu tiên trước	26
+Mình gửi lịch họp qua nhé	26
+Mọi người xem lịch giúp mình	26
+Cuộc họp dời sang ngày mai	26
+Mình xin phép nhắc lại	26
+Cảm ơn bạn đã hỗ trợ	26
+Mình gửi lại sau khi sửa	26
+Mình kiểm tra rồi báo bạn	26
+Mình cần trao đổi riêng	26
+Trao đổi nhanh một chút nhé	26
+Để mình hỏi lại bên liên quan	26
+Mình chưa nắm rõ yêu cầu	26
+Mình sẽ theo dõi việc này	26
+Mình chờ bạn xác nhận nhé	26
+Nhờ anh xem giúp em gấp	26
+Việc này xong trước thứ sáu	26
+Mình xin nghỉ phép ngày mai	26
+Hôm nay có tăng ca không	26
+Báo cáo tuần đã hoàn tất	26
+Phần ngân sách cần cập nhật	26
+Kết quả tháng này khá tốt	26
+Chúng ta cần thống nhất mục tiêu	26
+Mình đề xuất phương án khác	26
+Có thể giảm phạm vi công việc	26
+Mình chuyển tiếp email cho bạn	26
+Bạn đã xem tin nhắn chưa	26
+Bản trình bày cần sửa thêm	26
+Mình kiểm tra lại số liệu	26
+Cho mình xin biên bản họp	26
+Nhớ cập nhật tiến độ giúp mình	26
+Đầu việc này ai đang giữ	26
+Mình đang xử lý ưu tiên	26
+Việc này để tuần sau nhé	26
+Chưa có cập nhật mới bạn ạ	26
+Ăn cơm chưa con	26
+Về tới nhà chưa con	26
+Nhớ mặc thêm áo nhé	26
+Đi đường cẩn thận nha	26
+Có gì gọi mẹ nhé	26
+Để mẹ làm cho	26
+Con ăn thêm chút nữa	26
+Đừng thức khuya nữa nhé	26
+Sáng mai nhớ dậy sớm	26
+Đi ngủ đi con	26
+Mẹ để phần cơm đó	26
+Bố chờ con ngoài cửa	26
+Con lấy chìa khóa chưa	26
+Nhớ khóa cửa khi ra ngoài	26
+Mua giúp mẹ bó rau	26
+Lát nữa ghé chợ nhé	26
+Về nhà nhớ gọi điện	26
+Có tiền trong ví không	26
+Đừng quên mang ô nhé	26
+Hôm nay đi làm có mệt không	26
+Công việc dạo này ổn không	26
+Cuối tuần về ăn cơm nhé	26
+Nhà mình ăn gì tối nay	26
+Để dành phần cho bố	26
+Mẹ nói rồi mà con	26
+Bố đã nhắc bao nhiêu lần	26
+Con biết lỗi chưa nào	26
+Đừng cãi mẹ nữa nha	26
+Thôi chuyện qua rồi con	26
+Mẹ chỉ lo cho con thôi	26
+Con lớn rồi tự quyết đi	26
+Có người yêu chưa vậy	26
+Bao giờ dẫn bạn về nhà	26
+Mẹ hỏi chút thôi mà	26
+Bố đùa chút thôi con	26
+Nói thế chứ mẹ thương	26
+Con về rồi đó hả	26
+Đi chơi nhớ về sớm	26
+Nhớ nhắn tin khi tới nơi	26
+Nhà có khách đó con	26
+Cả nhà đợi con ăn cơm	26
+Con đừng lo chuyện tiền bạc	26
+Để bố xem lại cho	26
+Mẹ để dành quà cho con	26
+Lâu rồi chưa về thăm nhà	26
+Hôm nay mẹ nấu món con thích	26
+Cuối tuần mình về quê	26
+Trời mưa nhớ mang áo mưa	26
+Thấy ai thì chào người ta	26
+Khách tới thì mở cửa nhé	26
+Có gì nói mẹ nghe	26
+Mẹ không giận đâu	26
+Bố tin con làm được	26
+Về đến nơi báo một tiếng	26
+Hôm nay em xinh thế	26
+Em cười đẹp lắm đó	26
+Nói chuyện với em vui thật	26
+Anh muốn gặp em nữa	26
+Em có rảnh cuối tuần không	26
+Mình đi cà phê nhé	26
+Cho anh mời em bữa tối	26
+Em thích ăn món gì	26
+Anh nhớ em một chút	26
+Nhớ em nhiều hơn một chút	26
+Tối nay em có bận không	26
+Em về tới nhà chưa	26
+Nhắn anh khi về đến nơi	26
+Cạnh em anh thấy vui	26
+Nụ cười em làm anh vui	26
+Em có muốn đi dạo không	26
+Em đang nghĩ gì vậy	26
+Anh sẽ chờ câu trả lời	26
+Hôm nay nhớ em ghê	26
+Anh thấy nhớ em rồi	26
+Em làm anh bối rối quá	26
+Nhìn em anh quên mất lời	26
+Có em ngày vui hơn	26
+Mình nói chuyện thêm nhé	26
+Em cho anh xin số nhé	26
+Anh xin phép làm quen	26
+Mình gặp nhau đúng lúc	26
+Em có người thương chưa	26
+Anh có thể gọi em không	26
+Anh mời em đi ăn nhé	26
+Mai mình gặp nhau nhé	26
+Em thích hoa gì nhất	26
+Gửi em một lời chúc ngủ ngon	26
+Chúc em ngày mới vui vẻ	26
+Em kể anh nghe đi	26
+Anh thích nghe em nói	26
+Cảm ơn em đã ở đây	26
+Không gặp em thấy nhớ	26
+Em là điều dễ thương nhất	26
+Trái tim anh hơi loạn nhịp	26
+Anh nghiêm túc đó nhé	26
+Mình thử hẹn hò nhé	26
+Anh thích em thật lòng	26
+Chờ anh một chút nhé	26
+Ngồi thêm với anh chút nữa	26
+Đi với anh nhé	26
+Dạo này bạn thế nào	26
+Lâu rồi không gặp bạn	26
+Hôm nay bạn khỏe không	26
+Bạn đang làm gì đó	26
+Cuối tuần có kế hoạch chưa	26
+Hôm nay trời đẹp quá	26
+Ngoài kia mưa lớn lắm	26
+Trời nóng ghê luôn á	26
+Mình đói bụng quá rồi	26
+Cà phê hôm nay ngon ghê	26
+Bạn muốn uống gì không	26
+Để mình gọi món nhé	26
+Cho mình xin cái này	26
+Làm ơn chờ một chút	26
+Xin lỗi mình đến trễ	26
+Không sao đâu bạn	26
+Có chuyện gì vậy bạn	26
+Kể mình nghe với	26
+Thật vậy hả bạn	26
+Mình cũng nghĩ vậy đó	26
+Để mình xem thử nha	26
+Cứ từ từ thôi bạn	26
+Hôm nay bận quá trời	26
+Mình quên mất tiêu rồi	26
+Vậy cũng được đó	26
+Chắc là ổn thôi mà	26
+Gặp lại bạn sau nhé	26
+Chúc bạn buổi tối vui	26
+Đi về cẩn thận nhé	26
+Có gì nhắn mình nha	26
+Mình gọi lại sau nhé	26
+Đang ở đâu vậy bạn	26
+Chờ mình năm phút nhé	26
+Mình ra liền đây	26
+Tới nơi nhắn mình nha	26
+Bạn nói tiếp đi	26
+Mình nghe đây nè	26
+Ừ mình biết rồi	26
+Thôi mình đi trước nhé	26
+Mai gặp lại nha	26
+Có gì cứ nói thẳng	26
+Đừng nghĩ nhiều quá	26
+Chuyện nhỏ thôi mà	26
+Mọi thứ sẽ ổn thôi	26
+Hôm nay vui ghê á	26
+Mình chưa hiểu lắm	26
+Bạn giải thích giúp mình	26
+Ý bạn là sao vậy	26
+Có phải vậy không ta	26
+Mình hỏi thiệt đó nha	26
+Chắc bạn nhầm rồi đó	26
+Ừ cũng có lý	26
+Nghe có vẻ hợp lý	26
+Để mình suy nghĩ thêm	26
+Việc này tính sau nha	26
+Thôi bỏ qua đi bạn	26
+Có gì vui kể nghe	26
+Tui nói thiệt đó nghen	26
+Thiệt tình luôn á	26
+Có biết gì đâu trời	26
+Mới đó mà hết ngày	26
+Bữa nay sao rồi bạn	26
+Rảnh thì ghé chơi nha	26
+Ăn gì chưa đó	26
+Đợi lâu chưa bạn	26
+Mình mới tới nè	26
+Ở đây đông ghê	26
+Đi đâu cũng kẹt xe	26
+Để mình chở bạn về	26
+Đừng khách sáo nha	26
+Có gì đâu mà ngại	26
+Vậy hẹn bữa khác	26
+Nhớ giữ sức khỏe nha	26
+Mệt thì nghỉ chút đi	26
+Ăn uống đàng hoàng nha	26
+Coi chừng cảm lạnh đó	26
+Uống nước nhiều vào	26
+
+# Areca-authored phrases beginning with Trà Vinh; place, culture, food, and everyday conversation.
+Trà Vinh là vùng đất giao thoa văn hóa Kinh Khmer Hoa	30
+Trà Vinh có cộng đồng người Khmer đông đảo	30
+Trà Vinh có nhiều ngôi chùa Khmer cổ kính	30
+Trà Vinh nổi tiếng với những hàng cây cổ thụ	30
+Trà Vinh mang nét bình dị của miền sông nước	30
+Trà Vinh có nhiều món ngon đậm vị miền Tây	30
+Trà Vinh có những vườn dừa xanh mát	30
+Trà Vinh là điểm hẹn của những người yêu văn hóa Khmer	30
+Trà Vinh có nhiều lễ hội truyền thống đặc sắc	30
+Trà Vinh về đêm yên bình và dễ chịu	30
+Trà Vinh quê mình ngày càng đổi mới	30
+Trà Vinh quê tôi có nhiều món ngon	30
+Trà Vinh trong ký ức vẫn thân thương	30
+Trà Vinh luôn khiến người ta nhớ mãi	30
+Trà Vinh có Ao Bà Om rợp bóng cây cổ thụ	30
+Trà Vinh có chùa Âng mang kiến trúc Khmer	30
+Trà Vinh có Bảo tàng Văn hóa dân tộc Khmer	30
+Trà Vinh có chùa Hang nổi tiếng với nghề điêu khắc gỗ	30
+Trà Vinh có chùa Cò với đàn cò về làm tổ	30
+Trà Vinh có chùa Vàm Ray với kiến trúc nổi bật	30
+Trà Vinh có biển Ba Động lộng gió	30
+Trà Vinh có Cồn Chim xanh mát giữa sông nước	30
+Trà Vinh có Cồn Hô bình yên và xanh mát	30
+Trà Vinh có những con đường rợp bóng cây	30
+Trà Vinh có những ngôi chùa nằm giữa phum sóc	30
+Trà Vinh có nhiều làng nghề truyền thống	30
+Trà Vinh có làng văn hóa du lịch Khmer	30
+Trà Vinh có những vườn cây ăn trái trĩu quả	30
+Trà Vinh có vùng biển và những cửa sông rộng	30
+Trà Vinh có nhiều cảnh đẹp để khám phá	30
+Trà Vinh có những góc nhỏ rất đỗi bình yên	30
+Trà Vinh nổi tiếng với dừa sáp Cầu Kè	30
+Trà Vinh nổi tiếng với bún nước lèo thơm ngon	30
+Trà Vinh nổi tiếng với món bún suông độc đáo	30
+Trà Vinh có bánh canh Bến Có đậm đà	30
+Trà Vinh có bánh tét Trà Cuôn thơm dẻo	30
+Trà Vinh có cốm dẹp thơm mùi nếp mới	30
+Trà Vinh có tôm khô Vĩnh Kim nổi tiếng	30
+Trà Vinh có chù ụ rang me đậm vị biển	30
+Trà Vinh có cháo ám cá lóc dân dã	30
+Trà Vinh có nước mắm rươi thơm đặc trưng	30
+Trà Vinh có trái quách chua ngọt lạ miệng	30
+Trà Vinh có mật hoa dừa ngọt dịu	30
+Trà Vinh có nhiều món ngon làm quà	30
+Trà Vinh ăn gì cũng thấy đậm đà hương vị	30
+Trà Vinh đi đâu cũng gặp món ngon	30
+Trà Vinh có món nào bạn thích nhất	30
+Trà Vinh ăn bún nước lèo là đúng bài	30
+Trà Vinh mua dừa sáp làm quà nha	30
+Trà Vinh có món bánh tét ăn hoài không ngán	30
+Trà Vinh có lễ hội Ok Om Bok rộn ràng	30
+Trà Vinh có lễ hội đua ghe Ngo sôi nổi	30
+Trà Vinh đón Tết Chôl Chnăm Thmây vui lắm	30
+Trà Vinh có lễ Sene Dolta ấm cúng	30
+Trà Vinh còn lưu giữ nghệ thuật múa Rô băm	30
+Trà Vinh có nghệ thuật Dù kê giàu bản sắc	30
+Trà Vinh có điệu múa Rom Vong vui nhộn	30
+Trà Vinh có tiếng nhạc ngũ âm rộn ràng	30
+Trà Vinh có những đội ghe Ngo đầy khí thế	30
+Trà Vinh có nhiều câu chuyện văn hóa thú vị	30
+Trà Vinh là nơi đáng ghé thăm một lần	30
+Trà Vinh đi một lần vẫn muốn quay lại	30
+Trà Vinh mùa nào cũng có điều hay	30
+Trà Vinh cuối tuần này mình đi đâu	30
+Trà Vinh chuyến này mình đi cùng nhau nhé	30
+Trà Vinh có gần chỗ bạn đang ở không	30
+Trà Vinh quê bạn có món gì ngon	30
+Trà Vinh ngày xưa có khác bây giờ không	30
+Trà Vinh trong mắt bạn như thế nào	30
+Trà Vinh có làm bạn nhớ miền Tây không	30
+Trà Vinh bình yên vậy mà thương ghê	30
+Trà Vinh dễ thương như người miền Tây	30
+Trà Vinh xa rồi mà vẫn nhớ nhà	30
+Trà Vinh nắng lên đẹp quá trời	30
+Trà Vinh mưa xuống nghe lòng dịu lại	30
+Trà Vinh mình hẹn nhau dịp gần nhất	30
+Trà Vinh có dịp mình dẫn bạn đi chơi	30
+Trà Vinh đi chậm mới thấy hết cái hay	30
+Trà Vinh có nhiều điều để kể lắm	30
+Sài Gòn là thành phố không ngủ	30
+Sài Gòn lúc nào cũng đông vui	30
+Sài Gòn buổi sáng kẹt xe ghê	30
+Sài Gòn buổi tối lên đèn đẹp quá	30
+Sài Gòn có nhiều quán ăn ngon	30
+Sài Gòn có món cơm tấm sườn nướng	30
+Sài Gòn có bánh mì nóng giòn	30
+Sài Gòn có nhiều quán cà phê xinh	30
+Sài Gòn uống cà phê sữa đá là chuẩn	30
+Sài Gòn đi ăn ốc khuya không	30
+Sài Gòn có nhiều món ăn đường phố	30
+Sài Gòn lúc mưa đường nào cũng ngập	30
+Sài Gòn mưa bất chợt như thường lệ	30
+Sài Gòn nắng lên là nóng muốn xỉu	30
+Sài Gòn có Chợ Bến Thành nổi tiếng	30
+Sài Gòn có phố đi bộ Nguyễn Huệ	30
+Sài Gòn có Dinh Độc Lập giữa trung tâm	30
+Sài Gòn có Bưu điện Thành phố cổ kính	30
+Sài Gòn có Nhà thờ Đức Bà quen thuộc	30
+Sài Gòn có nhiều bảo tàng đáng ghé thăm	30
+Sài Gòn có khu Chợ Lớn đông vui	30
+Sài Gòn có những con hẻm nhiều món ngon	30
+Sài Gòn có nhiều công viên xanh mát	30
+Sài Gòn đi đâu cũng thấy quán cà phê	30
+Sài Gòn có nhiều chỗ vui chơi cuối tuần	30
+Sài Gòn về đêm vẫn còn nhộn nhịp	30
+Sài Gòn chạy xe một vòng cho khuây khỏa	30
+Sài Gòn cuối tuần mình đi đâu chơi	30
+Sài Gòn hôm nay có gì vui không	30
+Sài Gòn có làm bạn nhớ nhà không	30
+Sài Gòn đông người mà vẫn thấy thân quen	30
+Sài Gòn xa hoa nhưng tình người ấm áp	30
+Sài Gòn có nhiều cơ hội để bắt đầu	30
+Sài Gòn là nơi nhiều người chọn lập nghiệp	30
+Sài Gòn chiều nay mình gặp nhau nhé	30
+Sài Gòn tan tầm đường đông quá trời	30
+Sài Gòn có chuyến xe buýt nào tiện không	30
+Sài Gòn đi metro có nhanh hơn không	30
+Sài Gòn hôm nay nóng hơn hôm qua	30
+Sài Gòn mưa rồi nhớ mang áo mưa nha	30
+Hà Nội là thủ đô nghìn năm văn hiến	30
+Hà Nội có Hồ Gươm giữa lòng thành phố	30
+Hà Nội có phố cổ đông vui và nhộn nhịp	30
+Hà Nội có Văn Miếu Quốc Tử Giám	30
+Hà Nội có Hoàng thành Thăng Long cổ kính	30
+Hà Nội có cầu Long Biên nhiều dấu ấn	30
+Hà Nội có hồ Tây lộng gió	30
+Hà Nội có những hàng cây xanh mát	30
+Hà Nội mùa thu đẹp dịu dàng	30
+Hà Nội mùa đông lạnh mà thơ mộng	30
+Hà Nội mùa hè nóng oi ả	30
+Hà Nội mùa xuân có mưa phùn	30
+Hà Nội có cốm làng Vòng thơm dịu	30
+Hà Nội có phở nóng ăn sáng rất ngon	30
+Hà Nội có bún chả thơm lừng	30
+Hà Nội có chả cá Lã Vọng nổi tiếng	30
+Hà Nội có cà phê trứng béo thơm	30
+Hà Nội có bánh cuốn nóng buổi sáng	30
+Hà Nội có nhiều món ngon phố cổ	30
+Hà Nội ăn kem Tràng Tiền nhé	30
+Hà Nội đi dạo quanh Hồ Gươm không	30
+Hà Nội có nhiều bảo tàng đáng tham quan	30
+Hà Nội có những con phố rất riêng	30
+Hà Nội mỗi mùa lại mang vẻ đẹp khác	30
+Hà Nội buổi sáng yên bình đến lạ	30
+Hà Nội buổi tối phố xá lên đèn	30
+Hà Nội cuối tuần có phố đi bộ	30
+Hà Nội có nhiều quán cà phê xinh	30
+Hà Nội tắc đường vào giờ tan tầm	30
+Hà Nội mưa phùn nhớ mặc áo ấm	30
+Hà Nội hôm nay lạnh hơn hôm qua	30
+Hà Nội có làm bạn nhớ một người không	30
+Hà Nội xa rồi mà vẫn nhớ thương	30
+Hà Nội trong lòng mình vẫn thân quen	30
+Hà Nội là nơi mình muốn quay lại	30
+Hà Nội chuyến này mình đi cùng nhau nhé	30
+Hà Nội có chỗ nào ngắm hoàng hôn đẹp	30
+Hà Nội đi chơi một ngày có đủ không	30
+Hà Nội có món gì bạn thích nhất	30
+Hà Nội có nhiều góc nhỏ bình yên	30
+Hà Nội giữ lại bao nhiêu ký ức đẹp	30
+Vĩnh Long nằm giữa miền sông nước	30
+Vĩnh Long có nhiều cù lao xanh mát	30
+Vĩnh Long có cù lao An Bình nổi tiếng	30
+Vĩnh Long có những vườn trái cây trĩu quả	30
+Vĩnh Long có bưởi Năm Roi Mỹ Hòa	30
+Vĩnh Long có khoai lang Bình Tân nổi tiếng	30
+Vĩnh Long có cam sành Tam Bình thơm ngọt	30
+Vĩnh Long có thanh trà chua ngọt	30
+Vĩnh Long có làng nghề gạch gốm Mang Thít	30
+Vĩnh Long có những lò gạch đỏ ven sông	30
+Vĩnh Long có cầu Mỹ Thuận bắc qua sông Tiền	30
+Vĩnh Long có bến cảng ngắm hoàng hôn	30
+Vĩnh Long có nhiều homestay miệt vườn	30
+Vĩnh Long chèo xuồng qua những con rạch nhỏ	30
+Vĩnh Long đi thăm vườn trái cây nha	30
+Vĩnh Long có nhiều món ngon dân dã	30
+Vĩnh Long ăn cá tai tượng chiên xù không	30
+Vĩnh Long có bánh tráng cù lao Mây	30
+Vĩnh Long có tàu hủ ky Bình Minh	30
+Vĩnh Long có nhiều đặc sản làm quà	30
+Vĩnh Long có những con đường quê yên bình	30
+Vĩnh Long mùa trái cây vui lắm	30
+Vĩnh Long về đêm yên tĩnh và dễ chịu	30
+Vĩnh Long quê mình ngày càng đổi mới	30
+Vĩnh Long quê bạn có món gì ngon	30
+Vĩnh Long có gần chỗ bạn không	30
+Vĩnh Long cuối tuần mình đi chơi nhé	30
+Vĩnh Long chuyến này mình về thăm ngoại	30
+Vĩnh Long đi một lần vẫn muốn quay lại	30
+Vĩnh Long có gì vui để khám phá	30
+Vĩnh Long có nhiều cảnh đẹp miền Tây	30
+Vĩnh Long người dân hiền hòa dễ mến	30
+Vĩnh Long có làm bạn nhớ quê nhà không	30
+Vĩnh Long mình hẹn nhau mùa trái chín	30
+Vĩnh Long đi chậm mới thấy miền Tây đẹp	30
+Vĩnh Long có nắng vàng trên vườn cây	30
+Vĩnh Long mưa xuống mát cả vườn nhà	30
+Vĩnh Long có nhiều chuyện hay để kể	30
+Vĩnh Long thương quá biết nói sao	30
+Vĩnh Long về rồi chẳng muốn đi xa	30

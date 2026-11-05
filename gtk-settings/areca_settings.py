@@ -29,6 +29,7 @@ MAIN_FILE = "areca.conf"
 MACRO_FILE = "areca-macro-table.conf"
 APPS_FILE = "areca-apps.conf"
 ADVANCED_FILE = "areca-advanced.conf"
+PHRASE_FILE = CONFIG_DIR.parent / "areca" / "phrase-suggestions.tsv"
 
 # Colors mirror settings/ui_theme.cpp: background, sidebar, surface, text, accent.
 THEMES = {
@@ -74,6 +75,7 @@ MAIN_DEFAULTS = {
     "MacroBypassModifier": "Shift",
     "BackspaceRecovery": True,
     "RestoreSurroundingText": True,
+    "PhraseSuggestions": True,
     "ShiftSelectFallbackForBrowser": False,
     "UseBackspaceForUrl": True,
     "Debug": False,
@@ -404,6 +406,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
     PAGES = [
         ("overview", "Tổng quan", "home"),
         ("typing", "Bộ gõ", "keyboard"),
+        ("phrases", "Cụm từ gợi ý", "phrase-suggestions"),
         ("macros", "Macro", "macro"),
         ("apps", "Ứng dụng", "apps"),
         ("advanced", "Nâng cao", "advanced"),
@@ -536,6 +539,12 @@ class SettingsWindow(Gtk.ApplicationWindow):
         .save-toast.error { background: @error_bg_color; color: @error_fg_color; }
         .areca-content label.macro-count-error { color: @error_color; background: transparent; }
         .settings-group { background: SURFACE; border: 1px solid alpha(BORDER, .65); border-radius: 8px; }
+        .areca-content .phrase-list, .areca-content .phrase-list > row,
+        .areca-content .custom-phrase-list, .areca-content .custom-phrase-list > row,
+        .areca-content .phrase-scroll { background: SURFACE; color: FG; }
+        .areca-content .phrase-list > row { border-bottom: 1px solid alpha(BORDER, .45); }
+        .areca-content .phrase-list > row:hover, .areca-content .custom-phrase-list > row:hover { background: alpha(FG, .05); }
+        .areca-content .phrase-list > row label, .areca-content .custom-phrase-list > row label { color: FG; }
         .areca-content entry, .areca-content spinbutton, .areca-content dropdown > button { color: FG; background: FIELD; border: 1px solid alpha(FG, .18); border-radius: 5px; box-shadow: none; }
         .areca-content entry { padding: 8px 12px; min-height: 20px; }
         .areca-content button, .status-line button { padding: 8px 12px; min-height: 20px; }
@@ -681,6 +690,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
         self.stack.set_vexpand(True)
         self.pages = {
             "overview": self._build_overview(), "typing": self._build_typing(),
+            "phrases": self._build_phrase_suggestions(),
             "macros": self._build_macros(), "apps": self._build_apps(),
             "advanced": self._build_advanced(), "appearance": self._build_appearance(),
             "icons": self._build_icons(), "about": self._build_about(),
@@ -877,6 +887,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Tự viết hoa sau dấu kết câu", "AutoCapitalizeAfterPunctuation", ". ! ?"),
             ("Bật khôi phục chính tả khi nhấn Backspace", "BackspaceRecovery", "Khôi phục từ vừa sửa khi xoá ngược."),
             ("Cho phép sửa từ đã commit", "RestoreSurroundingText", "Sửa từ vừa gõ dựa trên văn bản xung quanh con trỏ."),
+            ("Gợi ý cụm từ", "PhraseSuggestions", "Khi có gợi ý: Shift+Space chọn dòng đầu; Alt+1 đến Alt+5 chọn dòng tương ứng, hoặc nhấp chuột."),
             ("Shift+Left fallback cho trình duyệt", "ShiftSelectFallbackForBrowser", "Dùng khi trình duyệt không hỗ trợ surrounding text."),
             ("Xử lý riêng ô URL và thanh địa chỉ", "UseBackspaceForUrl", "Chọn backend tương thích cho ô địa chỉ."),
         ]:
@@ -884,6 +895,183 @@ class SettingsWindow(Gtk.ApplicationWindow):
         diagnostics = self._section(content, "Chẩn đoán")
         self._switch(diagnostics, "Bật log debug Areca", "Debug", "Log được ghi trong journal của Fcitx5.")
         return page
+
+    @staticmethod
+    def _phrase_key(phrase: str) -> str:
+        return " ".join(re.sub(r"[^\w]+", " ", phrase.casefold()).split())
+
+    @staticmethod
+    def _read_phrase_file(path: Path) -> list[str]:
+        phrases = []
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            return phrases
+        for line in lines:
+            if not line or line.startswith("#"):
+                continue
+            phrase = line.split("\t", 1)[0].strip()
+            if len(phrase.split()) >= 3:
+                phrases.append(phrase)
+        return phrases
+
+    def _load_phrase_entries(self) -> tuple[list[str], list[str]]:
+        source_paths = [
+            Path(__file__).resolve().parents[1] / "data" / "phrase-suggestions.tsv",
+            Path(__file__).resolve().parents[2] / "fcitx5" / "areca" / "phrase-suggestions.tsv",
+        ]
+        packaged = []
+        for path in source_paths:
+            if path.is_file():
+                packaged = self._read_phrase_file(path)
+                if packaged:
+                    break
+        seen = {self._phrase_key(phrase) for phrase in packaged}
+        custom = []
+        for phrase in self._read_phrase_file(PHRASE_FILE):
+            key = self._phrase_key(phrase)
+            if key not in seen:
+                custom.append(phrase)
+                seen.add(key)
+        return packaged, custom
+
+    def _refresh_phrase_suggestions(self, *_args) -> None:
+        packaged, custom = self._load_phrase_entries()
+        query = self.phrase_search.get_text().strip().casefold()
+        all_phrases = packaged + custom
+        visible = [phrase for phrase in all_phrases if not query or query in phrase.casefold()]
+        self.phrase_count.set_text(
+            f"{len(visible):,} / {len(all_phrases):,} cụm từ · {len(custom):,} cụm từ tự thêm"
+        )
+        self.phrase_list.set_model(Gtk.NoSelection.new(Gtk.StringList.new(visible)))
+        child = self.custom_phrase_list.get_first_child()
+        while child:
+            next_child = child.get_next_sibling()
+            self.custom_phrase_list.remove(child)
+            child = next_child
+        visible_custom = [phrase for phrase in custom if not query or query in phrase.casefold()]
+        if not visible_custom:
+            self.custom_phrase_list.append(Gtk.Label(
+                label="Chưa có cụm từ tự thêm phù hợp.", xalign=0
+            ))
+        for phrase in visible_custom:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            row.append(Gtk.Label(label=phrase, xalign=0, hexpand=True, wrap=True))
+            remove = Gtk.Button(label="Xóa")
+            remove.add_css_class("flat")
+            remove.connect("clicked", self._remove_custom_phrase, phrase)
+            row.append(remove)
+            self.custom_phrase_list.append(row)
+
+    def _save_custom_phrases(self, phrases: list[str]) -> None:
+        lines = ["# Phrase<TAB>priority. User-added Areca suggestions."]
+        lines.extend(f"{phrase}\t30" for phrase in phrases)
+        atomic_write(PHRASE_FILE, ("\n".join(lines) + "\n").encode("utf-8"))
+
+    def _add_custom_phrase(self, _button: Gtk.Button) -> None:
+        phrase = " ".join(self.phrase_entry.get_text().split())
+        if len(phrase.split()) < 3 or "\t" in phrase or phrase.startswith("#"):
+            self._saved("Chưa thêm: cụm từ cần có ít nhất ba từ.")
+            return
+        packaged, custom = self._load_phrase_entries()
+        key = self._phrase_key(phrase)
+        if key in {self._phrase_key(item) for item in packaged + custom}:
+            self._saved("Cụm từ này đã có trong danh sách.")
+            return
+        custom.append(phrase)
+        try:
+            self._save_custom_phrases(custom)
+        except OSError as error:
+            self._saved(f"Lỗi lưu cụm từ: {error}")
+            return
+        self.phrase_entry.set_text("")
+        self._refresh_phrase_suggestions()
+        reloaded, error = self.store.reload_fcitx()
+        self._saved(
+            "Đã thêm cụm từ và Fcitx5 đã nạp lại Areca" if reloaded
+            else f"Đã lưu cụm từ, nhưng Areca chưa áp dụng: {error}"
+        )
+
+    def _remove_custom_phrase(self, _button: Gtk.Button, phrase: str) -> None:
+        _packaged, custom = self._load_phrase_entries()
+        custom = [item for item in custom if self._phrase_key(item) != self._phrase_key(phrase)]
+        try:
+            self._save_custom_phrases(custom)
+        except OSError as error:
+            self._saved(f"Lỗi lưu cụm từ: {error}")
+            return
+        self._refresh_phrase_suggestions()
+        reloaded, error = self.store.reload_fcitx()
+        self._saved(
+            "Đã xóa cụm từ và Fcitx5 đã nạp lại Areca" if reloaded
+            else f"Đã lưu thay đổi, nhưng Areca chưa áp dụng: {error}"
+        )
+
+    def _build_phrase_suggestions(self) -> Gtk.Widget:
+        page, content = self._page(
+            "Cụm từ gợi ý", "Xem kho cụm từ và thêm những câu thường dùng của riêng bạn."
+        )
+        search_group = self._section(content, "Tìm trong kho cụm từ")
+        self.phrase_search = Gtk.SearchEntry()
+        self.phrase_search.set_placeholder_text("Tìm cụm từ...")
+        self.phrase_search.connect("search-changed", self._refresh_phrase_suggestions)
+        search_group.append(self.phrase_search)
+
+        add_group = self._section(content, "Thêm cụm từ")
+        add_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.phrase_entry = Gtk.Entry(hexpand=True)
+        self.phrase_entry.set_placeholder_text("Nhập cụm từ có ít nhất ba từ...")
+        self.phrase_entry.connect("activate", self._add_custom_phrase)
+        add_row.append(self.phrase_entry)
+        add_button = Gtk.Button(label="Thêm")
+        add_button.add_css_class("suggested-action")
+        add_button.connect("clicked", self._add_custom_phrase)
+        add_row.append(add_button)
+        add_group.append(add_row)
+
+        list_group = self._section(content, "Danh sách cụm từ")
+        self.phrase_count = Gtk.Label(xalign=0)
+        self.phrase_count.add_css_class("setting-description")
+        self.phrase_count.set_margin_bottom(6)
+        list_group.append(self.phrase_count)
+
+        self.phrase_factory = Gtk.SignalListItemFactory()
+        self.phrase_factory.connect("setup", self._setup_phrase_list_item)
+        self.phrase_factory.connect("bind", self._bind_phrase_list_item)
+        self.phrase_list = Gtk.ListView(
+            model=Gtk.NoSelection.new(Gtk.StringList.new([])),
+            factory=self.phrase_factory,
+        )
+        self.phrase_list.add_css_class("phrase-list")
+        phrase_scroller = Gtk.ScrolledWindow(
+            min_content_height=220, max_content_height=360, vexpand=False
+        )
+        phrase_scroller.add_css_class("phrase-scroll")
+        phrase_scroller.set_child(self.phrase_list)
+        list_group.append(phrase_scroller)
+
+        custom_group = self._section(content, "Cụm từ tự thêm")
+        self.custom_phrase_list = Gtk.ListBox(show_separators=True)
+        self.custom_phrase_list.add_css_class("settings-group")
+        self.custom_phrase_list.add_css_class("custom-phrase-list")
+        custom_scroller = Gtk.ScrolledWindow(min_content_height=100, max_content_height=220)
+        custom_scroller.set_child(self.custom_phrase_list)
+        custom_group.append(custom_scroller)
+        self._refresh_phrase_suggestions()
+        return page
+
+    @staticmethod
+    def _setup_phrase_list_item(_factory: Gtk.SignalListItemFactory, item: Gtk.ListItem) -> None:
+        row = Gtk.Label(xalign=0, wrap=True)
+        row.set_margin_start(10)
+        row.set_margin_end(10)
+        row.set_margin_top(7)
+        row.set_margin_bottom(7)
+        item.set_child(row)
+
+    @staticmethod
+    def _bind_phrase_list_item(_factory: Gtk.SignalListItemFactory, item: Gtk.ListItem) -> None:
+        item.get_child().set_text(item.get_item().get_string())
 
     def _build_macros(self) -> Gtk.Widget:
         page, content = self._page("Macro", "Mở rộng từ viết tắt thành nội dung thường dùng.")
@@ -1726,6 +1914,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
         builders = {
             "overview": self._build_overview,
             "typing": self._build_typing,
+            "phrases": self._build_phrase_suggestions,
             "macros": self._build_macros,
             "apps": self._build_apps,
             "advanced": self._build_advanced,
@@ -1751,7 +1940,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             if name != page_id:
                 button.set_active(False)
         self.navigation[page_id].set_active(True)
-        self.restore_button.set_visible(page_id not in {"overview", "about"})
+        self.restore_button.set_visible(page_id not in {"overview", "about", "phrases"})
 
 
 class ArecaSettings(Gtk.Application):

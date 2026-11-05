@@ -20,6 +20,8 @@
 #include "input_scheduler.h"
 #include "notification/input_method_announcement.h"
 #include "preedit_mode.h"
+#include "phrase_suggestions.h"
+#include "sentence_capitalizer.h"
 #include "input_type_detector.h"
 #include "native_device.h"
 #include "redirect_mode.h"
@@ -121,6 +123,13 @@ private:
   bool isBackendSelecting(fcitx::InputContext &inputContext) const;
   bool handleBackendSelectionKey(fcitx::InputContext &inputContext,
                                  fcitx::KeyEvent &event);
+  void updatePhraseSuggestions(fcitx::InputContext &inputContext);
+  bool selectPhraseSuggestionByKey(fcitx::InputContext &inputContext,
+                                  fcitx::KeyEvent &event);
+  void clearPhraseSuggestions(fcitx::InputContext &inputContext);
+  void resetPhraseObservation(fcitx::InputContext &inputContext);
+  void observePhraseKey(fcitx::InputContext &inputContext,
+                        const fcitx::KeyEvent &event);
 
   void initActions();
   void updateUI(fcitx::InputContext *ic);
@@ -142,6 +151,21 @@ private:
   uint64_t nextPreeditRecoveryTransactionId_ = 1;
   std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
+  struct PhraseSuggestionContext {
+    bool active = false;
+    // Fully owned observation state; never restored into the typing engine.
+    std::unique_ptr<BambooEngineAdapter> observer;
+    // Text finalized by a word boundary. The current composing word stays
+    // separate until Space or another boundary commits it.
+    std::string text;
+    std::string pendingText;
+    SentenceCapitalizationState capitalization;
+    uint64_t revision = 0;
+    std::unique_ptr<fcitx::EventSourceTime> refreshTimer;
+  };
+  PhraseSuggestions phraseSuggestions_;
+  std::unordered_map<std::string, PhraseSuggestionContext>
+      phraseSuggestionContexts_;
   void rebuildAppBackendOverridesMap();
   PresentationMode activePresentationMode_ = PresentationMode::Rewrite;
   std::string inputMethodEntryIcon_;
@@ -176,6 +200,8 @@ private:
   std::unique_ptr<MouseClickTracker> mouseTracker_;
   std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
       surroundingTextWatcher_;
+  std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
+      inputContextDestroyedWatcher_;
   std::unique_ptr<InputMethodAnnouncement> inputMethodAnnouncement_;
 
   std::unique_ptr<fcitx::SimpleAction> inputMethodAction_;
