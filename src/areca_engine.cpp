@@ -30,7 +30,6 @@
 #include "browser_autocomplete.h"
 #include "fcitx_notifications_compat.h"
 #include "program_compatibility.h"
-#include <fcitx-utils/utf8.h>
 
 #include "mouse_click_tracker.h"
 #include "window_focus_tracker.h"
@@ -97,29 +96,6 @@ private:
   AppBackendMode mode_;
   std::function<void(AppBackendMode)> onSelect_;
 };
-
-class PhraseSuggestionCandidateWord : public fcitx::CandidateWord {
-public:
-  PhraseSuggestionCandidateWord(fcitx::Text text,
-                                std::function<void(fcitx::InputContext *)> onSelect)
-      : fcitx::CandidateWord(std::move(text)), onSelect_(std::move(onSelect)) {}
-
-  void select(fcitx::InputContext *inputContext) const override {
-    if (onSelect_) {
-      onSelect_(inputContext);
-    }
-  }
-
-private:
-  std::function<void(fcitx::InputContext *)> onSelect_;
-};
-
-bool isPhraseSuggestionList(fcitx::InputContext &inputContext) {
-  auto *list = dynamic_cast<fcitx::CommonCandidateList *>(
-      inputContext.inputPanel().candidateList().get());
-  return list && list->size() > 0 &&
-         dynamic_cast<const PhraseSuggestionCandidateWord *>(&list->candidate(0));
-}
 
 } // namespace
 
@@ -282,18 +258,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         if (auto *state = preeditHandler_.stateFor(*inputContext)) {
           state->surroundingRestoreArmed = true;
         }
-      });
-  inputContextDestroyedWatcher_ = instance_->watchEvent(
-      fcitx::EventType::InputContextDestroyed,
-      fcitx::EventWatcherPhase::Default, [this](fcitx::Event &event) {
-        auto &contextEvent = static_cast<fcitx::InputContextEvent &>(event);
-        auto *inputContext = contextEvent.inputContext();
-        if (!inputContext) {
-          return;
-        }
-        const auto session = icUuidToHex(inputContext->uuid());
-        phraseSuggestions_.forgetSession(session);
-        phraseSuggestionContexts_.erase(session);
       });
   config_.bambooInputMethod.annotation().setList(
       BambooEngineAdapter::inputMethodNames());
@@ -1084,7 +1048,6 @@ void ArecaEngine::switchPresentationMode(fcitx::InputContext &inputContext) {
   preeditHandler_.resetContext(inputContext);
   config_.presentationMode.setValue(next);
   applyConfig();
-  resetPhraseObservation(inputContext);
   handlerFor(inputContext).activate(inputContext);
   save();
 
@@ -1106,7 +1069,6 @@ bool ArecaEngine::isBackendSelecting(fcitx::InputContext &inputContext) const {
 }
 
 void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
-  resetPhraseObservation(inputContext);
   auto *rewriteState = inputContext.propertyFor(&rewriteStateFactory_);
   std::string appName = resolveProgram(inputContext, rewriteState);
   if (appName.empty()) {
@@ -1339,302 +1301,6 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
   return true;
 }
 
-void ArecaEngine::clearPhraseSuggestions(fcitx::InputContext &inputContext) {
-  if (isPhraseSuggestionList(inputContext)) {
-    inputContext.inputPanel().setCandidateList(nullptr);
-    inputContext.updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
-                                     true);
-  }
-}
-
-void ArecaEngine::resetPhraseObservation(fcitx::InputContext &inputContext) {
-  const auto session = icUuidToHex(inputContext.uuid());
-  auto &context = phraseSuggestionContexts_[session];
-  context.refreshTimer.reset();
-  context.observer.reset();
-  context.text.clear();
-  context.pendingText.clear();
-  context.capitalization.reset();
-  ++context.revision;
-  phraseSuggestions_.forgetObservedSession(session);
-  clearPhraseSuggestions(inputContext);
-}
-
-void ArecaEngine::observePhraseKey(fcitx::InputContext &inputContext,
-                                   const fcitx::KeyEvent &event) {
-  if (event.isRelease() || event.rawKey().isModifier()) {
-    return;
-  }
-  auto &context = phraseSuggestionContexts_[icUuidToHex(inputContext.uuid())];
-  context.refreshTimer.reset();
-  ++context.revision;
-  clearPhraseSuggestions(inputContext);
-  const auto key = event.key().normalize();
-  const auto modifiers = event.rawKey().states();
-  auto sym = key.sym();
-  const bool shortcut = modifiers.test(fcitx::KeyState::Ctrl) ||
-      modifiers.test(fcitx::KeyState::Alt) ||
-      modifiers.test(fcitx::KeyState::Super) ||
-      modifiers.test(fcitx::KeyState::Meta) ||
-      modifiers.test(fcitx::KeyState::Hyper) ||
-      modifiers.test(fcitx::KeyState::Super2) ||
-      modifiers.test(fcitx::KeyState::Hyper2);
-  if (!context.active || !config_.phraseSuggestions.value() ||
-      config_.outputCharset.value() != "Unicode" ||
-      effectivePresentationMode(inputContext) == PresentationMode::Redirect ||
-      inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Password) ||
-      inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Sensitive) ||
-      shortcut || key.isCursorMove() || sym == FcitxKey_Delete ||
-      sym == FcitxKey_Tab ||
-      sym == FcitxKey_Return || sym == FcitxKey_KP_Enter ||
-      sym == FcitxKey_Escape) {
-    resetPhraseObservation(inputContext);
-    return;
-  }
-  try {
-    if (sym == FcitxKey_BackSpace) {
-      if (!context.observer) {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-      if (!context.observer->currentText().empty()) {
-        const auto result = context.observer->processBackspace();
-        const auto length = fcitx::utf8::length(context.pendingText);
-        if (result.deleteCount > length) {
-          resetPhraseObservation(inputContext);
-          return;
-        }
-        context.pendingText.resize(fcitx::utf8::ncharByteLength(
-            context.pendingText.begin(), length - result.deleteCount));
-        context.pendingText += result.commitText;
-      } else if (!context.text.empty() && context.text.back() == ' ') {
-        // Undoing the just-typed boundary makes that word composing again.
-        // Keep earlier space-committed words in the stable suggestion buffer.
-        context.observer->backspace();
-        context.text.pop_back();
-        context.pendingText = context.observer->currentText();
-        if (!context.pendingText.empty()) {
-          if (context.text.size() < context.pendingText.size() ||
-              context.text.compare(
-                  context.text.size() - context.pendingText.size(),
-                  context.pendingText.size(), context.pendingText) != 0) {
-            resetPhraseObservation(inputContext);
-            return;
-          }
-          context.text.resize(context.text.size() - context.pendingText.size());
-        }
-      } else {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-    } else {
-      if (sym >= FcitxKey_KP_0 && sym <= FcitxKey_KP_9) {
-        sym = static_cast<fcitx::KeySym>(FcitxKey_0 + sym - FcitxKey_KP_0);
-      }
-      if (config_.autoCapitalizeAfterPunctuation.value()) {
-        sym = capitalizeAfterSentenceBoundary(context.capitalization, sym);
-      }
-      const auto codepoint = fcitx::Key::keySymToUnicode(sym);
-      const auto text = fcitx::Key::keySymToUTF8(sym);
-      if (!codepoint || text.empty()) {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-      if (!context.observer) {
-        context.observer = std::make_unique<BambooEngineAdapter>(
-            config_.bambooInputMethod.value(),
-            config_.spellcheckMode.value() != SpellcheckMode::Off,
-            config_.spellcheckMode.value() == SpellcheckMode::Realtime,
-            config_.modernStyle.value(), "Unicode", config_.enableMacro.value(),
-            config_.capitalizeMacro.value(), macroDefinitions(),
-            config_.revertMacroOnBackspace.value());
-      }
-      const bool bypass = !context.observer->currentText().empty() &&
-          isMacroBypassSpace(key, config_.macroBypassModifier.value());
-      const auto result = bypass
-          ? context.observer->processWithoutMacro(codepoint, text)
-          : context.observer->process(codepoint, text);
-      const auto length = fcitx::utf8::length(context.pendingText);
-      if (result.deleteCount > length) {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-      context.pendingText.resize(fcitx::utf8::ncharByteLength(
-          context.pendingText.begin(), length - result.deleteCount));
-      context.pendingText += result.commitText;
-      if (context.pendingText.size() > 2048) {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-    }
-
-    // Only move text into the searchable history once Bamboo has finalized
-    // the composing word at a boundary (normally Space).
-    if (context.observer->currentText().empty() &&
-        !context.pendingText.empty()) {
-      context.text += context.pendingText;
-      context.pendingText.clear();
-    }
-    if (context.text.size() > 2048) {
-      const auto boundary = context.text.find(' ', context.text.size() - 1024);
-      if (boundary == std::string::npos) {
-        resetPhraseObservation(inputContext);
-        return;
-      }
-      context.text.erase(0, boundary + 1);
-    }
-    // Offer completions only after a word boundary. In particular, do not
-    // append external text while the real engine still owns a composing word.
-    if (!context.observer->currentText().empty()) {
-      return;
-    }
-    const auto watch = inputContext.watch();
-    const auto revision = context.revision;
-    context.refreshTimer = instance_->eventLoop().addTimeEvent(
-        CLOCK_MONOTONIC, fcitx::now(CLOCK_MONOTONIC) + 30000, 1000,
-        [this, watch, revision, attempts = 0](fcitx::EventSourceTime *timer,
-                                            uint64_t) mutable {
-          auto *ic = watch.get();
-          if (!ic) return false;
-          auto it = phraseSuggestionContexts_.find(icUuidToHex(ic->uuid()));
-          if (it == phraseSuggestionContexts_.end() ||
-              it->second.revision != revision || !it->second.active ||
-              !ic->hasFocus()) return false;
-          if (scheduler_.shouldRejectReset() || scheduler_.queuedKeyCount()) {
-            if (++attempts >= 50) return false;
-            timer->setTime(fcitx::now(CLOCK_MONOTONIC) + 20000);
-            timer->setOneShot();
-            return true;
-          }
-          phraseSuggestions_.observe(icUuidToHex(ic->uuid()), it->second.text);
-          updatePhraseSuggestions(*ic);
-          return false;
-        });
-    if (context.refreshTimer) context.refreshTimer->setOneShot();
-  } catch (const std::exception &error) {
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: phrase observer reset: " << error.what();
-    }
-    resetPhraseObservation(inputContext);
-  }
-}
-
-bool ArecaEngine::selectPhraseSuggestionByKey(
-    fcitx::InputContext &inputContext, fcitx::KeyEvent &event) {
-  if (event.isRelease() || !isPhraseSuggestionList(inputContext) ||
-      !inputContext.hasFocus() || !config_.phraseSuggestions.value() ||
-      scheduler_.shouldRejectReset() || scheduler_.queuedKeyCount()) {
-    return false;
-  }
-  const auto key = event.key().normalize();
-  const auto sym = key.sym();
-  int index = -1;
-  if (key.check(FcitxKey_space, fcitx::KeyState::Shift)) {
-    index = 0;
-  } else if (sym >= FcitxKey_1 && sym <= FcitxKey_5 &&
-             key.check(sym, fcitx::KeyState::Alt)) {
-    index = sym - FcitxKey_1;
-  } else {
-    return false;
-  }
-  auto *list = static_cast<fcitx::CommonCandidateList *>(
-      inputContext.inputPanel().candidateList().get());
-  if (index >= list->size()) {
-    return false;
-  }
-  list->candidate(index).select(&inputContext);
-  event.filterAndAccept();
-  return true;
-}
-
-void ArecaEngine::updatePhraseSuggestions(fcitx::InputContext &inputContext) {
-  const auto session = icUuidToHex(inputContext.uuid());
-  auto &context = phraseSuggestionContexts_[session];
-  if (!context.active || !inputContext.hasFocus() || !context.observer ||
-      !context.observer->currentText().empty() || scheduler_.rewritePending() ||
-      scheduler_.queuedKeyCount() ||
-      !config_.phraseSuggestions.value() ||
-      inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Password) ||
-      inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Sensitive)) {
-    clearPhraseSuggestions(inputContext);
-    return;
-  }
-
-  const auto mode = effectivePresentationMode(inputContext);
-  if (mode == PresentationMode::Redirect || isBackendSelecting(inputContext)) {
-    clearPhraseSuggestions(inputContext);
-    return;
-  }
-  if (mode == PresentationMode::Rewrite) {
-    auto *state = inputContext.propertyFor(&rewriteStateFactory_);
-    if (state && state->engine && !state->engine->currentText().empty()) {
-      clearPhraseSuggestions(inputContext);
-      return;
-    }
-  } else if (mode == PresentationMode::Preedit) {
-    auto *state = inputContext.propertyFor(&preeditStateFactory_);
-    if (state && !state->composing.empty()) {
-      clearPhraseSuggestions(inputContext);
-      return;
-    }
-  }
-
-  const auto revision = context.revision;
-  const auto suggestions = phraseSuggestions_.suggest(session, context.text);
-  if (suggestions.empty()) {
-    clearPhraseSuggestions(inputContext);
-    return;
-  }
-
-  auto list = std::make_unique<fcitx::CommonCandidateList>();
-  list->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
-  list->setPageSize(5);
-  list->setLabels();
-  auto inputContextWatch = inputContext.watch();
-  for (const auto &suggestion : suggestions) {
-    const auto first = suggestion.completion.find_first_not_of(' ');
-    const auto label = first == std::string::npos
-                           ? std::string{}
-                           : suggestion.completion.substr(first);
-    list->append(std::make_unique<PhraseSuggestionCandidateWord>(
-        fcitx::Text(label),
-        [this, inputContextWatch, session, revision, suggestion](
-            fcitx::InputContext *selectedContext) mutable {
-          auto *ic = inputContextWatch.get();
-          if (!ic || ic != selectedContext) {
-            return;
-          }
-          auto it = phraseSuggestionContexts_.find(session);
-          if (it == phraseSuggestionContexts_.end() || !it->second.active ||
-              it->second.revision != revision || !ic->hasFocus() ||
-              scheduler_.shouldRejectReset() || scheduler_.queuedKeyCount()) {
-            return;
-          }
-          const auto mode = effectivePresentationMode(*ic);
-          if (mode == PresentationMode::Redirect) return;
-          if (mode == PresentationMode::Rewrite) {
-            auto *typing = rewriteHandler_.stateFor(*ic);
-            if (typing && typing->engine &&
-                !typing->engine->currentText().empty()) return;
-          } else if (mode == PresentationMode::Preedit) {
-            auto *typing = preeditHandler_.stateFor(*ic);
-            if (typing && !typing->composing.empty()) return;
-          }
-          // Accepting external text ends the old typing transaction. Use the
-          // normal reset lifecycle so Backspace cannot restore the word that
-          // preceded this completion. Never write the shared surrounding cache.
-          phraseSuggestions_.recordSelection(session, suggestion.phrase);
-          const auto completion = suggestion.completion;
-          resetPhraseObservation(*ic);
-          ic->reset();
-          ic->commitString(completion);
-        }));
-  }
-  inputContext.inputPanel().setCandidateList(std::move(list));
-  inputContext.updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
-                                   true);
-}
-
 void ArecaEngine::activate(const fcitx::InputMethodEntry &entry,
                            fcitx::InputContextEvent &event) {
   auto *inputContext = event.inputContext();
@@ -1642,8 +1308,6 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &entry,
     return;
   }
   syncInputMethodEntryIcon(entry);
-  resetPhraseObservation(*inputContext);
-  phraseSuggestionContexts_[icUuidToHex(inputContext->uuid())].active = true;
   if (focusTracker_) focusTracker_->requestAccessibilityPoke();
   const PresentationMode presentationMode =
       effectivePresentationMode(*inputContext);
@@ -1687,21 +1351,13 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   if (!inputContext) {
     return;
   }
-  const auto capabilities = inputContext->capabilityFlags();
-  if (capabilities.test(fcitx::CapabilityFlag::Sensitive)) {
-    resetPhraseObservation(*inputContext);
-  }
-  if (capabilities.test(fcitx::CapabilityFlag::Password)) {
-    resetPhraseObservation(*inputContext);
+  if (inputContext->capabilityFlags().test(fcitx::CapabilityFlag::Password)) {
     if (isBackendSelecting(*inputContext)) {
       inputContext->inputPanel().reset();
       inputContext->updateUserInterface(
           fcitx::UserInterfaceComponent::InputPanel, true);
     }
     handlerFor(*inputContext).handleKeyEvent(event);
-    return;
-  }
-  if (selectPhraseSuggestionByKey(*inputContext, event)) {
     return;
   }
   if (isBackendSelecting(*inputContext)) {
@@ -1737,7 +1393,6 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     // nằm trước caret mới. Preedit chỉ làm việc này khi composition đã trống,
     // tránh làm mất chữ nếu frontend chưa kết thúc preedit đang hiển thị.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
-      resetPhraseObservation(*inputContext);
       const auto mode = effectivePresentationMode(*inputContext);
       if (mode == PresentationMode::Preedit) {
         const bool prepared =
@@ -1804,13 +1459,6 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
       }
     }
   }
-  // Observe a copy of ordinary input only. Backend-generated erase/navigation
-  // events during a rewrite must not be replayed into the private converter.
-  if (!scheduler_.shouldRejectReset() ||
-      (fcitx::Key::keySymToUnicode(event.key().normalize().sym()) >= 32 &&
-       !event.rawKey().states().test(fcitx::KeyState::Ctrl))) {
-    observePhraseKey(*inputContext, event);
-  }
   handlerFor(*inputContext).handleKeyEvent(event);
 }
 
@@ -1821,10 +1469,6 @@ void ArecaEngine::deactivate(const fcitx::InputMethodEntry &,
     return;
   }
   backendSelectionPost_.cancel();
-  auto &phraseContext =
-      phraseSuggestionContexts_[icUuidToHex(inputContext->uuid())];
-  phraseContext.active = false;
-  resetPhraseObservation(*inputContext);
   if (isBackendSelecting(*inputContext)) {
     inputContext->inputPanel().reset();
     inputContext->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,
@@ -1854,7 +1498,6 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
     if (debugEnabled()) {
       FCITX_INFO() << "areca: app reset requested; arm protected reset";
     }
-    resetPhraseObservation(*inputContext);
     handlerFor(*inputContext).requestProtectedReset(*inputContext);
   }
 }
@@ -1908,7 +1551,6 @@ void ArecaEngine::setSubConfig(const std::string &path,
 }
 
 void ArecaEngine::reloadConfig() {
-  phraseSuggestions_.reload();
   fcitx::readAsIni(config_, kPkgConfigPath, "conf/areca.conf");
   // Seed the advanced panel from legacy timing fields before loading its own
   // file. Once the advanced file exists, its values take precedence.
@@ -2007,14 +1649,6 @@ void ArecaEngine::rebuildAppBackendOverridesMap() {
 }
 
 void ArecaEngine::applyConfig() {
-  for (auto &[session, context] : phraseSuggestionContexts_) {
-    context.refreshTimer.reset();
-    context.observer.reset();
-    context.text.clear();
-    context.capitalization.reset();
-    ++context.revision;
-    phraseSuggestions_.forgetObservedSession(session);
-  }
   if (focusTracker_) focusTracker_->setDebugEnabled(debugEnabled());
   const auto previousOverrides = appBackendOverridesMap_;
   const PresentationMode previousDefaultMode = activePresentationMode_;
@@ -2063,7 +1697,6 @@ void ArecaEngine::applyConfig() {
        &outputCharset, macroEnabled, capitalizeMacro, revertMacroOnBackspace,
        autoCapitalize, &macros, &previousOverrides, previousDefaultMode,
        requestedMode](fcitx::InputContext *inputContext) {
-        clearPhraseSuggestions(*inputContext);
         auto *rewriteState = rewriteHandler_.stateFor(*inputContext);
         const std::string program = resolveProgram(*inputContext, rewriteState);
         auto modeFor = [&program](const auto &overrides,

@@ -239,9 +239,6 @@ namespace areca::settings {
             ImGui::TableNextColumn();
             checkbox("Cho phép sửa từ đã commit", config.main.restoreSurroundingText);
             ImGui::TableNextColumn();
-            checkbox("Gợi ý cụm từ", config.main.phraseSuggestions);
-            ImGui::TextWrapped("Khi có gợi ý: Shift+Space chọn dòng đầu; Alt+1 đến Alt+5 chọn dòng tương ứng, hoặc nhấp chuột.");
-            ImGui::TableNextColumn();
             checkbox("Đặt dấu kiểu mới (oà, uý)", config.main.modernStyle);
             ImGui::TableNextColumn();
             checkbox("Tự viết hoa sau . ! ?", config.main.autoCapitalizeAfterPunctuation);

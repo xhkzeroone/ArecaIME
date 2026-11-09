@@ -375,25 +375,6 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     state->sentenceCapitalization.reset();
     if (!state->forwardedBackspacePresses.empty()) {
-      // Wayland auto-repeat can reuse the original press timestamp/keycode.
-      // A marked repeat is a real held deletion, not a replay of that press.
-      // Drop the restored word as the app continues deleting it; otherwise
-      // the next text key would append to a word that no longer exists.
-      const char *frontend = inputContext->frontend();
-      if (isRepeat && frontend && std::string_view(frontend) == "wayland") {
-        if (debugProvider_()) {
-          FCITX_INFO() << "areca: backspace route=forward"
-                       << " reason=repeat-after-forward-reset-composition"
-                       << " event_time=" << event.time()
-                       << " keycode=" << event.rawKey().code()
-                       << " previous_current=" << state->engine->currentText();
-        }
-        resetContext(*inputContext);
-        state->forwardedBackspacePresses.emplace(event.time(),
-                                                 event.rawKey().code());
-        event.forward();
-        return;
-      }
       const bool replay = event.time() != 0 &&
           state->forwardedBackspacePresses.contains(
               {event.time(), event.rawKey().code()});

@@ -63,7 +63,6 @@ add_library(areca MODULE
     src/input_type_detector.cpp
     src/preedit_mode.cpp
     src/preedit_logic.cpp
-    src/phrase_suggestions.cpp
     src/program_compatibility.cpp
     src/redirect_mode.cpp
     src/rewrite_mode.cpp
@@ -86,8 +85,6 @@ add_library(areca MODULE
     src/xtest_shift_select_backend.cpp)
 target_compile_definitions(areca PRIVATE
     ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor"
-    ARECA_PHRASE_DATA_PATH="${CMAKE_INSTALL_FULL_DATADIR}/fcitx5/areca/phrase-suggestions.tsv"
-    ARECA_SOURCE_PHRASE_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/phrase-suggestions.tsv"
     ARECA_SETTINGS_PATH="${CMAKE_INSTALL_FULL_BINDIR}/areca-settings")
 if(Fcitx5Core_VERSION VERSION_GREATER_EQUAL "5.1.11")
     target_compile_definitions(areca PRIVATE ARECA_HAVE_SHOW_CUSTOM_INFO=1)
@@ -197,10 +194,6 @@ configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
 configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)
 
 install(TARGETS areca DESTINATION "${CMAKE_INSTALL_LIBDIR}/fcitx5")
-install(FILES data/phrase-suggestions.tsv
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/areca")
-install(FILES data/phrase-suggestions-sources.md
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/fcitx5/areca")
 install(FILES gtk-settings/areca_settings.py gtk-settings/icon_library.py
         DESTINATION "${CMAKE_INSTALL_DATADIR}/areca/gtk-settings")
 install(DIRECTORY gtk-settings/assets

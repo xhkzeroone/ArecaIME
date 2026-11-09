@@ -166,42 +166,6 @@ void testForwardedBackspaceReplay() {
   press(1000, false);
   handler.resetContext(context);
   assert(state->forwardedBackspacePresses.empty());
-
-  // Wayland repeats are real deletions even when their timestamp is identical
-  // to the initial press (teams-linux log, 2026-11-05). Keep the DBus replay
-  // expectations above while dropping stale composition for Wayland holds.
-  TestInputContext wayland(manager, "teams-linux", "wayland");
-  auto *waylandState = wayland.propertyFor(&factory);
-  for (bool reuseTimestamp : {true, false}) {
-    handler.resetContext(wayland);
-    for (char c : std::string("khoong mayf ")) {
-      waylandState->engine->process(c, std::string(1, c));
-    }
-    fcitx::KeyEvent first(&wayland,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::NoState, 22),
-        false, 1243456);
-    handler.handleKeyEvent(first);
-    assert(!first.filtered() && !first.accepted());
-    assert(waylandState->engine->currentText() == "mày");
-    for (int i = 0; i < 10; ++i) {
-      fcitx::KeyEvent held(&wayland,
-          fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat, 22),
-          false, reuseTimestamp ? 1243456 : 1243457 + i);
-      handler.handleKeyEvent(held);
-      assert(!held.filtered() && !held.accepted());
-      assert(!waylandState->backspaceRecoveryAwaitingRelease);
-      assert(waylandState->engine->currentText().empty());
-    }
-    fcitx::KeyEvent up(&wayland,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::NoState, 22),
-        true, 1243500);
-    handler.handleKeyEvent(up);
-    assert(waylandState->forwardedBackspacePresses.empty());
-    const auto next = waylandState->engine->process('l', "l");
-    assert(next.currentText.empty());
-    assert(next.newText == "l" && next.commitText == "l");
-    assert(next.deleteCount == 0);
-  }
 }
 
 } // namespace
