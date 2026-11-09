@@ -250,6 +250,9 @@ namespace areca::settings {
             checkbox("Xử lý riêng ô URL và thanh địa chỉ",
                      config.main.useBackspaceForUrl);
             ImGui::TableNextColumn();
+            checkbox("Tắt tiếng Việt trong terminal",
+                     config.main.disableVietnameseInTerminal);
+            ImGui::TableNextColumn();
             checkbox("Bật macro", config.main.enableMacro);
             ImGui::TableNextColumn();
             checkbox("Đổi hoa/thường nội dung macro", config.main.capitalizeMacro);

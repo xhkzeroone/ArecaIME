@@ -1403,6 +1403,23 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     handlerFor(*inputContext).handleKeyEvent(event);
     return;
   }
+  // Giống ô mật khẩu: terminal được chuyển tiếp nguyên phím, không qua Bamboo.
+  if (config_.disableVietnameseInTerminal.value() &&
+      inputTypeDetector_.isTerminal(
+          resolveProgram(*inputContext,
+                         inputContext->propertyFor(&rewriteStateFactory_)),
+          inputContext->frontend())) {
+    if (isBackendSelecting(*inputContext)) {
+      inputContext->inputPanel().reset();
+      inputContext->updateUserInterface(
+          fcitx::UserInterfaceComponent::InputPanel, true);
+    }
+    if (!event.isRelease()) {
+      handlerFor(*inputContext).resetContext(*inputContext);
+    }
+    event.forward();
+    return;
+  }
   if (isBackendSelecting(*inputContext)) {
     const auto normKey = event.key().normalize();
     if (!event.isRelease() &&

@@ -76,6 +76,7 @@ MAIN_DEFAULTS = {
     "RestoreSurroundingText": True,
     "ShiftSelectFallbackForBrowser": False,
     "UseBackspaceForUrl": True,
+    "DisableVietnameseInTerminal": False,
     "Debug": False,
 }
 MAIN_KEY_LIST_DEFAULTS = {"SwitchModeKey": [], "SelectBackendKey": ["grave"]}
@@ -879,6 +880,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Cho phép sửa từ đã commit", "RestoreSurroundingText", "Sửa từ vừa gõ dựa trên văn bản xung quanh con trỏ."),
             ("Shift+Left fallback cho trình duyệt", "ShiftSelectFallbackForBrowser", "Dùng khi trình duyệt không hỗ trợ surrounding text."),
             ("Xử lý riêng ô URL và thanh địa chỉ", "UseBackspaceForUrl", "Chọn backend tương thích cho ô địa chỉ."),
+            ("Tắt tiếng Việt trong terminal", "DisableVietnameseInTerminal", "Chuyển tiếp nguyên phím khi đang ở terminal, giống ô mật khẩu."),
         ]:
             self._switch(behavior, title, key, description)
         diagnostics = self._section(content, "Chẩn đoán")

@@ -652,6 +652,7 @@ int main() {
   areca::ArecaConfig mainConfig;
   assert(!mainConfig.shiftSelectFallbackForBrowser.value());
   assert(mainConfig.useBackspaceForUrl.value());
+  assert(!mainConfig.disableVietnameseInTerminal.value());
   assert(areca::shouldForceBackspaceForUrl(
       mainConfig.useBackspaceForUrl.value(),
       fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));

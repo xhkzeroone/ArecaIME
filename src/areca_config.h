@@ -389,6 +389,9 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useBackspaceForUrl{
         this, "UseBackspaceForUrl",
         N_("Xử lý riêng ô URL và thanh địa chỉ"), true};
+    fcitx::Option<bool> disableVietnameseInTerminal{
+        this, "DisableVietnameseInTerminal",
+        N_("Tắt tiếng Việt trong terminal"), false};
     fcitx::SubConfigOption advancedEditor{
         this, "AdvancedEditor", N_("Cấu hình nâng cao"),
         "fcitx://config/addon/areca/advanced"};
