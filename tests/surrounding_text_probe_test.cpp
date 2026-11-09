@@ -11,6 +11,7 @@
 #include <fcitx/inputcontextmanager.h>
 
 #include "rewrite_backend.h"
+#include "surrounding_probe_match.h"
 #include "surrounding_reliability.h"
 #include "surrounding_text_backend.h"
 #include "types.h"
@@ -459,6 +460,69 @@ void testProbeAcceptsNormalizedLineEndingSentinel() {
   assert(inputContext.committedText == "á");
 }
 
+// Log anvildroid-gui: snapshot trễ một nhịp ("g" trong khi ô đã có "go").
+// Probe tính expected là rỗng; update trễ "go" không được coi là xác nhận xoá.
+void testLaggingUpdateDoesNotConfirmEmptyExpectation() {
+  assert(!areca::surroundingProbeMatches(true, "g", 1, "", 0, "go", 2, 2));
+  assert(!areca::surroundingProbeMatches(true, "g", 1, "", 0, "o", 1, 1));
+  // Xác nhận thật: trước cursor không còn gì.
+  assert(areca::surroundingProbeMatches(true, "g", 1, "", 0, "", 0, 0));
+  assert(areca::surroundingProbeMatches(true, "a\n\n", 1, "\n\n", 0, "\n", 0,
+                                        0));
+
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  DummyInputContext inputContext(manager, events, "anvildroid-gui");
+  inputContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  inputContext.surroundingText().setText("g", 1, 1);
+
+  FakeBackspaceBackend fallback(events);
+  bool probeSucceeded = false;
+  bool probeFailed = false;
+  bool doneCalled = false;
+  areca::SurroundingTextBackend backend(
+      eventLoop, []() { return false; },
+      [&](fcitx::InputContext &) { probeSucceeded = true; },
+      [&](fcitx::InputContext &) { probeFailed = true; },
+      [&](fcitx::InputContext &) -> areca::RewriteBackend * {
+        return &fallback;
+      });
+
+  auto plan = makePlan(108, 1, "õ", true);
+  plan.surroundingProbeTimeoutMs = 5;
+  const auto status = backend.apply(
+      inputContext, plan, [&](uint64_t, areca::RewriteOutcome) {
+        doneCalled = true;
+        eventLoop.exit();
+      });
+  assert(status == areca::ApplyStatus::Pending);
+
+  inputContext.surroundingText().setText("go", 2, 2);
+  backend.notifySurroundingTextUpdated(inputContext);
+  assert(backend.isProbing());
+  eventLoop.exec();
+
+  assert(!probeSucceeded);
+  assert(probeFailed);
+  assert(doneCalled);
+}
+
+void testSnapshotMatchesWord() {
+  // Snapshot trễ: ô có "go" nhưng frontend báo "g".
+  assert(!areca::surroundingSnapshotMatchesWord(true, "g", 1, 1, "go"));
+  assert(areca::surroundingSnapshotMatchesWord(true, "go", 2, 2, "go"));
+  assert(areca::surroundingSnapshotMatchesWord(true, "xin go", 6, 6, "go"));
+  assert(areca::surroundingSnapshotMatchesWord(true, "go tiep", 2, 2, "go"));
+  assert(!areca::surroundingSnapshotMatchesWord(true, "go tiep", 7, 7, "go"));
+  assert(areca::surroundingSnapshotMatchesWord(true, "gõ", 2, 2, "gõ"));
+  assert(!areca::surroundingSnapshotMatchesWord(false, "", 0, 0, "go"));
+  assert(!areca::surroundingSnapshotMatchesWord(true, "go", 2, 0, "go"));
+  assert(areca::surroundingSnapshotMatchesWord(true, "", 0, 0, ""));
+  assert(areca::surroundingSnapshotMatchesWord(true, "gõ\u00a0", 3, 3, "gõ "));
+  assert(!areca::surroundingSnapshotMatchesWord(true, "gõ", 2, 2, "gõ "));
+}
+
 void testAdaptiveWaitIntegration() {
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
@@ -506,6 +570,8 @@ int main() {
   testProbeAcceptsInvalidEmptyUpdateEvent();
   testProbeAcceptsNormalizedLineEndingSentinel();
   testAdaptiveWaitIntegration();
+  testLaggingUpdateDoesNotConfirmEmptyExpectation();
+  testSnapshotMatchesWord();
   std::cout << "All surrounding text probe tests passed\n";
   return 0;
 }

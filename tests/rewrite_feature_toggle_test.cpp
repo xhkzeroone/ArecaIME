@@ -479,6 +479,52 @@ int main() {
   assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
          "ếa");
 
+  // Context đã bị phát hiện gửi snapshot trễ: không nạp lại từ snapshot đó.
+  TestInputContext laggingContext(restoreManager, "anvildroid-gui");
+  laggingContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  laggingContext.surroundingText().setText("gõ", 2, 2);
+  laggingContext.propertyFor(&restoreFactory)->surroundingSnapshotLagSeen =
+      true;
+  restoreHandler.activate(laggingContext);
+  fcitx::KeyEvent laggingKey(&laggingContext, fcitx::Key(FcitxKey_a));
+  restoreHandler.handleKeyEvent(laggingKey);
+  assert(laggingKey.accepted());
+  assert(laggingContext.propertyFor(&restoreFactory)->engine->currentText() ==
+         "a");
+
+  // Restore chỉ được arm khi caret có thể đã sang từ khác: phím di chuyển và
+  // Backspace khi không còn composition.
+  // Scheduler riêng: scheduler ở trên vừa commit nên còn trong cửa sổ chặn
+  // reset 20ms.
+  areca::InputScheduler armScheduler(
+      restoreLoop,
+      [&](fcitx::InputContext &ic) {
+        return ic.propertyFor(&restoreFactory)->engine.get();
+      },
+      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+      [] { return false; },
+      [](fcitx::InputContext &, const areca::BambooResult &) {
+        return areca::RewriteBackendSelection{};
+      });
+  areca::RewriteModeHandler armHandler(
+      restoreLoop, restoreFactory, armScheduler, [] { return false; },
+      [] { return false; }, [](fcitx::InputContext &, const char *) {},
+      [] { return false; }, [](fcitx::InputContext &) { return false; },
+      [](fcitx::InputContext &) { return true; },
+      [](const fcitx::Key &) { return false; });
+  TestInputContext armContext(restoreManager, "org.gnome.TextEditor");
+  armContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  armHandler.activate(armContext);
+  auto *armState = armContext.propertyFor(&restoreFactory);
+  armState->surroundingRestoreArmed = false;
+  fcitx::KeyEvent leftKey(&armContext, fcitx::Key(FcitxKey_Left));
+  armHandler.handleKeyEvent(leftKey);
+  assert(armState->surroundingRestoreArmed);
+  armState->surroundingRestoreArmed = false;
+  fcitx::KeyEvent emptyBackspace(&armContext, fcitx::Key(FcitxKey_BackSpace));
+  armHandler.handleKeyEvent(emptyBackspace);
+  assert(armState->surroundingRestoreArmed);
+
   // Tạm thời không restore trong address bar: Chromium có thể giữ snapshot
   // getText() cũ sau khi nội dung hiển thị đã bị Backspace xóa sạch.
   TestInputContext addressBarContext(restoreManager, "google-chrome");

@@ -46,6 +46,10 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   // Frontend hoặc lifecycle reset đã thay đổi text/vị trí quanh con trỏ. Cờ
   // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một lần.
   bool surroundingRestoreArmed = false;
+  // Đã bắt gặp frontend gửi surrounding trễ (snapshot không chứa từ vừa soạn).
+  // Restore đọc cùng snapshot đó nên sẽ nạp sai từ; tắt restore cho context này.
+  // Không xoá ở resetContext/focus vì đây là đặc tính của ứng dụng.
+  bool surroundingSnapshotLagSeen = false;
   // Tăng khi ký tự đầu tiên của một từ mới tới sau boundary. Backend dùng số
   // này để chỉ retry surrounding probe ở từ kế tiếp, không retry mỗi ký tự.
   uint32_t wordSerial = 0;

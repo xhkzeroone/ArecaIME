@@ -14,6 +14,7 @@
 
 #include "preedit_logic.h"
 #include "surrounding_text_cache.h"
+#include "surrounding_probe_match.h"
 #include "surrounding_text_restore.h"
 
 namespace areca {
@@ -131,6 +132,53 @@ void PreeditModeHandler::deactivate(fcitx::InputContext &inputContext) {
   }
 }
 
+namespace {
+
+constexpr std::size_t kMaxExpectedTextBytes = 256;
+
+void noteCommittedText(PreeditInputState &state, const std::string &text) {
+  if (text.empty()) {
+    return;
+  }
+  state.expectedTextBeforeCursor += text;
+  if (state.expectedTextBeforeCursor.size() > kMaxExpectedTextBytes) {
+    // Cắt ở biên ký tự UTF-8 để vẫn so sánh được phần đuôi.
+    std::size_t cut =
+        state.expectedTextBeforeCursor.size() - kMaxExpectedTextBytes;
+    while (cut < state.expectedTextBeforeCursor.size() &&
+           (static_cast<unsigned char>(state.expectedTextBeforeCursor[cut]) &
+            0xC0U) == 0x80U) {
+      ++cut;
+    }
+    state.expectedTextBeforeCursor.erase(0, cut);
+  }
+}
+
+void forgetExpectedText(PreeditInputState &state) {
+  state.expectedTextBeforeCursor.clear();
+}
+
+// Phím không bị filter sẽ được ứng dụng tự xử lý (chèn/xoá/di chuyển) nên
+// Areca không còn biết chắc text trước con trỏ.
+class ExpectedTextGuard {
+public:
+  ExpectedTextGuard(fcitx::KeyEvent &event, PreeditInputState &state)
+      : event_(event), state_(state) {}
+  ~ExpectedTextGuard() {
+    if (!event_.filtered()) {
+      forgetExpectedText(state_);
+    }
+  }
+  ExpectedTextGuard(const ExpectedTextGuard &) = delete;
+  ExpectedTextGuard &operator=(const ExpectedTextGuard &) = delete;
+
+private:
+  fcitx::KeyEvent &event_;
+  PreeditInputState &state_;
+};
+
+} // namespace
+
 void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   auto *inputContext = event.inputContext();
   if (!inputContext) {
@@ -162,6 +210,7 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     return;
   }
+  ExpectedTextGuard expectedTextGuard(event, *state);
   if (rawKey.isModifier()) {
     return;
   }
@@ -233,6 +282,7 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
           updateSurroundingCacheAfterDelete(
               *inputContext, -static_cast<int>(result.deleteCount),
               result.deleteCount);
+          forgetExpectedText(*state);
           if (!result.commitText.empty()) {
             inputContext->commitString(result.commitText);
             updateSurroundingCacheAfterCommit(*inputContext, result.commitText);
@@ -368,6 +418,7 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
           fcitx::now(CLOCK_MONOTONIC) + kPostCommitResetProtectionUsec;
       inputContext->commitString(committed);
       updateSurroundingCacheAfterCommit(*inputContext, committed);
+      noteCommittedText(*state, committed);
     }
     // Không reset ở boundary: adapter giữ snapshot của từ và số boundary đã
     // commit để Backspace có thể đi ngược nhiều Space giống mode Rewrite.
@@ -404,6 +455,7 @@ bool PreeditModeHandler::startFinalizedWordRecovery(
     return false;
   }
   state.finalizedWordRecovery = FinalizedWordRecoveryState::Erasing;
+  forgetExpectedText(state);
   const auto watchedContext = inputContext.watch();
   const std::string recoveredWord = word;
   const bool started = finalizedWordEraser_(
@@ -470,8 +522,32 @@ bool PreeditModeHandler::tryRestoreFromSurroundingText(
     return false;
   }
 
+  if (state.surroundingSnapshotLagSeen) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: preedit surrounding restore rejected"
+                   << " reason=snapshot-lag";
+    }
+    return false;
+  }
+
   const auto &surrounding = inputContext.surroundingText();
   if (!surrounding.isValid()) {
+    return false;
+  }
+  // Text Areca vừa commit phải nằm ngay trước con trỏ. Nếu không, frontend
+  // đang gửi snapshot trễ; restore sẽ xoá nhầm ký tự nên tắt restore cho
+  // context này.
+  if (!surroundingSnapshotMatchesWord(
+          true, surrounding.text(), surrounding.cursor(), surrounding.anchor(),
+          state.expectedTextBeforeCursor)) {
+    state.surroundingSnapshotLagSeen = true;
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: preedit surrounding snapshot stale text="
+                   << surrounding.text() << " cursor=" << surrounding.cursor()
+                   << " anchor=" << surrounding.anchor()
+                   << " expected=" << state.expectedTextBeforeCursor
+                   << " restore_disabled=1";
+    }
     return false;
   }
   auto candidate = extractSurroundingRestoreCandidate(
@@ -491,6 +567,7 @@ bool PreeditModeHandler::tryRestoreFromSurroundingText(
   updateSurroundingCacheAfterDelete(
       inputContext, -static_cast<int>(candidate->characterCount),
       candidate->characterCount);
+  forgetExpectedText(state);
   state.composing = candidate->text;
   if (debugProvider_()) {
     FCITX_INFO() << "areca: preedit surrounding restore applied"
@@ -532,6 +609,7 @@ void PreeditModeHandler::commitComposition(fcitx::InputContext &inputContext,
   if (!state.composing.empty()) {
     inputContext.commitString(state.composing);
     updateSurroundingCacheAfterCommit(inputContext, state.composing);
+    noteCommittedText(state, state.composing);
   }
   state.engine->reset();
   state.composing.clear();
@@ -567,6 +645,7 @@ void PreeditModeHandler::resetContext(fcitx::InputContext &inputContext) {
     state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
     state->resetProtectedUntilUsec = 0;
     clearComposition(inputContext, *state);
+    forgetExpectedText(*state);
     // Reset/focus/click có thể đặt con trỏ vào một từ đã commit. Cho phép phím
     // text kế tiếp thử chuyển từ đó vào preedit nếu người dùng bật tính năng.
     state->surroundingRestoreArmed = true;
@@ -586,6 +665,7 @@ bool PreeditModeHandler::prepareSurroundingRestoreAfterClick(
   state->engine->reset();
   state->sentenceCapitalization.reset();
   state->resetProtectedUntilUsec = 0;
+  forgetExpectedText(*state);
   state->surroundingRestoreArmed = true;
   return true;
 }

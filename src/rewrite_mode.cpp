@@ -145,6 +145,12 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
     return;
   }
 
+  if (state.surroundingSnapshotLagSeen) {
+    if (debugProvider_())
+      FCITX_INFO() << "areca: surrounding restore rejected reason=snapshot-lag";
+    return;
+  }
+
   const auto &surrounding = inputContext.surroundingText();
   if (!surrounding.isValid()) {
     if (debugProvider_())
@@ -202,6 +208,11 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
         fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
   }
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
+  // Backspace đã xoá hết composition (hoặc không có composition): caret có
+  // thể lùi vào từ trước đó, nên cho phép phím text kế tiếp restore một lần.
+  if (state.engine && state.engine->currentText().empty()) {
+    state.surroundingRestoreArmed = true;
+  }
   state.forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
   event.forward();
 }
@@ -354,6 +365,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     state->sentenceCapitalization.reset();
     state->engine->reset();
+    // Caret đã di chuyển (mũi tên, Home/End, Ctrl+..., Tab): phím text kế tiếp
+    // có thể đang đứng sau một từ đã commit nên cho phép restore một lần.
+    state->surroundingRestoreArmed = true;
     event.forward();
     return;
   }

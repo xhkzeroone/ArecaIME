@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 #include <fcitx-utils/utf8.h>
@@ -54,6 +55,13 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
     return actualText.empty() && actualCursor == 0 && expectedBefore.empty();
   }
 
+  // When the deletion should leave nothing before the cursor, any non-empty
+  // text is unrelated (e.g. a lagging update from before the delete). Without
+  // this, ends_with("") below would accept every update.
+  if (expectedBefore.empty() && !actualBefore.empty()) {
+    return false;
+  }
+
   // The text that was supposed to be deleted is still immediately before the
   // cursor, so this is the old snapshot.
   if (actualBefore.ends_with(originalBefore)) {
@@ -79,6 +87,46 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
   }
 
   return true;
+}
+
+// Returns false when the surrounding snapshot cannot reflect what Areca has
+// already committed for the current word: the text before the cursor must end
+// with the word Bamboo is composing. A frontend that lags one update behind
+// (reports "g" while the field shows "go") fails this check, and deleting
+// relative to such a snapshot is not trustworthy.
+inline bool surroundingSnapshotMatchesWord(bool valid, std::string_view text,
+                                           uint32_t cursor, uint32_t anchor,
+                                           std::string_view word) {
+  if (word.empty()) {
+    return true;
+  }
+  if (!valid || cursor != anchor) {
+    return false;
+  }
+  std::string_view before;
+  if (!textBeforeCursor(text, cursor, before)) {
+    return false;
+  }
+  if (before.ends_with(word)) {
+    return true;
+  }
+  // Chromium báo dấu cách cuối dòng thành NBSP (U+00A0). Coi hai ký tự này là
+  // một khi so phần đuôi để không nhận nhầm là snapshot trễ.
+  constexpr std::string_view kNbsp = "\xC2\xA0";
+  const auto normalize = [&](std::string_view input) {
+    std::string out;
+    out.reserve(input.size());
+    for (std::size_t i = 0; i < input.size();) {
+      if (input.substr(i, kNbsp.size()) == kNbsp) {
+        out.push_back(' ');
+        i += kNbsp.size();
+      } else {
+        out.push_back(input[i++]);
+      }
+    }
+    return out;
+  };
+  return std::string_view(normalize(before)).ends_with(normalize(word));
 }
 
 } // namespace areca

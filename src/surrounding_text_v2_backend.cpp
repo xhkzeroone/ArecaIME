@@ -145,7 +145,10 @@ void SurroundingTextV2Backend::notifySurroundingTextUpdated(
 
   if (debugProvider_()) {
     FCITX_INFO() << "areca: surrounding-v2 probe succeeded tx="
-                 << transactionId_;
+                 << transactionId_ << " expected_text=" << expectedProbeText_
+                 << " actual_text=" << surrounding.text()
+                 << " actual_cursor=" << surrounding.cursor()
+                 << " updates=" << probeUpdateCount_;
   }
   probeDeletePending_ = false;
   timer_.reset();

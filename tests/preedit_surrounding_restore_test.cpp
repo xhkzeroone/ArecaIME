@@ -158,6 +158,53 @@ int main() {
   assert(!handler.prepareSurroundingRestoreAfterClick(middleContext));
   assert(middleContext.propertyFor(&factory)->composing == "ề");
 
+  // Snapshot trễ (giống log anvildroid-gui): Areca vừa commit "gõ " nhưng app
+  // gửi lại "gõ". Restore phải bị chặn (không xoá gì) và context bị đánh dấu.
+  TestInputContext laggingContext(manager);
+  laggingContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  laggingContext.surroundingText().setText("", 0, 0);
+  handler.activate(laggingContext);
+  for (const char key : std::string("gox ")) {
+    fcitx::KeyEvent keyEvent(
+        &laggingContext,
+        fcitx::Key(fcitx::Key::keySymFromUnicode(
+            static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+    assert(keyEvent.accepted());
+  }
+  assert(laggingContext.commits == std::vector<std::string>{"gõ "});
+  auto *laggingState = laggingContext.propertyFor(&factory);
+  assert(laggingState->expectedTextBeforeCursor == "gõ ");
+  laggingContext.surroundingText().setText("gõ", 2, 2);
+  laggingState->surroundingRestoreArmed = true;
+  fcitx::KeyEvent laggingKey(&laggingContext, fcitx::Key(FcitxKey_n));
+  handler.handleKeyEvent(laggingKey);
+  assert(laggingKey.accepted());
+  assert(laggingContext.deletes.empty());
+  assert(laggingState->surroundingSnapshotLagSeen);
+  assert(laggingState->composing == "n");
+
+  // Chromium báo dấu cách cuối thành NBSP: không được coi là snapshot trễ.
+  TestInputContext nbspContext(manager);
+  nbspContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  nbspContext.surroundingText().setText("", 0, 0);
+  handler.activate(nbspContext);
+  for (const char key : std::string("gox ")) {
+    fcitx::KeyEvent keyEvent(
+        &nbspContext,
+        fcitx::Key(fcitx::Key::keySymFromUnicode(
+            static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+  }
+  auto *nbspState = nbspContext.propertyFor(&factory);
+  nbspContext.surroundingText().setText("gõ\u00a0", 3, 3);
+  nbspState->surroundingRestoreArmed = true;
+  fcitx::KeyEvent nbspKey(&nbspContext, fcitx::Key(FcitxKey_n));
+  handler.handleKeyEvent(nbspKey);
+  assert(nbspKey.accepted());
+  assert(!nbspState->surroundingSnapshotLagSeen);
+  assert(nbspContext.deletes.empty());
+
   // Khi tắt, cùng snapshot chỉ tạo preedit từ phím mới và tuyệt đối không xóa
   // phần text đã commit trước con trỏ.
   enabled = false;

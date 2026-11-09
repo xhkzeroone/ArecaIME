@@ -30,6 +30,7 @@
 #include "browser_autocomplete.h"
 #include "fcitx_notifications_compat.h"
 #include "program_compatibility.h"
+#include "surrounding_probe_match.h"
 
 #include "mouse_click_tracker.h"
 #include "window_focus_tracker.h"
@@ -252,7 +253,13 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         // Callback chỉ ghi nhận rằng frontend đã đổi text hoặc cursor. Việc đọc
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
         // lifecycle và để nhận snapshot surrounding mới nhất.
-        if (auto *state = rewriteHandler_.stateFor(*inputContext)) {
+        // Rewrite: frontend gửi update sau cả commit của chính Areca, nên arm ở
+        // đây khiến restore chạy ở mọi từ mới. Restore chỉ được arm khi caret có
+        // thể đã sang từ khác (focus, click, phím di chuyển, Backspace hết
+        // composition, reset). Chỉ giữ arm theo event khi không theo dõi được
+        // click chuột.
+        if (auto *state = rewriteHandler_.stateFor(*inputContext);
+            state && !(mouseTracker_ && mouseTracker_->isValid())) {
           state->surroundingRestoreArmed = true;
         }
         if (auto *state = preeditHandler_.stateFor(*inputContext)) {
@@ -830,6 +837,42 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
       }
     }
     backendVerdict_.known = true;
+  }
+
+  // Tăng cường phân loại: lúc probe, snapshot phải chứa từ đang soạn ngay
+  // trước con trỏ. Frontend gửi surrounding trễ (vd. "g" trong khi ô đã có
+  // "go") thì probe tính expected theo snapshot sai và có thể nhận nhầm update
+  // trễ là xác nhận xoá. Khi đó xếp app là không hỗ trợ surrounding tốt (probe
+  // thất bại -> Backspace/Shift+Left, retry ở từ kế tiếp). App đã được xác
+  // nhận surrounding thì không kiểm tra lại.
+  const bool staleDuringProbe =
+      !browserAutocomplete && backendVerdict_.probePending &&
+      backendVerdict_.reliable &&
+      surrounding.cursor() == surrounding.anchor() &&
+      !surroundingSnapshotMatchesWord(surrounding.isValid(), surrounding.text(),
+                                      surrounding.cursor(),
+                                      surrounding.anchor(), shownText);
+  if (staleDuringProbe) {
+    // Tính là một lần probe để chỉ retry đúng một lần như probe timeout.
+    backendVerdict_.probeStarted();
+    backendVerdict_.probeFailed(state ? state->wordSerial : 0);
+    // Restore đọc cùng snapshot nên cũng sẽ nạp sai từ: tắt cho context này.
+    if (state) {
+      state->surroundingSnapshotLagSeen = true;
+    }
+    if (auto *preeditState = inputContext.propertyFor(&preeditStateFactory_)) {
+      preeditState->surroundingSnapshotLagSeen = true;
+    }
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: surrounding snapshot stale during probe text="
+                   << surrounding.text() << " cursor=" << surrounding.cursor()
+                   << " anchor=" << surrounding.anchor()
+                   << " word=" << shownText << " marked_unreliable=1"
+                   << " attempt=" << backendVerdict_.probeAttempts
+                   << " retry_next_word=" << backendVerdict_.retryOnNextWord
+                   << " restore_disabled=1"
+                   << " program=" << programName;
+    }
   }
 
   if (debugEnabled()) {
