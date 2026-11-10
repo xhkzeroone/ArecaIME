@@ -52,6 +52,8 @@ ctest --test-dir build --output-on-failure
 
 PR vi phạm một quy tắc dưới đây sẽ được yêu cầu sửa trước khi review.
 
+Bot Claude tự review PR mở từ nhánh trong repo, dựa trên các quy tắc này và skill `areca-pr`, `areca-code`. Với PR từ fork, maintainer comment `@claude review` để gọi bot. Nhận xét của bot chỉ để tham khảo, người review vẫn quyết định cuối cùng.
+
 ### Phạm vi
 - Mỗi PR chỉ giải quyết một vấn đề. Không gộp refactor, đổi format hay sửa lỗi không liên quan vào cùng PR.
 - Không tự tăng version, không sửa `packaging/` hay file release trừ khi PR là về đóng gói.
