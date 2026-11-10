@@ -54,6 +54,10 @@ add_dependencies(areca-bamboo areca-bamboo-bridge)
 add_library(areca MODULE
     src/adaptive_wait_monitor.cpp
     src/areca_engine.cpp
+    src/areca_engine_actions.cpp
+    src/areca_engine_backend.cpp
+    src/areca_engine_backend_menu.cpp
+    src/areca_engine_config.cpp
     src/bamboo_engine_adapter.cpp
     src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp

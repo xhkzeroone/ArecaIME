@@ -4085,7 +4085,7 @@ chọn backend, sequence diagram từng backend và bảng timing.</li><li><a hr
 <tr><th>Thành phần</th><th>File</th><th>Trách nhiệm</th></tr>
 </thead>
 <tbody>
-<tr><td><code>ArecaEngine</code></td><td><code>src/areca_engine.*</code></td><td>Nhận event Fcitx5, chọn mode theo ứng dụng, chọn rewrite backend, nạp config, giữ cache verdict backend của context hiện tại.</td></tr>
+<tr><td><code>ArecaEngine</code></td><td><code>src/areca_engine*</code></td><td>Nhận event Fcitx5, chọn mode theo ứng dụng, chọn rewrite backend, nạp config, giữ cache verdict backend của context hiện tại.</td></tr>
 <tr><td><code>InputModeHandler</code></td><td><code>src/mode_handler.h</code></td><td>Interface lifecycle và KeyEvent chung cho các mode.</td></tr>
 <tr><td><code>RewriteModeHandler</code></td><td><code>src/rewrite_mode.*</code></td><td>Policy phím của Rewrite, restore surrounding, thử phím đầu khi rảnh rồi đưa phím vào <code>InputScheduler</code>.</td></tr>
 <tr><td><code>PreeditModeHandler</code></td><td><code>src/preedit_mode.*</code></td><td>Xử lý Bamboo đồng bộ và hiển thị preedit, không dùng scheduler hay rewrite backend.</td></tr>

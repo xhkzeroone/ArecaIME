@@ -11,7 +11,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 
 | Thành phần | File | Vai trò |
 |---|---|---|
-| Engine fcitx | `src/areca_engine.*` | Nhận `keyEvent`, chọn mode, chọn backend, nạp config, nối mọi thành phần bằng provider |
+| Engine fcitx | `src/areca_engine*` | Nhận `keyEvent`, chọn mode, chọn backend, nạp config, nối mọi thành phần bằng provider |
 | Mode | `src/mode_handler.h`, `rewrite_mode.*`, `preedit_mode.*`, `redirect_mode.*` | Mỗi mode implement `InputModeHandler` và giữ state riêng |
 | Hàng đợi phím | `src/input_scheduler.*`, `key_queue.h` | FIFO single-flight: một phím xử lý xong mới tới phím sau, có post-commit barrier |
 | Bamboo | `src/bamboo_engine_adapter.*`, `bamboo-bridge/main.go` | `VietnameseEngine` trả `BambooResult` gồm `deleteCount` và `commitText` |
@@ -21,6 +21,14 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 | Nhận diện app | `window_focus_tracker.*`, `atspi/`, `input_type_detector.*`, `program_compatibility.*` | AT-SPI chạy thread riêng, phần còn lại là hàm thuần |
 | Surrounding text | `surrounding_text_*`, `surrounding_probe_match.h`, `surrounding_reliability.h` | Cache, probe, restore từ đã commit |
 | Cấu hình | `src/areca_config.h` | `FCITX_CONFIGURATION`, có thêm UI ở `gtk-settings/` và `settings/` |
+
+`ArecaEngine` được chia theo nhóm hàm, cùng một class. Thêm hàm mới vào đúng file:
+
+- `areca_engine.cpp`: constructor, `activate`/`keyEvent`/`deactivate`/`reset`, chọn mode, warmup thiết bị, addon factory
+- `areca_engine_backend.cpp`: chọn rewrite backend, đánh giá độ tin cậy, cache verdict, probe surrounding
+- `areca_engine_backend_menu.cpp`: menu chọn backend theo app (phím `SelectBackendKey`)
+- `areca_engine_config.cpp`: đọc/ghi config, `timing()`, `applyConfig()`
+- `areca_engine_actions.cpp`: action trên status area và cập nhật UI
 
 ## Luồng xử lý một phím ở chế độ Rewrite
 1. `ArecaEngine::keyEvent` lọc ô mật khẩu, terminal, menu chọn backend, phím phát lại từ uinput.

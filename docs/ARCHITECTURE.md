@@ -14,7 +14,7 @@ Xem thêm:
 
 | Thành phần | File | Trách nhiệm |
 | --- | --- | --- |
-| `ArecaEngine` | `src/areca_engine.*` | Nhận event Fcitx5, chọn mode theo ứng dụng, chọn rewrite backend, nạp config, giữ cache verdict backend của context hiện tại. |
+| `ArecaEngine` | `src/areca_engine*` | Nhận event Fcitx5, chọn mode theo ứng dụng, chọn rewrite backend, nạp config, giữ cache verdict backend của context hiện tại. |
 | `InputModeHandler` | `src/mode_handler.h` | Interface lifecycle và KeyEvent chung cho các mode. |
 | `RewriteModeHandler` | `src/rewrite_mode.*` | Policy phím của Rewrite, restore surrounding, thử phím đầu khi rảnh rồi đưa phím vào `InputScheduler`. |
 | `PreeditModeHandler` | `src/preedit_mode.*` | Xử lý Bamboo đồng bộ và hiển thị preedit, không dùng scheduler hay rewrite backend. |
