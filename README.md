@@ -421,7 +421,52 @@ hãy đọc [CONTRIBUTING.md](CONTRIBUTING.md), đặc biệt mục quy tắc b�
 
 Xin cảm ơn những người đã đóng góp trực tiếp cho Areca:
 
-[![Contributors](https://contrib.rocks/image?repo=xhkzeroone/ArecaIME)](https://github.com/xhkzeroone/ArecaIME/graphs/contributors)
+<table>
+  <tr>
+    <th>Thành viên</th>
+    <th>Đóng góp</th>
+  </tr>
+  <tr>
+    <td align="center" width="160">
+      <a href="https://github.com/kimxuanhong">
+        <img src="https://github.com/kimxuanhong.png?size=160" width="80" alt="Kim Xuân Hồng"><br>
+        <b>Kim Xuân Hồng</b>
+      </a><br>
+      <sub>@kimxuanhong · @xhkzeroone</sub>
+    </td>
+    <td>
+      Tác giả và người phát triển chính.
+      <ul>
+        <li>Kiến trúc addon Fcitx5, hàng đợi phím và chế độ Rewrite, Preedit</li>
+        <li>Các backend sửa chữ: surrounding text, uinput, Shift+Left, Libei/XTest, ForwardKey</li>
+        <li>Nhận diện ứng dụng qua AT-SPI, xử lý trình duyệt và thanh địa chỉ</li>
+        <li>Sửa từ đã commit, thời gian chờ thích nghi</li>
+        <li>Ứng dụng cài đặt GTK, installer, gói phân phối và website</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="160">
+      <a href="https://github.com/justanoobcoder">
+        <img src="https://github.com/justanoobcoder.png?size=160" width="80" alt="Nguyễn Hồng Hiệp"><br>
+        <b>Nguyễn Hồng Hiệp</b>
+      </a><br>
+      <sub>@justanoobcoder</sub>
+    </td>
+    <td>
+      <ul>
+        <li>Kiểm tra chính tả thời gian thực và lựa chọn chế độ chính tả</li>
+        <li>Ứng dụng cài đặt <code>areca-settings</code> bản đầu: tab giao diện, tìm kiếm macro, các tuỳ chọn mới</li>
+        <li>Macro tự viết hoa theo từ viết tắt và hoàn tác macro bằng Backspace</li>
+        <li>Xử lý tên frontend khác nhau giữa các môi trường</li>
+        <li>Hướng dẫn cài trên NixOS, cấu hình CI cho settings</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+Danh sách đầy đủ xem tại
+[trang contributors](https://github.com/xhkzeroone/ArecaIME/graphs/contributors).
 
 Xin chân thành cảm ơn các anh, chị, em trong cộng đồng đã dành thời gian trải
 nghiệm Areca, báo lỗi, gửi log và chia sẻ những ý tưởng quý báu. Mỗi phản hồi
