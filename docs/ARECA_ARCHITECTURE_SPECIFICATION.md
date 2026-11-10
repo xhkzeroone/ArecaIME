@@ -1,129 +1,137 @@
-# Areca IME - Technical Architecture Specification
+# Areca IME - Đặc tả kỹ thuật
 
-Tài liệu tả chi tiết kiến trúc kỹ thuật, luồng xử lý dữ liệu và sơ đồ tuần tự (Sequence Diagrams) của bộ gõ tiếng Việt **Areca IME** trên hệ điều hành Linux (Fcitx5 / Wayland).
+Tài liệu đặc tả invariant, chính sách chọn backend, sequence diagram của từng
+rewrite backend và bảng timing. Tổng quan thành phần, luồng phím, restore và
+Preedit nằm trong [ARCHITECTURE.md](ARCHITECTURE.md).
 
-> **Bản vẽ HTML xuất bản:** Xem giao diện HTML đẹp mắt và tương tác tại [website/architecture.html](../website/architecture.html).
-
----
-
-## 1. Tổng quan hệ thống
-
-Areca IME là bộ gõ tiếng Việt dành cho Linux dưới dạng mô-đun mở rộng (addon) của **Fcitx5**, được viết bằng **C++20**. Areca tích hợp trực tiếp thư viện core `bamboo-core` để xử lý quy tắc gõ tiếng Việt (Telex, VNI, VIQR, v.v.), đồng thời tự quản lý luồng sự kiện phím bất đồng bộ và cơ chế chỉnh sửa lại văn bản đã hiển thị.
+## 1. Tổng quan luồng Rewrite
 
 ```text
-Fcitx5 Key Event
-       ├──► Idle first key: Bamboo → unchanged → event chưa accept
-       │ (Các text key còn lại: filterAndAccept)
-       ▼
-  KeyQueue (FIFO Queue)
-       │ (Single-flight processing)
-       ▼
- InputScheduler ──► BambooEngineAdapter ──► BambooResult
-                                              │
-                          deleteCount == 0 ───┼──► commitString
-                                              │
-                          deleteCount > 0  ───┘
-                                              │
-                          ReliabilityChecker & Policy
-                                  │
-    ┌─────────────────────────────┼─────────────────────────────┐
-    ▼                             ▼                             ▼
-SurroundingTextBackend  UinputShiftSelectBackend    ForwardBackspaceBackend
-(deleteSurroundingText) (uinput Shift+Left bôi đen) (forwardKey Backspace × N)
+Fcitx5 KeyEvent
+   │
+   ├─ ô mật khẩu, terminal bị tắt tiếng Việt, mode Redirect ─► forward nguyên bản
+   ├─ phím do backend phát ra quay về ─► backend xử lý ACK và forward
+   ├─ phím đầu trong trình duyệt, Bamboo rỗng ─► handleIdleKey
+   │
+   ▼ filterAndAccept
+KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
+                                                        │
+                       deleteCount == 0 ◄───────────────┤
+                       commitString                     │ deleteCount > 0
+                                                        ▼
+                                              selectRewriteBackend
+                                                        │
+      ┌──────────────────┬───────────────────┬──────────┴───────────┐
+      ▼                  ▼                   ▼                      ▼
+ Surrounding V1/V2   Shift select        Backspace             Backspace
+ deleteSurrounding   uinput / Native     uinput / Native       ForwardKey
+                                                        │
+                                                        ▼
+                                  AdaptiveWait → EventLoopPostTask → commitString
+                                                        │
+                                                        ▼
+                                         PostCommitDelayMs → phím kế tiếp
 ```
 
----
+## 2. Thành phần
 
-## 2. Các thành phần chính (System Components)
-
-| Thành phần | Trách nhiệm chính |
+| Thành phần | Trách nhiệm |
 | :--- | :--- |
-| `ArecaEngine` | Quản lý vòng đời Fcitx5 addon, dispatch sự kiện theo chế độ gõ (`PresentationMode`) và lưu cache Reliability Verdict cho từng InputContext. |
-| `InputModeHandler` | Interface trừu tượng xử lý sự kiện phím cho các chế độ gõ. |
-| `RewriteModeHandler` | Quản lý chế độ Rewrite (gõ trực tiếp); lọc phím và nạp phím vào `InputScheduler`. |
-| `PreeditModeHandler` | Quản lý chế độ Preedit (gõ qua gạch chân composition); xử lý đồng bộ trực tiếp với Bamboo mà không qua scheduler hay backend rewrite. |
-| `RedirectModeHandler` | Chế độ chuyển tiếp phím gốc (dùng cho ô nhập mật khẩu); bypass toàn bộ Bamboo engine và scheduler. |
-| `KeyQueue` | Hàng đợi FIFO lưu trữ sự kiện phím gốc, Unicode codepoint, UTF-8 sequence và watch reference tới InputContext. |
-| `MouseClickTracker` | Nhận cờ click qua pipe trên event loop, quản lý vòng đời helper. |
-| `areca-mouse-monitor` | Process con dùng libinput/udev bắt nhấn chuột và tap touchpad. |
-| `InputScheduler` | Bộ điều phối sự kiện đơn luồng (Single-flight Scheduler), quản lý ranh giới giao dịch (Transaction Barrier) và timer sau commit. |
-| `BambooEngineAdapter` | Lớp cầu nối C++/Go gọi thư viện `bamboo-core`, biến đổi kết quả gõ thành `BambooResult` (bao gồm `deleteCount` và `commitText`). |
-| `ReliabilityChecker` | Kiểm tra khả năng tương thích SurroundingText của ứng dụng ở lần gõ đầu tiên và quyết định chiến lược rewrite. |
-| `RewriteBackend` | Interface trừu tượng định nghĩa phương thức thực thi một `RewritePlan`. |
-| `SurroundingTextBackend` | Thực thi xóa văn bản qua API Fcitx `deleteSurroundingText()` và chèn chữ mới qua `commitString()`, tích hợp `AdaptiveWait` và kiểm tra xác nhận qua sự kiện `SurroundingTextUpdated`. |
-| `SurroundingTextV2Backend` | Thực thi xóa văn bản từng ký tự tuần tự (Incremental Delete) cho các trình soạn thảo không ổn định với xóa gộp, tích hợp `AdaptiveWait`. |
-| `UinputShiftSelectBackend` | Phát `Shift down` và `Left` × N+1 qua `/dev/uinput`; Fcitx forward N Left đầu, lọc lần xác nhận cuối, phát `Shift up`, chờ mặc định 5 ms trên Wayland hoặc 10 ms trên frontend khác rồi commit. Timeout xác nhận là 20 ms. |
-| `UinputBackspaceBackend` | Phát đúng `KEY_BACKSPACE` × N qua `/dev/uinput` và forward mọi event Backspace quay lại Fcitx. Bộ đếm ACK chỉ là mốc tương đối để bắt đầu settling wait; timer phát phím độc lập với timer commit và commit luôn đợi phát hết N phím. Nếu chưa đủ ACK, timeout cấu hình (mặc định 150 ms) vẫn chuyển sang settling wait. Terminal nhúng trong VS Code dùng `ForwardBackspaceBackend`. |
-| `ForwardBackspaceBackend` | Phát phím Backspace tuần tự qua `InputContext::forwardKey()`, áp dụng settling delay thích ứng theo timer drift và commit chữ mới. |
+| `ArecaEngine` | Vòng đời addon, chọn mode theo ứng dụng, chọn backend, cache verdict surrounding của context hiện tại. |
+| `RewriteModeHandler` | Policy phím Rewrite, restore surrounding, đưa phím vào scheduler. |
+| `PreeditModeHandler` | Preedit đồng bộ, không dùng scheduler hay backend. |
+| `RedirectModeHandler` | Forward phím gốc. |
+| `InputScheduler` | FIFO single-flight, transaction rewrite, post-commit barrier, khoảng bảo vệ reset. |
+| `BambooEngineAdapter` | Gọi `bamboo-core` qua cgo, trả `BambooResult` gồm `deleteCount` và `commitText`. |
+| `BackendVerdict` | Kết quả probe surrounding, số lần probe, cờ retry ở từ kế tiếp. |
+| `RewriteBackend` | Interface `apply(inputContext, plan, onDone)` trả `Completed`, `Pending` hoặc `Failed`. |
+| `AdaptiveWait` | Thời gian chờ cộng thêm dùng chung cho mọi backend. |
+| `EventLoopPostTask` | Chạy commit ở pha post của event loop. |
 
----
+## 3. Invariant
 
-## 3. Quy tắc Invariant cốt lõi
+1. **FIFO**: phím qua queue giữ đúng thứ tự. Phím đầu chỉ được xử lý trực tiếp
+   khi scheduler rảnh và hết khoảng bảo vệ.
+2. **Single-flight**: tại một thời điểm chỉ một phím được Bamboo xử lý và chỉ một
+   transaction rewrite chạy.
+3. **Transaction barrier**: khi backend đang xoá, chọn hoặc commit, scheduler giữ
+   trạng thái bận. Sau khi backend báo hoàn tất, scheduler chờ thêm
+   `PostCommitDelayMs`.
+4. **Gọi lại đúng một lần**: backend trả `Pending` phải gọi `onDone` đúng một lần
+   với đúng `transactionId`.
+5. **Dừng khi lỗi**: backend báo `Failed` làm scheduler dừng nhận phím vì trạng
+   thái ứng dụng không còn xác định.
+6. **Không sleep trên thread chính**: mọi khoảng chờ dùng timer của event loop.
+   Việc chặn như D-Bus đồng bộ chạy trên thread riêng.
+7. **Không reset giữa transaction**: reset bị từ chối khi đang có rewrite hoặc
+   trong 20 ms sau commit.
 
-1. **Thứ tự FIFO bảo toàn**: Phím đi qua queue giữ thứ tự FIFO. Phím đầu chỉ được xử lý trực tiếp khi scheduler rảnh và không còn barrier bảo vệ.
-2. **Xử lý đơn luồng (Single-flight)**: Chỉ một phím duy nhất được Bamboo xử lý tại một thời điểm. Phím mới đến trong lúc pipeline đang bận sẽ chờ ở `KeyQueue`.
-3. **Ranh giới giao dịch (Transaction Barrier)**: Khi một Backend Rewrite đang chạy (xóa/bôi đen/commit), scheduler giữ trạng thái bận và không cho phím sau chen ngang.
-4. **Không sleep trên Main Thread**: Mọi khoảng chờ (delay) giữa các phím bấm ảo và post-commit đều sử dụng timer bất đồng bộ trên EventLoop của Fcitx.
-
----
-
-## 4. Chính sách lựa chọn Backend (`selectRewriteBackend`)
-
-Khi Bamboo trả về kết quả yêu cầu xóa ký tự (`deleteCount > 0`), `ArecaEngine` lựa chọn Rewrite Backend theo thứ tự ưu tiên sau:
+## 4. Chính sách chọn backend
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant E as ArecaEngine
-    participant R as ReliabilityChecker
+    participant D as InputTypeDetector
     participant IC as InputContext
 
     S->>E: selectRewriteBackend(inputContext, result)
-    E->>R: evaluate(inputContext, shownText, verdict)
-    R-->>E: ReliabilityDecision
-    E->>IC: surroundingText() & check (cursor != anchor)
-    
-    alt plasmashell OR VS Code embedded terminal
-        E-->>S: Return ForwardBackspaceBackend
-    else browserAutocomplete OR (surrounding.isValid & cursor != anchor)
-        E-->>S: Return ForwardBackspaceBackend (+1 extra backspace)
-    else App Override: mode != Auto
-        alt Mode: SurroundingText
-            E-->>S: Return Surrounding / Shift-Select / ForwardKey
-        else Mode: Shift+Left (uinput)
-            E-->>S: Return UinputShiftSelectBackend
-        else Mode: Native (Libei/XTest)
-            E-->>S: Return NativeXTestBackend (fallback uinput/forward)
-        else Mode: Uinput Backspace
-            E-->>S: Return UinputBackspaceBackend (fallback native/forward)
-        else Mode: ForwardKey
-            E-->>S: Return ForwardBackspaceBackend
+    E->>D: isTerminal, canForwardBackspaces, inChromiumAddressBar
+    E->>IC: capabilityFlags, surroundingText
+    E->>E: evaluateReliability
+
+    alt Terminal
+        E-->>S: Backspace, ưu tiên phím phần cứng
+    else Autocomplete trình duyệt hoặc đang có vùng chọn
+        alt Ô URL
+            E-->>S: Shift select
+        else Ô khác
+            E-->>S: Backspace, có thể thêm 1 phím
         end
-    else decision.useSurrounding & UseUinputShiftSelectForBrowser & isBrowser & uinputAvailable
-        E-->>S: Return UinputShiftSelectBackend
-    else decision.useSurrounding
-        E-->>S: Return SurroundingTextBackend
-    else DBus terminal/unknown & uinputAvailable
-        E-->>S: Return UinputBackspaceBackend
-    else ForceUinput & uinputAvailable
-        E-->>S: Return UinputBackspaceBackend
-    else Fallback
-        E-->>S: Return ForwardBackspaceBackend
+    else Ô URL trình duyệt không có surrounding
+        E-->>S: Shift select
+    else UseBackspaceForUrl và ô URL
+        E-->>S: Shift select, không có thì Backspace
+    else Cấu hình theo ứng dụng
+        alt Surrounding
+            E-->>S: Surrounding nếu verdict cho phép, không thì Shift select hoặc Backspace
+        else Shift select
+            E-->>S: Shift select, không có thì Backspace
+        else Backspace
+            E-->>S: Backspace
+        end
+    else Verdict cho phép surrounding
+        E-->>S: Surrounding V1 hoặc V2, kèm probe nếu chưa xác nhận
+    else Trình duyệt và ShiftSelectFallbackForBrowser
+        E-->>S: Shift select
+    else Còn lại
+        E-->>S: Backspace
     end
 ```
 
+Thứ tự trong từng nhóm backend:
+
+| Nhóm | Thứ tự |
+| --- | --- |
+| Surrounding | V2 nếu `UseSurroundingV2InsteadOfSurroundingV1`, ngược lại V1 |
+| Shift select | Native nếu `UseXTestInsteadOfUinput` → uinput → Native |
+| Backspace | Nếu cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey`: Native nếu được ưu tiên → uinput → Native. Cuối cùng ForwardKey |
+
+Cần phím phần cứng khi ứng dụng là terminal hoặc `canForwardBackspaces()` trả
+false: ứng dụng SDL, frontend DBus thiếu `KeyEventOrderFix` và `SurroundingText`,
+frontend Fcitx4 thiếu `FormattedPreedit` và `SurroundingText`, hoặc frontend lạ.
+
 > [!IMPORTANT]
-> **Cơ chế bảo vệ bôi đen (Selection Guard)**:
-> Nếu phát hiện trong ô nhập liệu đang có văn bản bôi đen sẵn (`cursor != anchor`) hoặc có gợi ý Autocomplete của trình duyệt, hệ thống tự động loại bỏ `UinputShiftSelectBackend` và chuyển sang `ForwardBackspaceBackend` với `+1` phím Backspace bổ sung để xóa sạch vùng bôi đen một cách an toàn.
+> **Bảo vệ vùng chọn**: khi ô đang có vùng chọn hoặc gợi ý autocomplete, ô không
+> phải URL dùng Backspace với 1 phím thêm để xoá vùng chọn trước. Ô URL dùng
+> Shift select để chọn lại đúng phần cần thay.
 
----
+## 5. Sequence diagram các backend
 
-## 5. Chi tiết sơ đồ tuần tự (Sequence Diagrams) các Backend
+### 5.1. `SurroundingTextBackend`
 
-### 5.1. `SurroundingTextBackend` Sequence Diagram
-
-#### A. Luồng Probe xác thực độ tin cậy và kiểm tra sự kiện `SurroundingTextUpdated`
+#### A. Probe bằng `SurroundingTextUpdated`
 
 ```mermaid
 sequenceDiagram
@@ -133,37 +141,36 @@ sequenceDiagram
     participant B as SurroundingTextBackend
     participant IC as InputContext
     participant EL as EventLoop
-    participant FB as FallbackBackend
+    participant FB as Backend fallback
 
-    S->>B: apply(inputContext, plan[probe=true], onDone)
-    B->>B: Lưu snapshot gốc và tính snapshot kỳ vọng
-    B->>IC: deleteSurroundingText(-count, count)
-    B->>EL: addTimeEvent(ProbeDeadline = 150ms)
-    
-    alt Trường hợp 1: Nhận sự kiện InputContextSurroundingTextUpdated trước 150ms
-        IC-->>E: Sự kiện InputContextSurroundingTextUpdated
-        E->>B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=true)
-        B->>B: surroundingProbeMatches: kiểm tra ngữ nghĩa text trước con trỏ
-        Note over B: Xác thực khớp: con trỏ bằng anchor, không còn text cũ, khớp text kỳ vọng
-        B->>EL: timer.reset (Hủy deadline 150ms)
-        B->>E: onProbeSucceeded: probePending = false, reliable = true
-        B->>EL: Chờ effectiveWaitMs (AdaptiveWait)
-        EL-->>B: commitPost_.schedule (Pha post của EventLoop)
+    S->>B: apply(plan probe=true)
+    B->>B: Lưu snapshot gốc, tính snapshot kỳ vọng
+    B->>IC: deleteSurroundingText(-N, N)
+    B->>EL: Timer deadline 150 ms, retry 80 ms
+
+    alt Nhận update khớp trước deadline
+        IC-->>E: InputContextSurroundingTextUpdated
+        E->>B: notifySurroundingTextUpdated
+        B->>B: surroundingProbeMatches
+        B->>EL: Huỷ deadline
+        B->>E: onProbeSucceeded
+        B->>EL: Chờ SurroundingWaitMs + AdaptiveWait
+        EL-->>B: Pha post
         B->>IC: commitString(commitText)
-        B->>S: onDone(transactionId, Succeeded)
-    else Trường hợp 2: Hết hạn 150ms không có sự kiện hợp lệ (Timeout)
-        EL-->>B: Timer ProbeDeadline 150ms kích hoạt
-        B->>B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=false)
-        Note over B: Kiểm tra lần cuối snapshot hiện tại trong queue
-        alt Snapshot vẫn không khớp
-            B->>E: onProbeFailed: known = true, reliable = false, probePending = false
-            B->>FB: apply(inputContext, plan[probe=false], onDone)
-            Note over B,FB: Chuyển sang ShiftSelect nếu là trình duyệt hoặc Backspace
-        end
+        B->>S: onDone(Succeeded)
+    else Hết deadline
+        EL-->>B: Deadline
+        B->>E: onProbeFailed, retry ở từ kế tiếp nếu còn lượt
+        B->>FB: apply(plan probe=false)
+        Note over B,FB: Shift select nếu bật fallback trình duyệt, ngược lại Backspace
     end
 ```
 
-#### B. Luồng Rewrite thông thường với `AdaptiveWait` và `EventLoopPostTask`
+Update không khớp bị bỏ qua và backend tiếp tục chờ. Ngoài ra, nếu ngay lúc
+chọn backend snapshot không chứa từ đang gõ trước con trỏ, probe bị tính là thất
+bại trước khi gửi lệnh xoá và restore bị tắt cho context đó.
+
+#### B. Rewrite khi đã xác nhận
 
 ```mermaid
 sequenceDiagram
@@ -173,122 +180,137 @@ sequenceDiagram
     participant IC as InputContext
     participant AW as AdaptiveWait
     participant EL as EventLoop
-    participant PT as EventLoopPostTask
 
-    S->>B: apply(inputContext, plan[probe=false], onDone)
-    alt backspaceCount > 0
-        B->>AW: beginTransaction
-        B->>IC: deleteSurroundingText(-count, count)
-        B->>B: updateSurroundingCacheAfterDelete
-        B->>AW: effectiveWaitMs(waitMs), effectiveExtraWaitMs(waitMs)
-        B->>EL: addTimeEvent(effectiveWaitMs)
-        EL-->>B: Timer callback (observeTimer ghi nhận độ trễ thực tế)
-        B->>PT: commitPost_.schedule
-        PT-->>B: Pha post của EventLoop
-        B->>B: commitAfterAdaptiveWait: kiểm tra nếu trễ tăng thì giãn tiếp
+    S->>B: apply(plan probe=false)
+    B->>AW: beginTransaction
+    B->>IC: deleteSurroundingText(-N, N)
+    B->>B: updateSurroundingCacheAfterDelete
+    B->>EL: Timer SurroundingWaitMs + extra
+    EL-->>B: Timer, chuyển sang pha post
+    B->>AW: observeTimer
+    alt Extra tăng trong lúc chờ
+        B->>EL: Chờ thêm phần chênh lệch
+    end
+    B->>IC: commitString(commitText)
+    B->>B: updateSurroundingCacheAfterCommit
+    B->>AW: completeTransaction
+    B->>S: onDone(Succeeded)
+```
+
+### 5.2. `SurroundingTextV2Backend`
+
+Dùng cho editor xử lý lệnh xoá gộp `-N` không ổn định. Xoá từng ký tự và xác
+nhận lần xoá cuối ở mọi rewrite, không chỉ lần đầu.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as InputScheduler
+    participant B as SurroundingTextV2Backend
+    participant IC as InputContext
+    participant EL as EventLoop
+
+    S->>B: apply(plan)
+    loop N - 1 lần
+        B->>IC: deleteSurroundingText(-1, 1)
+        B->>EL: Timer SurroundingDeleteDelayMs, Wayland dùng WaylandSurroundingDeleteDelayMs
+        EL-->>B: Timer
+    end
+    B->>EL: Timer deadline xác nhận
+    B->>IC: deleteSurroundingText(-1, 1) lần cuối
+    alt Update khớp
+        IC-->>B: SurroundingTextUpdated
+        B->>EL: Chờ AfterSurroundingDeleteWaitMs + extra, pha post
         B->>IC: commitString(commitText)
-        B->>B: updateSurroundingCacheAfterCommit
-        B->>AW: completeTransaction (giảm dần độ trễ khi hệ thống ổn định)
-        B->>S: onDone(transactionId, Succeeded)
-    else backspaceCount == 0
-        B->>IC: commitString(commitText)
-        B->>B: updateSurroundingCacheAfterCommit
-        B->>S: onDone(transactionId, Succeeded)
+        B->>S: onDone(Succeeded)
+    else Hết deadline
+        B->>B: Chuyển sang backend fallback như V1
     end
 ```
 
----
-
-### 5.2. `UinputShiftSelectBackend` Sequence Diagram
+### 5.3. `UinputShiftSelectBackend`
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant B as UinputShiftSelectBackend
-    participant DEV as UinputDevice (/dev/uinput)
+    participant DEV as /dev/uinput
     participant EL as EventLoop
     participant IC as InputContext
 
-    S->>B: apply(inputContext, plan, onDone)
-    B->>DEV: sendKeyEvent(KEY_LEFTSHIFT, 1) (Shift DOWN)
-    B->>EL: addTimeEvent(UinputShiftSelectDelayMs = 1ms)
-    
-    loop N+1 lần
-        EL-->>B: Timer callback
-        B->>DEV: sendKeyEvent(KEY_LEFT, 1) -> (KEY_LEFT, 0)
-        B->>EL: addTimeEvent(UinputShiftSelectDelayMs = 1ms)
+    S->>B: apply(plan)
+    B->>DEV: Shift down
+    loop N lần
+        EL-->>B: Timer UinputShiftSelectDelayMs
+        B->>DEV: Left press, release
     end
-
-    B->>EL: addTimeEvent(AckTimeout = 20ms)
-    alt Left thứ N+1 về trước timeout
-        DEV-->>IC: N Left đầu quay lại Fcitx
-        IC-->>B: forward N Left
-        DEV-->>IC: Left thứ N+1 quay lại Fcitx
-        IC-->>B: filter Left dư và hủy timeout
-    else Timeout về trước
-        EL-->>B: Ack timeout
-        B->>B: clear left tracker
+    DEV-->>IC: Left quay về Fcitx
+    IC-->>B: handleKeyEvent: forward
+    B->>DEV: Shift up
+    B->>EL: Timer ACK UinputShiftSelectAckTimeoutMs = 150 ms
+    alt Shift up quay về trước timeout
+        IC-->>B: Shift release: forward, observeAckRoundtrip
+    else Timeout
+        EL-->>B: observeAckTimeout
     end
-    B->>DEV: sendKeyEvent(KEY_LEFTSHIFT, 0) (Shift UP)
-    B->>EL: addTimeEvent(AfterUinputShiftSelectWaitMs = 5ms Wayland / 10ms frontend khác)
-    
-    EL-->>B: Timer callback (Settling wait hoàn tất)
-    
-    loop Lần lượt từng ký tự UTF-8 trong commitText
-        B->>IC: commitString(utf8_char)
-        B->>EL: addTimeEvent(5ms)
-        EL-->>B: Timer callback
-    end
-    
-    B->>B: finishTransaction()
-    B->>S: onDone(transactionId)
+    B->>EL: Chờ AfterUinputShiftSelectWaitMs + extra, pha post
+    B->>IC: commitString(ký tự đầu), đè lên vùng chọn
+    B->>EL: Chờ 5 ms, pha post
+    B->>IC: commitString(phần còn lại)
+    B->>S: onDone(Succeeded)
 ```
 
----
+Mọi Left và Shift quay về đều được forward tới ứng dụng. Shift up là ACK duy nhất.
+`commitText` rỗng thì backend phát một Backspace để xoá vùng chọn.
 
-### 5.3. `UinputBackspaceBackend` Sequence Diagram
+### 5.4. `XTestShiftSelectBackend`
+
+Giống 5.3 nhưng phát Shift, Left qua libei hoặc XTest, khoảng cách giữa các Left
+cộng thêm adaptive, và không chờ ACK: thả Shift xong là bắt đầu chờ commit.
+
+### 5.5. `UinputBackspaceBackend`
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant S as InputScheduler
     participant B as UinputBackspaceBackend
-    participant DEV as UinputDevice (/dev/uinput)
+    participant DEV as /dev/uinput
     participant EL as EventLoop
     participant IC as InputContext
 
-    S->>B: apply(inputContext, plan, onDone)
-    
+    S->>B: apply(plan)
     loop N lần
-        B->>DEV: sendKeyEvent(KEY_BACKSPACE, 1) -> (KEY_BACKSPACE, 0)
-        B->>EL: sendTimer.addTimeEvent(BackspaceDelayMs)
-        EL-->>B: Timer callback
+        B->>DEV: Backspace press, release
+        B->>EL: Timer BackspaceDelayMs + adaptive
     end
-
-    DEV-->>IC: Backspace quay lại Fcitx
-    IC-->>B: forward mọi press/release và tăng seen
-    alt seen đạt N
-        B->>EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
-    else Chưa đạt N sau phím phát cuối
-        B->>EL: commitTimer.addTimeEvent(AckTimeoutMs)
-        EL-->>B: Ack timeout
-        B->>EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
+    B->>EL: Timer ACK UinputBackspaceAckTimeoutMs = 150 ms
+    DEV-->>IC: Backspace quay về Fcitx
+    IC-->>B: handleBackspace: forward, tăng seen
+    alt seen đạt N trước timeout
+        B->>B: observeAckRoundtrip
+    else Timeout
+        B->>B: observeAckTimeout
     end
-    EL-->>B: Settling wait hoàn tất
+    B->>EL: Chờ AfterBackspaceWaitMs theo frontend + extra, pha post
     alt Vẫn còn Backspace chưa phát
-        B->>B: Đánh dấu wait đã hết
-        B->>EL: Phát hết rồi chờ lại AfterBackspaceWaitMs
-        EL-->>B: Settling wait sau phím cuối hoàn tất
+        B->>B: Đánh dấu đã chờ xong, phát hết rồi chờ lại
     end
     B->>IC: commitString(commitText)
-    B->>B: clearPending()
-    B->>S: onDone(transactionId)
+    B->>S: onDone(Succeeded)
 ```
 
----
+Mọi Backspace quay về đều được forward. `seen` chỉ là mốc để bắt đầu chờ, không
+dùng để lọc phím. Commit không bao giờ xảy ra trước khi phát hết N phím.
 
-### 5.4. `ForwardBackspaceBackend` Sequence Diagram
+### 5.6. `XTestBackspaceBackend`
+
+Phát Backspace × N qua libei hoặc XTest với `XTestBackspaceDelayMs` cộng adaptive,
+rồi chờ `AfterXTestBackspaceWaitMs` theo frontend cộng extra và commit ở pha post.
+Không có ACK.
+
+### 5.7. `ForwardBackspaceBackend`
 
 ```mermaid
 sequenceDiagram
@@ -298,163 +320,63 @@ sequenceDiagram
     participant IC as InputContext
     participant EL as EventLoop
 
-    S->>B: apply(inputContext, plan, onDone)
-    
-    loop N = backspaceCount lần
-        B->>IC: forwardKey(Backspace press/release)
-        B->>EL: addTimeEvent(BackspaceDelayMs)
-        EL-->>B: Timer callback
+    S->>B: apply(plan)
+    loop N lần
+        B->>IC: forwardKey(Backspace press, release)
+        B->>EL: Timer BackspaceDelayMs + adaptive
     end
-    
-    B->>EL: addTimeEvent(AfterBackspaceWaitMs)
-    EL-->>B: Timer callback (Settling wait hoàn tất)
+    B->>EL: Chờ AfterBackspaceWaitMs theo frontend + extra, pha post
     B->>IC: commitString(commitText)
-    B->>B: clearPending()
-    B->>S: onDone(transactionId)
+    B->>S: onDone(Succeeded)
 ```
 
----
+## 6. Timing
 
-## 6. Đề xuất cải tiến tương lai (Future Architecture Extensions)
+Các khoá nằm trong `conf/areca-advanced.conf`. Khoá có hậu tố frontend được chọn
+theo tên frontend bắt đầu bằng `wayland`, `xim`, `fcitx4`, `dbus`, `ibus`. Khoá
+ẩn không có trong giao diện nhưng đọc được từ file.
 
-### Đề xuất SurroundingTextBackend xóa từng ký tự (Incremental Delete)
-
-> [!NOTE]
-> **Bối cảnh**: Hiện tại `SurroundingTextBackend` phát lệnh xóa gộp `deleteSurroundingText(-N, N)` trong 1 lần gọi RPC. Bộ máy Firefox Gecko hoặc một số Web Editor (Monaco, CodeMirror) xử lý câu lệnh xóa gộp `-N` ký tự không ổn định khi phía sau con trỏ đang có các ký tự đặc biệt (như dấu ngoặc `}}` hoặc thẻ HTML).
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextBackend (Đề xuất)
-    participant IC as InputContext
-    participant EL as EventLoop
-
-    S->>B: apply(inputContext, plan, onDone)
-    
-    alt backspaceCount > 0
-        loop N = backspaceCount lần
-            B->>IC: deleteSurroundingText(-1, 1)
-            B->>B: updateSurroundingCacheAfterDelete(-1, 1)
-            B->>EL: addTimeEvent(DeleteDelayMs = 1ms)
-            EL-->>B: Timer callback
-        end
-        
-        B->>EL: addTimeEvent(WaitMs = 3ms)
-        EL-->>B: Timer callback (Settling wait hoàn tất)
-        B->>IC: commitString(commitText)
-        B->>B: updateSurroundingCacheAfterCommit(...)
-        B->>S: onDone(transactionId)
-    else backspaceCount == 0
-        B->>IC: commitString(commitText)
-        B->>S: onDone(transactionId)
-    end
-```
-
----
-
-## 7. Bảng thông số cấu hình Timing (Advanced Timing Configuration)
-
-| Tên tùy chọn trong Config | Ý nghĩa & Mô tả | Giá trị mặc định |
+| Khoá | Ý nghĩa | Mặc định |
 | :--- | :--- | :--- |
-| `BackspaceDelayMs` | Delay giữa các phím Backspace ảo (ms) | `1 ms` |
-| `AfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối (ms) | `10 ms` |
-| `WaylandAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên Wayland (ms) | `3 ms` |
-| `XimAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên XIM (ms) | `10 ms` |
-| `Fcitx4AfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên Fcitx4 (ms) | `10 ms` |
-| `DbusAfterBackspaceWaitMs` | Thời gian chờ sau phím Backspace cuối trên DBus (ms) | `10 ms` |
-| `UinputShiftSelectDelayMs` | Delay giữa các phím uinput Shift+Left (ms) | `1 ms` |
-| `AfterUinputShiftSelectWaitMs` | Thời gian chờ sau khi thả Shift uinput (ms) | `10 ms` |
-| `WaylandAfterUinputShiftSelectWaitMs` | Thời gian chờ sau khi thả Shift uinput Wayland (ms) | `5 ms` |
-| `XimAfterUinputShiftSelectWaitMs` | Thời gian chờ sau khi thả Shift uinput XIM (ms) | `10 ms` |
-| `Fcitx4AfterUinputShiftSelectWaitMs` | Thời gian chờ sau khi thả Shift uinput Fcitx4 (ms) | `10 ms` |
-| `DbusAfterUinputShiftSelectWaitMs` | Thời gian chờ sau khi thả Shift uinput DBus (ms) | `10 ms` |
-| `SurroundingWaitMs` | Thời gian chờ sau xóa surrounding text | `3 ms` |
-| `PostCommitDelayMs` | Delay bảo vệ sau mỗi lượt commit (ms) | `20 ms` |
-| `PreciseTiming` | Sử dụng timer độ chính xác cao (1µs) | `True` |
+| `BackspaceDelayMs` | Giữa các Backspace uinput và ForwardKey | 1 ms |
+| `UinputBackspaceAckTimeoutMs` | Timeout ACK Backspace uinput, ẩn | 150 ms |
+| `AfterBackspaceWaitMs` | Chờ sau Backspace cuối, frontend khác | 10 ms |
+| `Wayland`, `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterBackspaceWaitMs` | Như trên theo frontend | 10 ms |
+| `UinputShiftSelectDelayMs` | Giữa các Left, dùng cho cả Native | 1 ms |
+| `UinputShiftSelectAckTimeoutMs` | Timeout ACK Shift up, ẩn | 150 ms |
+| `AfterUinputShiftSelectWaitMs` | Chờ sau khi thả Shift, frontend khác | 10 ms |
+| `WaylandAfterUinputShiftSelectWaitMs` | Như trên, Wayland | 5 ms |
+| `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterUinputShiftSelectWaitMs` | Như trên theo frontend | 10 ms |
+| `SurroundingWaitMs` | Chờ sau lệnh xoá surrounding V1 | 3 ms |
+| `SurroundingProbeTimeoutMs` | Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms | 80 ms |
+| `SurroundingDeleteDelayMs` | Giữa các lệnh xoá V2 | 10 ms |
+| `WaylandSurroundingDeleteDelayMs` | Như trên, Wayland | 0 ms |
+| `AfterSurroundingDeleteWaitMs` | Chờ sau lệnh xoá V2 cuối | 1 ms |
+| `XTestBackspaceDelayMs` | Giữa các Backspace Native | 1 ms |
+| `AfterXTestBackspaceWaitMs` | Chờ sau Backspace Native cuối, frontend khác | 10 ms |
+| `Wayland`, `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterXTestBackspaceWaitMs` | Như trên theo frontend | 10 ms |
+| `PostCommitDelayMs` | Barrier sau mỗi phím | 20 ms |
+| `PreciseTiming` | Timer accuracy 1 µs thay vì 0 | `True` |
 
-### Bật/tắt tính năng nhập liệu
+Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 
-Hai tùy chọn nhập liệu trong **Cấu hình nâng cao**
-(`conf/areca-advanced.conf`) mặc định bật:
+| Nhóm khoá | Giá trị |
+| --- | --- |
+| Chờ sau Backspace, Shift select, Native trên Wayland | 3 ms |
+| Chờ sau Backspace, Shift select, Native trên DBus và IBus | 5 ms |
+| `SurroundingWaitMs`, các delay và chờ của Surrounding V2 | 1 ms |
 
-| Khóa | Nhãn giao diện | Khi tắt |
-| --- | --- | --- |
-| `EnableMouseTracking` | Tự reset bộ gõ sau khi click chuột trong mọi ứng dụng | Hủy tracker, watcher, pipe và process helper; xóa click đang chờ. |
-| `ForwardFirstCharacter` | Chuyển tiếp phím đầu để tương thích trình duyệt | Bỏ qua `handleIdleKey()`, text key dùng luồng accept/enqueue cũ. |
+## 7. Tuỳ chọn hành vi liên quan
 
-Thay đổi qua giao diện cấu hình có hiệu lực ngay. Nếu sửa file bằng tay, cần
-reload cấu hình Fcitx. Bật lại mouse tracking tạo helper mới, không giữ click cũ.
-Tắt cả hai bằng:
-
-```ini
-EnableMouseTracking=False
-ForwardFirstCharacter=False
-```
-
-Mouse tracking dùng process riêng; tắt sẽ dừng hẳn process đó. Click reset
-composition của input context hiện tại trong mọi ứng dụng. Chuyển tiếp phím đầu
-chỉ áp dụng cho trình duyệt và không tạo thread/process riêng.
-
-## Phím đầu khi Rewrite đang rảnh
-
-Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo.
-Khi `ForwardFirstCharacter=True`, trước `filterAndAccept()`,
-`RewriteModeHandler` chỉ thử `InputScheduler::handleIdleKey()` cho input context
-trình duyệt, khi không chờ Backspace release và phím không bị đổi bởi tự viết
-hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text, không processing,
-không rewrite pending, queue rỗng, không stalled và đã qua khoảng bảo vệ reset
-sau commit (hiện là 20 ms).
-
-Bamboo vẫn xử lý phím đúng một lần. Nếu `deleteCount == 0`, `commitText` bằng
-UTF-8 đầu vào và không mở rộng macro, addon để event chưa filter/accept cho
-frontend xử lý. Trạng thái Bamboo được giữ để phím sau vẫn ghép dấu, ví dụ
-`a` rồi `s` thành `á`. Nhánh này không gọi `commitString()`, không phát cặp
-`forwardKey()` giả và không tự cập nhật surrounding cache. Scheduler vẫn giữ
-barrier `PostCommitDelayMs` trước khi xử lý phím kế tiếp để frontend kịp nhận
-phím vừa chuyển tiếp.
-
-`KeyEvent::forward()` trong API Fcitx đang dùng là getter; việc để event chưa
-filter/accept mới là điều cho phép phím đi tiếp. Cách frontend giao event đến
-trang web vẫn cần kiểm tra trên từng môi trường thực tế.
-
-Nếu Bamboo đổi đầu ra, scheduler accept event và áp dụng ngay kết quả đã tính,
-không enqueue lại để tránh xử lý cùng phím hai lần. Nếu chưa đủ điều kiện,
-`handleIdleKey()` trả false mà không sửa engine/event; caller dùng FIFO như cũ.
-Phím bị tự viết hoa cũng dùng luồng commit để giữ ký tự đã biến đổi.
-
-## Theo dõi click và reset composition
-
-`WindowFocusTracker` là thread đọc AT-SPI trong Fcitx. `MouseClickTracker`
-quản lý process con riêng `areca-mouse-monitor`; helper dùng libinput/udev trên
-`XDG_SEAT` (mặc định `seat0`) và cùng quyền user với Fcitx. Không cần socket
-server hoặc thread nhận chuột trong addon.
-
-```text
-libinput/udev → areca-mouse-monitor → stdout pipe riêng (R/C)
-             → MouseClickTracker trên event loop Fcitx → pending click
-             → ArecaEngine::keyEvent → kiểm tra scheduler → reset handler
-```
-
-- `R` báo context libinput đã khởi tạo, không đảm bảo có thiết bị đọc được.
-- `C` báo nút chuột được nhấn, không phân biệt nút trái/phải/giữa. Helper bật
-  tap-to-click trong context libinput riêng; di chuyển, cuộn và nhả nút không
-  gửi reset. udev hỗ trợ thiết bị được cắm thêm sau khi helper chạy.
-- Pipe nonblocking tránh chặn event loop/dispatch; nhiều click gộp thành một
-  cờ reset. stderr dành cho log, không lẫn vào protocol stdout.
-- Callback pipe chỉ đánh dấu. Trước phím nhấn tiếp theo, addon đọc thêm pipe để
-  lấy click đã đến nhưng callback chưa chạy. Nếu scheduler đang bảo vệ rewrite,
-  cờ vẫn được giữ cho phím sau; nếu được phép thì reset handler đang active,
-  xử lý cache verdict theo lifecycle và xóa cờ. Redirect không có composition
-  để reset. Đây không phải reset tức thời ngay khi click.
-- Activation thử khởi động lại helper đã mất kết nối và bỏ click cũ đã nhận.
-  Khi pipe đóng, watcher bị tắt; pending click đã nhận vẫn được giữ. Hủy tracker
-  sẽ đóng pipe, kết thúc và thu hồi process con bằng `waitpid()`. Helper cũng
-  theo dõi pipe để thoát khi Fcitx mất kết nối, kể cả không có click mới.
-
-Helper được cài vào `CMAKE_INSTALL_LIBEXECDIR`; addon nhúng đường dẫn tuyệt đối
-ứng với `CMAKE_INSTALL_PREFIX`. Build cần libinput và libudev. Rule
-`70-areca-pointer.rules` cấp `uaccess` cho chuột/touchpad của phiên local đang
-active, trước `73-seat-late.rules`. Không có ACL/quyền đọc thiết bị thì tính năng
-click không hoạt động; nhập liệu Fcitx bình thường vẫn hoạt động. Xem
-[Debug mouse tracker](DEBUGGING.md#mouse-tracker) để kiểm tra cài đặt và log.
+| Khoá | File | Mặc định | Tác dụng |
+| --- | --- | --- | --- |
+| `UseSurroundingV2InsteadOfSurroundingV1` | advanced | `False` | Dùng V2 cho nhóm Surrounding |
+| `UseUinputInsteadOfForwardKey` | advanced | `True` | Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng |
+| `UseXTestInsteadOfUinput` | advanced | `False` | Ưu tiên Native trước uinput |
+| `EnableMouseTracking` | advanced | `True` | Chạy helper chuột để reset khi click |
+| `ForwardFirstCharacter` | advanced | `True` | Bật nhánh phím đầu cho trình duyệt |
+| `ShiftSelectFallbackForBrowser` | areca | `False` | Trình duyệt không dùng được surrounding thì dùng Shift select |
+| `UseBackspaceForUrl` | areca | `True` | Xử lý riêng ô URL bằng Shift select |
+| `RestoreSurroundingText` | areca | `True` | Sửa từ đã commit |
+| `DisableVietnameseInTerminal` | areca | `False` | Forward nguyên phím trong terminal |
+| `SelectBackendKey` | areca | phím dấu huyền | Mở menu chọn mode, backend cho ứng dụng |

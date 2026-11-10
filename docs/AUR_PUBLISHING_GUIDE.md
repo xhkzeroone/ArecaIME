@@ -45,7 +45,7 @@ Lưu ý: Tên gói được đặt là `fcitx5-areca` để tránh trùng lặp 
 ### Bước 1: Xác nhận tag phiên bản trên GitHub
 Phiên bản khai báo trong PKGBUILD phải có Git tag tương ứng trên remote repository GitHub trước khi build:
 ```bash
-git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.0.2
+git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.3.3
 ```
 
 ### Bước 2: Clone repository trắng từ AUR
@@ -56,8 +56,8 @@ cd fcitx5-areca
 
 ### Bước 3: Sao chép cấu hình vào thư mục AUR
 ```bash
-cp /home/xuanhong/Desktop/ArecaIME/packaging/aur/PKGBUILD .
-cp /home/xuanhong/Desktop/ArecaIME/packaging/aur/.SRCINFO .
+cp /duong-dan/toi/ArecaIME/packaging/aur/PKGBUILD .
+cp /duong-dan/toi/ArecaIME/packaging/aur/.SRCINFO .
 ```
 
 ### Bước 4: Kiểm tra quá trình build cục bộ

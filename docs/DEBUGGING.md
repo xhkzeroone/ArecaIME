@@ -50,41 +50,64 @@ lại lệnh `/proc/<pid>/maps` để xác nhận không còn `(deleted)`.
 
 ## Log addon
 
-Bật:
-
-```ini
-Debug=True
-```
-
-Theo dõi log:
+Bật `Debug=True` trong `~/.config/fcitx5/conf/areca.conf` hoặc mục **Bật log
+debug Areca** trong giao diện. Cách chắc chắn nhất để thấy log là chạy Fcitx
+ngay trong terminal:
 
 ```bash
-journalctl --user -f | grep areca
+fcitx5 -rd 2>&1 | tee ~/areca.log
 ```
 
-Những dòng hữu ích:
+`scripts/install.sh` khởi động lại Fcitx với output bị bỏ đi, nên sau khi cài
+bằng script cần tự chạy lại lệnh trên. Nếu phiên desktop thu stderr của Fcitx
+vào user journal:
+
+```bash
+journalctl --user -f | grep --line-buffered areca
+```
+
+Những dòng hữu ích, theo thứ tự xuất hiện trong một lần rewrite:
 
 ```text
-areca: queue push
-areca: scheduler process
-areca: bamboo result
-areca: reliability first-probe
-areca: reliability first-probe force_forward=1 reason=program-compatibility-capability-mask-0x72
-areca: selected uinput-shift-select backend for browser
-areca: uinput-shift-select start tx=
-areca: uinput-shift-select left press tx=
-areca: uinput-shift-select left ack timeout tx=
-areca: uinput-select 2-step commit tx=
+areca: queue push kind=text seq=
+areca: scheduler process seq=
+areca: bamboo result current= new= delete= commit=
+areca: reliability first-probe text= cursor= anchor= reliable=
+areca: reliability cached known= reliable= force_forward=
+areca: auto selected surrounding backend=
+areca: app-override selected ... backend=
+areca: terminal selected backend=
+areca: url selected shift-select backend=
+areca: url without surrounding selected shift-select backend=
+areca: autocomplete selected shift-select backend=
+areca: browser autocomplete or address bar strategy=
+areca: rewrite select backend= tx= bamboo_delete= plan_backspaces=
+areca: surrounding-text start tx=
+areca: surrounding probe succeeded via SurroundingTextUpdated event
+areca: surrounding delete unconfirmed after
+areca: fallback from unconfirmed surrounding delete to backend=
 areca: uinput-backspace start tx=
-areca: uinput-backspace press tx=
+areca: uinput-backspace press tx= seen= expected=
 areca: uinput-backspace ack timeout tx=
-areca: browser autocomplete or active selection strategy=
-areca: rewrite select backend=
-areca: forward-backspace start
-areca: forward-backspace sent
-areca: forward-backspace complete
-areca: rewrite done
-areca: protected reset cancelled/executed
+areca: uinput-shift-select start tx= select_left= emit_left=
+areca: uinput-shift-select shift-up ack tx=
+areca: uinput-shift-select shift-up ack timeout tx=
+areca: uinput-select 2-step commit tx=
+areca: forward-backspace start tx=
+areca: rewrite done tx=
+areca: post-commit barrier delay_us=
+```
+
+Dòng liên quan reset và thời gian chờ thích nghi:
+
+```text
+areca: reset rejected
+areca: app reset rejected (active rewrite or 20ms post-commit window)
+areca: event loop lag detected lateness_us= adaptive_extra_ms=
+areca: system thermal or load lag detected temp_mc=
+areca: ... adaptive commit wait tx= base_ms= extra_ms= effective_ms=
+areca: ... lag before commit tx= additional_wait_ms=
+areca: ... adaptive wait decayed tx=
 ```
 
 ## Phân biệt lỗi backend
@@ -95,8 +118,10 @@ Khi log có:
 rewrite select backend=surrounding-text
 ```
 
-Areca đang dùng `deleteSurroundingText()`. Kiểm tra first-probe word/shown nếu
-xoá sai.
+Areca đang dùng `deleteSurroundingText()`. Nếu xoá sai, xem dòng
+`reliability first-probe` và `surrounding probe ...`. Dòng
+`surrounding snapshot stale during probe` nghĩa là ứng dụng gửi surrounding trễ;
+Areca sẽ chuyển sang Backspace hoặc Shift select và tắt restore cho ô đó.
 
 Khi log có:
 
@@ -113,12 +138,31 @@ Kiểm tra theo thứ tự:
 
 Khi log có `rewrite select backend=uinput-shift-select`, kiểm tra:
 
-1. `select_left=N` phải đi cùng `emit_left=N+1`.
-2. Các dòng `left press` từ `seen=1` tới `seen=N` phải có `action=forward`.
-3. Dòng `seen=N+1` phải có `action=filter`, sau đó backend mới Shift Up và
-   chờ 5 ms trên Wayland hoặc 10 ms trên frontend khác trước commit.
-4. Nếu có `left ack timeout`, tín hiệu N+1 không quay lại trong 20 ms; backend
-   đã hủy tracker và thả Shift bằng đường timeout.
+1. `select_left=N` phải đi cùng `emit_left=N`.
+2. Mọi Left và Shift quay về Fcitx đều được forward tới ứng dụng.
+3. Sau `shift-up sent` phải có `shift-up ack`. Backend chờ 5 ms trên Wayland
+   hoặc 10 ms trên frontend khác, cộng adaptive, rồi commit hai bước: ký tự đầu,
+   chờ 5 ms, phần còn lại.
+4. `shift-up ack timeout` nghĩa là Shift up không quay về trong 150 ms. Backend
+   vẫn commit nhưng tăng thời gian chờ adaptive.
+
+`native-shift-select` và `native-backspace` phát phím qua libei hoặc XTest và
+không có ACK, nên log chỉ có dòng start, các bước phát phím và commit.
+
+## Chọn backend theo ứng dụng
+
+Nhấn phím chọn backend, mặc định phím dấu huyền, khi đang ở ô nhập và chưa gõ dở
+từ nào. Menu hiện tên ứng dụng và backend cụ thể của từng lựa chọn. Lựa chọn được
+lưu trong `~/.config/fcitx5/conf/areca-apps.conf`. Log tương ứng:
+
+```text
+areca: app-override selected surrounding backend= program=
+areca: app-override selected shift-select backend= program=
+areca: app-override selected backspace backend= program=
+```
+
+Muốn quay về tự động, chọn lại **Tự động** trong menu hoặc xoá mục của ứng dụng
+trong file trên rồi reload cấu hình.
 
 Khi log có `rewrite select backend=uinput-backspace`, kiểm tra tương tự:
 
@@ -134,12 +178,13 @@ Khi log có `rewrite select backend=uinput-backspace`, kiểm tra tương tự:
 ## Cấu hình cũ che default mới
 
 Timing hiện được lưu trong
-`~/.config/fcitx5/conf/areca-advanced.conf`. Ví dụ source đổi `ResetDelayMs`
-mặc định thành 250 không tự sửa dòng `ResetDelayMs=120` đã tồn tại. Kiểm tra
-trực tiếp:
+`~/.config/fcitx5/conf/areca-advanced.conf`. Khoá đang ở mặc định được ghi dạng
+comment, còn khoá đã đổi sẽ giữ giá trị cũ khi source đổi mặc định. Ví
+dụ source nâng `WaylandAfterBackspaceWaitMs` từ 3 lên 10 ms không sửa dòng
+`WaylandAfterBackspaceWaitMs=3` đã có. Kiểm tra trực tiếp:
 
 ```bash
-grep -E '^(BackspaceDelayMs|AfterBackspaceWaitMs|WaylandAfterBackspaceWaitMs|PostCommitDelayMs|PreciseTiming|ResetDelayMs)=' \
+grep -E '^(BackspaceDelayMs|AfterBackspaceWaitMs|WaylandAfterBackspaceWaitMs|PostCommitDelayMs|PreciseTiming)=' \
   ~/.config/fcitx5/conf/areca-advanced.conf
 ```
 

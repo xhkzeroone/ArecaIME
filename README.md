@@ -44,6 +44,7 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
   độ mặc định.
 - **Preedit**: từ đang gõ được gạch chân cho tới khi kết thúc từ.
 - **Redirect (EN)**: chuyển tiếp phím nguyên bản.
+- Chọn chế độ riêng cho từng ứng dụng bằng phím tắt, mặc định là phím dấu huyền.
 
 **Tự chọn backend sửa chữ theo ứng dụng**
 - Surrounding text khi ứng dụng hỗ trợ xoá qua giao thức input method.
@@ -262,7 +263,7 @@ Các nhóm cấu hình chính:
 
 | Nhóm | Nội dung |
 |---|---|
-| Chung | Kiểu gõ, bảng mã, chế độ hiển thị, kiểm tra chính tả, kiểu đặt dấu, tự viết hoa |
+| Chung | Kiểu gõ, bảng mã, kiểm tra chính tả, kiểu đặt dấu, tự viết hoa, phím chọn chế độ cho ứng dụng |
 | Macro | Bật tắt macro, bảng từ viết tắt, hoàn tác bằng Backspace, phím bỏ qua macro |
 | Theo ứng dụng | Ghi đè chế độ và backend cho từng ứng dụng hoặc frontend |
 | Nâng cao | Thời gian chờ của từng backend, chọn uinput hay Libei/XTest, log debug |
