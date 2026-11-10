@@ -22,7 +22,7 @@ Tên package được dùng là `fcitx5-areca` để không xung đột với pa
 Tag GitHub tương ứng phải tồn tại trước khi build. Với bản hiện tại:
 
 ```bash
-git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.3.3
+git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.3.5
 ```
 
 Clone repository AUR mới, chép đúng hai file package rồi test:
