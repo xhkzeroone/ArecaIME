@@ -11,3 +11,4 @@
 
 ## Pull Request
 - Trước khi commit hoặc chuẩn bị PR, làm theo mục "Quy tắc bắt buộc cho Pull Request" trong `CONTRIBUTING.md` và skill `.claude/skills/areca-pr/SKILL.md`.
+- Khi viết hoặc sửa code, theo skill `.claude/skills/areca-code/SKILL.md`.
