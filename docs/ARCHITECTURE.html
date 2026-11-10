@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHITECTURE.md</title>
+<title>Kiến trúc Areca IME</title>
 
 <style>
 /* Markdown PDF (Revived) — Base Typography
@@ -4073,622 +4073,257 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
   </script>
 <main>
 <h1 id="ki%E1%BA%BFn-tr%C3%BAc-areca-ime" tabindex="-1">Kiến trúc Areca IME</h1>
-<p>Tài liệu này mô tả pipeline hiện tại của Areca. Mục tiêu thiết kế là giữ đúng
-thứ tự input, tránh rewrite song song và cô lập engine tiếng Việt khỏi chi tiết
-Wayland và Fcitx5.</p>
+<p>Tài liệu mô tả pipeline hiện tại của Areca. Mục tiêu thiết kế: giữ đúng thứ tự
+phím, không chạy hai rewrite cùng lúc và tách engine tiếng Việt khỏi chi tiết
+của Fcitx5, Wayland hay X11.</p>
+<p>Xem thêm:</p>
+<ul><li><a href="ARECA_ARCHITECTURE_SPECIFICATION.md">Đặc tả kỹ thuật</a>: invariant, chính sách
+chọn backend, sequence diagram từng backend và bảng timing.</li><li><a href="ADAPTIVE_DELAYS.md">Thời gian chờ thích nghi</a>.</li><li><a href="DEBUGGING.md">Hướng dẫn debug</a>.</li></ul>
 <h2 id="th%C3%A0nh-ph%E1%BA%A7n" tabindex="-1">Thành phần</h2>
 <table>
 <thead>
-<tr>
-<th>Thành phần</th>
-<th>Trách nhiệm</th>
-</tr>
+<tr><th>Thành phần</th><th>File</th><th>Trách nhiệm</th></tr>
 </thead>
 <tbody>
-<tr>
-<td><code>ArecaEngine</code></td>
-<td>Nhận event từ Fcitx5, dispatch sang mode đang chọn và giữ cache verdict backend cho context hiện tại.</td>
-</tr>
-<tr>
-<td><code>InputModeHandler</code></td>
-<td>Interface lifecycle/KeyEvent không chứa state; engine gọi handler đang active qua interface này.</td>
-</tr>
-<tr>
-<td><code>RewriteInputState</code></td>
-<td>Bamboo, auto-capitalization và reset timer riêng của Rewrite.</td>
-</tr>
-<tr>
-<td><code>PreeditInputState</code></td>
-<td>Bamboo, composition, auto-capitalization và reset timer riêng của Preedit.</td>
-</tr>
-<tr>
-<td><code>RewriteModeHandler</code></td>
-<td>Policy KeyEvent/reset của Rewrite; thử phím đầu khi rảnh trước khi enqueue vào <code>InputScheduler</code>.</td>
-</tr>
-<tr>
-<td><code>PreeditModeHandler</code></td>
-<td>Xử lý Bamboo đồng bộ và quản lý UI preedit; không gọi scheduler hay rewrite backend.</td>
-</tr>
-<tr>
-<td><code>RedirectModeHandler</code></td>
-<td>Forward KeyEvent nguyên bản như password field; không có Bamboo, queue, timer hay mutable state.</td>
-</tr>
-<tr>
-<td><code>KeyQueue</code></td>
-<td>FIFO chứa key gốc, Unicode codepoint, UTF-8, sequence và reference tới input context.</td>
-</tr>
-<tr>
-<td><code>InputScheduler</code></td>
-<td>FIFO single-flight, backend selection, transaction barrier và timer riêng sau commit.</td>
-</tr>
-<tr>
-<td><code>BambooEngineAdapter</code></td>
-<td>Bridge C++/Go gọi trực tiếp <code>bamboo-core</code> và biến chuỗi kết quả thành <code>BambooResult</code>.</td>
-</tr>
-<tr>
-<td><code>ReliabilityChecker</code></td>
-<td>Probe SurroundingText lần đầu và cache verdict theo input context.</td>
-</tr>
-<tr>
-<td><code>RewriteBackend</code></td>
-<td>Interface chung cho thao tác apply một <code>RewritePlan</code>.</td>
-</tr>
-<tr>
-<td><code>SurroundingTextBackend</code></td>
-<td>Gọi <code>deleteSurroundingText()</code> và <code>commitString()</code>, tích hợp <code>AdaptiveWait</code> và kiểm tra xác nhận qua sự kiện <code>SurroundingTextUpdated</code>.</td>
-</tr>
-<tr>
-<td><code>SurroundingTextV2Backend</code></td>
-<td>Xóa văn bản từng ký tự tuần tự (Incremental Delete) cho các trình soạn thảo không ổn định với xóa gộp, tích hợp <code>AdaptiveWait</code>.</td>
-</tr>
-<tr>
-<td><code>ForwardBackspaceBackend</code></td>
-<td>Phát tuần tự Backspace press/release bằng <code>forwardKey()</code>, chờ settling delay thích ứng rồi commit text và hoàn tất transaction.</td>
-</tr>
-<tr>
-<td><code>UinputBackspaceBackend</code></td>
-<td>Gửi đúng <code>KEY_BACKSPACE</code> × N qua <code>/dev/uinput</code> và forward mọi event Backspace quay lại Fcitx. Bộ đếm ACK chỉ là mốc tương đối để bắt đầu settling wait; timer phát phím chạy độc lập với timer commit và commit luôn đợi phát hết N phím. Nếu chưa đủ ACK, timeout cấu hình (mặc định 150 ms) vẫn chuyển sang settling wait.</td>
-</tr>
-<tr>
-<td><code>UinputShiftSelectBackend</code></td>
-<td>Gửi <code>Shift down</code> và <code>Left</code> × N+1 qua <code>/dev/uinput</code>; Fcitx forward N lần đầu, lọc lần xác nhận cuối, gửi <code>Shift up</code>, chờ 5 ms trên Wayland hoặc 10 ms trên frontend khác rồi commit.</td>
-</tr>
+<tr><td><code>ArecaEngine</code></td><td><code>src/areca_engine.*</code></td><td>Nhận event Fcitx5, chọn mode theo ứng dụng, chọn rewrite backend, nạp config, giữ cache verdict backend của context hiện tại.</td></tr>
+<tr><td><code>InputModeHandler</code></td><td><code>src/mode_handler.h</code></td><td>Interface lifecycle và KeyEvent chung cho các mode.</td></tr>
+<tr><td><code>RewriteModeHandler</code></td><td><code>src/rewrite_mode.*</code></td><td>Policy phím của Rewrite, restore surrounding, thử phím đầu khi rảnh rồi đưa phím vào <code>InputScheduler</code>.</td></tr>
+<tr><td><code>PreeditModeHandler</code></td><td><code>src/preedit_mode.*</code></td><td>Xử lý Bamboo đồng bộ và hiển thị preedit, không dùng scheduler hay rewrite backend.</td></tr>
+<tr><td><code>RedirectModeHandler</code></td><td><code>src/redirect_mode.*</code></td><td>Forward phím nguyên bản, không có Bamboo hay state.</td></tr>
+<tr><td><code>RewriteInputState</code>, <code>PreeditInputState</code></td><td><code>src/rewrite_mode.h</code>, <code>src/preedit_mode.h</code></td><td>State theo input context: Bamboo engine, tự viết hoa, cờ restore, khoảng bảo vệ reset.</td></tr>
+<tr><td><code>InputScheduler</code>, <code>KeyQueue</code></td><td><code>src/input_scheduler.*</code>, <code>src/key_queue.h</code></td><td>FIFO single-flight, transaction rewrite và post-commit barrier.</td></tr>
+<tr><td><code>BambooEngineAdapter</code></td><td><code>src/bamboo_engine_adapter.*</code>, <code>bamboo-bridge/main.go</code></td><td>Gọi <code>bamboo-core</code> qua cgo, trả <code>BambooResult</code>.</td></tr>
+<tr><td><code>BackendVerdict</code></td><td><code>src/surrounding_reliability.h</code></td><td>Kết quả probe surrounding text của context hiện tại, số lần probe và retry.</td></tr>
+<tr><td>Rewrite backend</td><td><code>src/*_backend.*</code></td><td>7 backend implement <code>RewriteBackend</code>, xem <a href="#rewrite-backend">bảng backend</a>.</td></tr>
+<tr><td><code>AdaptiveWait</code>, <code>AdaptiveWaitMonitor</code></td><td><code>src/adaptive_wait*</code></td><td>Tăng thời gian chờ khi timer trễ, ACK chậm hoặc máy bận.</td></tr>
+<tr><td><code>EventLoopPostTask</code></td><td><code>src/event_loop_post.h</code></td><td>Đưa commit sang pha post của event loop.</td></tr>
+<tr><td><code>InputTypeDetector</code></td><td><code>src/input_type_detector.*</code></td><td>Nhận diện trình duyệt, terminal, thanh địa chỉ Chromium, khả năng forward Backspace.</td></tr>
+<tr><td><code>WindowFocusTracker</code></td><td><code>src/window_focus_tracker.*</code>, <code>src/atspi/</code></td><td>Thread riêng đọc AT-SPI để biết chương trình và ô đang focus.</td></tr>
+<tr><td><code>MouseClickTracker</code>, <code>areca-mouse-monitor</code></td><td><code>src/mouse_click_tracker.*</code></td><td>Process con libinput báo click qua pipe để reset composition.</td></tr>
+<tr><td><code>DynamicIslandAnnouncement</code></td><td><code>src/notification/</code></td><td>Phát tín hiệu D-Bus khi chọn Areca, xem <a href="input-method-announcement.md">tài liệu riêng</a>.</td></tr>
 </tbody>
 </table>
 <h2 id="ph%C3%A2n-t%C3%A1ch-c%E1%BA%A5u-h%C3%ACnh" tabindex="-1">Phân tách cấu hình</h2>
-<p>Cấu hình chính ở <code>conf/areca.conf</code> chỉ chứa các tuỳ chọn dùng thường xuyên.
-Timing nằm trong sub-config <strong>Cấu hình nâng cao</strong> tại
-<code>conf/areca-advanced.conf</code>, dùng cùng cơ chế panel con với trình sửa macro.
-Các field timing cũ trong <code>areca.conf</code> được giữ ẩn để migrate cấu hình;
-file nâng cao, nếu có, luôn được load sau và được ưu tiên.
-<code>PreciseTiming=True</code> đặt accuracy của timer Backspace và post-commit thành
-<code>1µs</code>; khi tắt, accuracy bằng <code>0</code> và event-loop backend được phép coalesce timer.</p>
-<h2 id="v%C3%B2ng-%C4%91%E1%BB%9Di-text-key-trong-rewrite" tabindex="-1">Vòng đời text key trong Rewrite</h2>
-<ol>
-<li>Fcitx5 gọi <code>ArecaEngine::keyEvent()</code>.</li>
-<li>Release event bình thường không bị giữ lại. Modifier-only key được bỏ qua.</li>
-<li>Password input được forward thẳng và state cũ của context bị xoá.</li>
-<li>Special key đi theo policy riêng; text key thử nhánh phím đầu khi engine rảnh.</li>
-<li>Nếu nhánh đó không xử lý, text key được <code>filterAndAccept()</code> rồi đẩy vào <code>KeyQueue</code>.</li>
-<li>Nếu pipeline đang rảnh, scheduler pop ngay đúng một key và gọi Bamboo.</li>
-<li>Scheduler apply <code>BambooResult</code>; trong lúc apply/commit/rewrite, key mới chỉ
-được nối vào cuối FIFO.</li>
-<li>Forward backend phát đúng số Backspace trong plan rồi chờ
-<code>AfterBackspaceWaitMs</code> trước khi commit; frontend <code>wayland</code> dùng riêng
-<code>WaylandAfterBackspaceWaitMs</code>, mặc định 3 ms.</li>
-<li>Sau khi apply hoàn tất và qua <code>PostCommitDelayMs</code>, scheduler mới pump đúng
-một key tiếp theo.</li>
-</ol>
-<p>Scheduler không dùng timer trước Bamboo và không dùng vòng lặp hút hết queue.
-Key đầu được xử lý inline trong callback Fcitx; queue chỉ giữ các key đến trong
-lúc pipeline đang bận. <code>PostCommitDelayMs</code> bắt đầu sau khi backend đã commit và
-báo hoàn tất.</p>
+<table>
+<thead>
+<tr><th>File</th><th>Nội dung</th></tr>
+</thead>
+<tbody>
+<tr><td><code>conf/areca.conf</code></td><td>Tuỳ chọn thường dùng: kiểu gõ, bảng mã, chính tả, macro, URL, terminal, debug.</td></tr>
+<tr><td><code>conf/areca-advanced.conf</code></td><td>Timing của từng backend, chọn uinput hay Native, mouse tracking, phím đầu.</td></tr>
+<tr><td><code>conf/areca-apps.conf</code></td><td>Mode hoặc backend ghi đè theo ứng dụng.</td></tr>
+<tr><td><code>conf/areca-macro-table.conf</code></td><td>Bảng macro.</td></tr>
+</tbody>
+</table>
+<p>Các khoá timing cũ trong <code>areca.conf</code> vẫn được đọc ẩn để migrate. File nâng cao
+được load sau và luôn được ưu tiên. Ứng dụng cài đặt ImGui cũ có nút preset
+hiệu năng, đặt các thời gian chờ chính về 1, 3 hoặc 5 ms.</p>
+<p><code>PreciseTiming=True</code> đặt accuracy của timer backend và post-commit thành <code>1 µs</code>.
+Khi tắt, accuracy bằng <code>0</code> và event loop được phép gộp timer.</p>
+<h2 id="ch%E1%BB%8Dn-mode" tabindex="-1">Chọn mode</h2>
+<p><code>PresentationMode</code> toàn cục mặc định là Rewrite và không còn hiện trong giao
+diện. Phím tắt đổi mode toàn cục <code>SwitchModeKey</code> đã bị tắt trong code.</p>
+<p>Mode thực tế của một input context được quyết định theo ứng dụng:</p>
+<ol><li>Ứng dụng có mục trong <code>areca-apps.conf</code> với mode <code>Preedit</code> hoặc <code>Redirect</code>
+dùng mode đó.</li><li>Mode <code>Surrounding</code>, <code>Shift select</code>, <code>Backspace</code> dùng Rewrite và ghi đè backend.</li><li><code>Tự động</code> hoặc không có mục dùng mode toàn cục.</li></ol>
+<p>Phím <code>SelectBackendKey</code>, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 6
+lựa chọn: Tự động, Surrounding, Shift select, Backspace, Preedit, Redirect. Tên
+mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ <code>Backspace (Uinput)</code>. Lựa chọn
+được lưu vào <code>areca-apps.conf</code> cùng tên frontend. Ứng dụng không báo tên được
+đặt tên tạm <code>context-&lt;uuid&gt;</code>.</p>
+<h2 id="v%C3%B2ng-%C4%91%E1%BB%9Di-ph%C3%ADm-trong-rewrite" tabindex="-1">Vòng đời phím trong Rewrite</h2>
+<ol><li>Fcitx5 gọi <code>ArecaEngine::keyEvent()</code>.</li><li>Ô mật khẩu đi thẳng vào handler để forward phím gốc.</li><li>Nếu <code>DisableVietnameseInTerminal=True</code> và ứng dụng là terminal, phím được
+forward nguyên bản và state của mode hiện tại bị reset.</li><li>Phím đang thuộc menu chọn backend được xử lý cho menu.</li><li>Backspace do backend uinput phát ra và Left, Shift do backend shift-select
+phát ra được trả về backend tương ứng trước mọi xử lý khác.</li><li>Click chuột đang chờ được áp dụng nếu scheduler cho phép reset.</li><li><code>RewriteModeHandler::handleKeyEvent()</code>:<ul><li>Phím di chuyển, Tab, Escape, tổ hợp Ctrl, Alt, Super reset Bamboo, arm
+restore rồi forward.</li><li>Backspace đồng bộ Bamboo hoặc chạy khôi phục chính tả.</li><li>Phím chữ Bamboo xử lý được thử restore surrounding nếu đang arm.</li><li>Trình duyệt bật <code>ForwardFirstCharacter</code> thử <code>InputScheduler::handleIdleKey()</code>.</li><li>Phím còn lại được <code>filterAndAccept()</code> rồi đưa vào <code>KeyQueue</code>.</li></ul></li><li>Scheduler đang rảnh thì xử lý ngay đúng một phím: gọi Bamboo, nhận
+<code>BambooResult</code>.</li><li><code>deleteCount == 0</code>: <code>commitString()</code> ngay. Ngược lại tạo <code>RewritePlan</code>, chọn
+backend và gọi <code>apply()</code>.</li><li>Backend báo hoàn tất, scheduler chờ <code>PostCommitDelayMs</code> rồi mới lấy phím
+tiếp theo trong queue.</li></ol>
+<p>Scheduler không dùng timer trước Bamboo và không hút hết queue trong một lần.
+Phím đến trong lúc pipeline bận chỉ được nối vào cuối FIFO. Backend báo <code>Failed</code>
+làm scheduler dừng hẳn để không phá thứ tự phím.</p>
+<h3 id="kho%E1%BA%A3ng-b%E1%BA%A3o-v%E1%BB%87-reset" tabindex="-1">Khoảng bảo vệ reset</h3>
+<p><code>shouldRejectReset()</code> trả true khi đang xử lý phím, đang có rewrite hoặc trong
+20 ms sau lần commit cuối. Trong khoảng đó reset từ ứng dụng, click chuột và
+phím di chuyển do backend phát ra đều không xoá state Bamboo. Rewrite còn có
+thêm 20 ms bảo vệ sau Backspace vì một số frontend X11 gửi reset ngay sau
+Backspace đã forward.</p>
+<p><code>ArecaEngine::reset()</code> gọi <code>requestProtectedReset()</code> của mode hiện tại. Reset chỉ
+chạy ngay nếu không nằm trong khoảng bảo vệ, không có timer trì hoãn.</p>
+<h2 id="ph%C3%ADm-%C4%91%E1%BA%A7u-khi-rewrite-%C4%91ang-r%E1%BA%A3nh" tabindex="-1">Phím đầu khi Rewrite đang rảnh</h2>
+<p>Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo. Khi
+<code>ForwardFirstCharacter=True</code>, với input context của trình duyệt, chưa chờ
+Backspace release và phím không bị tự viết hoa đổi, handler thử
+<code>InputScheduler::handleIdleKey()</code> trước <code>filterAndAccept()</code>.</p>
+<p>Scheduler chỉ nhận khi Bamboo đang rỗng, không xử lý phím nào, không có rewrite,
+queue rỗng, không bị dừng và đã qua khoảng bảo vệ sau commit. Bamboo vẫn xử lý
+phím đúng một lần:</p>
+<ul><li>Đầu ra không đổi, không xoá, không macro: event được để chưa filter để
+frontend tự giao phím gốc. Bamboo giữ state để <code>a</code> rồi <code>s</code> vẫn thành <code>á</code>.
+Scheduler vẫn giữ barrier <code>PostCommitDelayMs</code>.</li><li>Đầu ra đổi: event bị accept và kết quả vừa tính được áp dụng ngay, không
+enqueue lại.</li><li>Không đủ điều kiện: trả false, không sửa engine hay event.</li></ul>
+<p><code>KeyEvent::forward()</code> của Fcitx là getter. Việc không filter event mới là điều
+cho phím đi tiếp.</p>
 <h2 id="bambooresult-v%C3%A0-diff" tabindex="-1">BambooResult và diff</h2>
-<p>Go bridge tạo một <code>bamboo.IEngine</code> trực tiếp bằng:</p>
-<pre class="hljs"><code><div>bamboo.NewEngine(method, bamboo.EstdFlags)
-</div></code></pre>
-<p><code>BambooEngineAdapter</code> giữ chuỗi mà nó tin rằng đang hiển thị. Sau mỗi key,
-Bamboo trả chuỗi đã xử lý mới; adapter tìm common prefix UTF-8 và tạo:</p>
-<pre class="hljs"><code><div>currentText  chuỗi trước key
-newText      chuỗi Bamboo mới
-deleteCount  số Unicode character ở suffix cũ cần xoá
-commitText   suffix mới cần chèn
-</div></code></pre>
-<p>Ví dụ Telex:</p>
-<pre class="hljs"><code><div>currentText = "a"
-key         = "w"
-newText     = "ă"
-deleteCount = 1
-commitText  = "ă"
-</div></code></pre>
-<p>Ký tự Bamboo không xử lý được được xem như word boundary. Hành vi tại boundary
-phụ thuộc vào <code>SpellcheckMode</code>:</p>
-<ul>
-<li><code>"Không kiểm tra (Tắt)"</code>: không kiểm tra, commit từ nguyên trạng.</li>
-<li><code>"Khôi phục từ sau khi gõ xong"</code>: gọi <code>IsValid(true)</code> trước khi reset. Từ có
-ký tự tiếng Việt nhưng cấu trúc âm tiết không hợp lệ được
-<code>RestoreLastWord(false)</code> về chuỗi phím Latin ban đầu; adapter tạo delta
-rewrite cho phần restore rồi nối boundary. Từ hợp lệ chỉ commit boundary
-như bình thường.</li>
-<li><code>"Khôi phục từ ngay trong lúc gõ"</code>: như mức trên và ngoài ra khi xử
-lý từng ký tự trung gian, bridge truyền <code>spellCheck=1</code> vào
-<code>ArecaBambooProcess</code> để Bamboo kiểm tra và rollback ngay trong lúc gõ.</li>
-</ul>
-<p>Tính năng này dùng luật có sẵn của <code>bamboo-core</code>, chưa dùng dictionary ngoài.</p>
-<p>Khi tạo engine, bridge ánh xạ <code>ModernStyle=True</code> sang cách đặt dấu <code>oà/uý</code> và
-<code>ModernStyle=False</code> sang <code>òa/úy</code>. Việc ánh xạ ngược với tên flag nội bộ
-<code>EstdToneStyle</code> là có chủ ý để tên option mô tả trực tiếp chuỗi đầu ra.</p>
-<p>Bridge cũng xuất danh sách input method và charset trực tiếp từ <code>bamboo-core</code>
-cho giao diện cấu hình. Adapter giữ Bamboo state ở Unicode nội bộ, nhưng encode
-chuỗi mới bằng <code>OutputCharset</code> trước khi tính common prefix. Vì vậy
-<code>currentText</code>, <code>newText</code>, <code>deleteCount</code> và <code>commitText</code> luôn mô tả đúng chuỗi
-thực tế đã commit vào ứng dụng, kể cả <code>Unicode tổ hợp</code>, VNI Windows hoặc VIQR.</p>
-<h2 id="macro-expansion" tabindex="-1">Macro expansion</h2>
-<p>Macro table là sub-config riêng gồm các cặp <code>Key/Value</code>. Khi xử lý một word
-boundary, bridge lấy word hiện tại ở <code>PunctuationMode</code>, lookup key không phân
-biệt hoa/thường và expand trước spell-check. Nếu <code>CapitalizeMacro</code> bật, key viết
-thường tạo replacement viết thường, key toàn chữ hoa tạo replacement toàn chữ
-hoa, còn kiểu mixed-case giữ nguyên value cấu hình. Adapter reset Bamboo sau
-match, nối boundary, encode theo charset rồi tính delta rewrite. Vì thế macro
-không có đường commit đặc biệt và vẫn tuân thủ mọi queue/pending invariant.</p>
-<p>Nếu <code>AutoCapitalizeAfterPunctuation</code> bật, state theo từng input context theo dõi
-<code>.</code>, <code>!</code>, <code>?</code> rồi khoảng trắng. Chữ ASCII thường kế tiếp được đổi thành keysym
-hoa trước khi enqueue và trước khi Bamboo xử lý. Phím đã đổi hoa vẫn đi qua
-scheduler qua FIFO và bỏ qua nhánh phím đầu đi tiếp, vì replay phím
-vật lý không có Shift có thể vẫn tạo chữ thường. <code>Enter</code>, reset, Backspace, di
-chuyển con trỏ và shortcut sẽ xoá trạng thái chờ để tránh viết hoa nhầm.
-git
-Sau khi finalize một từ, adapter giữ composition Bamboo của từ đó và đếm các
-dấu cách/dấu câu đã commit phía sau. Backspace đi ngược qua các boundary này;
-khi boundary cuối bị xoá, composition vừa finalize được phục hồi để lần gõ kế
-tiếp có thể sửa dấu hoặc Backspace tiếp tục xoá từ. Composition chỉ bị bỏ khi
-người dùng bắt đầu một từ mới hoặc khi protected reset thực sự chạy.</p>
-<h2 id="backend-selection" tabindex="-1">Backend selection</h2>
-<p>Với kết quả đi qua <code>applyResult()</code> (phím đã được accept), khi <code>deleteCount == 0</code>:</p>
-<ul>
-<li>Nếu <code>commitText</code> giống text của phím gốc, scheduler dùng <code>commitString()</code>.
-Phím gốc đã bị accept trước khi vào queue nên không replay bất đồng bộ bằng
-<code>forwardKey()</code>; GNOME
-IBus Wayland có thể không chuyển loại forwarded key này tới text-input client.</li>
-<li>Nếu Bamboo đã biến đổi output dù không cần xoá, scheduler commit
-<code>commitText</code>. Trường hợp điển hình là dấu của <code>Unicode tổ hợp</code>.</li>
-<li>Cả hai nhánh đều qua barrier sau commit; kết quả từ <code>handleIdleKey()</code> đã biến đổi được áp dụng trực tiếp, không enqueue lại.</li>
-</ul>
-<p>Khi <code>deleteCount &gt; 0</code>:</p>
-<ol>
-<li><code>ReliabilityChecker</code> đánh giá input context.</li>
-<li>Checker lọc program trước. Chỉ khi program thuộc họ VS Code, là IDE/code
-editor/developer tool, hoặc là terminal Linux đã biết thì checker mới đọc và
-so sánh capability mask. Nếu mask chính xác là <code>0x72</code>, checker cache
-<code>forceForwardBackspace</code> rồi chọn <code>ForwardBackspaceBackend</code>. Các ứng dụng
-ngoài allowlist không được xét rule theo mask; verdict unreliable vốn đã
-chọn forward backend theo policy mặc định.
-Program name rỗng cũng nằm ngoài allowlist và không được fallback theo
-frontend, vì không đủ dữ liệu để ép an toàn.</li>
-<li><code>plasmashell</code> luôn dùng <code>ForwardBackspaceBackend</code> để tránh xung đột krunner.</li>
-<li>Terminal nhúng trong họ VS Code dùng <code>ForwardBackspaceBackend</code>.</li>
-<li>Nếu phát hiện đang có bôi đen sẵn (<code>cursor != anchor</code>) hoặc có <code>browserAutocomplete</code>, hệ thống hủy chọn uinput-shift-select và fallback về <code>ForwardBackspaceBackend</code> (+1 phím Backspace phụ) để đảm bảo an toàn.</li>
-<li><strong>Cấu hình ghi đè theo ứng dụng (<code>AppBackendOverrides</code>)</strong>: Nếu ứng dụng có cấu hình chỉ định trong <code>areca-apps.conf</code>:
-  <ul>
-    <li><code>SurroundingText</code>: Tự động fallback sang <code>UinputShiftSelectBackend</code> rồi sang <code>ForwardBackspaceBackend</code> nếu app không hỗ trợ surrounding.</li>
-    <li><code>UinputShiftSelect</code>: Dùng <code>UinputShiftSelectBackend</code> nếu uinput khả dụng.</li>
-    <li><code>NativeXTest</code>: Dùng <code>NativeXTestBackend</code>; fallback sang <code>UinputBackspaceBackend</code> rồi sang <code>ForwardBackspaceBackend</code>.</li>
-    <li><code>UinputBackspace</code>: Dùng <code>UinputBackspaceBackend</code>; fallback sang <code>NativeXTestBackend</code> rồi sang <code>ForwardBackspaceBackend</code>.</li>
-    <li><code>ForwardKey</code>: Dùng <code>ForwardBackspaceBackend</code>.</li>
-    <li><code>Auto</code>: Tiếp tục luồng heuristic mặc định.</li>
-  </ul>
-</li>
-<li>Đánh giá độ tin cậy và chọn mặc định theo <code>decision.useSurrounding</code> hoặc fallback.</li>
-</ol>
-<h2 id="s%C6%A1-%C4%91%E1%BB%93-sequence-chi-ti%E1%BA%BFt-c%C3%A1c-backend-v%C3%A0-selection-logic" tabindex="-1">Sơ đồ Sequence chi tiết các Backend và Selection Logic</h2>
-<h3 id="1-s%C6%A1-%C4%91%E1%BB%93-quy%E1%BA%BFt-%C4%91%E1%BB%8Bnh-l%E1%BB%B1a-ch%E1%BB%8Dn-backend-selectrewritebackend" tabindex="-1">1. Sơ đồ quyết định lựa chọn Backend (<code>selectRewriteBackend</code>)</h3>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant E as ArecaEngine
-    participant R as ReliabilityChecker
-    participant IC as InputContext
-
-    S-&gt;&gt;E: selectRewriteBackend(inputContext, result)
-    E-&gt;&gt;R: evaluate(inputContext, shownText, verdict)
-    R--&gt;&gt;E: ReliabilityDecision
-    E-&gt;&gt;IC: surroundingText() &amp; check cursor/anchor
-    
-    alt plasmashell OR VS Code embedded terminal
-        E--&gt;&gt;S: Return ForwardBackspaceBackend
-    else browserAutocomplete OR (surrounding.isValid &amp; cursor != anchor)
-        E--&gt;&gt;S: Return ForwardBackspaceBackend (+1 extra backspace)
-    else App Override: mode != Auto
-        alt Mode: SurroundingText
-            E--&gt;&gt;S: Return Surrounding / Shift-Select / ForwardKey
-        else Mode: Shift+Left (uinput)
-            E--&gt;&gt;S: Return UinputShiftSelectBackend
-        else Mode: Native (Libei/XTest)
-            E--&gt;&gt;S: Return NativeXTestBackend (fallback uinput/forward)
-        else Mode: Uinput Backspace
-            E--&gt;&gt;S: Return UinputBackspaceBackend (fallback native/forward)
-        else Mode: ForwardKey
-            E--&gt;&gt;S: Return ForwardBackspaceBackend
-        end
-    else decision.useSurrounding &amp; UseUinputShiftSelectForBrowser &amp; isBrowser &amp; uinputAvailable
-        E--&gt;&gt;S: Return UinputShiftSelectBackend
-    else decision.useSurrounding
-        E--&gt;&gt;S: Return SurroundingTextBackend
-    else DBus terminal/unknown &amp; uinputAvailable
-        E--&gt;&gt;S: Return UinputBackspaceBackend
-    else ForceUinput &amp; uinputAvailable
-        E--&gt;&gt;S: Return UinputBackspaceBackend
-    else Fallback
-        E--&gt;&gt;S: Return ForwardBackspaceBackend
-    end
-</div></code></pre>
-<h3 id="2-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-surroundingtextbackend" tabindex="-1">2. Sơ đồ luồng <code>SurroundingTextBackend</code></h3>
-<h4 id="a-lu%E1%BB%93ng-probe-x%C3%A1c-th%E1%BB%B1c-%C4%91%E1%BB%99-tin-c%E1%BA%ADy-v%C3%A0-ki%E1%BB%83m-tra-s%E1%BB%B1-ki%E1%BB%87n-surroundingtextupdated" tabindex="-1">A. Luồng Probe xác thực độ tin cậy và kiểm tra sự kiện <code>SurroundingTextUpdated</code></h4>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant E as ArecaEngine
-    participant B as SurroundingTextBackend
-    participant IC as InputContext
-    participant EL as EventLoop
-    participant FB as FallbackBackend
-
-    S-&gt;&gt;B: apply(inputContext, plan[probe=true], onDone)
-    B-&gt;&gt;B: Lưu snapshot gốc và tính snapshot kỳ vọng
-    B-&gt;&gt;IC: deleteSurroundingText(-count, count)
-    B-&gt;&gt;EL: addTimeEvent(ProbeDeadline = 150ms)
-    
-    alt Trường hợp 1: Nhận sự kiện InputContextSurroundingTextUpdated trước 150ms
-        IC--&gt;&gt;E: Sự kiện InputContextSurroundingTextUpdated
-        E-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=true)
-        B-&gt;&gt;B: surroundingProbeMatches: kiểm tra ngữ nghĩa text trước con trỏ
-        Note over B: Xác thực khớp: con trỏ bằng anchor, không còn text cũ, khớp text kỳ vọng
-        B-&gt;&gt;EL: timer.reset (Hủy deadline 150ms)
-        B-&gt;&gt;E: onProbeSucceeded: probePending = false, reliable = true
-        B-&gt;&gt;EL: Chờ effectiveWaitMs (AdaptiveWait)
-        EL--&gt;&gt;B: commitPost_.schedule (Pha post của EventLoop)
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;S: onDone(transactionId, Succeeded)
-    else Trường hợp 2: Hết hạn 150ms không có sự kiện hợp lệ (Timeout)
-        EL--&gt;&gt;B: Timer ProbeDeadline 150ms kích hoạt
-        B-&gt;&gt;B: notifySurroundingTextUpdated(inputContext, fromUpdateEvent=false)
-        Note over B: Kiểm tra lần cuối snapshot hiện tại trong queue
-        alt Snapshot vẫn không khớp
-            B-&gt;&gt;E: onProbeFailed: known = true, reliable = false, probePending = false
-            B-&gt;&gt;FB: apply(inputContext, plan[probe=false], onDone)
-            Note over B,FB: Chuyển sang ShiftSelect nếu là trình duyệt hoặc Backspace
-        end
-    end
-</div></code></pre>
-<h4 id="b-lu%E1%BB%93ng-rewrite-th%C3%B4ng-th%C6%B0%E1%BB%9Dng-v%E1%BB%9Bi-adaptivewait-v%C3%A0-eventloopposttask" tabindex="-1">B. Luồng Rewrite thông thường với <code>AdaptiveWait</code> và <code>EventLoopPostTask</code></h4>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextBackend
-    participant IC as InputContext
-    participant AW as AdaptiveWait
-    participant EL as EventLoop
-    participant PT as EventLoopPostTask
-
-    S-&gt;&gt;B: apply(inputContext, plan[probe=false], onDone)
-    alt backspaceCount &gt; 0
-        B-&gt;&gt;AW: beginTransaction
-        B-&gt;&gt;IC: deleteSurroundingText(-count, count)
-        B-&gt;&gt;B: updateSurroundingCacheAfterDelete
-        B-&gt;&gt;AW: effectiveWaitMs(waitMs), effectiveExtraWaitMs(waitMs)
-        B-&gt;&gt;EL: addTimeEvent(effectiveWaitMs)
-        EL--&gt;&gt;B: Timer callback (observeTimer ghi nhận độ trễ thực tế)
-        B-&gt;&gt;PT: commitPost_.schedule
-        PT--&gt;&gt;B: Pha post của EventLoop
-        B-&gt;&gt;B: commitAfterAdaptiveWait: kiểm tra nếu trễ tăng thì giãn tiếp
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
-        B-&gt;&gt;AW: completeTransaction (giảm dần độ trễ khi hệ thống ổn định)
-        B-&gt;&gt;S: onDone(transactionId, Succeeded)
-    else backspaceCount == 0
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;B: updateSurroundingCacheAfterCommit
-        B-&gt;&gt;S: onDone(transactionId, Succeeded)
-    end
-</div></code></pre>
-<h3 id="3-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-uinputshiftselectbackend" tabindex="-1">3. Sơ đồ luồng <code>UinputShiftSelectBackend</code></h3>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as UinputShiftSelectBackend
-    participant DEV as UinputDevice (/dev/uinput)
-    participant EL as EventLoop
-    participant IC as InputContext
-
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
-    B-&gt;&gt;DEV: sendKeyEvent(KEY_LEFTSHIFT, 1) (Shift DOWN)
-    B-&gt;&gt;EL: addTimeEvent(ShiftSelectDelayMs = 1ms)
-    
-    loop N+1 lần
-        EL--&gt;&gt;B: Timer callback
-        B-&gt;&gt;DEV: sendKeyEvent(KEY_LEFT, 1) -&gt; (KEY_LEFT, 0)
-        B-&gt;&gt;EL: addTimeEvent(ShiftSelectDelayMs = 1ms)
-    end
-
-    B-&gt;&gt;EL: addTimeEvent(AckTimeout = 20ms)
-    alt Left thứ N+1 về trước timeout
-        DEV--&gt;&gt;IC: N Left đầu quay lại Fcitx
-        IC--&gt;&gt;B: forward N Left
-        DEV--&gt;&gt;IC: Left thứ N+1 quay lại Fcitx
-        IC--&gt;&gt;B: filter Left dư và hủy timeout
-    else Timeout về trước
-        EL--&gt;&gt;B: Ack timeout
-        B-&gt;&gt;B: clear left tracker
-    end
-    B-&gt;&gt;DEV: sendKeyEvent(KEY_LEFTSHIFT, 0) (Shift UP)
-    B-&gt;&gt;EL: addTimeEvent(AfterSelectWaitMs = 5ms Wayland / 10ms frontend khác)
-    
-    EL--&gt;&gt;B: Timer callback (Settling wait hoàn tất)
-    
-    loop Lần lượt từng ký tự UTF-8 trong commitText
-        B-&gt;&gt;IC: commitString(utf8_char)
-        B-&gt;&gt;EL: addTimeEvent(5ms)
-        EL--&gt;&gt;B: Timer callback
-    end
-    
-    B-&gt;&gt;B: finishTransaction()
-    B-&gt;&gt;S: onDone(transactionId)
-</div></code></pre>
-<h3 id="4-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-uinputbackspacebackend" tabindex="-1">4. Sơ đồ luồng <code>UinputBackspaceBackend</code></h3>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as UinputBackspaceBackend
-    participant DEV as UinputDevice (/dev/uinput)
-    participant EL as EventLoop
-    participant IC as InputContext
-
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
-    
-    loop N lần
-        B-&gt;&gt;DEV: sendKeyEvent(KEY_BACKSPACE, 1) -&gt; (KEY_BACKSPACE, 0)
-        B-&gt;&gt;EL: sendTimer.addTimeEvent(BackspaceDelayMs)
-        EL--&gt;&gt;B: Timer callback
-    end
-
-    DEV--&gt;&gt;IC: Backspace quay lại Fcitx
-    IC--&gt;&gt;B: forward mọi press/release và tăng seen
-    alt seen đạt N
-        B-&gt;&gt;EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
-    else Chưa đạt N sau phím phát cuối
-        B-&gt;&gt;EL: commitTimer.addTimeEvent(AckTimeoutMs)
-        EL--&gt;&gt;B: Ack timeout
-        B-&gt;&gt;EL: commitTimer.addTimeEvent(AfterBackspaceWaitMs)
-    end
-    EL--&gt;&gt;B: Settling wait hoàn tất
-    alt Vẫn còn Backspace chưa phát
-        B-&gt;&gt;B: Đánh dấu wait đã hết
-        B-&gt;&gt;EL: Phát hết rồi chờ lại AfterBackspaceWaitMs
-        EL--&gt;&gt;B: Settling wait sau phím cuối hoàn tất
-    end
-    B-&gt;&gt;IC: commitString(commitText)
-    B-&gt;&gt;B: clearPending()
-    B-&gt;&gt;S: onDone(transactionId)
-</div></code></pre>
-<h3 id="5-s%C6%A1-%C4%91%E1%BB%93-lu%E1%BB%93ng-forwardbackspacebackend" tabindex="-1">5. Sơ đồ luồng <code>ForwardBackspaceBackend</code></h3>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as ForwardBackspaceBackend
-    participant IC as InputContext
-    participant EL as EventLoop
-
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
-    
-    loop N = backspaceCount lần
-        B-&gt;&gt;IC: forwardKey(Backspace press/release)
-        B-&gt;&gt;EL: addTimeEvent(BackspaceDelayMs)
-        EL--&gt;&gt;B: Timer callback
-    end
-    
-    B-&gt;&gt;EL: addTimeEvent(AfterBackspaceWaitMs)
-    EL--&gt;&gt;B: Timer callback (Settling wait hoàn tất)
-    B-&gt;&gt;IC: commitString(commitText)
-    B-&gt;&gt;B: clearPending()
-    B-&gt;&gt;S: onDone(transactionId)
-</div></code></pre>
-<h2 id="preedit-mode" tabindex="-1">Preedit mode</h2>
-<p><code>PresentationMode=Preedit</code> không dùng <code>InputScheduler</code>, <code>RewriteBackend</code>,
-<code>ReliabilityChecker</code>, SurroundingText hay forward-Backspace. Nó có riêng:</p>
-<ul>
-<li><code>PreeditInputState</code> cho từng input context;</li>
-<li>một <code>BambooEngineAdapter</code> riêng;</li>
-<li>xử lý <code>KeyEvent</code> đồng bộ như frontend Preedit của Bamboo;</li>
-<li>composition, sentence-capitalization và delayed-reset riêng.</li>
-</ul>
-<p>Text key được xử lý tuần tự rồi hiển thị bằng client preedit nếu app khai báo
-<code>CapabilityFlag::Preedit</code>; nếu không thì dùng server-side preedit của Fcitx.
-Backspace chỉ sửa composition khi composition còn tồn tại. Space/dấu câu chạy
-macro và spell-check qua Bamboo rồi commit toàn bộ từ. Enter, Tab, Delete và
-phím di chuyển commit composition trước khi được forward. Escape và shortcut
-cũng commit composition trước, sau đó Fcitx forward nguyên <code>KeyEvent</code> gốc.</p>
-<p>Hai mode xử lý tiếng Việt chỉ dùng chung cấu hình bất biến và lớp adapter; chúng
-không dùng chung engine instance hoặc mutable input state. <code>RedirectModeHandler</code>
-không có engine/state. <code>ArecaEngine</code> chỉ dispatch theo mode global, và reset
-cả Rewrite lẫn Preedit khi người dùng đổi mode.</p>
-<p>Hotkey <code>SwitchModeKey</code> (mặc định <code>Alt+Space</code>) được bắt trước bước dispatch vì nó
-thay đổi chính handler đích. Areca hủy state/queue của hai handler có state,
-quay vòng <code>Rewrite → Preedit → Redirect → Rewrite</code>, lưu mode global và gọi popup
-thông tin Fcitx5. Hotkey không đổi mode giữa transaction rewrite đang pending;
-password context tiếp tục nhận phím gốc như bình thường.</p>
-<h2 id="redirect-mode" tabindex="-1">Redirect mode</h2>
-<p><code>Redirect</code> chỉ được bật bằng <code>PresentationMode</code> global; Areca không tự đổi mode
-theo input context. <code>RedirectModeHandler</code> không xử lý nội dung: press event gọi
-<code>KeyEvent::forward()</code>, release event được để nguyên cho Fcitx chuyển tiếp.</p>
-<h2 id="reliability-lifetime" tabindex="-1">Reliability lifetime</h2>
-<p>Probe chỉ diễn ra khi rewrite đầu tiên cần delete:</p>
-<ul>
-<li>App phải quảng bá capability <code>SurroundingText</code>.</li>
-<li>Snapshot phải valid.</li>
-<li>Từ ngay trước cursor phải có suffix không rỗng khớp với <code>currentText</code>.</li>
-</ul>
-<p>Khi bắt đầu probe, backend gửi lệnh xóa và khởi tạo timer deadline 150 ms trên
-EventLoop. Backend xác thực thành công thông qua sự kiện <code>SurroundingTextUpdated</code>
-nhờ hàm kiểm tra ngữ nghĩa <code>surroundingProbeMatches</code>:</p>
-<ul>
-<li>Con trỏ và anchor phải trùng nhau, không nằm trong vùng bôi đen.</li>
-<li>Phần văn bản trước con trỏ trước khi xóa phải chứa đúng đoạn text kỳ vọng sau khi xóa.</li>
-<li>Văn bản hiện tại trước con trỏ không được còn chứa đoạn văn bản cũ chưa xóa.</li>
-<li>Loại trừ trạng thái trung gian khi ứng dụng di chuyển con trỏ trước rồi mới xóa ký tự sau.</li>
-</ul>
-<p>Khi khớp ngữ nghĩa thành công, backend hủy deadline 150 ms, xác nhận độ tin cậy
-và chuyển sang commit. Nếu hết 150 ms mà không nhận được sự kiện hợp lệ, backend
-kiểm tra snapshot lần cuối rồi đánh dấu không tin cậy và chuyển giao diện sang
-fallback backend như Shift-Select cho trình duyệt hoặc Backspace.</p>
-<p>Cả <code>SurroundingTextBackend</code> và <code>SurroundingTextV2Backend</code> đều tích hợp <code>AdaptiveWait</code>
-kết hợp <code>EventLoopPostTask</code>. Thời gian chờ commit được tính thích ứng và đẩy sang
-pha post của event loop, tự động giãn thêm trễ nếu hệ thống bị nghẽn nhằm ngăn chặn
-hiện tượng commit trước khi ứng dụng kịp xóa text cũ.</p>
-<p>Kết quả được cache ở cấp <code>ArecaEngine</code>, cùng UUID của context hiện tại. Bình
-thường lifecycle sẽ xoá verdict để rewrite sau đánh giá lại. Backspace, Ctrl+A
-và phím di chuyển hoặc chọn text bảo vệ riêng verdict trong 1 giây; lifecycle và reset
-state nhập vẫn chạy bình thường. UUID thay đổi luôn làm cache được tạo lại cho
-context mới.</p>
-<p>Snapshot browser autocomplete không được dùng làm first probe; checker giữ
-<code>known=false</code> để lần rewrite bình thường sau mới quyết định reliability.</p>
-<h2 id="forward-backspace-single-flight-state-machine" tabindex="-1">Forward-Backspace single-flight state machine</h2>
-<pre class="hljs"><code><div>Idle
- │ apply(plan)
- ▼
-Forward Backspace đầu tiên
- │ còn Backspace
- ├──► timer(BackspaceDelayMs) ──► forward Backspace kế tiếp
- │ hết Backspace
- └──► timer(AfterBackspaceWaitMs)
-                │
- ▼
-Commit text → clear pending → post-commit timer → process next key
-</div></code></pre>
-<p>Trong <code>Pending</code>, <code>processing_</code> vẫn là true nên scheduler không lấy key tiếp.
-Key mới chỉ được append vào queue. Backend giữ đúng một transaction và gọi
-completion callback đúng một lần sau commit.</p>
+<p>Go bridge tạo <code>bamboo.IEngine</code> bằng <code>bamboo.NewEngine(method, bamboo.EstdFlags)</code>.
+<code>BambooEngineAdapter</code> giữ chuỗi mà nó tin là đang hiển thị. Sau mỗi phím, adapter
+lấy chuỗi mới từ Bamboo, encode theo <code>OutputCharset</code>, tìm common prefix UTF-8 và
+tạo:</p>
+<pre class="hljs"><code><div>currentText  chuỗi trước phím
+newText      chuỗi sau phím
+deleteCount  số ký tự ở đuôi cũ cần xoá
+commitText   đuôi mới cần chèn</div></code></pre>
+<p>Ví dụ Telex: <code>a</code> rồi <code>w</code> cho <code>deleteCount = 1</code>, <code>commitText = "ă"</code>.</p>
+<p>Vì encode trước khi tính diff, các trường trên luôn mô tả đúng chuỗi đã commit
+vào ứng dụng, kể cả với Unicode tổ hợp, VNI Windows hay VIQR.</p>
+<p>Ký tự Bamboo không xử lý được là word boundary. Hành vi tại boundary theo
+<code>SpellcheckMode</code>, mặc định là khôi phục ngay trong lúc gõ:</p>
+<ul><li><strong>Không kiểm tra</strong>: commit từ nguyên trạng.</li><li><strong>Khôi phục từ sau khi gõ xong</strong>: gọi <code>IsValid(true)</code> trước khi reset. Từ có
+dấu nhưng sai cấu trúc âm tiết được <code>RestoreLastWord(false)</code> về chuỗi phím
+Latin ban đầu rồi mới nối boundary.</li><li><strong>Khôi phục từ ngay trong lúc gõ</strong>: như trên, và mỗi phím trung gian truyền
+<code>spellCheck=1</code> vào <code>ArecaBambooProcess</code> để Bamboo rollback ngay.</li></ul>
+<p>Kiểm tra chính tả dùng luật có sẵn của <code>bamboo-core</code>, không dùng từ điển ngoài.</p>
+<p><code>ModernStyle=True</code> cho cách đặt dấu <code>oà</code>, <code>uý</code>; <code>False</code> cho <code>òa</code>, <code>úy</code>. Ánh xạ
+ngược với tên flag nội bộ <code>EstdToneStyle</code> là có chủ ý để tên option mô tả đúng
+chuỗi đầu ra.</p>
+<h2 id="macro" tabindex="-1">Macro</h2>
+<p>Bảng macro gồm các cặp <code>Key</code>, <code>Value</code>. Tại word boundary, bridge lấy từ hiện tại
+ở <code>PunctuationMode</code>, tra key không phân biệt hoa thường và mở rộng trước khi kiểm
+tra chính tả. Khi <code>CapitalizeMacro=True</code>:</p>
+<ul><li>Key viết thường cho value viết thường.</li><li>Key toàn chữ hoa cho value toàn chữ hoa.</li><li>Key viết hoa chữ đầu cho value viết hoa chữ đầu mỗi từ.</li><li>Kiểu hoa thường khác giữ nguyên value.</li></ul>
+<p>Adapter reset Bamboo sau khi khớp, nối boundary, encode rồi tính diff. Macro vì
+vậy đi qua đúng đường rewrite thông thường.</p>
+<p><code>MacroBypassModifier</code>, mặc định Shift, cho phép giữ một phím bổ trợ khi nhấn
+Space để bỏ qua macro cho đúng lần đó. Cờ <code>suppressMacro</code> gắn trên từng phần tử
+trong FIFO nên gõ nhanh không làm cờ áp nhầm sang phím sau.</p>
+<p><code>RevertMacroOnBackspace=True</code>: Backspace ngay sau khi macro mở rộng hoàn tác về
+key viết tắt kèm boundary.</p>
+<h2 id="t%E1%BB%B1-vi%E1%BA%BFt-hoa-v%C3%A0-kh%C3%B4i-ph%E1%BB%A5c-t%E1%BB%AB-v%E1%BB%ABa-g%C3%B5" tabindex="-1">Tự viết hoa và khôi phục từ vừa gõ</h2>
+<p><code>AutoCapitalizeAfterPunctuation</code>, mặc định tắt, theo dõi <code>.</code>, <code>!</code>, <code>?</code> rồi khoảng
+trắng theo từng input context. Chữ ASCII thường kế tiếp được đổi thành chữ hoa
+trước khi vào queue. Phím đã đổi không đi nhánh phím đầu vì phím vật lý không có
+Shift. Enter, reset, Backspace, di chuyển con trỏ và shortcut xoá trạng thái chờ.</p>
+<p>Sau khi kết thúc một từ, adapter giữ composition của từ đó và đếm các boundary đã
+commit phía sau. Backspace lùi qua các boundary này. Khi boundary cuối bị xoá,
+composition được phục hồi để phím sau còn sửa được dấu. Composition chỉ bị bỏ
+khi bắt đầu từ mới hoặc khi reset thật sự chạy.</p>
+<p><code>BackspaceRecovery=True</code> cho phép Backspace trong từ đang gõ dựng lại chuỗi đã
+kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.</p>
+<h2 id="rewrite-backend" tabindex="-1">Rewrite backend</h2>
+<table>
+<thead>
+<tr><th>Backend</th><th>Tên trong log</th><th>Cách xoá</th><th>Xác nhận</th></tr>
+</thead>
+<tbody>
+<tr><td><code>SurroundingTextBackend</code></td><td><code>surrounding-text</code></td><td><code>deleteSurroundingText(-N, N)</code> một lần</td><td>Probe bằng <code>SurroundingTextUpdated</code> ở lần đầu</td></tr>
+<tr><td><code>SurroundingTextV2Backend</code></td><td><code>surrounding-text-v2</code></td><td><code>deleteSurroundingText(-1, 1)</code> N lần</td><td>Xác nhận lần xoá cuối ở mọi rewrite</td></tr>
+<tr><td><code>UinputShiftSelectBackend</code></td><td><code>uinput-shift-select</code></td><td>Shift giữ + Left × N qua <code>/dev/uinput</code>, commit đè vùng chọn</td><td>ACK bằng Shift up quay về Fcitx</td></tr>
+<tr><td><code>XTestShiftSelectBackend</code></td><td><code>native-shift-select</code></td><td>Như trên qua libei hoặc XTest</td><td>Không ACK</td></tr>
+<tr><td><code>UinputBackspaceBackend</code></td><td><code>uinput-backspace</code></td><td>Backspace × N qua <code>/dev/uinput</code></td><td>ACK bằng số Backspace quay về Fcitx</td></tr>
+<tr><td><code>XTestBackspaceBackend</code></td><td><code>native-backspace</code></td><td>Backspace × N qua libei hoặc XTest</td><td>Không ACK</td></tr>
+<tr><td><code>ForwardBackspaceBackend</code></td><td><code>forward-backspace</code></td><td><code>forwardKey(Backspace)</code> × N</td><td>Không ACK</td></tr>
+</tbody>
+</table>
+<p>Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
+X11 hoặc khi libei không khả dụng.</p>
+<p>Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
+<code>AdaptiveWait</code>. Commit luôn được đưa sang pha post của event loop bằng
+<code>EventLoopPostTask</code>. Timer giữa các bước xoá chạy callback trực tiếp. Chi tiết
+từng backend nằm trong <a href="ARECA_ARCHITECTURE_SPECIFICATION.md#5-sequence-diagram-các-backend">đặc tả</a>.</p>
+<p>Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:</p>
+<ul><li><strong>Surrounding</strong>: V2 nếu <code>UseSurroundingV2InsteadOfSurroundingV1=True</code>, ngược lại V1.</li><li><strong>Shift select</strong>: Native nếu <code>UseXTestInsteadOfUinput=True</code> và khả dụng, rồi
+uinput, rồi Native.</li><li><strong>Backspace</strong>: khi cần phím phần cứng hoặc <code>UseUinputInsteadOfForwardKey=True</code>,
+thử Native nếu được ưu tiên, rồi uinput, rồi Native; cuối cùng là ForwardKey.</li></ul>
+<h2 id="ch%E1%BB%8Dn-backend" tabindex="-1">Chọn backend</h2>
+<p>Khi <code>deleteCount &gt; 0</code>, <code>selectRewriteBackend()</code> quyết định theo thứ tự:</p>
+<ol><li><strong>Terminal</strong> dùng bộ chọn Backspace có ưu tiên phím phần cứng. Terminal được
+nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có tên.</li><li><strong>Autocomplete trình duyệt hoặc đang có vùng chọn</strong>: ô URL dùng Shift select.
+Ô khác dùng Backspace, thêm 1 Backspace nếu vùng chọn nằm ngay sau từ đang gõ
+hoặc là gợi ý autocomplete.</li><li><strong>Ô URL trong trình duyệt không có surrounding text</strong> dùng Shift select.
+Ô URL được nhận diện bằng <code>CapabilityFlag::Url</code> hoặc AT-SPI với thanh địa chỉ
+Chromium.</li><li>**<code>UseBackspaceForUrl=True</code> và ô là URL**: Shift select, không có thì Backspace.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
+Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
+<code>canForwardBackspaces()</code> trả false, ví dụ ứng dụng SDL hay frontend DBus,
+Fcitx4 thiếu capability phù hợp.</li></ul></li></ol>
+<p>Backend tự động được chọn gần nhất cho mỗi ứng dụng được nhớ để hiển thị trong
+menu chọn backend.</p>
+<h2 id="verdict-surrounding-text" tabindex="-1">Verdict surrounding text</h2>
+<p>Verdict được đánh giá ở rewrite đầu tiên cần xoá trong một input context:</p>
+<ul><li>Snapshot có text, cursor và anchor đều lớn hơn 0 thì được đánh dấu tin cậy và
+chờ probe.</li><li>Chương trình lập trình, terminal, office luôn bị buộc dùng Backspace.</li><li>Họ VS Code với capability mask <code>0x72</code> cũng bị buộc dùng Backspace.</li><li>Snapshot gợi ý autocomplete không được dùng để probe.</li><li>Trong lúc chờ probe, snapshot không chứa từ đang gõ ngay trước con trỏ nghĩa
+là frontend gửi surrounding trễ. Probe bị tính là thất bại và restore surrounding
+bị tắt cho context đó.</li></ul>
+<p>Probe gửi lệnh xoá rồi chờ <code>SurroundingTextUpdated</code> khớp ngữ nghĩa theo
+<code>surroundingProbeMatches</code>: con trỏ trùng anchor, text trước con trỏ đúng như kỳ
+vọng sau khi xoá, không còn text cũ, và không nhận nhầm trạng thái trung gian.
+Lần probe đầu chờ 150 ms, lần retry chờ 80 ms. Hết hạn thì verdict thành không tin
+cậy, transaction chuyển sang backend fallback, và chỉ retry một lần ở từ kế tiếp.</p>
+<p>Verdict được cache theo UUID của context đang dùng. Lifecycle như activate,
+deactivate, reset, click chuột xoá verdict để đánh giá lại, trừ khi verdict đang
+được bảo vệ: Backspace, Ctrl+A, phím di chuyển hoặc chọn text bảo vệ verdict
+trong 1 giây.</p>
 <h2 id="surrounding-cache" tabindex="-1">Surrounding cache</h2>
-<p>Areca không tự chỉnh object <code>surroundingText()</code> mà Fcitx đang cache sau delete,
-selection delete hoặc commit. Addon chờ frontend gửi snapshot mới từ ứng dụng.</p>
-<h2 id="reset-barrier" tabindex="-1">Reset barrier</h2>
-<p><code>ArecaEngine::reset()</code> chỉ arm timer của mode đang hoạt động, không reset ngay.
-Reset thật xảy ra sau <code>ResetDelayMs</code> nếu không có input mới. Rewrite pending
-làm timer Rewrite được arm lại. Preedit không có processing queue; phím
-mới chỉ huỷ delayed-reset của chính nó. Hai timer và hai composition không tham
-chiếu lẫn nhau.</p>
-<p>Special key mà user chủ động gõ vẫn có policy tức thời:</p>
-<ul>
-<li>Cursor, Tab, Escape và Ctrl/Alt/Super/Meta combination: reset Bamboo rồi
-forward.</li>
-<li>Return/KP Enter: reset Bamboo rồi forward nguyên event.</li>
-<li>Backspace: gọi <code>RemoveLastChar(true)</code> để đồng bộ Bamboo rồi forward.</li>
-<li>Delete: forward mà không thay Bamboo history.</li>
-</ul>
-<h2 id="h%C6%B0%E1%BB%9Bng-m%E1%BB%9F-r%E1%BB%99ng" tabindex="-1">Hướng mở rộng</h2>
-<h3 id="1-th%C3%AAm-mode-surroundingonly" tabindex="-1">1. Thêm Mode SurroundingOnly</h3>
-<p>Policy <code>SurroundingOnly</code> sau này có thể được thêm như một rewrite mode thứ ba,
-với state và scheduler riêng hoặc backend selector luôn chọn
-<code>SurroundingTextBackend</code>. Nó không cần thay đổi <code>PreeditModeHandler</code>.</p>
-<h3 id="2-%C4%91%E1%BB%81-xu%E1%BA%A5t-c%E1%BA%A3i-ti%E1%BA%BFn-surroundingtextbackend-x%C3%B3a-t%E1%BB%ABng-k%C3%BD-t%E1%BB%B1-thay-v%C3%AC-x%C3%B3a-to%C3%A0n-b%E1%BB%99" tabindex="-1">2. Đề xuất cải tiến SurroundingTextBackend (Xóa từng ký tự thay vì xóa toàn bộ)</h3>
-<h4 id="hi%E1%BB%87n-tr%E1%BA%A1ng" tabindex="-1">Hiện trạng</h4>
-<p>Hiện tại, <code>SurroundingTextBackend</code> thực hiện xóa <code>N</code> ký tự trong một câu lệnh duy nhất:</p>
-<pre class="hljs"><code><div>inputContext.<span class="hljs-built_in">deleteSurroundingText</span>(-<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(plan.backspaceCount), plan.backspaceCount);
-</div></code></pre>
-<h4 id="h%E1%BA%A1n-ch%E1%BA%BF-c%E1%BB%A7a-c%C6%A1-ch%E1%BA%BF-x%C3%B3a-g%E1%BB%99p" tabindex="-1">Hạn chế của cơ chế xóa gộp</h4>
-<ul>
-<li><strong>Lỗi tính offset của ứng dụng</strong>: Một số trình duyệt (đặc biệt là Firefox Gecko trên Wayland) hoặc các bộ soạn thảo Web (Monaco Editor, CodeMirror) xử lý câu lệnh xóa gộp <code>-N</code> ký tự không ổn định khi phía sau con trỏ đang có các ký tự đặc biệt (như dấu ngoặc <code>}}</code> hoặc thẻ HTML).</li>
-<li><strong>Rủi ro lệch vị trí xóa</strong>: Việc xóa gộp một lượt có thể dẫn tới hiện tượng trình duyệt xóa thiếu ký tự hoặc tính nhầm độ dài ký tự UTF-8 multibyte.</li>
-</ul>
-<h4 id="gi%E1%BA%A3i-ph%C3%A1p-%C4%91%E1%BB%81-xu%E1%BA%A5t" tabindex="-1">Giải pháp đề xuất</h4>
-<p>Chuyển <code>SurroundingTextBackend</code> sang cơ chế vòng lặp xóa từng ký tự qua timer event-loop (tương tự như <code>UinputShiftSelectBackend</code>):</p>
-<ol>
-<li>Mỗi nhịp timer (ví dụ <code>1ms</code> - <code>3ms</code>), phát lệnh xóa 1 ký tự trước con trỏ: <code>deleteSurroundingText(-1, 1)</code>.</li>
-<li>Lặp lại <code>N</code> lần cho tới khi xóa đủ số ký tự cần thiết (<code>backspaceCount</code>).</li>
-<li>Chờ hết thời gian settling delay (<code>WaitMs</code>), sau đó mới thực hiện <code>commitString(commitText)</code>.</li>
-</ol>
-<h4 id="s%C6%A1-%C4%91%E1%BB%93-sequence-%C4%91%E1%BB%81-xu%E1%BA%A5t" tabindex="-1">Sơ đồ Sequence đề xuất</h4>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextBackend (Đề xuất)
-    participant IC as InputContext
-    participant EL as EventLoop
-
-    S-&gt;&gt;B: apply(inputContext, plan, onDone)
-    
-    alt backspaceCount &gt; 0
-        loop N = backspaceCount lần
-            B-&gt;&gt;IC: deleteSurroundingText(-1, 1)
-            B-&gt;&gt;B: updateSurroundingCacheAfterDelete(-1, 1)
-            B-&gt;&gt;EL: addTimeEvent(DeleteDelayMs = 1ms)
-            EL--&gt;&gt;B: Timer callback
-        end
-        
-        B-&gt;&gt;EL: addTimeEvent(WaitMs = 3ms)
-        EL--&gt;&gt;B: Timer callback (Settling wait hoàn tất)
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;B: updateSurroundingCacheAfterCommit(...)
-        B-&gt;&gt;S: onDone(transactionId)
-    else backspaceCount == 0
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;S: onDone(transactionId)
-    end
-</div></code></pre>
-
-<h2>Tùy chọn nhập liệu</h2>
-<p>Trong Cấu hình nâng cao <code>conf/areca-advanced.conf</code>, <code>EnableMouseTracking</code>
-và <code>ForwardFirstCharacter</code> đều mặc định <code>True</code>. Mouse tracking áp dụng
-cho mọi ứng dụng. Thay đổi qua giao diện có hiệu lực ngay; sửa file bằng tay cần reload cấu hình.</p>
-<ul><li>Tắt <code>EnableMouseTracking</code>: hủy watcher, pipe, pending click và
-process helper. Bật lại tạo tracker mới.</li>
-<li>Tắt <code>ForwardFirstCharacter</code>: bỏ qua <code>handleIdleKey()</code>,
-text key dùng luồng accept/enqueue cũ. Tính năng này không tạo thread/process riêng.</li></ul>
-<p>Chưa có benchmark so sánh hiệu năng hai chế độ.</p>
-<h2>Phím đầu khi Rewrite đang rảnh</h2>
-<p>Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo.
-Khi <code>ForwardFirstCharacter=True</code>, trước <code>filterAndAccept()</code>, <code>RewriteModeHandler</code> thử
-<code>InputScheduler::handleIdleKey()</code> khi không chờ Backspace release và phím không
-bị đổi bởi tự viết hoa. Scheduler chỉ nhận nhánh này khi Bamboo không giữ text,
-không processing, không rewrite pending, queue rỗng, không stalled và đã qua
-khoảng bảo vệ reset sau commit (hiện là 20 ms).</p>
-<p>Bamboo vẫn xử lý phím đúng một lần. Nếu <code>deleteCount == 0</code>, <code>commitText</code> bằng
-UTF-8 đầu vào và không mở rộng macro, addon để event chưa filter/accept cho
-frontend xử lý. Trạng thái Bamboo được giữ để phím sau vẫn ghép dấu, ví dụ
-<code>a</code> rồi <code>s</code> thành <code>á</code>. Nhánh này không gọi <code>commitString()</code>, không phát cặp
-<code>forwardKey()</code> giả, không tự cập nhật surrounding cache và không tạo barrier
-sau commit vì addon chưa thực hiện commit.</p>
-<p><code>KeyEvent::forward()</code> trong API Fcitx đang dùng là getter; việc để event chưa
-filter/accept mới là điều cho phép phím đi tiếp. Cách frontend giao event đến
-trang web vẫn cần kiểm tra trên từng môi trường thực tế.</p>
-<p>Nếu Bamboo đổi đầu ra, scheduler accept event và áp dụng ngay kết quả đã tính,
-không enqueue lại để tránh xử lý cùng phím hai lần. Nếu chưa đủ điều kiện,
-<code>handleIdleKey()</code> trả false mà không sửa engine/event; caller dùng FIFO như cũ.
-Phím bị tự viết hoa cũng dùng luồng commit để giữ ký tự đã biến đổi.</p>
-<h2>Theo dõi click và reset composition</h2>
-<p><code>WindowFocusTracker</code> là thread đọc AT-SPI trong Fcitx. <code>MouseClickTracker</code>
-quản lý process con riêng <code>areca-mouse-monitor</code>; helper dùng libinput/udev trên
-<code>XDG_SEAT</code> (mặc định <code>seat0</code>) và cùng quyền user với Fcitx. Không cần socket
-server hoặc thread nhận chuột trong addon.</p>
-<pre><code>libinput/udev → areca-mouse-monitor → stdout pipe riêng (R/C)
-             → MouseClickTracker trên event loop Fcitx → pending click
-             → ArecaEngine::keyEvent → kiểm tra scheduler → reset handler</code></pre>
-<ul><li><code>R</code> báo context libinput đã khởi tạo, không đảm bảo có thiết bị đọc được.</li><li><code>C</code> báo nút chuột được nhấn, không phân biệt nút trái/phải/giữa. Helper bật
-  tap-to-click trong context libinput riêng; di chuyển, cuộn và nhả nút không
-  gửi reset. udev hỗ trợ thiết bị được cắm thêm sau khi helper chạy.</li><li>Pipe nonblocking tránh chặn event loop/dispatch; nhiều click gộp thành một
-  cờ reset. stderr dành cho log, không lẫn vào protocol stdout.</li><li>Callback pipe chỉ đánh dấu. Trước phím nhấn tiếp theo, addon đọc thêm pipe để
-  lấy click đã đến nhưng callback chưa chạy. Nếu scheduler đang bảo vệ rewrite,
-  cờ vẫn được giữ cho phím sau; nếu được phép thì reset handler đang active,
-  xử lý cache verdict theo lifecycle và xóa cờ. Redirect không có composition
-  để reset. Đây không phải reset tức thời ngay khi click.</li><li>Activation thử khởi động lại helper đã mất kết nối và bỏ click cũ đã nhận.
-  Khi pipe đóng, watcher bị tắt; pending click đã nhận vẫn được giữ. Hủy tracker
-  sẽ đóng pipe, kết thúc và thu hồi process con bằng <code>waitpid()</code>. Helper cũng
-  theo dõi pipe để thoát khi Fcitx mất kết nối, kể cả không có click mới.</li></ul>
-<p>Helper được cài vào <code>CMAKE_INSTALL_LIBEXECDIR</code>; addon nhúng đường dẫn tuyệt đối
-ứng với <code>CMAKE_INSTALL_PREFIX</code>. Build cần libinput và libudev. Rule
-<code>70-areca-pointer.rules</code> cấp <code>uaccess</code> cho chuột/touchpad của phiên local đang
-active, trước <code>73-seat-late.rules</code>. Không có ACL/quyền đọc thiết bị thì tính năng
-click không hoạt động; nhập liệu Fcitx bình thường vẫn hoạt động. Xem
-<a href="DEBUGGING.md#mouse-tracker">Debug mouse tracker</a> để kiểm tra cài đặt và log.</p>
+<p>Backend cập nhật object <code>surroundingText()</code> mà Fcitx đang giữ ngay sau khi xoá
+hoặc commit, để thao tác kế tiếp không đọc snapshot cũ. Frontend vẫn là nguồn dữ
+liệu chính và snapshot mới từ ứng dụng sẽ thay cache này.</p>
+<h2 id="s%E1%BB%ADa-t%E1%BB%AB-%C4%91%C3%A3-commit" tabindex="-1">Sửa từ đã commit</h2>
+<p><code>RestoreSurroundingText=True</code>, mặc định bật, cho phép đặt con trỏ sau một từ đã
+gõ xong rồi tiếp tục sửa dấu cho từ đó.</p>
+<p><strong>Khi nào được arm.</strong> Cờ restore là one-shot theo input context, được bật khi:</p>
+<ul><li>Focus vào ô nhập.</li><li>Reset context, kể cả reset từ ứng dụng hay click chuột.</li><li>Phím di chuyển, Tab, Escape hoặc shortcut.</li><li>Backspace xoá hết từ đang gõ.</li><li>Rewrite nhận <code>SurroundingTextUpdated</code> khi không có mouse tracker. Preedit luôn
+arm theo sự kiện này.</li></ul>
+<p><strong>Khi nào chạy.</strong> Ở phím chữ đầu tiên mà Bamboo xử lý được sau khi arm. Phím
+không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước khi kiểm tra điều kiện:</p>
+<ul><li>Bảng mã Unicode, không phải ô mật khẩu, ứng dụng có <code>SurroundingText</code>.</li><li>Rewrite: không phải ô có <code>CapabilityFlag::Url</code>, Bamboo rỗng, không có rewrite,
+queue rỗng, ngoài khoảng bảo vệ reset.</li><li>Chưa từng thấy snapshot trễ ở context này.</li></ul>
+<p><strong>Cách khôi phục.</strong> Extractor quét lùi từ con trỏ, dừng ở ký tự không phải chữ
+Latin hoặc chữ tiếng Việt dựng sẵn, tối đa 16 ký tự. Chuỗi UTF-8 lỗi, dấu tổ hợp
+và từ dài hơn giới hạn bị từ chối. Bridge tách chữ gốc và hiệu ứng dấu, thử một
+tập phím hữu hạn trên engine tạm, chỉ nạp vào engine thật khi output khớp đúng từ
+trên màn hình. Không khớp thì bỏ dần ký tự đầu để xử lý trường hợp con trỏ nằm
+giữa từ như <code>tiế|n</code>.</p>
+<p>Rewrite giữ nguyên text trên màn hình, phím kế tiếp tạo diff đi qua scheduler như
+bình thường. Preedit xoá từ cũ bằng <code>deleteSurroundingText(-N, N)</code> rồi đưa vào
+preedit. Preedit còn kiểm tra text Areca vừa commit phải nằm ngay trước con trỏ,
+nếu không coi là snapshot trễ và tắt restore. Bamboo lỗi sau khi xoá thì commit
+lại từ cũ trước khi forward phím.</p>
+<h2 id="preedit-mode" tabindex="-1">Preedit mode</h2>
+<p>Preedit không dùng <code>InputScheduler</code>, rewrite backend hay verdict. Mỗi input
+context có <code>PreeditInputState</code> và engine Bamboo riêng, xử lý phím đồng bộ.</p>
+<ul><li>Hiển thị bằng preedit của client nếu ứng dụng có <code>CapabilityFlag::Preedit</code>,
+ngược lại dùng preedit phía Fcitx.</li><li>Backspace trong composition gọi <code>processBackspace()</code> khi bật <code>BackspaceRecovery</code>.</li><li>Space và dấu câu chạy macro, kiểm tra chính tả rồi commit ngay.</li><li>Backspace lùi qua boundary được forward nguyên bản. Khi chạm tới từ, handler xoá
+<code>từ + boundary cuối</code> bằng <code>deleteSurroundingText()</code> rồi đưa từ lên preedit, chỉ
+khi ứng dụng hỗ trợ surrounding và snapshot khớp chính xác.</li><li>Enter, Tab, Delete, phím di chuyển, Escape và shortcut commit composition trước
+khi forward.</li><li>Click chuột chỉ chuẩn bị restore khi composition đang trống.</li></ul>
+<p>Hai mode xử lý tiếng Việt chỉ dùng chung cấu hình và lớp adapter, không dùng
+chung engine instance hay state.</p>
+<h2 id="redirect-mode" tabindex="-1">Redirect mode</h2>
+<p><code>RedirectModeHandler</code> forward phím nhấn bằng <code>KeyEvent::forward()</code> và để nguyên
+phím nhả cho Fcitx. Mode này không có state để reset.</p>
+<h2 id="theo-d%C3%B5i-click-chu%E1%BB%99t" tabindex="-1">Theo dõi click chuột</h2>
+<p><code>MouseClickTracker</code> quản lý process con <code>areca-mouse-monitor</code>. Helper dùng
+libinput và udev trên <code>XDG_SEAT</code>, mặc định <code>seat0</code>, chạy cùng quyền user với
+Fcitx.</p>
+<pre class="hljs"><code><div>libinput/udev → areca-mouse-monitor → pipe stdout (R/C)
+             → MouseClickTracker trên event loop → cờ click chờ xử lý
+             → ArecaEngine::keyEvent → kiểm tra khoảng bảo vệ → reset handler</div></code></pre>
+<ul><li><code>R</code>: libinput đã khởi tạo, chưa đảm bảo đọc được thiết bị.</li><li><code>C</code>: có nút chuột được nhấn hoặc tap touchpad. Di chuyển, cuộn, nhả nút không
+gửi gì.</li><li>Pipe nonblocking, nhiều click gộp thành một cờ. stderr chỉ dùng cho log.</li><li>Callback pipe chỉ đặt cờ. Trước phím nhấn kế tiếp, addon đọc thêm pipe. Nếu
+đang trong khoảng bảo vệ, cờ được giữ cho phím sau. Nếu không thì reset handler
+của mode hiện tại và xoá verdict theo lifecycle.</li><li>Activation khởi động lại helper đã mất kết nối và bỏ click cũ. Huỷ tracker đóng
+pipe, kill và <code>waitpid()</code> helper.</li></ul>
+<p><code>EnableMouseTracking=False</code> dừng hẳn helper. Helper cài vào
+<code>CMAKE_INSTALL_LIBEXECDIR</code>. Rule <code>70-areca-pointer.rules</code> cấp <code>uaccess</code> cho chuột
+và touchpad của phiên local đang active. Thiếu quyền chỉ làm mất tính năng reset
+theo click. Xem <a href="DEBUGGING.md#mouse-tracker">debug mouse tracker</a>.</p>
+<h2 id="nh%E1%BA%ADn-di%E1%BB%87n-%E1%BB%A9ng-d%E1%BB%A5ng" tabindex="-1">Nhận diện ứng dụng</h2>
+<ul><li>Tên chương trình lấy từ <code>InputContext::program()</code>. Khi trống hoặc là proxy của
+GNOME Shell, Areca dùng tên từ <code>WindowFocusTracker</code> và cache vào state.</li><li><code>WindowFocusTracker</code> chạy thread riêng, kết nối bus accessibility, theo dõi sự
+kiện focus và lưu chương trình, class, cờ terminal. Thread chính chỉ đọc qua
+atomic và mutex ngắn.</li><li><code>InputTypeDetector</code> dùng các thông tin trên cùng danh sách trong
+<code>program_compatibility.cpp</code> để nhận diện trình duyệt, Chromium, terminal, thanh
+địa chỉ Omnibox và ứng dụng SDL.</li></ul>
 </main>
 </body>
 </html>

@@ -274,7 +274,7 @@
             </article>
             <article>
               <span aria-hidden="true">→</span>
-              <div><b>Không cần dịch vụ uinput</b><p>Fallback dùng Fcitx5 <code>forwardKey()</code>, không cần socket, daemon hay quyền truy cập thiết bị riêng.</p></div>
+              <div><b>Vẫn gõ được khi thiếu uinput</b><p>uinput được ưu tiên khi có quyền. Thiếu quyền thì Areca dùng Libei/XTest hoặc Fcitx5 <code>forwardKey()</code>, không cần socket hay daemon riêng.</p></div>
             </article>
           </div>
 
@@ -284,8 +284,8 @@
             </div>
             <p>
               Một pipeline liền mạch giúp giảm thành phần phải cài đặt và quản
-              lý. Người dùng tránh được bước cấp quyền uinput vốn có thể khác
-              nhau giữa các distro, đặc biệt trong lần cài đầu tiên.
+              lý. Installer thiết lập sẵn quyền uinput; nếu bước đó thất bại,
+              Areca vẫn chạy bằng backend dự phòng.
             </p>
           </div>
         </div>
@@ -368,7 +368,7 @@
           </a>
           <a
             class="text-link"
-            href="https://github.com/xhkzeroone/ArecaIME#cài-đặt"
+            href="https://github.com/xhkzeroone/ArecaIME#cài-đặt-chi-tiết"
             target="_blank"
             rel="noreferrer"
             >Xem mọi tùy chọn cài đặt <span aria-hidden="true">→</span></a
@@ -576,7 +576,7 @@ test -w /dev/uinput &amp;&amp; echo "uinput: OK" || echo "uinput: chưa có quy�
 fcitx5 -rd</code></pre>
           <p>
             Xem thêm hướng dẫn và cách cài thủ công trong
-            <a href="https://github.com/xhkzeroone/ArecaIME#khởi-nạp-uinput-và-cấp-quyền"
+            <a href="https://github.com/xhkzeroone/ArecaIME#uinput-và-quyền-truy-cập"
                target="_blank" rel="noreferrer">README trên GitHub</a>.
           </p>
         </div>
