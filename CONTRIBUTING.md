@@ -43,8 +43,61 @@ ctest --test-dir build --output-on-failure
    ```bash
    git checkout -b feature/ten-tinh-nang
    ```
-2. Đảm bảo mã nguồn tuân thủ tiêu chí không nghẽn main thread và vượt qua toàn bộ unit test.
-3. Rebase với `main` và gửi Pull Request kèm mô tả chi tiết.
+2. Làm theo toàn bộ [quy tắc bắt buộc](#-quy-tắc-bắt-buộc-cho-pull-request) bên dưới.
+3. Rebase với `main` và gửi Pull Request theo mẫu có sẵn.
+
+---
+
+## ✅ Quy tắc bắt buộc cho Pull Request
+
+PR vi phạm một quy tắc dưới đây sẽ được yêu cầu sửa trước khi review.
+
+### Phạm vi
+- Mỗi PR chỉ giải quyết một vấn đề. Không gộp refactor, đổi format hay sửa lỗi không liên quan vào cùng PR.
+- Không tự tăng version, không sửa `packaging/` hay file release trừ khi PR là về đóng gói.
+- Không commit thư mục build, file IDE, log hay file tạm.
+- Không đổi submodule `bamboo/bamboo-core` nếu PR không cần đổi engine Bamboo.
+
+### Định dạng mã nguồn
+- Mã C++ phải theo `.clang-format` ở gốc repo. Trước khi commit chạy:
+  ```bash
+  git clang-format main
+  ```
+- Không format lại những file mà PR không sửa.
+- Mã Go trong `bamboo-bridge/` phải qua `gofmt`.
+
+### Build và kiểm thử
+- Build sạch, không phát sinh cảnh báo biên dịch mới.
+- `ctest --test-dir build --output-on-failure` phải qua toàn bộ.
+- Sửa lỗi phải kèm test tái hiện lỗi đó. Tính năng mới phải kèm test cho hành vi mới. Test đặt trong `tests/` và đăng ký bằng `add_test` trong `CMakeLists.txt`.
+- Thay đổi đường xử lý phím phải được gõ thử trên ứng dụng thật. Ghi rõ trong PR: tên app, Wayland hay X11, chế độ Rewrite hay Preedit, backend rewrite đang dùng.
+
+### Luồng xử lý phím
+- Không chặn main thread của fcitx5. Cấm gọi D-Bus đồng bộ, đọc file, `sleep`, chờ mutex lâu hay tính toán nặng trong callback phím, timer hoặc event loop. Việc chậm phải chạy trên thread riêng như `WindowFocusTracker` và chỉ trao kết quả qua atomic hoặc mutex ngắn.
+- Mọi thao tác xoá chữ và commit chữ phải đi qua `InputScheduler` và rewrite backend. Không gọi `commitString` hay `deleteSurroundingText` ngoài luồng này vì sẽ phá thứ tự phím.
+- Tôn trọng `shouldRejectReset()`: không reset engine khi rewrite đang chạy hoặc trong khoảng bảo vệ sau commit.
+- Hạn chế thêm timer hoặc thời gian chờ mới. Mỗi timer phải có lý do trong comment và có cấu hình nếu là thời gian chờ ảnh hưởng tới người dùng.
+- Không đổi hành vi mặc định của tính năng có sẵn nếu không nêu rõ lý do trong PR.
+
+### Cấu hình
+- Option mới khai báo trong `src/areca_config.h`, mặc định giữ nguyên hành vi cũ.
+- Option người dùng thấy được phải có mặt đủ ở `gtk-settings/areca_settings.py` và `settings/ui_views.cpp`.
+
+### Log
+- Log debug chỉ in khi bật Debug, kiểm tra bằng `debugProvider_()` hoặc `debugEnabled()`.
+- Mọi dòng log bắt đầu bằng `areca: ` và dùng dạng `key=value` để dễ grep.
+- Không log nội dung ô mật khẩu hay dữ liệu nhạy cảm.
+
+### Comment và tài liệu
+- Comment viết tiếng Việt, ngắn, giải thích lý do thay vì mô tả lại code.
+- Không chèn ngoặc đơn giải thích thừa.
+- Không ghi tên dự án hay người mà kỹ thuật được tham khảo.
+
+### Commit
+- Tiêu đề commit bằng tiếng Anh, thể mệnh lệnh, viết hoa chữ đầu, không quá 72 ký tự, không dấu chấm cuối. Ví dụ: `Detect lagging surrounding snapshots and guard restore`.
+- Thân commit giải thích vì sao thay đổi và ảnh hưởng tới người dùng nếu không hiển nhiên.
+- Không thêm dòng `Co-Authored-By` hay `Generated with` của công cụ AI.
+- Rebase lên `main` mới nhất, gộp các commit sửa vặt trước khi gửi.
 
 ---
 

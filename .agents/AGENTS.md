@@ -8,3 +8,6 @@
 - **Get straight to the core point (Đi thẳng vào trọng tâm)**: Write clean, concise, direct text and code comments without redundant fluff.
 - **No Parentheses Noise**: Never add unnecessary filler or explanatory parentheticals `()` in documentation, code comments, or text responses.
 
+
+## Pull Request
+- Trước khi commit hoặc chuẩn bị PR, làm theo mục "Quy tắc bắt buộc cho Pull Request" trong `CONTRIBUTING.md` và skill `.claude/skills/areca-pr/SKILL.md`.

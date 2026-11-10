@@ -16,13 +16,23 @@ Mô tả tóm tắt nội dung thay đổi và mục đích của Pull Request n
 - [ ] Build/CI - Cấu hình CMake hoặc GitHub Actions
 
 ## Các bước kiểm thử đã thực hiện
-Mô tả cách bạn đã kiểm tra thay đổi này:
 1. Biên dịch thành công với CMake: `cmake --build build -j$(nproc)`
 2. Toàn bộ unit tests đều vượt qua: `ctest --test-dir build --output-on-failure`
-3. Kiểm tra thực tế trên ứng dụng: ghi rõ tên app đã test như Chrome, LibreOffice, VS Code...
+3. Kiểm tra thực tế trên ứng dụng:
+
+| Ứng dụng | Wayland/X11 | Chế độ | Backend rewrite | Kết quả |
+|---|---|---|---|---|
+|  |  |  |  |  |
 
 ## Checklist trước khi gửi
-- [ ] Mã nguồn tuân thủ coding style hiện tại của dự án
+Xem đầy đủ tại [quy tắc bắt buộc cho Pull Request](https://github.com/xhkzeroone/ArecaIME/blob/main/CONTRIBUTING.md#-quy-tắc-bắt-buộc-cho-pull-request).
+- [ ] PR chỉ giải quyết một vấn đề
+- [ ] Đã chạy `git clang-format main`, không format lại file không liên quan
+- [ ] Build sạch, không phát sinh cảnh báo biên dịch mới
 - [ ] Đã chạy và vượt qua toàn bộ unit test
-- [ ] Đã kiểm tra tính năng gõ thực tế trên môi trường Wayland
-- [ ] Không làm phát sinh cảnh báo biên dịch mới
+- [ ] Có test mới cho lỗi được sửa hoặc tính năng được thêm
+- [ ] Không chặn main thread của fcitx5, không commit chữ ngoài `InputScheduler`
+- [ ] Option mới mặc định giữ hành vi cũ và có trong các giao diện settings
+- [ ] Log debug có kiểm tra Debug và bắt đầu bằng `areca: `
+- [ ] Đã gõ thử trên ứng dụng thật và ghi vào bảng trên
+- [ ] Commit theo quy tắc, không có dòng attribution của công cụ AI
