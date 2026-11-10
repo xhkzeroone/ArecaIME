@@ -17,6 +17,7 @@ Quy tắc gốc nằm ở mục "Quy tắc bắt buộc cho Pull Request" trong 
 - Kiểm tra lại bằng `git clang-format --diff main`, kết quả phải rỗng.
 - Có sửa file Go thì chạy `gofmt -l bamboo-bridge`, kết quả phải rỗng.
 - Không chạy clang-format cho file mà PR không sửa.
+- CI (`.github/workflows/format.yml`) kiểm tra toàn bộ `src/` và `tests/` bằng clang-format 23.1.4; PR không qua bước này sẽ không được merge.
 
 ## 3. Build và test
 - Build vào thư mục riêng để không đụng build của người dùng:

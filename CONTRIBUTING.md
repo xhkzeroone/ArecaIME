@@ -64,6 +64,11 @@ PR vi phạm một quy tắc dưới đây sẽ được yêu cầu sửa trư�
   git clang-format main
   ```
 - Không format lại những file mà PR không sửa.
+- CI chạy `clang-format` 23 trên `src/` và `tests/`. PR sai định dạng sẽ bị báo lỗi.
+- Có thể bật hook tự format phần thay đổi đã stage mỗi lần commit:
+  ```bash
+  git config core.hooksPath .githooks
+  ```
 - Mã Go trong `bamboo-bridge/` phải qua `gofmt`.
 
 ### Build và kiểm thử

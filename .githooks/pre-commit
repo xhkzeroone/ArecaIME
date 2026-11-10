@@ -1,0 +1,19 @@
+#!/bin/sh
+# Format staged C++ changes in src/ and tests/ with the repo .clang-format.
+# Enable once per clone: git config core.hooksPath .githooks
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  'src/*.cpp' 'src/*.h' 'tests/*.cpp' 'tests/*.h')
+[ -z "$files" ] && exit 0
+
+if ! command -v git-clang-format >/dev/null 2>&1; then
+  echo "pre-commit: git-clang-format not found, skipping format check" >&2
+  exit 0
+fi
+
+if ! git clang-format --staged --diff -- $files >/dev/null; then
+  git clang-format --staged -- $files >/dev/null
+  echo "pre-commit: formatted staged C++ changes." >&2
+  echo "Review with 'git diff', then 'git add' and commit again." >&2
+  exit 1
+fi
