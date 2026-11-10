@@ -28,6 +28,7 @@ public:
                     RewriteDone onDone) override;
 
   bool hasPending() const { return transactionId_ != 0; }
+
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
 
@@ -39,10 +40,8 @@ private:
   void completeWithoutCommit();
   void schedule(uint32_t delayMs, TimerDispatch dispatch,
                 std::function<void()> callback);
-  void dispatchPostEvent(uint64_t deadlineUsec,
-                         std::function<void()> callback);
-  void observeAndRun(uint64_t deadlineUsec,
-                     std::function<void()> callback);
+  void dispatchPostEvent(uint64_t deadlineUsec, std::function<void()> callback);
+  void observeAndRun(uint64_t deadlineUsec, std::function<void()> callback);
   void clearPending();
 
   fcitx::EventLoop &eventLoop_;

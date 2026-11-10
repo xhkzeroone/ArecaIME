@@ -1,5 +1,5 @@
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <string>
 
@@ -13,8 +13,7 @@ areca::BambooResult type(areca::BambooEngineAdapter &engine, char key) {
   return engine.process(static_cast<unsigned char>(key), std::string(1, key));
 }
 
-void applyToDisplay(std::string &display,
-                    const areca::BambooResult &result) {
+void applyToDisplay(std::string &display, const areca::BambooResult &result) {
   const auto displayLength = fcitx::utf8::length(display);
   assert(displayLength >= result.deleteCount);
   const auto eraseFrom = fcitx::utf8::nextNChar(
@@ -191,7 +190,9 @@ int main() {
 
   for (const auto &[method, word] :
        std::vector<std::pair<std::string, std::string>>{
-           {"Telex", "đúng"}, {"VNI", "tưởng"}, {"VIQR", "Chào"},
+           {"Telex", "đúng"},
+           {"VNI", "tưởng"},
+           {"VIQR", "Chào"},
            {"Microsoft layout", "đấ"}}) {
     areca::BambooEngineAdapter restoredEngine(method);
     assert(restoredEngine.restoreFromRenderedText(word));
@@ -208,7 +209,8 @@ int main() {
   assert(basicBoundary.commitText == "awbc ");
 
   areca::BambooEngineAdapter modernToneEngine("Telex 2", true, true, true);
-  areca::BambooEngineAdapter traditionalToneEngine("Telex 2", true, true, false);
+  areca::BambooEngineAdapter traditionalToneEngine("Telex 2", true, true,
+                                                   false);
   areca::BambooResult modernTone;
   areca::BambooResult traditionalTone;
   for (char key : std::string("hoaf")) {
@@ -232,7 +234,8 @@ int main() {
   assert(std::find(charsets.begin(), charsets.end(), "Unicode tổ hợp") !=
          charsets.end());
   for (const auto &charset : charsets) {
-    areca::BambooEngineAdapter encodedEngine("Telex 2", true, true, true, charset);
+    areca::BambooEngineAdapter encodedEngine("Telex 2", true, true, true,
+                                             charset);
     type(encodedEngine, 'a');
     const auto encodedResult = type(encodedEngine, 's');
     assert(fcitx::utf8::validate(encodedResult.newText));
@@ -250,16 +253,16 @@ int main() {
   areca::BambooEngineAdapter viqrEngine("VIQR");
   assert(viqrEngine.canProcessKey('.'));
 
-  areca::BambooEngineAdapter combiningEngine(
-      "Telex 2", true, true, true, "Unicode tổ hợp");
+  areca::BambooEngineAdapter combiningEngine("Telex 2", true, true, true,
+                                             "Unicode tổ hợp");
   type(combiningEngine, 'a');
   const auto combiningResult = type(combiningEngine, 's');
   assert(combiningResult.newText == "a\u0301");
   assert(combiningResult.deleteCount == 0);
   assert(combiningResult.commitText == "\u0301");
 
-  const std::vector<areca::MacroDefinition> macros = {
-      {"bt", "Be There"}, {"vn", "Việt Nam"}};
+  const std::vector<areca::MacroDefinition> macros = {{"bt", "Be There"},
+                                                      {"vn", "Việt Nam"}};
   areca::BambooEngineAdapter macroEngine("Telex 2", true, true, true, "Unicode",
                                          true, true, macros);
   display.clear();
@@ -376,9 +379,9 @@ int main() {
   assert(!undoEngine.canUndoMacro());
 
   // Test macro undo disabled when revertMacroOnBackspace is false:
-  areca::BambooEngineAdapter disabledUndoEngine(
-      "Telex 2", true, true, true, "Unicode", true, true,
-      {{"k", "không"}}, false);
+  areca::BambooEngineAdapter disabledUndoEngine("Telex 2", true, true, true,
+                                                "Unicode", true, true,
+                                                {{"k", "không"}}, false);
 
   display = "50";
   for (char key : std::string("k.")) {

@@ -13,7 +13,10 @@ public:
   virtual ~XTestBackspaceDevice() = default;
   virtual bool isAvailable() = 0;
   virtual bool sendBackspace() = 0;
-  virtual bool sendShift(bool press) { (void)press; return false; }
+  virtual bool sendShift(bool press) {
+    (void)press;
+    return false;
+  }
   virtual bool sendLeft() { return false; }
 };
 

@@ -208,8 +208,7 @@ void testSingleWrongUpdateFallsBack() {
   auto plan = makeProbePlan(306);
   plan.surroundingProbeTimeoutMs = 5;
   const auto status = backend.apply(
-      inputContext, plan,
-      [&](uint64_t, areca::RewriteOutcome outcome) {
+      inputContext, plan, [&](uint64_t, areca::RewriteOutcome outcome) {
         assert(outcome == areca::RewriteOutcome::Succeeded);
         doneCalled = true;
         eventLoop.exit();

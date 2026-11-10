@@ -27,7 +27,8 @@ bool XTestDevice::ensureDevice(const char *displayName) {
   initialized_ = true;
   activeDisplayName_ = name;
 
-  const char *openTarget = displayName && displayName[0] ? displayName : nullptr;
+  const char *openTarget =
+      displayName && displayName[0] ? displayName : nullptr;
   display_ = XOpenDisplay(openTarget);
   if (!display_) {
     if (debugProvider_()) {
@@ -125,8 +126,8 @@ bool XTestDevice::sendShift(bool press) {
     return false;
   }
 
-  const bool sent =
-      XTestFakeKeyEvent(display_, shiftKeycode_, press ? True : False, CurrentTime);
+  const bool sent = XTestFakeKeyEvent(display_, shiftKeycode_,
+                                      press ? True : False, CurrentTime);
   XFlush(display_);
   return sent;
 }

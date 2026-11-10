@@ -40,7 +40,7 @@ void InputScheduler::enqueue(fcitx::InputContext &inputContext,
 }
 
 bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
-                                    const std::string &utf8Text) {
+                                   const std::string &utf8Text) {
   auto *inputContext = event.inputContext();
   // Không cho phím vượt qua công việc đang chờ hoặc khoảng ổn định sau commit:
   // editor phải nhận đủ kết quả rewrite trước khi nhận phím mới. Khi stalled,
@@ -51,7 +51,8 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
   }
   auto *engine = engineResolver_(*inputContext);
   // Chỉ áp dụng lúc chưa có từ đang ghép; phím trong từ vẫn cần luồng rewrite.
-  if (!engine || !engine->currentText().empty()) return false;
+  if (!engine || !engine->currentText().empty())
+    return false;
 
   // Khóa scheduler trong lúc xử lý đồng bộ để tránh công việc khác chen vào.
   processing_ = true;
@@ -75,7 +76,8 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
       finishKeyAfterDelay();
     } else {
       if (debugProvider_())
-        FCITX_INFO() << "areca: idle key route=commit reason=transformed-output";
+        FCITX_INFO()
+            << "areca: idle key route=commit reason=transformed-output";
       // Đầu ra đã đổi: chặn phím gốc và áp dụng chính kết quả vừa tính. Không
       // enqueue lại vì như vậy Bamboo sẽ xử lý cùng một phím hai lần.
       event.filterAndAccept();
@@ -170,10 +172,10 @@ void InputScheduler::processNext() {
     if (key.isBackspace) {
       applyResult(*inputContext, *engine, engine->processBackspace(), "");
     } else {
-      const auto result = key.suppressMacro
-                              ? engine->processWithoutMacro(key.codepoint,
-                                                            key.utf8Text)
-                              : engine->process(key.codepoint, key.utf8Text);
+      const auto result =
+          key.suppressMacro
+              ? engine->processWithoutMacro(key.codepoint, key.utf8Text)
+              : engine->process(key.codepoint, key.utf8Text);
       applyResult(*inputContext, *engine, result, key.utf8Text);
     }
   } catch (const std::exception &error) {
@@ -246,8 +248,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   plan.waylandAfterXTestBackspaceWaitMs =
       timing.waylandAfterXTestBackspaceWaitMs;
   plan.ximAfterXTestBackspaceWaitMs = timing.ximAfterXTestBackspaceWaitMs;
-  plan.fcitx4AfterXTestBackspaceWaitMs =
-      timing.fcitx4AfterXTestBackspaceWaitMs;
+  plan.fcitx4AfterXTestBackspaceWaitMs = timing.fcitx4AfterXTestBackspaceWaitMs;
   plan.dbusAfterXTestBackspaceWaitMs = timing.dbusAfterXTestBackspaceWaitMs;
   plan.ibusAfterXTestBackspaceWaitMs = timing.ibusAfterXTestBackspaceWaitMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;

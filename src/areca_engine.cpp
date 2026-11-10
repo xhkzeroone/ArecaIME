@@ -17,6 +17,10 @@
 #else
 #include <fcitx-utils/standardpath.h>
 #endif
+#include "browser_autocomplete.h"
+#include "fcitx_notifications_compat.h"
+#include "program_compatibility.h"
+#include "surrounding_probe_match.h"
 #include <fcitx-utils/misc.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addonmanager.h>
@@ -27,10 +31,6 @@
 #include <fcitx/statusarea.h>
 #include <fcitx/surroundingtext.h>
 #include <fcitx/userinterfacemanager.h>
-#include "browser_autocomplete.h"
-#include "fcitx_notifications_compat.h"
-#include "program_compatibility.h"
-#include "surrounding_probe_match.h"
 
 #include "mouse_click_tracker.h"
 #include "window_focus_tracker.h"
@@ -209,18 +209,15 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                 fcitx::CapabilityFlag::Url);
           },
           [this](const fcitx::Key &key) {
-            return isMacroBypassSpace(
-                key, config_.macroBypassModifier.value());
+            return isMacroBypassSpace(key, config_.macroBypassModifier.value());
           }),
       preeditHandler_(
-          preeditStateFactory_,
-          [this]() { return debugEnabled(); },
+          preeditStateFactory_, [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
           [this]() { return backspaceRecoveryEnabled(); },
           [this]() { return config_.restoreSurroundingText.value(); },
           [this](const fcitx::Key &key) {
-            return isMacroBypassSpace(
-                key, config_.macroBypassModifier.value());
+            return isMacroBypassSpace(key, config_.macroBypassModifier.value());
           },
           [this](fcitx::InputContext &inputContext, uint32_t backspaceCount,
                  PreeditModeHandler::FinalizedWordEraseDone onDone) {
@@ -254,8 +251,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
         // lifecycle và để nhận snapshot surrounding mới nhất.
         // Rewrite: frontend gửi update sau cả commit của chính Areca, nên arm ở
-        // đây khiến restore chạy ở mọi từ mới. Restore chỉ được arm khi caret có
-        // thể đã sang từ khác (focus, click, phím di chuyển, Backspace hết
+        // đây khiến restore chạy ở mọi từ mới. Restore chỉ được arm khi caret
+        // có thể đã sang từ khác (focus, click, phím di chuyển, Backspace hết
         // composition, reset). Chỉ giữ arm theo event khi không theo dõi được
         // click chuột.
         if (auto *state = rewriteHandler_.stateFor(*inputContext);
@@ -353,16 +350,14 @@ std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
 
   if (focusTracker_ && focusTracker_->isValid()) {
     const std::string trackedProgram = focusTracker_->focusProgram();
-    if (!trackedProgram.empty() &&
-        !isGnomeShellProxyProgram(trackedProgram)) {
+    if (!trackedProgram.empty() && !isGnomeShellProxyProgram(trackedProgram)) {
       if (state) {
         state->resolvedProgram = trackedProgram;
       }
       if (debugEnabled()) {
         FCITX_INFO()
             << "areca: resolved and cached proxy program via focus tracker"
-            << " reported=" << reportedProgram
-            << " tracked=" << trackedProgram;
+            << " reported=" << reportedProgram << " tracked=" << trackedProgram;
       }
       return trackedProgram;
     }
@@ -553,7 +548,8 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
   // Bắt đầu: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả
   // dụng hoặc không hợp lệ
   const bool inAddressBar =
-      !hasSurrounding && inputTypeDetector_.inChromiumAddressBar(inputContext, program);
+      !hasSurrounding &&
+      inputTypeDetector_.inChromiumAddressBar(inputContext, program);
   // Kết thúc: Nhận diện thanh địa chỉ Chromium khi SurroundingText không khả
   // dụng hoặc không hợp lệ
   const bool isUrl =
@@ -587,8 +583,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         }
         if (debugEnabled()) {
           FCITX_INFO() << "areca: autocomplete selected shift-select backend="
-                       << shiftBackend->name()
-                       << " collapsed_autocomplete="
+                       << shiftBackend->name() << " collapsed_autocomplete="
                        << collapsedFirefoxAutocomplete
                        << " active_selection=" << hasActiveSelection
                        << " bamboo_delete=" << result.deleteCount
@@ -656,8 +651,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
       return {shiftBackend};
     }
 
-    RewriteBackend *backend =
-        resolvePreferredBackspaceBackend(preferHardware);
+    RewriteBackend *backend = resolvePreferredBackspaceBackend(preferHardware);
     if (!program.empty()) {
       lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
     }
@@ -680,17 +674,16 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           if (backendVerdict_.probePending) {
             backendVerdict_.probeStarted();
           }
-          const uint32_t probeTimeoutMs = backendVerdict_.probePending
-                                              ? backendVerdict_
-                                                    .activeProbeTimeoutMs()
-                                              : 0;
+          const uint32_t probeTimeoutMs =
+              backendVerdict_.probePending
+                  ? backendVerdict_.activeProbeTimeoutMs()
+                  : 0;
           if (debugEnabled()) {
             FCITX_INFO() << "areca: app-override selected surrounding backend="
                          << surBackend->name() << " program=" << program
                          << " probe_timeout_ms=" << probeTimeoutMs;
           }
-          return {surBackend, 0, backendVerdict_.probePending,
-                  probeTimeoutMs};
+          return {surBackend, 0, backendVerdict_.probePending, probeTimeoutMs};
         }
         if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
             inputTypeDetector_.isBrowser(program)) {
@@ -755,8 +748,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
                    << " probe=" << backendVerdict_.probePending
                    << " probe_timeout_ms=" << probeTimeoutMs;
     }
-    return {surBackend, 0, backendVerdict_.probePending,
-            probeTimeoutMs};
+    return {surBackend, 0, backendVerdict_.probePending, probeTimeoutMs};
   }
 
   if (config_.shiftSelectFallbackForBrowser.value() && !isTerminal &&
@@ -801,8 +793,7 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
       backendVerdict_.retryForWord(state->wordSerial) && debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe retry armed"
                  << " attempt=" << (backendVerdict_.probeAttempts + 1)
-                 << " word=" << state->wordSerial
-                 << " program=" << programName;
+                 << " word=" << state->wordSerial << " program=" << programName;
   }
   // Kết thúc: Probe lại đúng một lần khi bước sang từ kế tiếp
 
@@ -921,8 +912,7 @@ bool ArecaEngine::eraseFinalizedPreeditWord(
   plan.waylandAfterBackspaceWaitMs =
       schedulerTiming.waylandAfterBackspaceWaitMs;
   plan.ximAfterBackspaceWaitMs = schedulerTiming.ximAfterBackspaceWaitMs;
-  plan.fcitx4AfterBackspaceWaitMs =
-      schedulerTiming.fcitx4AfterBackspaceWaitMs;
+  plan.fcitx4AfterBackspaceWaitMs = schedulerTiming.fcitx4AfterBackspaceWaitMs;
   plan.dbusAfterBackspaceWaitMs = schedulerTiming.dbusAfterBackspaceWaitMs;
   plan.ibusAfterBackspaceWaitMs = schedulerTiming.ibusAfterBackspaceWaitMs;
   plan.xtestBackspaceDelayMs = schedulerTiming.xtestBackspaceDelayMs;
@@ -940,8 +930,7 @@ bool ArecaEngine::eraseFinalizedPreeditWord(
   plan.timerAccuracyUsec = schedulerTiming.timerAccuracyUsec;
 
   const auto status = backend->apply(
-      inputContext, plan,
-      [onDone](uint64_t, RewriteOutcome outcome) {
+      inputContext, plan, [onDone](uint64_t, RewriteOutcome outcome) {
         onDone(outcome == RewriteOutcome::Succeeded);
       });
   if (status == ApplyStatus::Completed) {
@@ -1351,7 +1340,8 @@ void ArecaEngine::activate(const fcitx::InputMethodEntry &entry,
     return;
   }
   syncInputMethodEntryIcon(entry);
-  if (focusTracker_) focusTracker_->requestAccessibilityPoke();
+  if (focusTracker_)
+    focusTracker_->requestAccessibilityPoke();
   const PresentationMode presentationMode =
       effectivePresentationMode(*inputContext);
   if (presentationMode == PresentationMode::Rewrite) {
@@ -1652,7 +1642,8 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
 SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
   return SchedulerTiming{
       static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
-      static_cast<uint32_t>(advancedConfig_.uinputBackspaceAckTimeoutMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.uinputBackspaceAckTimeoutMs.value()),
       static_cast<uint32_t>(advancedConfig_.afterBackspaceWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.waylandAfterBackspaceWaitMs.value()),
@@ -1709,7 +1700,8 @@ void ArecaEngine::rebuildAppBackendOverridesMap() {
 }
 
 void ArecaEngine::applyConfig() {
-  if (focusTracker_) focusTracker_->setDebugEnabled(debugEnabled());
+  if (focusTracker_)
+    focusTracker_->setDebugEnabled(debugEnabled());
   const auto previousOverrides = appBackendOverridesMap_;
   const PresentationMode previousDefaultMode = activePresentationMode_;
   const PresentationMode requestedMode = config_.presentationMode.value();

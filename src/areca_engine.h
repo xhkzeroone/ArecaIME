@@ -12,20 +12,20 @@
 #include <fcitx/instance.h>
 #include <fcitx/menu.h>
 
-#include "areca_config.h"
 #include "adaptive_wait_monitor.h"
+#include "areca_config.h"
 #include "bamboo_engine_adapter.h"
 #include "event_loop_post.h"
 #include "forward_backspace_backend.h"
 #include "input_scheduler.h"
-#include "notification/input_method_announcement.h"
-#include "preedit_mode.h"
 #include "input_type_detector.h"
 #include "native_device.h"
+#include "notification/input_method_announcement.h"
+#include "preedit_mode.h"
 #include "redirect_mode.h"
 #include "rewrite_mode.h"
-#include "surrounding_text_backend.h"
 #include "surrounding_reliability.h"
+#include "surrounding_text_backend.h"
 #include "surrounding_text_v2_backend.h"
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
@@ -75,8 +75,7 @@ public:
 
 private:
   InputModeHandler &handlerFor(fcitx::InputContext &inputContext);
-  PresentationMode
-  effectivePresentationMode(fcitx::InputContext &inputContext);
+  PresentationMode effectivePresentationMode(fcitx::InputContext &inputContext);
   static const char *presentationModeName(PresentationMode mode);
   void switchPresentationMode(fcitx::InputContext &inputContext);
   SchedulerTiming timing(fcitx::InputContext &inputContext);
@@ -87,18 +86,17 @@ private:
   RewriteBackend *resolvePreferredSurroundingBackend();
   void handleSurroundingProbeSucceeded(fcitx::InputContext &inputContext);
   void handleSurroundingProbeFailed(fcitx::InputContext &inputContext);
-  RewriteBackend *resolveSurroundingFallbackBackend(
-      fcitx::InputContext &inputContext);
+  RewriteBackend *
+  resolveSurroundingFallbackBackend(fcitx::InputContext &inputContext);
   RewriteBackend *resolvePreferredShiftSelectBackend();
   RewriteBackend *resolvePreferredBackspaceBackend(bool preferHardware = false);
   std::string describeAutoBackend(const std::string &appName);
   std::string describeSurroundingBackend();
   std::string describeShiftSelectBackend();
   std::string describeBackspaceBackend(bool preferHardware = false);
-  ReliabilityDecision
-  evaluateReliability(fcitx::InputContext &inputContext,
-                      const std::string &shownText,
-                      const std::string &program);
+  ReliabilityDecision evaluateReliability(fcitx::InputContext &inputContext,
+                                          const std::string &shownText,
+                                          const std::string &program);
   std::string resolveProgram(fcitx::InputContext &inputContext,
                              RewriteInputState *state);
   void protectBackendVerdict(fcitx::InputContext &inputContext,
@@ -107,9 +105,10 @@ private:
                                        const char *eventName);
   bool backendVerdictProtected(fcitx::InputContext &inputContext) const;
   bool backspaceRecoveryEnabled() const;
-  bool eraseFinalizedPreeditWord(
-      fcitx::InputContext &inputContext, uint32_t backspaceCount,
-      PreeditModeHandler::FinalizedWordEraseDone onDone);
+  bool
+  eraseFinalizedPreeditWord(fcitx::InputContext &inputContext,
+                            uint32_t backspaceCount,
+                            PreeditModeHandler::FinalizedWordEraseDone onDone);
   void notifyUinputUnavailable();
   void scheduleDeviceWarmup();
   void applyConfig();

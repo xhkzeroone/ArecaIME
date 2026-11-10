@@ -126,12 +126,13 @@ bool InputTypeDetector::inChromiumAddressBar(
   if (inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Url)) {
     return true;
   }
-  if (!tracker_ || !tracker_->isValid()) return false;
+  if (!tracker_ || !tracker_->isValid())
+    return false;
   const auto focus = tracker_->browserFocus();
   std::string prog = program.empty() ? inputContext.program() : program;
-  if (prog.empty()) prog = focus.program;
-  return isChromiumBrowser(prog) &&
-         isChromiumBrowser(focus.program) &&
+  if (prog.empty())
+    prog = focus.program;
+  return isChromiumBrowser(prog) && isChromiumBrowser(focus.program) &&
          focus.className.find("Omnibox") != std::string::npos;
 }
 

@@ -23,10 +23,9 @@ namespace areca {
 
 struct RewriteInputState final : public fcitx::InputContextProperty {
   explicit RewriteInputState(std::string inputMethod, bool spellCheck,
-                             bool realtimeSpellcheck,
-                             bool modernStyle, std::string outputCharset,
-                             bool macroEnabled, bool capitalizeMacro,
-                             uint64_t macroRevision,
+                             bool realtimeSpellcheck, bool modernStyle,
+                             std::string outputCharset, bool macroEnabled,
+                             bool capitalizeMacro, uint64_t macroRevision,
                              std::vector<MacroDefinition> macros,
                              bool revertMacroOnBackspace = true);
 
@@ -44,11 +43,12 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   bool backspaceRecoveryAwaitingRelease = false;
   std::set<std::pair<int, uint32_t>> forwardedBackspacePresses;
   // Frontend hoặc lifecycle reset đã thay đổi text/vị trí quanh con trỏ. Cờ
-  // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một lần.
+  // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một
+  // lần.
   bool surroundingRestoreArmed = false;
   // Đã bắt gặp frontend gửi surrounding trễ (snapshot không chứa từ vừa soạn).
-  // Restore đọc cùng snapshot đó nên sẽ nạp sai từ; tắt restore cho context này.
-  // Không xoá ở resetContext/focus vì đây là đặc tính của ứng dụng.
+  // Restore đọc cùng snapshot đó nên sẽ nạp sai từ; tắt restore cho context
+  // này. Không xoá ở resetContext/focus vì đây là đặc tính của ứng dụng.
   bool surroundingSnapshotLagSeen = false;
   // Tăng khi ký tự đầu tiên của một từ mới tới sau boundary. Backend dùng số
   // này để chỉ retry surrounding probe ở từ kế tiếp, không retry mỗi ký tự.
@@ -89,8 +89,7 @@ public:
 
 private:
   bool syncEngineBackspace(RewriteInputState &state);
-  void forwardSyncedBackspace(fcitx::KeyEvent &event,
-                              RewriteInputState &state);
+  void forwardSyncedBackspace(fcitx::KeyEvent &event, RewriteInputState &state);
   bool shouldRecoverBackspace(fcitx::InputContext &inputContext,
                               RewriteInputState &state) const;
   void deferBackspaceRecoveryUntilRelease(fcitx::KeyEvent &event,

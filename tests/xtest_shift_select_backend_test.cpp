@@ -99,7 +99,7 @@ void testSuccessfulShiftSelect() {
   FakeXTestDevice device(events);
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   assert(std::string(backend.name()) == "native-shift-select");
   assert(backend.isAvailable());
@@ -136,7 +136,7 @@ void testEmptyCommitTextErasesWithBackspace() {
   FakeXTestDevice device(events);
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   bool doneCalled = false;
   const auto status =
@@ -170,7 +170,7 @@ void testZeroBackspaceDirectCommit() {
   FakeXTestDevice device(events);
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   bool doneCalled = false;
   const auto status =
@@ -203,7 +203,7 @@ void testUnavailableDevice() {
   device.available = false;
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   assert(!backend.isAvailable());
 
@@ -228,7 +228,7 @@ void testInitialShiftFailure() {
   device.shiftResults = {false};
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   bool doneCalled = false;
   const auto status = backend.apply(
@@ -252,7 +252,7 @@ void testAsynchronousLeftFailure() {
   device.leftResults = {true, false};
   areca::AdaptiveWait adaptiveWait;
   areca::XTestShiftSelectBackend backend(eventLoop, device, adaptiveWait,
-                                        [] { return false; });
+                                         [] { return false; });
 
   bool doneCalled = false;
   const auto status =
@@ -272,9 +272,9 @@ void testAsynchronousLeftFailure() {
   assert(!backend.hasPending());
   assert(device.leftCalls == 2);
   assert(inputContext.committedText.empty());
-  assert((events == std::vector<std::string>{"shift:down", "left",
-                                             "left-failed", "shift:up",
-                                             "failed"}));
+  assert(
+      (events == std::vector<std::string>{"shift:down", "left", "left-failed",
+                                          "shift:up", "failed"}));
 }
 
 } // namespace

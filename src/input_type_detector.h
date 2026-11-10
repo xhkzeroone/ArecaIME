@@ -16,14 +16,15 @@ public:
 
   void setFocusTracker(const WindowFocusTracker *tracker);
 
-  bool isTerminal(const std::string &program, const char *frontend = nullptr) const;
+  bool isTerminal(const std::string &program,
+                  const char *frontend = nullptr) const;
   bool isBrowser(const std::string &program) const;
   bool isChromiumBrowser(const std::string &program) const;
   bool canForwardBackspaces(const fcitx::InputContext &inputContext,
-                           const std::string &program = "") const;
+                            const std::string &program = "") const;
 
   bool inChromiumAddressBar(const fcitx::InputContext &inputContext,
-                           const std::string &program = "") const;
+                            const std::string &program = "") const;
 
 private:
   const WindowFocusTracker *tracker_ = nullptr;

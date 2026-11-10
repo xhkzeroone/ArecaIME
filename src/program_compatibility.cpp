@@ -25,15 +25,14 @@ std::string normalizedProgramName(std::string program) {
 
 template <typename Names>
 bool matchesNameOrVariant(std::string_view program, const Names &names) {
-  return std::any_of(names.begin(), names.end(),
-                     [program](std::string_view name) {
-                       if (!program.starts_with(name)) {
-                         return false;
-                       }
-                       return program.size() == name.size() ||
-                              program[name.size()] == '.' ||
-                              program[name.size()] == '-';
-                     });
+  return std::any_of(
+      names.begin(), names.end(), [program](std::string_view name) {
+        if (!program.starts_with(name)) {
+          return false;
+        }
+        return program.size() == name.size() || program[name.size()] == '.' ||
+               program[name.size()] == '-';
+      });
 }
 } // namespace
 
@@ -178,12 +177,11 @@ bool isProgrammingProgram(const std::string &rawProgram) {
 bool isOfficeProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   static constexpr auto names = std::to_array<std::string_view>(
-      {"libreoffice", "soffice", "softoffice", "org.libreoffice",
-       "onlyoffice", "desktopeditors", "org.onlyoffice"});
+      {"libreoffice", "soffice", "softoffice", "org.libreoffice", "onlyoffice",
+       "desktopeditors", "org.onlyoffice"});
 
   return matchesNameOrVariant(program, names);
 }
-
 
 bool isTerminalProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
@@ -324,8 +322,7 @@ bool isFirefoxFamilyProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   static constexpr auto patterns = std::to_array<std::string_view>(
       {"firefox", "librewolf", "waterfox", "floorp", "zen", "tor-browser",
-       "torbrowser", "mullvad", "icecat", "seamonkey", "palemoon",
-       "basilisk"});
+       "torbrowser", "mullvad", "icecat", "seamonkey", "palemoon", "basilisk"});
   return std::any_of(patterns.begin(), patterns.end(),
                      [&program](std::string_view pattern) {
                        return program.find(pattern) != std::string::npos;
@@ -338,16 +335,52 @@ bool isBrowserLikeProgram(const std::string &rawProgram) {
     return true;
   }
 
-  static constexpr auto patterns = std::to_array<std::string_view>(
-      {"chrome", "google-chrome", "chromium", "chromium-browser", "edge",
-       "msedge", "brave", "vivaldi", "opera", "opera-beta",
-       "opera-developer", "coccoc", "yandex", "firefox", "librewolf",
-       "waterfox", "floorp", "zen", "tor-browser", "torbrowser",
-       "epiphany", "falkon", "midori", "qutebrowser", "palemoon",
-       "basilisk", "nyxt", "otter", "dooble", "arc", "helium",
-       "mullvad", "thorium", "ladybird", "luakit", "surf", "min",
-       "icecat", "seamonkey", "konqueror", "mercury", "angelfish",
-       "vieb", "netsurf", "window:"});
+  static constexpr auto patterns =
+      std::to_array<std::string_view>({"chrome",
+                                       "google-chrome",
+                                       "chromium",
+                                       "chromium-browser",
+                                       "edge",
+                                       "msedge",
+                                       "brave",
+                                       "vivaldi",
+                                       "opera",
+                                       "opera-beta",
+                                       "opera-developer",
+                                       "coccoc",
+                                       "yandex",
+                                       "firefox",
+                                       "librewolf",
+                                       "waterfox",
+                                       "floorp",
+                                       "zen",
+                                       "tor-browser",
+                                       "torbrowser",
+                                       "epiphany",
+                                       "falkon",
+                                       "midori",
+                                       "qutebrowser",
+                                       "palemoon",
+                                       "basilisk",
+                                       "nyxt",
+                                       "otter",
+                                       "dooble",
+                                       "arc",
+                                       "helium",
+                                       "mullvad",
+                                       "thorium",
+                                       "ladybird",
+                                       "luakit",
+                                       "surf",
+                                       "min",
+                                       "icecat",
+                                       "seamonkey",
+                                       "konqueror",
+                                       "mercury",
+                                       "angelfish",
+                                       "vieb",
+                                       "netsurf",
+                                       "window:"});
   return std::any_of(patterns.begin(), patterns.end(),
                      [&program](std::string_view pattern) {
                        return program.find(pattern) != std::string::npos;

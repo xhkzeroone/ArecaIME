@@ -29,9 +29,7 @@ public:
     debugEnabled_.store(enabled, std::memory_order_relaxed);
   }
 
-  bool isValid() const {
-    return valid_.load(std::memory_order_relaxed);
-  }
+  bool isValid() const { return valid_.load(std::memory_order_relaxed); }
 
   struct BrowserFocus {
     std::string program;

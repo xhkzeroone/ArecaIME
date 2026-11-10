@@ -84,9 +84,9 @@ public:
   areca::ApplyStatus apply(fcitx::InputContext &inputContext,
                            const areca::RewritePlan &plan,
                            areca::RewriteDone onDone) override {
-    events_.push_back("shiftSelectApply:tx=" +
-                      std::to_string(plan.transactionId) +
-                      ":commit=" + plan.commitText);
+    events_.push_back(
+        "shiftSelectApply:tx=" + std::to_string(plan.transactionId) +
+        ":commit=" + plan.commitText);
     inputContext.commitString(plan.commitText);
     if (onDone) {
       onDone(plan.transactionId, areca::RewriteOutcome::Succeeded);
@@ -108,10 +108,9 @@ public:
   areca::ApplyStatus apply(fcitx::InputContext &inputContext,
                            const areca::RewritePlan &plan,
                            areca::RewriteDone onDone) override {
-    events_.push_back("backspaceApply:tx=" +
-                      std::to_string(plan.transactionId) +
-                      ":bs=" + std::to_string(plan.backspaceCount) +
-                      ":commit=" + plan.commitText);
+    events_.push_back(
+        "backspaceApply:tx=" + std::to_string(plan.transactionId) + ":bs=" +
+        std::to_string(plan.backspaceCount) + ":commit=" + plan.commitText);
     inputContext.commitString(plan.commitText);
     if (onDone) {
       onDone(plan.transactionId, areca::RewriteOutcome::Succeeded);
@@ -134,7 +133,8 @@ areca::RewritePlan makePlan(uint64_t transactionId, uint32_t backspaceCount,
   return plan;
 }
 
-// Probe deadline expires without receiving event -> fallback to shift-select for browser.
+// Probe deadline expires without receiving event -> fallback to shift-select
+// for browser.
 void testProbeFailureFallbackToShiftSelect() {
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
@@ -162,15 +162,15 @@ void testProbeFailureFallbackToShiftSelect() {
         return &fakeBackspace;
       });
 
-  const auto status = backend.apply(
-      inputContext, makePlan(101, 3, "trieu", true),
-      [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-        assert(transactionId == 101);
-        assert(outcome == areca::RewriteOutcome::Succeeded);
-        events.push_back("done");
-        doneCalled = true;
-        eventLoop.exit();
-      });
+  const auto status =
+      backend.apply(inputContext, makePlan(101, 3, "trieu", true),
+                    [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                      assert(transactionId == 101);
+                      assert(outcome == areca::RewriteOutcome::Succeeded);
+                      events.push_back("done");
+                      doneCalled = true;
+                      eventLoop.exit();
+                    });
 
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
@@ -184,7 +184,8 @@ void testProbeFailureFallbackToShiftSelect() {
   assert(inputContext.committedText == "trieu");
 }
 
-// Probe deadline expires without receiving event -> fallback to backspace for non-browser.
+// Probe deadline expires without receiving event -> fallback to backspace for
+// non-browser.
 void testProbeFailureFallbackToBackspace() {
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
@@ -212,15 +213,15 @@ void testProbeFailureFallbackToBackspace() {
         return &fakeBackspace;
       });
 
-  const auto status = backend.apply(
-      inputContext, makePlan(102, 3, "trieu", true),
-      [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-        assert(transactionId == 102);
-        assert(outcome == areca::RewriteOutcome::Succeeded);
-        events.push_back("done");
-        doneCalled = true;
-        eventLoop.exit();
-      });
+  const auto status =
+      backend.apply(inputContext, makePlan(102, 3, "trieu", true),
+                    [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                      assert(transactionId == 102);
+                      assert(outcome == areca::RewriteOutcome::Succeeded);
+                      events.push_back("done");
+                      doneCalled = true;
+                      eventLoop.exit();
+                    });
 
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
@@ -258,8 +259,7 @@ void testSingleWrongUpdateFallsBack() {
   auto plan = makePlan(107, 1, "õ", true);
   plan.surroundingProbeTimeoutMs = 5;
   const auto status = backend.apply(
-      inputContext, plan,
-      [&](uint64_t, areca::RewriteOutcome outcome) {
+      inputContext, plan, [&](uint64_t, areca::RewriteOutcome outcome) {
         assert(outcome == areca::RewriteOutcome::Succeeded);
         doneCalled = true;
         eventLoop.exit();
@@ -302,15 +302,15 @@ void testProbeSuccessViaEvent() {
         return &fakeShift;
       });
 
-  const auto status = backend.apply(
-      inputContext, makePlan(103, 3, "nammoi", true),
-      [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-        assert(transactionId == 103);
-        assert(outcome == areca::RewriteOutcome::Succeeded);
-        events.push_back("done");
-        doneCalled = true;
-        eventLoop.exit();
-      });
+  const auto status =
+      backend.apply(inputContext, makePlan(103, 3, "nammoi", true),
+                    [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                      assert(transactionId == 103);
+                      assert(outcome == areca::RewriteOutcome::Succeeded);
+                      events.push_back("done");
+                      doneCalled = true;
+                      eventLoop.exit();
+                    });
 
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
@@ -370,14 +370,14 @@ void testProbeSuccessViaSynchronousEvent() {
     backend.notifySurroundingTextUpdated(inputContext);
   };
 
-  const auto status = backend.apply(
-      inputContext, makePlan(104, 3, "nam", true),
-      [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-        assert(transactionId == 104);
-        assert(outcome == areca::RewriteOutcome::Succeeded);
-        doneCalled = true;
-        eventLoop.exit();
-      });
+  const auto status =
+      backend.apply(inputContext, makePlan(104, 3, "nam", true),
+                    [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                      assert(transactionId == 104);
+                      assert(outcome == areca::RewriteOutcome::Succeeded);
+                      doneCalled = true;
+                      eventLoop.exit();
+                    });
 
   assert(status == areca::ApplyStatus::Pending);
   assert(!backend.isProbing());
@@ -467,8 +467,8 @@ void testLaggingUpdateDoesNotConfirmEmptyExpectation() {
   assert(!areca::surroundingProbeMatches(true, "g", 1, "", 0, "o", 1, 1));
   // Xác nhận thật: trước cursor không còn gì.
   assert(areca::surroundingProbeMatches(true, "g", 1, "", 0, "", 0, 0));
-  assert(areca::surroundingProbeMatches(true, "a\n\n", 1, "\n\n", 0, "\n", 0,
-                                        0));
+  assert(
+      areca::surroundingProbeMatches(true, "a\n\n", 1, "\n\n", 0, "\n", 0, 0));
 
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
@@ -491,8 +491,8 @@ void testLaggingUpdateDoesNotConfirmEmptyExpectation() {
 
   auto plan = makePlan(108, 1, "õ", true);
   plan.surroundingProbeTimeoutMs = 5;
-  const auto status = backend.apply(
-      inputContext, plan, [&](uint64_t, areca::RewriteOutcome) {
+  const auto status =
+      backend.apply(inputContext, plan, [&](uint64_t, areca::RewriteOutcome) {
         doneCalled = true;
         eventLoop.exit();
       });
@@ -539,14 +539,14 @@ void testAdaptiveWaitIntegration() {
       eventLoop, []() { return false; }, nullptr, nullptr, nullptr,
       &adaptiveWait);
 
-  const auto status = backend.apply(
-      inputContext, makePlan(201, 1, "õ", false),
-      [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-        assert(transactionId == 201);
-        assert(outcome == areca::RewriteOutcome::Succeeded);
-        doneCalled = true;
-        eventLoop.exit();
-      });
+  const auto status =
+      backend.apply(inputContext, makePlan(201, 1, "õ", false),
+                    [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                      assert(transactionId == 201);
+                      assert(outcome == areca::RewriteOutcome::Succeeded);
+                      doneCalled = true;
+                      eventLoop.exit();
+                    });
 
   assert(status == areca::ApplyStatus::Pending);
   eventLoop.exec();

@@ -29,8 +29,7 @@ bool isCombiningMark(uint32_t codepoint) {
 
 std::optional<SurroundingRestoreCandidate>
 extractSurroundingRestoreCandidate(const std::string &text, uint32_t cursor,
-                                   uint32_t anchor,
-                                   std::size_t maxCharacters) {
+                                   uint32_t anchor, std::size_t maxCharacters) {
   if (cursor != anchor || !cursor || !maxCharacters ||
       !fcitx::utf8::validate(text)) {
     return std::nullopt;
@@ -89,8 +88,7 @@ extractSurroundingRestoreCandidate(const std::string &text, uint32_t cursor,
   return candidate;
 }
 
-std::optional<SurroundingRestoreCandidate>
-shortenSurroundingRestoreCandidate(
+std::optional<SurroundingRestoreCandidate> shortenSurroundingRestoreCandidate(
     const SurroundingRestoreCandidate &candidate) {
   if (candidate.characterCount <= 1 || candidate.text.empty() ||
       !fcitx::utf8::validate(candidate.text)) {

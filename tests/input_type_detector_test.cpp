@@ -28,7 +28,8 @@ struct WindowFocusTrackerTestAccess {
     }
   }
 
-  static void setClass(WindowFocusTracker &tracker, const std::string &className) {
+  static void setClass(WindowFocusTracker &tracker,
+                       const std::string &className) {
     std::lock_guard<std::mutex> lock(tracker.focusProgramMutex_);
     tracker.focusClass_ = className;
   }
@@ -52,8 +53,7 @@ struct WindowFocusTrackerTestAccess {
 class TestInputContext : public fcitx::InputContext {
 public:
   TestInputContext(fcitx::InputContextManager &manager,
-                   const std::string &program,
-                   const char *frontendName = "x11")
+                   const std::string &program, const char *frontendName = "x11")
       : fcitx::InputContext(manager, program), frontend_(frontendName) {}
   ~TestInputContext() override { destroy(); }
 
@@ -164,8 +164,8 @@ int main() {
 
     WindowFocusTracker tracker;
     detector.setFocusTracker(&tracker);
-    areca::WindowFocusTrackerTestAccess::seedFocus(
-        tracker, ":1.53", "/omnibox", "msedge", false);
+    areca::WindowFocusTrackerTestAccess::seedFocus(tracker, ":1.53", "/omnibox",
+                                                   "msedge", false);
     areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
     assert(detector.inChromiumAddressBar(edge));
     // Neither coordinates nor the Url capability are needed for a match.
@@ -178,8 +178,9 @@ int main() {
       areca::WindowFocusTrackerTestAccess::setClass(tracker, className);
       assert(!detector.inChromiumAddressBar(edge));
     }
-    for (const auto *className : {"OmniboxResultView", "BraveOmniboxViewViews", "OmniboxViewViews extra",
-                                 "CustomOmniboxViewViewsSubclass"}) {
+    for (const auto *className :
+         {"OmniboxResultView", "BraveOmniboxViewViews",
+          "OmniboxViewViews extra", "CustomOmniboxViewViewsSubclass"}) {
       areca::WindowFocusTrackerTestAccess::setClass(tracker, className);
       assert(detector.inChromiumAddressBar(edge));
     }
@@ -192,9 +193,9 @@ int main() {
 
     areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
     // All browser identities use the existing Chromium list, without aliases.
-    for (const auto *program : {"microsoft-edge-stable", "msedge",
-                               "com.microsoft.Edge.desktop", "brave-browser",
-                               "brave", "google-chrome-beta", "chromium-browser"}) {
+    for (const auto *program :
+         {"microsoft-edge-stable", "msedge", "com.microsoft.Edge.desktop",
+          "brave-browser", "brave", "google-chrome-beta", "chromium-browser"}) {
       TestInputContext alias(manager, program);
       assert(detector.inChromiumAddressBar(alias));
     }
@@ -202,17 +203,18 @@ int main() {
     assert(detector.inChromiumAddressBar(chrome));
     TestInputContext editor(manager, "gnome-text-editor");
     assert(!detector.inChromiumAddressBar(editor));
-    areca::WindowFocusTrackerTestAccess::seedFocus(
-        tracker, ":1.54", "/omnibox", "chrome", false);
+    areca::WindowFocusTrackerTestAccess::seedFocus(tracker, ":1.54", "/omnibox",
+                                                   "chrome", false);
     areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
     assert(detector.inChromiumAddressBar(chrome));
     assert(detector.inChromiumAddressBar(edge));
 
-    areca::WindowFocusTrackerTestAccess::loseFocus(tracker, ":1.54", "/omnibox");
+    areca::WindowFocusTrackerTestAccess::loseFocus(tracker, ":1.54",
+                                                   "/omnibox");
     assert(!detector.inChromiumAddressBar(chrome));
     assert(tracker.browserFocus().className.empty());
-    areca::WindowFocusTrackerTestAccess::seedFocus(
-        tracker, ":1.54", "/omnibox", "chrome", false);
+    areca::WindowFocusTrackerTestAccess::seedFocus(tracker, ":1.54", "/omnibox",
+                                                   "chrome", false);
     areca::WindowFocusTrackerTestAccess::setClass(tracker, "OmniboxViewViews");
     areca::WindowFocusTrackerTestAccess::connectionLost(tracker);
     assert(!detector.inChromiumAddressBar(chrome));
@@ -231,8 +233,8 @@ int main() {
 
     // Different VS Code executable and desktop IDs still refer to the same
     // app whose embedded terminal owns the AT-SPI focus.
-    areca::WindowFocusTrackerTestAccess::seedFocus(
-        tracker, ":1.20", "/terminal", "code", true);
+    areca::WindowFocusTrackerTestAccess::seedFocus(tracker, ":1.20",
+                                                   "/terminal", "code", true);
     assert(detector.isTerminal("visual-studio-code", "wayland"));
 
     // A delayed blur for the old node must not clear a newer focus.

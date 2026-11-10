@@ -44,10 +44,8 @@ private:
   void completeWithoutCommit();
   void schedule(uint32_t delayMs, TimerDispatch dispatch,
                 std::function<void()> callback, bool sending = false);
-  void dispatchPostEvent(uint64_t deadlineUsec,
-                         std::function<void()> callback);
-  void observeAndRun(uint64_t deadlineUsec,
-                     std::function<void()> callback);
+  void dispatchPostEvent(uint64_t deadlineUsec, std::function<void()> callback);
+  void observeAndRun(uint64_t deadlineUsec, std::function<void()> callback);
   void clearPending();
 
   fcitx::EventLoop &eventLoop_;

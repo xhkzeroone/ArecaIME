@@ -70,18 +70,14 @@ std::vector<std::string> splitLines(char *raw) {
 
 } // namespace
 
-BambooEngineAdapter::BambooEngineAdapter(std::string inputMethod,
-                                         bool spellCheck,
-                                         bool realtimeSpellcheck,
-                                         bool modernStyle,
-                                         std::string outputCharset,
-                                         bool macroEnabled,
-                                         bool capitalizeMacro,
-                                         std::vector<MacroDefinition> macros,
-                                         bool revertMacroOnBackspace)
+BambooEngineAdapter::BambooEngineAdapter(
+    std::string inputMethod, bool spellCheck, bool realtimeSpellcheck,
+    bool modernStyle, std::string outputCharset, bool macroEnabled,
+    bool capitalizeMacro, std::vector<MacroDefinition> macros,
+    bool revertMacroOnBackspace)
     : spellCheck_(spellCheck), realtimeSpellcheck_(realtimeSpellcheck),
-      outputCharset_(std::move(outputCharset)),
-      macroEnabled_(macroEnabled), capitalizeMacro_(capitalizeMacro),
+      outputCharset_(std::move(outputCharset)), macroEnabled_(macroEnabled),
+      capitalizeMacro_(capitalizeMacro),
       revertMacroOnBackspace_(revertMacroOnBackspace) {
   handle_ = ArecaBambooCreate(inputMethod.data(), modernStyle ? 1 : 0);
   if (!handle_) {
@@ -133,8 +129,7 @@ BambooResult BambooEngineAdapter::processImpl(uint32_t codepoint,
     }
 
     char *raw = allowMacro && macroEnabled_
-                    ? ArecaBambooExpandMacro(handle_,
-                                             capitalizeMacro_ ? 1 : 0)
+                    ? ArecaBambooExpandMacro(handle_, capitalizeMacro_ ? 1 : 0)
                     : nullptr;
     if (raw) {
       result.macroExpanded = true;
@@ -161,8 +156,7 @@ BambooResult BambooEngineAdapter::processImpl(uint32_t codepoint,
            oldChars[prefix].first == newChars[prefix].first) {
       ++prefix;
     }
-    result.deleteCount =
-        static_cast<uint32_t>((oldChars.size() - 1) - prefix);
+    result.deleteCount = static_cast<uint32_t>((oldChars.size() - 1) - prefix);
     result.commitText = next.substr(newChars[prefix].second);
     if (!result.macroExpanded && !finalized.empty()) {
       finalizedRenderedText_ = encode(finalized);
@@ -204,9 +198,8 @@ BambooResult BambooEngineAdapter::processImpl(uint32_t codepoint,
   }
 
   int spellcheckRestored = 0;
-  char *raw = ArecaBambooProcess(handle_, codepoint,
-                                 realtimeSpellcheck_ ? 1 : 0,
-                                 &spellcheckRestored);
+  char *raw = ArecaBambooProcess(
+      handle_, codepoint, realtimeSpellcheck_ ? 1 : 0, &spellcheckRestored);
   if (!raw) {
     throw std::runtime_error("Bamboo processing failed");
   }

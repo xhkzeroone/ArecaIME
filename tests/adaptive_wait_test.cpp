@@ -74,11 +74,14 @@ int main() {
   areca::AdaptiveWait ackWait;
   assert(ackWait.effectiveBackspaceDelayMs(1) == 1);
   ackWait.beginTransaction();
-  assert(ackWait.observeAckRoundtrip(1000) == areca::AdaptiveWait::Adjustment::None);
-  assert(ackWait.observeAckRoundtrip(6000) == areca::AdaptiveWait::Adjustment::Increased);
+  assert(ackWait.observeAckRoundtrip(1000) ==
+         areca::AdaptiveWait::Adjustment::None);
+  assert(ackWait.observeAckRoundtrip(6000) ==
+         areca::AdaptiveWait::Adjustment::Increased);
   assert(ackWait.extraWaitMs() == 10);
   assert(ackWait.effectiveBackspaceDelayMs(1) == 2);
-  assert(ackWait.observeAckTimeout() == areca::AdaptiveWait::Adjustment::Increased);
+  assert(ackWait.observeAckTimeout() ==
+         areca::AdaptiveWait::Adjustment::Increased);
   assert(ackWait.extraWaitMs() == 30);
   assert(ackWait.effectiveBackspaceDelayMs(1) == 4);
 
@@ -87,17 +90,20 @@ int main() {
   assert(ackWait.isSystemStressed());
   for (uint32_t i = 0; i < 20; ++i) {
     ackWait.beginTransaction();
-    assert(ackWait.completeTransaction() == areca::AdaptiveWait::Adjustment::None);
+    assert(ackWait.completeTransaction() ==
+           areca::AdaptiveWait::Adjustment::None);
     assert(ackWait.extraWaitMs() == 30);
   }
   ackWait.clearSystemStress();
   assert(!ackWait.isSystemStressed());
-  for (uint32_t i = 1; i < areca::AdaptiveWait::StableTransactionsToDecay; ++i) {
+  for (uint32_t i = 1; i < areca::AdaptiveWait::StableTransactionsToDecay;
+       ++i) {
     ackWait.beginTransaction();
-    assert(ackWait.completeTransaction() == areca::AdaptiveWait::Adjustment::None);
+    assert(ackWait.completeTransaction() ==
+           areca::AdaptiveWait::Adjustment::None);
   }
   ackWait.beginTransaction();
-  assert(ackWait.completeTransaction() == areca::AdaptiveWait::Adjustment::Decreased);
+  assert(ackWait.completeTransaction() ==
+         areca::AdaptiveWait::Adjustment::Decreased);
   assert(ackWait.extraWaitMs() == 20);
 }
-

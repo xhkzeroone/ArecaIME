@@ -105,8 +105,7 @@ void UinputBackspaceBackend::sendNextBackspace() {
     schedule(ackTimeoutMs_, TimerDispatch::TimerCallback, [this]() {
       if (debugProvider_()) {
         FCITX_INFO() << "areca: uinput-backspace ack timeout tx="
-                     << transactionId_
-                     << " seen=" << backspacesSeen_
+                     << transactionId_ << " seen=" << backspacesSeen_
                      << " expected=" << deletedCharacters_;
       }
       backspaceAckTimedOut_ = true;
@@ -126,8 +125,7 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-backspace release tx=" << transactionId_
                    << " event_time=" << event.time()
-                   << " keycode=" << event.rawKey().code()
-                   << " action=forward";
+                   << " keycode=" << event.rawKey().code() << " action=forward";
     }
     event.forward();
     return true;
@@ -139,8 +137,7 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
                  << " event_time=" << event.time()
                  << " keycode=" << event.rawKey().code()
                  << " seen=" << backspacesSeen_
-                 << " expected=" << deletedCharacters_
-                 << " action=forward";
+                 << " expected=" << deletedCharacters_ << " action=forward";
   }
   // Toàn bộ Backspace phát qua uinput đều là phím xóa thật cần chuyển xuống
   // ứng dụng. Phím dội ngược đến muộn vẫn được forward tiếp để không nuốt nhầm
@@ -153,7 +150,8 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
   if (!commitWaitStarted_ && !backspaceAckTimedOut_ &&
       backspacesSeen_ == deletedCharacters_) {
     if (ackSentAtUsec_ > 0) {
-      const uint64_t roundtripUsec = fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
+      const uint64_t roundtripUsec =
+          fcitx::now(CLOCK_MONOTONIC) - ackSentAtUsec_;
       ackSentAtUsec_ = 0;
       adaptiveWait_.observeAckRoundtrip(roundtripUsec);
     }
@@ -165,8 +163,9 @@ bool UinputBackspaceBackend::handleBackspace(fcitx::KeyEvent &event) {
 void UinputBackspaceBackend::scheduleNextBackspace() {
   const uint32_t delayMs =
       adaptiveWait_.effectiveBackspaceDelayMs(backspaceDelayMs_);
-  schedule(delayMs, TimerDispatch::TimerCallback,
-           [this]() { sendNextBackspace(); }, true);
+  schedule(
+      delayMs, TimerDispatch::TimerCallback, [this]() { sendNextBackspace(); },
+      true);
 }
 
 void UinputBackspaceBackend::scheduleCommit() {
@@ -197,12 +196,11 @@ void UinputBackspaceBackend::commitAfterAdaptiveWait(
   const uint32_t currentExtraWaitMs =
       adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
   if (currentExtraWaitMs > appliedExtraWaitMs) {
-    const uint32_t additionalWaitMs =
-        currentExtraWaitMs - appliedExtraWaitMs;
+    const uint32_t additionalWaitMs = currentExtraWaitMs - appliedExtraWaitMs;
     if (debugProvider_()) {
       FCITX_INFO() << "areca: uinput-backspace lag before commit tx="
-                   << transactionId_ << " additional_wait_ms="
-                   << additionalWaitMs;
+                   << transactionId_
+                   << " additional_wait_ms=" << additionalWaitMs;
     }
     schedule(additionalWaitMs, TimerDispatch::PostEvent,
              [this, currentExtraWaitMs]() {
@@ -247,8 +245,7 @@ void UinputBackspaceBackend::completeWithoutCommit() {
   auto onDone = std::move(onDone_);
   adaptiveWait_.cancelTransaction();
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: uinput-backspace context lost tx="
-                 << transactionId;
+    FCITX_INFO() << "areca: uinput-backspace context lost tx=" << transactionId;
   }
   clearPending();
   if (onDone) {
@@ -256,29 +253,25 @@ void UinputBackspaceBackend::completeWithoutCommit() {
   }
 }
 
-void UinputBackspaceBackend::schedule(uint32_t delayMs,
-                                      TimerDispatch dispatch,
+void UinputBackspaceBackend::schedule(uint32_t delayMs, TimerDispatch dispatch,
                                       std::function<void()> callback,
                                       bool sending) {
   auto &timer = sending ? sendTimer_ : timer_;
   timer.reset();
   const uint64_t deadline =
       fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(delayMs) * 1000;
-  timer =
-      eventLoop_.addTimeEvent(CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
-                              [this, deadline, dispatch, sending,
-                               callback = std::move(callback)](
-                                  fcitx::EventSourceTime *, uint64_t) mutable {
-                                auto completedTimer =
-                                    std::move(sending ? sendTimer_ : timer_);
-                                if (dispatch == TimerDispatch::PostEvent) {
-                                  dispatchPostEvent(deadline,
-                                                    std::move(callback));
-                                } else {
-                                  observeAndRun(deadline, std::move(callback));
-                                }
-                                return false;
-                              });
+  timer = eventLoop_.addTimeEvent(
+      CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
+      [this, deadline, dispatch, sending, callback = std::move(callback)](
+          fcitx::EventSourceTime *, uint64_t) mutable {
+        auto completedTimer = std::move(sending ? sendTimer_ : timer_);
+        if (dispatch == TimerDispatch::PostEvent) {
+          dispatchPostEvent(deadline, std::move(callback));
+        } else {
+          observeAndRun(deadline, std::move(callback));
+        }
+        return false;
+      });
   if (!timer) {
     if (dispatch == TimerDispatch::PostEvent) {
       dispatchPostEvent(deadline, std::move(callback));
@@ -290,18 +283,17 @@ void UinputBackspaceBackend::schedule(uint32_t delayMs,
   timer->setOneShot();
 }
 
-void UinputBackspaceBackend::dispatchPostEvent(
-    uint64_t deadlineUsec, std::function<void()> callback) {
+void UinputBackspaceBackend::dispatchPostEvent(uint64_t deadlineUsec,
+                                               std::function<void()> callback) {
   commitPost_.schedule([this, deadlineUsec, callback]() mutable {
     observeAndRun(deadlineUsec, std::move(callback));
   });
 }
 
-void UinputBackspaceBackend::observeAndRun(
-    uint64_t deadlineUsec, std::function<void()> callback) {
+void UinputBackspaceBackend::observeAndRun(uint64_t deadlineUsec,
+                                           std::function<void()> callback) {
   const uint64_t firedAtUsec = fcitx::now(CLOCK_MONOTONIC);
-  const auto adjustment =
-      adaptiveWait_.observeTimer(deadlineUsec, firedAtUsec);
+  const auto adjustment = adaptiveWait_.observeTimer(deadlineUsec, firedAtUsec);
   if (debugProvider_() && adjustment != AdaptiveWait::Adjustment::None) {
     FCITX_INFO() << "areca: uinput-backspace adaptive wait changed tx="
                  << transactionId_ << " lateness_us="

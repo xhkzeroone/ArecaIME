@@ -29,8 +29,7 @@ size_t utf8CharIndexForByteOffset(const std::string &text, size_t byteOffset) {
 } // namespace
 
 bool isSelectionImmediatelyAfterText(const std::string &text,
-                                     unsigned int cursor,
-                                     unsigned int anchor,
+                                     unsigned int cursor, unsigned int anchor,
                                      const std::string &shownText) {
   if (cursor == anchor || shownText.empty() || !fcitx::utf8::validate(text) ||
       !fcitx::utf8::validate(shownText)) {
@@ -78,14 +77,14 @@ bool isCollapsedFirefoxAutocomplete(const std::string &program,
 }
 
 bool isBrowserAutocomplete(const std::string &text, unsigned int cursor,
-                           unsigned int anchor,
-                           const std::string &shownText) {
+                           unsigned int anchor, const std::string &shownText) {
   if (!isSelectionImmediatelyAfterText(text, cursor, anchor, shownText)) {
     return false;
   }
 
   // Autocomplete hợp lệ phải chọn phần suffix ngay sau composition cho tới hết
-  // dòng; selection đi qua newline hoặc dừng giữa dòng là selection thông thường.
+  // dòng; selection đi qua newline hoặc dừng giữa dòng là selection thông
+  // thường.
   const size_t textLength = fcitx::utf8::length(text);
   const unsigned int selectionStart = std::min(cursor, anchor);
   const unsigned int selectionEnd = std::max(cursor, anchor);
@@ -94,12 +93,11 @@ bool isBrowserAutocomplete(const std::string &text, unsigned int cursor,
   const size_t selectionEndByte =
       utf8ByteOffsetForCharIndex(text, selectionEnd);
   const size_t nextLineBreak = text.find('\n', selectionStartByte);
-  const size_t lineEnd =
-      nextLineBreak == std::string::npos
-          ? textLength
-          : utf8CharIndexForByteOffset(text, nextLineBreak);
-  const bool crossesNewline = nextLineBreak != std::string::npos &&
-                              nextLineBreak < selectionEndByte;
+  const size_t lineEnd = nextLineBreak == std::string::npos
+                             ? textLength
+                             : utf8CharIndexForByteOffset(text, nextLineBreak);
+  const bool crossesNewline =
+      nextLineBreak != std::string::npos && nextLineBreak < selectionEndByte;
 
   return selectionEnd == lineEnd && !crossesNewline;
 }

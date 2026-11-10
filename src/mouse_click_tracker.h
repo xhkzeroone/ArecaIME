@@ -1,10 +1,10 @@
 #pragma once
 
 #include <fcitx-utils/event.h>
-#include <memory>
 #include <functional>
-#include <utility>
+#include <memory>
 #include <sys/types.h>
+#include <utility>
 
 namespace areca {
 

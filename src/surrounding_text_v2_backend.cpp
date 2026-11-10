@@ -126,10 +126,10 @@ void SurroundingTextV2Backend::notifySurroundingTextUpdated(
   ++probeUpdateCount_;
 
   const auto &surrounding = inputContext.surroundingText();
-  if (!surroundingProbeMatches(
-          surrounding.isValid(), originalProbeText_, originalProbeCursor_,
-          expectedProbeText_, expectedProbeCursor_, surrounding.text(),
-          surrounding.cursor(), surrounding.anchor())) {
+  if (!surroundingProbeMatches(surrounding.isValid(), originalProbeText_,
+                               originalProbeCursor_, expectedProbeText_,
+                               expectedProbeCursor_, surrounding.text(),
+                               surrounding.cursor(), surrounding.anchor())) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: surrounding-v2 probe ignored unmatched update"
                    << " tx=" << transactionId_

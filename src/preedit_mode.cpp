@@ -13,8 +13,8 @@
 #include <fcitx/surroundingtext.h>
 
 #include "preedit_logic.h"
-#include "surrounding_text_cache.h"
 #include "surrounding_probe_match.h"
+#include "surrounding_text_cache.h"
 #include "surrounding_text_restore.h"
 
 namespace areca {
@@ -62,17 +62,16 @@ bool hasPreeditShortcutModifier(const fcitx::Key &key) {
 } // namespace
 
 PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
-                                     bool realtimeSpellcheck,
-                                     bool modernStyle,
+                                     bool realtimeSpellcheck, bool modernStyle,
                                      std::string outputCharset,
                                      bool macroEnabled, bool capitalizeMacro,
                                      uint64_t macroRevision,
                                      std::vector<MacroDefinition> macros,
                                      bool revertMacroOnBackspace)
     : inputMethod(std::move(inputMethod)), spellCheck(spellCheck),
-      realtimeSpellcheck(realtimeSpellcheck),
-      modernStyle(modernStyle), outputCharset(std::move(outputCharset)),
-      macroEnabled(macroEnabled), capitalizeMacro(capitalizeMacro),
+      realtimeSpellcheck(realtimeSpellcheck), modernStyle(modernStyle),
+      outputCharset(std::move(outputCharset)), macroEnabled(macroEnabled),
+      capitalizeMacro(capitalizeMacro),
       revertMacroOnBackspace(revertMacroOnBackspace),
       macroRevision(macroRevision),
       engine(std::make_unique<BambooEngineAdapter>(
@@ -104,8 +103,8 @@ PreeditModeHandler::stateFor(fcitx::InputContext &inputContext) const {
 void PreeditModeHandler::activate(fcitx::InputContext &inputContext) {
   // Bắt đầu: Giữ finalized-word recovery qua lifecycle giả của Edge X11
   if (auto *state = stateFor(inputContext);
-      state && state->finalizedWordRecovery ==
-                   FinalizedWordRecoveryState::Erasing) {
+      state &&
+      state->finalizedWordRecovery == FinalizedWordRecoveryState::Erasing) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: preedit activate reset rejected"
                    << " reason=finalized-word-recovery";
@@ -196,8 +195,9 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   const bool isRepeat = key.states().test(fcitx::KeyState::Repeat) ||
                         rawKey.states().test(fcitx::KeyState::Repeat);
   if (event.isRelease()) {
-    if (isBackspace && state->finalizedWordRecovery ==
-                           FinalizedWordRecoveryState::AwaitingBackspaceRelease) {
+    if (isBackspace &&
+        state->finalizedWordRecovery ==
+            FinalizedWordRecoveryState::AwaitingBackspaceRelease) {
       if (isRepeat) {
         event.filterAndAccept();
       } else {
@@ -310,7 +310,8 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       }
       try {
         // Adapter đếm các boundary đã commit. Backspace qua boundary trung gian
-        // chỉ được forward; khi chạm tới snapshot từ, handler kéo từ lên preedit.
+        // chỉ được forward; khi chạm tới snapshot từ, handler kéo từ lên
+        // preedit.
         state->engine->backspace();
         if (state->engine->currentText().empty()) {
           event.forward();
@@ -389,10 +390,9 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     if (suppressMacro && debugProvider_()) {
       FCITX_INFO() << "areca: preedit macro expansion bypassed";
     }
-    const auto result = suppressMacro
-                            ? state->engine->processWithoutMacro(codepoint,
-                                                                utf8Text)
-                            : state->engine->process(codepoint, utf8Text);
+    const auto result =
+        suppressMacro ? state->engine->processWithoutMacro(codepoint, utf8Text)
+                      : state->engine->process(codepoint, utf8Text);
     if (!result.newText.empty()) {
       state->composing = result.newText;
       updatePreedit(*inputContext, *state);
@@ -552,8 +552,7 @@ bool PreeditModeHandler::tryRestoreFromSurroundingText(
   }
   auto candidate = extractSurroundingRestoreCandidate(
       surrounding.text(), surrounding.cursor(), surrounding.anchor());
-  while (candidate &&
-         !state.engine->restoreFromRenderedText(candidate->text)) {
+  while (candidate && !state.engine->restoreFromRenderedText(candidate->text)) {
     candidate = shortenSurroundingRestoreCandidate(*candidate);
   }
   if (!candidate) {
@@ -620,8 +619,8 @@ void PreeditModeHandler::requestProtectedReset(
     fcitx::InputContext &inputContext) {
   auto *state = stateFor(inputContext);
   // Bắt đầu: Giữ finalized-word recovery qua lifecycle giả của Edge X11
-  if (state && state->finalizedWordRecovery ==
-                   FinalizedWordRecoveryState::Erasing) {
+  if (state &&
+      state->finalizedWordRecovery == FinalizedWordRecoveryState::Erasing) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: preedit reset rejected"
                    << " reason=finalized-word-recovery";
@@ -629,8 +628,7 @@ void PreeditModeHandler::requestProtectedReset(
     return;
   }
   // Kết thúc: Giữ finalized-word recovery qua lifecycle giả của Edge X11
-  if (state && fcitx::now(CLOCK_MONOTONIC) <=
-                   state->resetProtectedUntilUsec) {
+  if (state && fcitx::now(CLOCK_MONOTONIC) <= state->resetProtectedUntilUsec) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: preedit reset rejected"
                    << " reason=post-commit-window";

@@ -11,7 +11,8 @@ int main() {
   for (int run = 0; run < 3; ++run) {
     assert(tracker.start());
     assert(tracker.start());
-    for (int i = 0; i < 1000 && !tracker.hasPendingClick(); ++i) usleep(1000);
+    for (int i = 0; i < 1000 && !tracker.hasPendingClick(); ++i)
+      usleep(1000);
     assert(tracker.isValid());
     assert(tracker.hasPendingClick());
     // Reading again must preserve a reset deferred by the scheduler.
@@ -28,7 +29,8 @@ int main() {
   {
     auto enabled = std::make_unique<areca::MouseClickTracker>(loop);
     assert(enabled->start());
-    for (int i = 0; i < 1000 && !enabled->hasPendingClick(); ++i) usleep(1000);
+    for (int i = 0; i < 1000 && !enabled->hasPendingClick(); ++i)
+      usleep(1000);
     assert(enabled->hasPendingClick());
     enabled.reset();
     assert(waitpid(-1, nullptr, WNOHANG) == -1 && errno == ECHILD);

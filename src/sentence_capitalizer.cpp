@@ -4,8 +4,9 @@
 
 namespace areca {
 
-fcitx::KeySym capitalizeAfterSentenceBoundary(
-    SentenceCapitalizationState &state, fcitx::KeySym sym) {
+fcitx::KeySym
+capitalizeAfterSentenceBoundary(SentenceCapitalizationState &state,
+                                fcitx::KeySym sym) {
   auto result = sym;
   if (state.capitalizeNextLetter) {
     if (sym >= FcitxKey_a && sym <= FcitxKey_z) {

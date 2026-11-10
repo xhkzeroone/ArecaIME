@@ -123,12 +123,11 @@ void XTestBackspaceBackend::commitAfterAdaptiveWait(
   const uint32_t currentExtraWaitMs =
       adaptiveWait_.effectiveExtraWaitMs(afterBackspaceWaitMs_);
   if (currentExtraWaitMs > appliedExtraWaitMs) {
-    const uint32_t additionalWaitMs =
-        currentExtraWaitMs - appliedExtraWaitMs;
+    const uint32_t additionalWaitMs = currentExtraWaitMs - appliedExtraWaitMs;
     if (debugProvider_()) {
       FCITX_INFO() << "areca: native-backspace lag before commit tx="
-                   << transactionId_ << " additional_wait_ms="
-                   << additionalWaitMs;
+                   << transactionId_
+                   << " additional_wait_ms=" << additionalWaitMs;
     }
     schedule(additionalWaitMs, TimerDispatch::PostEvent,
              [this, currentExtraWaitMs]() {
@@ -173,8 +172,7 @@ void XTestBackspaceBackend::completeWithoutCommit() {
   auto onDone = std::move(onDone_);
   adaptiveWait_.cancelTransaction();
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: native-backspace context lost tx="
-                 << transactionId;
+    FCITX_INFO() << "areca: native-backspace context lost tx=" << transactionId;
   }
   clearPending();
   if (onDone) {
@@ -182,26 +180,23 @@ void XTestBackspaceBackend::completeWithoutCommit() {
   }
 }
 
-void XTestBackspaceBackend::schedule(uint32_t delayMs,
-                                     TimerDispatch dispatch,
+void XTestBackspaceBackend::schedule(uint32_t delayMs, TimerDispatch dispatch,
                                      std::function<void()> callback) {
   timer_.reset();
   const uint64_t deadline =
       fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(delayMs) * 1000;
-  timer_ =
-      eventLoop_.addTimeEvent(CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
-                              [this, deadline, dispatch,
-                               callback = std::move(callback)](
-                                  fcitx::EventSourceTime *, uint64_t) mutable {
-                                auto completedTimer = std::move(timer_);
-                                if (dispatch == TimerDispatch::PostEvent) {
-                                  dispatchPostEvent(deadline,
-                                                    std::move(callback));
-                                } else {
-                                  observeAndRun(deadline, std::move(callback));
-                                }
-                                return false;
-                              });
+  timer_ = eventLoop_.addTimeEvent(
+      CLOCK_MONOTONIC, deadline, timerAccuracyUsec_,
+      [this, deadline, dispatch, callback = std::move(callback)](
+          fcitx::EventSourceTime *, uint64_t) mutable {
+        auto completedTimer = std::move(timer_);
+        if (dispatch == TimerDispatch::PostEvent) {
+          dispatchPostEvent(deadline, std::move(callback));
+        } else {
+          observeAndRun(deadline, std::move(callback));
+        }
+        return false;
+      });
   if (!timer_) {
     if (dispatch == TimerDispatch::PostEvent) {
       dispatchPostEvent(deadline, std::move(callback));
@@ -213,18 +208,17 @@ void XTestBackspaceBackend::schedule(uint32_t delayMs,
   timer_->setOneShot();
 }
 
-void XTestBackspaceBackend::dispatchPostEvent(
-    uint64_t deadlineUsec, std::function<void()> callback) {
+void XTestBackspaceBackend::dispatchPostEvent(uint64_t deadlineUsec,
+                                              std::function<void()> callback) {
   commitPost_.schedule([this, deadlineUsec, callback]() mutable {
     observeAndRun(deadlineUsec, std::move(callback));
   });
 }
 
-void XTestBackspaceBackend::observeAndRun(
-    uint64_t deadlineUsec, std::function<void()> callback) {
+void XTestBackspaceBackend::observeAndRun(uint64_t deadlineUsec,
+                                          std::function<void()> callback) {
   const uint64_t firedAtUsec = fcitx::now(CLOCK_MONOTONIC);
-  const auto adjustment =
-      adaptiveWait_.observeTimer(deadlineUsec, firedAtUsec);
+  const auto adjustment = adaptiveWait_.observeTimer(deadlineUsec, firedAtUsec);
   if (debugProvider_() && adjustment != AdaptiveWait::Adjustment::None) {
     FCITX_INFO() << "areca: native-backspace adaptive wait changed tx="
                  << transactionId_ << " lateness_us="

@@ -10,9 +10,8 @@ public:
   using DebugProvider = std::function<bool()>;
   using UnavailableCallback = std::function<void()>;
 
-  explicit UinputDevice(
-      DebugProvider debugProvider,
-      UnavailableCallback unavailableCallback = {});
+  explicit UinputDevice(DebugProvider debugProvider,
+                        UnavailableCallback unavailableCallback = {});
   virtual ~UinputDevice();
 
   bool isAvailable();

@@ -7,17 +7,18 @@
 
 namespace areca {
 
-XTestShiftSelectBackend::XTestShiftSelectBackend(
-    fcitx::EventLoop &eventLoop, XTestBackspaceDevice &device,
-    AdaptiveWait &adaptiveWait, DebugProvider debugProvider)
+XTestShiftSelectBackend::XTestShiftSelectBackend(fcitx::EventLoop &eventLoop,
+                                                 XTestBackspaceDevice &device,
+                                                 AdaptiveWait &adaptiveWait,
+                                                 DebugProvider debugProvider)
     : eventLoop_(eventLoop), device_(device), commitPost_(eventLoop),
       adaptiveWait_(adaptiveWait), debugProvider_(std::move(debugProvider)) {}
 
 XTestShiftSelectBackend::~XTestShiftSelectBackend() { clearPending(); }
 
 ApplyStatus XTestShiftSelectBackend::apply(fcitx::InputContext &inputContext,
-                                          const RewritePlan &plan,
-                                          RewriteDone onDone) {
+                                           const RewritePlan &plan,
+                                           RewriteDone onDone) {
   if (hasPending() || !plan.transactionId || !device_.isAvailable()) {
     return ApplyStatus::Failed;
   }
@@ -147,17 +148,16 @@ void XTestShiftSelectBackend::commitSelectionAndComplete() {
   }
 
   const uint32_t charDelayMs = 5U;
-  schedule(
-      charDelayMs, TimerDispatch::PostEvent,
-      [this, remainingText = std::move(remainingText)]() {
-        auto *inputContext = inputContext_.get();
-        if (!inputContext) {
-          completeWithoutCommit();
-          return;
-        }
-        inputContext->commitString(remainingText);
-        finishTransaction();
-      });
+  schedule(charDelayMs, TimerDispatch::PostEvent,
+           [this, remainingText = std::move(remainingText)]() {
+             auto *inputContext = inputContext_.get();
+             if (!inputContext) {
+               completeWithoutCommit();
+               return;
+             }
+             inputContext->commitString(remainingText);
+             finishTransaction();
+           });
 }
 
 void XTestShiftSelectBackend::completeWithoutCommit() {
@@ -197,8 +197,7 @@ void XTestShiftSelectBackend::finishTransaction() {
   }
 }
 
-void XTestShiftSelectBackend::schedule(uint32_t delayMs,
-                                       TimerDispatch dispatch,
+void XTestShiftSelectBackend::schedule(uint32_t delayMs, TimerDispatch dispatch,
                                        std::function<void()> callback) {
   timer_.reset();
   const uint64_t deadline =

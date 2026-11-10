@@ -58,17 +58,16 @@ bool isSelectAllShortcut(const fcitx::Key &rawKey) {
 } // namespace
 
 RewriteInputState::RewriteInputState(std::string inputMethod, bool spellCheck,
-                                     bool realtimeSpellcheck,
-                                     bool modernStyle,
+                                     bool realtimeSpellcheck, bool modernStyle,
                                      std::string outputCharset,
                                      bool macroEnabled, bool capitalizeMacro,
                                      uint64_t macroRevision,
                                      std::vector<MacroDefinition> macros,
                                      bool revertMacroOnBackspace)
     : inputMethod(std::move(inputMethod)), spellCheck(spellCheck),
-      realtimeSpellcheck(realtimeSpellcheck),
-      modernStyle(modernStyle), outputCharset(std::move(outputCharset)),
-      macroEnabled(macroEnabled), capitalizeMacro(capitalizeMacro),
+      realtimeSpellcheck(realtimeSpellcheck), modernStyle(modernStyle),
+      outputCharset(std::move(outputCharset)), macroEnabled(macroEnabled),
+      capitalizeMacro(capitalizeMacro),
       revertMacroOnBackspace(revertMacroOnBackspace),
       macroRevision(macroRevision),
       engine(std::make_unique<BambooEngineAdapter>(
@@ -77,20 +76,14 @@ RewriteInputState::RewriteInputState(std::string inputMethod, bool spellCheck,
           this->capitalizeMacro, std::move(macros),
           this->revertMacroOnBackspace)) {}
 
-RewriteModeHandler::RewriteModeHandler(fcitx::EventLoop &eventLoop,
-                                       StateFactory &stateFactory,
-                                       InputScheduler &scheduler,
-                                       BoolProvider autoCapitalizeProvider,
-                                       BoolProvider debugProvider,
-                                       BackendVerdictProtector
-                                           backendVerdictProtector,
-                                       BackspaceRecoveryProvider
-                                           backspaceRecoveryProvider,
-                                       ContextBoolProvider
-                                           forwardFirstCharacterProvider,
-                                       ContextBoolProvider
-                                           restoreSurroundingTextProvider,
-                                       MacroBypassMatcher macroBypassMatcher)
+RewriteModeHandler::RewriteModeHandler(
+    fcitx::EventLoop &eventLoop, StateFactory &stateFactory,
+    InputScheduler &scheduler, BoolProvider autoCapitalizeProvider,
+    BoolProvider debugProvider, BackendVerdictProtector backendVerdictProtector,
+    BackspaceRecoveryProvider backspaceRecoveryProvider,
+    ContextBoolProvider forwardFirstCharacterProvider,
+    ContextBoolProvider restoreSurroundingTextProvider,
+    MacroBypassMatcher macroBypassMatcher)
     : eventLoop_(eventLoop), stateFactory_(stateFactory), scheduler_(scheduler),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       debugProvider_(std::move(debugProvider)),
@@ -124,16 +117,13 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
   state.surroundingRestoreArmed = false;
 
   const bool enabled = restoreSurroundingTextProvider_(inputContext);
-  const bool supported = enabled && state.outputCharset == "Unicode" &&
-                         state.engine &&
-                         state.engine->currentText().empty() &&
-                         !scheduler_.rewritePending() &&
-                         scheduler_.queuedKeyCount() == 0 &&
-                         !scheduler_.shouldRejectReset() &&
-                         !inputContext.capabilityFlags().test(
-                             fcitx::CapabilityFlag::Password) &&
-                         inputContext.capabilityFlags().test(
-                             fcitx::CapabilityFlag::SurroundingText);
+  const bool supported =
+      enabled && state.outputCharset == "Unicode" && state.engine &&
+      state.engine->currentText().empty() && !scheduler_.rewritePending() &&
+      scheduler_.queuedKeyCount() == 0 && !scheduler_.shouldRejectReset() &&
+      !inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Password) &&
+      inputContext.capabilityFlags().test(
+          fcitx::CapabilityFlag::SurroundingText);
   if (!supported) {
     if (debugProvider_() && enabled) {
       FCITX_INFO() << "areca: surrounding restore rejected"
@@ -166,8 +156,7 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
     return;
   }
 
-  while (candidate &&
-         !state.engine->restoreFromRenderedText(candidate->text)) {
+  while (candidate && !state.engine->restoreFromRenderedText(candidate->text)) {
     candidate = shortenSurroundingRestoreCandidate(*candidate);
   }
   if (!candidate) {
@@ -204,8 +193,7 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
                                                 RewriteInputState &state) {
   // Bắt đầu: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   if (syncEngineBackspace(state)) {
-    state.resetProtectedUntilUsec =
-        fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
+    state.resetProtectedUntilUsec = fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
   }
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   // Backspace đã xoá hết composition (hoặc không có composition): caret có
@@ -236,11 +224,9 @@ bool RewriteModeHandler::shouldRecoverBackspace(
   if (debugProvider_()) {
     const char *frontend = inputContext.frontend();
     FCITX_INFO() << "areca: backspace route="
-                 << (capture ? "recovery" : "forward")
-                 << " reason="
+                 << (capture ? "recovery" : "forward") << " reason="
                  << (capture ? "composition-active" : "gate-disabled")
-                 << " current=" << currentText
-                 << " queue=" << queuedKeys
+                 << " current=" << currentText << " queue=" << queuedKeys
                  << " program=" << inputContext.program()
                  << " frontend=" << (frontend ? frontend : "");
   }
@@ -252,13 +238,13 @@ void RewriteModeHandler::deferBackspaceRecoveryUntilRelease(
   state.backspaceRecoveryAwaitingRelease = true;
   if (debugProvider_()) {
     auto *inputContext = event.inputContext();
-    const char *frontend =
-        inputContext && inputContext->frontend() ? inputContext->frontend() : "";
+    const char *frontend = inputContext && inputContext->frontend()
+                               ? inputContext->frontend()
+                               : "";
     FCITX_INFO() << "areca: backspace recovery deferred until release"
                  << " current=" << state.engine->currentText()
                  << " queue=" << scheduler_.queuedKeyCount()
-                 << " program="
-                 << (inputContext ? inputContext->program() : "")
+                 << " program=" << (inputContext ? inputContext->program() : "")
                  << " frontend=" << frontend;
   }
   event.filterAndAccept();
@@ -300,13 +286,13 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
 
   if (debugProvider_() && (!event.isRelease() || isBackspace || isEnter)) {
     FCITX_INFO() << "areca: rewrite handler key=" << key.toString()
-                 << " release=" << event.isRelease()
-                 << " repeat=" << isRepeat
+                 << " release=" << event.isRelease() << " repeat=" << isRepeat
                  << " pending=" << scheduler_.rewritePending()
                  << " queue=" << scheduler_.queuedKeyCount();
   }
   if (event.isRelease()) {
-    if (isBackspace && state) state->forwardedBackspacePresses.clear();
+    if (isBackspace && state)
+      state->forwardedBackspacePresses.clear();
     if (isBackspace && state && state->engine &&
         state->backspaceRecoveryAwaitingRelease) {
       if (isRepeat) {
@@ -347,8 +333,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
   } else if ((key.isCursorMove() || isSelectAllShortcut(rawKey)) &&
              !scheduler_.shouldRejectReset()) {
-    backendVerdictProtector_(*inputContext,
-                             "selection-or-navigation-shortcut");
+    backendVerdictProtector_(*inputContext, "selection-or-navigation-shortcut");
   }
 
   const bool resetAndForward =
@@ -358,8 +343,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       (!suppressMacro && hasRewriteShortcutModifier(rawKey));
   if (resetAndForward) {
     if (scheduler_.shouldRejectReset()) {
-      // Cursor/modifier keys injected by uinput during or within post-commit window of a rewrite.
-      // Forward without resetting state.
+      // Cursor/modifier keys injected by uinput during or within post-commit
+      // window of a rewrite. Forward without resetting state.
       event.forward();
       return;
     }
@@ -382,16 +367,17 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   if (isBackspace) {
     if (scheduler_.shouldRejectReset()) {
-      // Backspace key injected by uinput during or within post-commit window of a rewrite.
-      // Forward without running backspace recovery or resetting state.
+      // Backspace key injected by uinput during or within post-commit window of
+      // a rewrite. Forward without running backspace recovery or resetting
+      // state.
       event.forward();
       return;
     }
     state->sentenceCapitalization.reset();
     if (!state->forwardedBackspacePresses.empty()) {
-      const bool replay = event.time() != 0 &&
-          state->forwardedBackspacePresses.contains(
-              {event.time(), event.rawKey().code()});
+      const bool replay =
+          event.time() != 0 && state->forwardedBackspacePresses.contains(
+                                   {event.time(), event.rawKey().code()});
       if (replay) {
         if (debugProvider_()) {
           FCITX_INFO() << "areca: backspace route=forward reason=replayed-press"
@@ -421,7 +407,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                        << " program=" << inputContext->program();
         }
         resetContext(*inputContext);
-        state->forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
+        state->forwardedBackspacePresses.emplace(event.time(),
+                                                 event.rawKey().code());
         event.forward();
         return;
       }
@@ -476,8 +463,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
   // Chỉ phục hồi nếu chính kiểu gõ Bamboo hiện tại xử lý phím này. Vì vậy Space
-  // và dấu câu kết thúc macro không hút snapshot cũ vào engine, trong khi số của
-  // VNI hoặc ký hiệu của VIQR/Telex 2 vẫn có thể sửa từ đã commit.
+  // và dấu câu kết thúc macro không hút snapshot cũ vào engine, trong khi số
+  // của VNI hoặc ký hiệu của VIQR/Telex 2 vẫn có thể sửa từ đã commit.
   const bool canProcessText = state->engine->canProcessKey(codepoint);
   if (canProcessText) {
     if (state->wordBoundaryPending) {
@@ -492,10 +479,10 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
   // đổi ký tự thì phải commit ký tự mới, vì phím gốc vẫn mang ký tự chưa đổi.
-  // Đọc cấu hình hiện tại mỗi lần để bật/tắt có hiệu lực mà không tạo lại handler.
+  // Đọc cấu hình hiện tại mỗi lần để bật/tắt có hiệu lực mà không tạo lại
+  // handler.
   if (forwardFirstCharacterProvider_(*inputContext) &&
-      !state->backspaceRecoveryAwaitingRelease &&
-      effectiveTextSym == textSym &&
+      !state->backspaceRecoveryAwaitingRelease && effectiveTextSym == textSym &&
       scheduler_.handleIdleKey(event, codepoint, utf8Text)) {
     return;
   }
@@ -510,8 +497,7 @@ void RewriteModeHandler::requestProtectedReset(
     fcitx::InputContext &inputContext) {
   // Bắt đầu: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   if (auto *state = stateFor(inputContext);
-      state && fcitx::now(CLOCK_MONOTONIC) <=
-                   state->resetProtectedUntilUsec) {
+      state && fcitx::now(CLOCK_MONOTONIC) <= state->resetProtectedUntilUsec) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: reset rejected"
                    << " reason=post-backspace-window";
@@ -521,7 +507,8 @@ void RewriteModeHandler::requestProtectedReset(
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
   if (scheduler_.shouldRejectReset()) {
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: reset rejected (active rewrite or 50ms post-commit window)";
+      FCITX_INFO() << "areca: reset rejected (active rewrite or 50ms "
+                      "post-commit window)";
     }
     return;
   }

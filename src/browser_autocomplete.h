@@ -8,8 +8,7 @@ namespace areca {
 // text Bamboo đang hiển thị. Cursor/anchor lệch nhưng cắt vào giữa từ là
 // snapshot stale và không được dùng để cộng thêm Backspace.
 bool isSelectionImmediatelyAfterText(const std::string &surroundingText,
-                                     unsigned int cursor,
-                                     unsigned int anchor,
+                                     unsigned int cursor, unsigned int anchor,
                                      const std::string &shownText);
 
 bool isCollapsedFirefoxAutocomplete(const std::string &program,

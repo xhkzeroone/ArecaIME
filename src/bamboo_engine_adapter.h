@@ -28,22 +28,20 @@ public:
   virtual void reset() = 0;
   virtual const std::string &currentText() const = 0;
   // Nạp lại text đã có trước con trỏ. Implement mặc định từ chối để các engine
-  // giả trong test và engine khác không vô tình nhận một trạng thái không hỗ trợ.
+  // giả trong test và engine khác không vô tình nhận một trạng thái không hỗ
+  // trợ.
   virtual bool restoreFromRenderedText(const std::string &) { return false; }
   virtual bool canUndoMacro() const { return false; }
 };
 
 class BambooEngineAdapter final : public VietnameseEngine {
 public:
-  explicit BambooEngineAdapter(std::string inputMethod = "Telex 2",
-                               bool spellCheck = true,
-                               bool realtimeSpellcheck = true,
-                               bool modernStyle = true,
-                               std::string outputCharset = "Unicode",
-                               bool macroEnabled = true,
-                               bool capitalizeMacro = true,
-                               std::vector<MacroDefinition> macros = {},
-                               bool revertMacroOnBackspace = true);
+  explicit BambooEngineAdapter(
+      std::string inputMethod = "Telex 2", bool spellCheck = true,
+      bool realtimeSpellcheck = true, bool modernStyle = true,
+      std::string outputCharset = "Unicode", bool macroEnabled = true,
+      bool capitalizeMacro = true, std::vector<MacroDefinition> macros = {},
+      bool revertMacroOnBackspace = true);
   ~BambooEngineAdapter() override;
 
   BambooEngineAdapter(const BambooEngineAdapter &) = delete;

@@ -25,10 +25,9 @@ enum class FinalizedWordRecoveryState {
 
 struct PreeditInputState final : public fcitx::InputContextProperty {
   explicit PreeditInputState(std::string inputMethod, bool spellCheck,
-                             bool realtimeSpellcheck,
-                             bool modernStyle, std::string outputCharset,
-                             bool macroEnabled, bool capitalizeMacro,
-                             uint64_t macroRevision,
+                             bool realtimeSpellcheck, bool modernStyle,
+                             std::string outputCharset, bool macroEnabled,
+                             bool capitalizeMacro, uint64_t macroRevision,
                              std::vector<MacroDefinition> macros,
                              bool revertMacroOnBackspace = true);
 
@@ -71,13 +70,13 @@ public:
   using FinalizedWordEraser = std::function<bool(
       fcitx::InputContext &, uint32_t, FinalizedWordEraseDone)>;
 
-  PreeditModeHandler(StateFactory &stateFactory, DebugProvider debugProvider,
-                     AutoCapitalizeProvider autoCapitalizeProvider,
-                     BackspaceRecoveryProvider backspaceRecoveryProvider,
-                     RestoreSurroundingTextProvider
-                         restoreSurroundingTextProvider,
-                     MacroBypassMatcher macroBypassMatcher,
-                     FinalizedWordEraser finalizedWordEraser);
+  PreeditModeHandler(
+      StateFactory &stateFactory, DebugProvider debugProvider,
+      AutoCapitalizeProvider autoCapitalizeProvider,
+      BackspaceRecoveryProvider backspaceRecoveryProvider,
+      RestoreSurroundingTextProvider restoreSurroundingTextProvider,
+      MacroBypassMatcher macroBypassMatcher,
+      FinalizedWordEraser finalizedWordEraser);
   void activate(fcitx::InputContext &inputContext) override;
   void deactivate(fcitx::InputContext &inputContext) override;
   void handleKeyEvent(fcitx::KeyEvent &event) override;
@@ -86,8 +85,7 @@ public:
 
   // Chuẩn bị đọc lại từ quanh caret sau một click, nhưng không xóa preedit
   // đang hiển thị nếu frontend chưa kết thúc composition cũ.
-  bool prepareSurroundingRestoreAfterClick(
-      fcitx::InputContext &inputContext);
+  bool prepareSurroundingRestoreAfterClick(fcitx::InputContext &inputContext);
 
   PreeditInputState *stateFor(fcitx::InputContext &inputContext) const;
 

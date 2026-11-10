@@ -25,7 +25,8 @@ public:
   void commitStringImpl(const std::string &text) override {
     events.push_back("commit:" + text);
     commitTimesUsec.push_back(fcitx::now(CLOCK_MONOTONIC));
-    if (onCommit) onCommit();
+    if (onCommit)
+      onCommit();
   }
   void deleteSurroundingTextImpl(int, unsigned int) override {}
   void forwardKeyImpl(const fcitx::ForwardKeyEvent &event) override {
@@ -112,8 +113,8 @@ int main() {
       },
       [] { return false; },
       [&](fcitx::InputContext &, const areca::BambooResult &result) {
-        return areca::RewriteBackendSelection{
-            result.deleteCount ? &backend : nullptr};
+        return areca::RewriteBackendSelection{result.deleteCount ? &backend
+                                                                 : nullptr};
       });
 
   // Phím đầu không bị nhận/chèn lặp, nhưng Bamboo phải nhớ nó để ghép dấu.
@@ -172,13 +173,11 @@ int main() {
       });
 
   const uint64_t forwardStartUsec = fcitx::now(CLOCK_MONOTONIC);
-  fcitx::KeyEvent barrierFirst(&barrierInputContext,
-                               fcitx::Key(FcitxKey_a));
+  fcitx::KeyEvent barrierFirst(&barrierInputContext, fcitx::Key(FcitxKey_a));
   assert(barrierScheduler.handleIdleKey(barrierFirst, 'a', "a"));
   assert(!barrierFirst.accepted());
 
-  fcitx::KeyEvent barrierSecond(&barrierInputContext,
-                                fcitx::Key(FcitxKey_s));
+  fcitx::KeyEvent barrierSecond(&barrierInputContext, fcitx::Key(FcitxKey_s));
   assert(!barrierScheduler.handleIdleKey(barrierSecond, 's', "s"));
   barrierScheduler.enqueue(barrierInputContext, 's', "s");
   assert(barrierScheduler.queuedKeyCount() == 1);
@@ -186,8 +185,7 @@ int main() {
 
   barrierInputContext.onCommit = [&] { barrierEventLoop.exit(); };
   assert(barrierEventLoop.exec());
-  assert(barrierInputContext.events ==
-         std::vector<std::string>{"commit:s"});
+  assert(barrierInputContext.events == std::vector<std::string>{"commit:s"});
   assert(barrierInputContext.commitTimesUsec.size() == 1);
   assert(barrierInputContext.commitTimesUsec.front() - forwardStartUsec >=
          20000);

@@ -183,8 +183,9 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
   if (commitText_.empty()) {
     if (selectedCharacters_ > 0) {
       if (debugProvider_()) {
-        FCITX_INFO() << "areca: uinput-select erase selection with backspace tx="
-                     << transactionId_ << " chars=" << selectedCharacters_;
+        FCITX_INFO()
+            << "areca: uinput-select erase selection with backspace tx="
+            << transactionId_ << " chars=" << selectedCharacters_;
       }
       device_.sendKeyEvent(KEY_BACKSPACE, 1);
       device_.sendKeyEvent(KEY_BACKSPACE, 0);
@@ -201,8 +202,7 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
 
   if (debugProvider_()) {
     FCITX_INFO() << "areca: uinput-select 2-step commit tx=" << transactionId_
-                 << " chars=" << selectedCharacters_
-                 << " first=" << firstChar
+                 << " chars=" << selectedCharacters_ << " first=" << firstChar
                  << " remaining=" << remainingText;
   }
 
@@ -214,17 +214,16 @@ void UinputShiftSelectBackend::commitSelectionAndComplete() {
   }
 
   const uint32_t charDelayMs = 5U;
-  schedule(
-      charDelayMs, TimerDispatch::PostEvent,
-      [this, remainingText = std::move(remainingText)]() {
-        auto *inputContext = inputContext_.get();
-        if (!inputContext) {
-          completeWithoutCommit();
-          return;
-        }
-        inputContext->commitString(remainingText);
-        finishTransaction();
-      });
+  schedule(charDelayMs, TimerDispatch::PostEvent,
+           [this, remainingText = std::move(remainingText)]() {
+             auto *inputContext = inputContext_.get();
+             if (!inputContext) {
+               completeWithoutCommit();
+               return;
+             }
+             inputContext->commitString(remainingText);
+             finishTransaction();
+           });
 }
 
 void UinputShiftSelectBackend::scheduleCommit() {

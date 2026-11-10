@@ -58,8 +58,8 @@ public:
     return result;
   }
 
-  areca::BambooResult processWithoutMacro(
-      uint32_t codepoint, const std::string &text) override {
+  areca::BambooResult processWithoutMacro(uint32_t codepoint,
+                                          const std::string &text) override {
     ++withoutMacroProcessCount;
     return process(codepoint, text);
   }
@@ -69,12 +69,8 @@ public:
     macroUndoAvailable = false;
     return {};
   }
-  void backspace() override {
-    ++plainBackspaceCount;
-  }
-  void reset() override {
-    current_.clear();
-  }
+  void backspace() override { ++plainBackspaceCount; }
+  void reset() override { current_.clear(); }
   bool restoreFromRenderedText(const std::string &text) override {
     if (text.empty() || text == "tiế" || text == "iế") {
       return false;
@@ -99,20 +95,23 @@ void testForwardedBackspaceReplay() {
   fcitx::EventLoop loop;
   fcitx::InputContextManager manager;
   areca::RewriteModeHandler::StateFactory factory([](fcitx::InputContext &) {
-    return new areca::RewriteInputState(
-        "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+    return new areca::RewriteInputState("Telex 2", true, true, true, "Unicode",
+                                        false, false, 1, {});
   });
   manager.registerProperty("rewrite-backspace-replay-test", &factory);
   TestInputContext context(manager, "gnome-text-editor", "dbus");
-  areca::InputScheduler scheduler(loop,
-      [&](fcitx::InputContext &ic) { return ic.propertyFor(&factory)->engine.get(); },
+  areca::InputScheduler scheduler(
+      loop,
+      [&](fcitx::InputContext &ic) {
+        return ic.propertyFor(&factory)->engine.get();
+      },
       [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
       [] { return false; },
       [](fcitx::InputContext &, const areca::BambooResult &) {
         return areca::RewriteBackendSelection{};
       });
-  areca::RewriteModeHandler handler(loop, factory, scheduler,
-      [] { return false; }, [] { return false; },
+  areca::RewriteModeHandler handler(
+      loop, factory, scheduler, [] { return false; }, [] { return false; },
       [](fcitx::InputContext &, const char *) {}, [] { return true; },
       [](fcitx::InputContext &) { return false; },
       [](fcitx::InputContext &) { return false; },
@@ -125,17 +124,20 @@ void testForwardedBackspaceReplay() {
     assert(state->engine->currentText().empty());
   };
   auto press = [&](int time, bool repeat) {
-    fcitx::KeyEvent event(&context,
-        fcitx::Key(FcitxKey_BackSpace, repeat ? fcitx::KeyState::Repeat
-                                            : fcitx::KeyState::NoState, 22),
+    fcitx::KeyEvent event(
+        &context,
+        fcitx::Key(FcitxKey_BackSpace,
+                   repeat ? fcitx::KeyState::Repeat : fcitx::KeyState::NoState,
+                   22),
         false, time);
     handler.handleKeyEvent(event);
     assert(!event.filtered() && !event.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
   };
   auto release = [&]() {
-    fcitx::KeyEvent event(&context,
-        fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::NoState, 22), true, 1100);
+    fcitx::KeyEvent event(
+        &context, fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::NoState, 22),
+        true, 1100);
     handler.handleKeyEvent(event);
     assert(!event.accepted() && !event.filtered());
     assert(state->forwardedBackspacePresses.empty());
@@ -176,20 +178,18 @@ int main() {
   // Backspace, giống BackspaceRecovery thường.
   // GNOME/IBus gửi các press lặp không kèm cờ Repeat.
   for (bool ibusWithoutRepeatFlag : {false, true}) {
-    const auto repeatState = ibusWithoutRepeatFlag
-                                 ? fcitx::KeyState::NoState
-                                 : fcitx::KeyState::Repeat;
+    const auto repeatState = ibusWithoutRepeatFlag ? fcitx::KeyState::NoState
+                                                   : fcitx::KeyState::Repeat;
     fcitx::EventLoop loop;
     fcitx::InputContextManager manager;
-    areca::RewriteModeHandler::StateFactory factory(
-        [](fcitx::InputContext &) {
-          auto *state = new areca::RewriteInputState(
-              "Telex 2", true, true, true, "Unicode", false, false, 1, {});
-          auto engine = std::make_unique<TestEngine>();
-          engine->macroUndoAvailable = true;
-          state->engine = std::move(engine);
-          return state;
-        });
+    areca::RewriteModeHandler::StateFactory factory([](fcitx::InputContext &) {
+      auto *state = new areca::RewriteInputState(
+          "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+      auto engine = std::make_unique<TestEngine>();
+      engine->macroUndoAvailable = true;
+      state->engine = std::move(engine);
+      return state;
+    });
     manager.registerProperty("rewrite-macro-backspace-test", &factory);
     TestInputContext context(manager, "org.gnome.TextEditor",
                              ibusWithoutRepeatFlag ? "ibus" : "wayland");
@@ -226,9 +226,8 @@ int main() {
     assert(state->backspaceRecoveryAwaitingRelease);
     assert(engine->backspaceProcessCount == 0);
 
-    fcitx::KeyEvent repeat(
-        &context,
-        fcitx::Key(FcitxKey_BackSpace, repeatState));
+    fcitx::KeyEvent repeat(&context,
+                           fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(repeat);
     assert(!repeat.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -252,7 +251,8 @@ int main() {
     assert(plainPress.accepted());
     assert(state->backspaceRecoveryAwaitingRelease);
 
-    fcitx::KeyEvent plainRelease(&context, fcitx::Key(FcitxKey_BackSpace), true);
+    fcitx::KeyEvent plainRelease(&context, fcitx::Key(FcitxKey_BackSpace),
+                                 true);
     handler.handleKeyEvent(plainRelease);
     assert(plainRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -269,16 +269,15 @@ int main() {
     assert(restoredPress.accepted());
     assert(state->backspaceRecoveryAwaitingRelease);
 
-    fcitx::KeyEvent restoredRepeat(
-        &context,
-        fcitx::Key(FcitxKey_BackSpace, repeatState));
+    fcitx::KeyEvent restoredRepeat(&context,
+                                   fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(restoredRepeat);
     assert(!restoredRepeat.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->currentText().empty());
 
-    fcitx::KeyEvent continuedHold(
-        &context, fcitx::Key(FcitxKey_BackSpace, repeatState));
+    fcitx::KeyEvent continuedHold(&context,
+                                  fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(continuedHold);
     assert(!continuedHold.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -286,22 +285,20 @@ int main() {
 
     // Sau khi thấy repeat, mọi event còn lại đi thẳng xuống ứng dụng.
     fcitx::KeyEvent repeatedRelease(
-        &context,
-        fcitx::Key(FcitxKey_BackSpace, repeatState), true);
+        &context, fcitx::Key(FcitxKey_BackSpace, repeatState), true);
     handler.handleKeyEvent(repeatedRelease);
     assert(!repeatedRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
     assert(engine->backspaceProcessCount == 1);
 
     fcitx::KeyEvent repeatAfterRelease(
-        &context,
-        fcitx::Key(FcitxKey_BackSpace, repeatState));
+        &context, fcitx::Key(FcitxKey_BackSpace, repeatState));
     handler.handleKeyEvent(repeatAfterRelease);
     assert(!repeatAfterRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
 
-    fcitx::KeyEvent restoredRelease(&context,
-                                    fcitx::Key(FcitxKey_BackSpace), true);
+    fcitx::KeyEvent restoredRelease(&context, fcitx::Key(FcitxKey_BackSpace),
+                                    true);
     handler.handleKeyEvent(restoredRelease);
     assert(!restoredRelease.accepted());
     assert(!state->backspaceRecoveryAwaitingRelease);
@@ -323,13 +320,12 @@ int main() {
   {
     fcitx::EventLoop loop;
     fcitx::InputContextManager manager;
-    areca::RewriteModeHandler::StateFactory factory(
-        [](fcitx::InputContext &) {
-          auto *state = new areca::RewriteInputState(
-              "Telex 2", true, true, true, "Unicode", false, false, 1, {});
-          state->engine = std::make_unique<TestEngine>();
-          return state;
-        });
+    areca::RewriteModeHandler::StateFactory factory([](fcitx::InputContext &) {
+      auto *state = new areca::RewriteInputState(
+          "Telex 2", true, true, true, "Unicode", false, false, 1, {});
+      state->engine = std::make_unique<TestEngine>();
+      return state;
+    });
     manager.registerProperty("rewrite-backspace-reset-test", &factory);
     TestInputContext context(manager, "msedge", "dbus");
     areca::InputScheduler scheduler(
@@ -373,15 +369,22 @@ int main() {
     manager.registerProperty("rewrite-test", &factory);
     TestInputContext context(manager);
     bool enabled = initiallyEnabled;
-    areca::InputScheduler scheduler(loop,
-        [&](fcitx::InputContext &ic) { return ic.propertyFor(&factory)->engine.get(); },
-        [](fcitx::InputContext &) { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
+    areca::InputScheduler scheduler(
+        loop,
+        [&](fcitx::InputContext &ic) {
+          return ic.propertyFor(&factory)->engine.get();
+        },
+        [](fcitx::InputContext &) {
+          areca::SchedulerTiming timing;
+          timing.postCommitDelayMs = 0;
+          return timing;
+        },
         [] { return false; },
         [](fcitx::InputContext &, const areca::BambooResult &) {
           return areca::RewriteBackendSelection{};
         });
-    areca::RewriteModeHandler handler(loop, factory, scheduler,
-        [] { return false; }, [] { return false; },
+    areca::RewriteModeHandler handler(
+        loop, factory, scheduler, [] { return false; }, [] { return false; },
         [](fcitx::InputContext &, const char *) {}, [] { return false; },
         [&](fcitx::InputContext &ic) {
           return enabled && ic.program() == "google-chrome";
@@ -407,9 +410,16 @@ int main() {
     // Luồng cũ phải tạo cùng kết quả và xử lý Bamboo đúng một lần.
     TestInputContext legacyContext(manager);
     TestEngine legacyEngine;
-    areca::InputScheduler legacy(loop,
-        [&](fcitx::InputContext &) -> areca::VietnameseEngine * { return &legacyEngine; },
-        [](fcitx::InputContext &) { areca::SchedulerTiming timing; timing.postCommitDelayMs = 0; return timing; },
+    areca::InputScheduler legacy(
+        loop,
+        [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
+          return &legacyEngine;
+        },
+        [](fcitx::InputContext &) {
+          areca::SchedulerTiming timing;
+          timing.postCommitDelayMs = 0;
+          return timing;
+        },
         [] { return false; },
         [](fcitx::InputContext &, const areca::BambooResult &) {
           return areca::RewriteBackendSelection{};
@@ -419,17 +429,16 @@ int main() {
     legacy.enqueue(legacyContext, 'a', "a");
     assert(context.events == legacyContext.events);
     assert(key.accepted() == legacyKey.accepted());
-    assert(context.propertyFor(&factory)->engine->currentText() == legacyEngine.currentText());
+    assert(context.propertyFor(&factory)->engine->currentText() ==
+           legacyEngine.currentText());
 
     // Bật option không được forward phím đầu trong ứng dụng ngoài trình duyệt.
     enabled = true;
     TestInputContext nonBrowserContext(manager, "org.gnome.TextEditor");
-    fcitx::KeyEvent nonBrowserKey(&nonBrowserContext,
-                                  fcitx::Key(FcitxKey_a));
+    fcitx::KeyEvent nonBrowserKey(&nonBrowserContext, fcitx::Key(FcitxKey_a));
     handler.handleKeyEvent(nonBrowserKey);
     assert(nonBrowserKey.accepted());
-    assert(nonBrowserContext.events ==
-           std::vector<std::string>{"commit:a"});
+    assert(nonBrowserContext.events == std::vector<std::string>{"commit:a"});
   }
 
   // Restore được gọi đúng một lần trước phím text đầu tiên và phần text đã
@@ -537,8 +546,9 @@ int main() {
   fcitx::KeyEvent addressBarKey(&addressBarContext, fcitx::Key(FcitxKey_a));
   restoreHandler.handleKeyEvent(addressBarKey);
   assert(addressBarKey.accepted());
-  assert(addressBarContext.propertyFor(&restoreFactory)->engine->currentText() ==
-         "a");
+  assert(
+      addressBarContext.propertyFor(&restoreFactory)->engine->currentText() ==
+      "a");
 
   fcitx::InputContextManager boundaryManager;
   areca::RewriteModeHandler::StateFactory boundaryFactory(
@@ -660,8 +670,8 @@ int main() {
       true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));
   assert(!areca::shouldForceBackspaceForUrl(
       true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::SurroundingText)));
-  assert(areca::shouldForceBackspaceForUrl(
-      true, fcitx::CapabilityFlags{}, true));
+  assert(
+      areca::shouldForceBackspaceForUrl(true, fcitx::CapabilityFlags{}, true));
   assert(!areca::shouldForceBackspaceForUrl(
       false, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url), true));
   assert(areca::shouldUseShiftSelectForUrl(true, false, true));
@@ -673,11 +683,10 @@ int main() {
   assert(areca::isMacroBypassSpace(
       fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift),
       mainConfig.macroBypassModifier.value()));
+  assert(!areca::isMacroBypassSpace(fcitx::Key(FcitxKey_space),
+                                    mainConfig.macroBypassModifier.value()));
   assert(!areca::isMacroBypassSpace(
-      fcitx::Key(FcitxKey_space), mainConfig.macroBypassModifier.value()));
-  assert(!areca::isMacroBypassSpace(
-      fcitx::Key(FcitxKey_space,
-                 fcitx::KeyStates{fcitx::KeyState::Shift,
-                                  fcitx::KeyState::Ctrl}),
+      fcitx::Key(FcitxKey_space, fcitx::KeyStates{fcitx::KeyState::Shift,
+                                                  fcitx::KeyState::Ctrl}),
       mainConfig.macroBypassModifier.value()));
 }

@@ -58,9 +58,10 @@ inline bool isMacroBypassSpace(const fcitx::Key &key,
   return false;
 }
 
-inline bool shouldForceBackspaceForUrl(
-    bool enabled, const fcitx::CapabilityFlags &capabilities,
-    bool inAddressBar = false) {
+inline bool
+shouldForceBackspaceForUrl(bool enabled,
+                           const fcitx::CapabilityFlags &capabilities,
+                           bool inAddressBar = false) {
   return enabled &&
          (capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar);
 }
@@ -161,8 +162,7 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> backspaceDelayMs{
         this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain>
-        uinputBackspaceAckTimeoutMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> uinputBackspaceAckTimeoutMs{
         this, "UinputBackspaceAckTimeoutMs",
         N_("Timeout ACK uinput Backspace (ms)"), 150,
         fcitx::IntConstrain(1, 5000)};
@@ -192,8 +192,7 @@ FCITX_CONFIGURATION(
         this, "UinputShiftSelectDelayMs",
         N_("Delay giữa các phím uinput Shift+Left (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain>
-        uinputShiftSelectAckTimeoutMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> uinputShiftSelectAckTimeoutMs{
         this, "UinputShiftSelectAckTimeoutMs",
         N_("Timeout ACK uinput Shift+Left (ms)"), 150,
         fcitx::IntConstrain(1, 5000)};
@@ -319,12 +318,12 @@ FCITX_CONFIGURATION(
         PresentationMode::Rewrite};
     fcitx::HiddenOption<fcitx::KeyList,
                         fcitx::ListConstrain<fcitx::KeyConstrain>>
-        switchModeKey{
-            this,
-            "SwitchModeKey",
-            N_("Phím tắt chuyển chế độ gõ"),
-            {},
-            fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
+        switchModeKey{this,
+                      "SwitchModeKey",
+                      N_("Phím tắt chuyển chế độ gõ"),
+                      {},
+                      fcitx::KeyListConstrain(
+                          fcitx::KeyConstrainFlag::AllowModifierLess)};
     fcitx::KeyListOption selectBackendKey{
         this,
         "SelectBackendKey",
@@ -341,9 +340,9 @@ FCITX_CONFIGURATION(
     fcitx::HiddenOption<int, fcitx::IntConstrain> legacyPostCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::HiddenOption<std::string> trayIcon{
-        this, "TrayIcon", N_("Biểu tượng khay hệ thống"),
-        "org.fcitx.Fcitx5.fcitx-areca"};
+    fcitx::HiddenOption<std::string> trayIcon{this, "TrayIcon",
+                                              N_("Biểu tượng khay hệ thống"),
+                                              "org.fcitx.Fcitx5.fcitx-areca"};
     fcitx::OptionWithAnnotation<std::string, StringListAnnotation>
         bambooInputMethod{this, "BambooInputMethod", N_("Kiểu gõ Bamboo"),
                           "Telex 2"};
@@ -365,10 +364,9 @@ FCITX_CONFIGURATION(
         this, "RevertMacroOnBackspace", N_("Hoàn tác macro khi nhấn Backspace"),
         true};
     fcitx::OptionWithAnnotation<MacroBypassModifier, fcitx::EnumAnnotation>
-        macroBypassModifier{
-            this, "MacroBypassModifier",
-            N_("Phím giữ để tạm bỏ qua macro khi nhấn Space"),
-            MacroBypassModifier::Shift};
+        macroBypassModifier{this, "MacroBypassModifier",
+                            N_("Phím giữ để tạm bỏ qua macro khi nhấn Space"),
+                            MacroBypassModifier::Shift};
     fcitx::SubConfigOption macroEditor{this, "MacroEditor",
                                        N_("Chỉnh sửa macro"),
                                        "fcitx://config/addon/areca/macro"};
@@ -379,16 +377,15 @@ FCITX_CONFIGURATION(
         this, "BackspaceRecovery",
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> restoreSurroundingText{
-        this, "RestoreSurroundingText",
-        N_("Cho phép sửa từ đã commit"), true};
+        this, "RestoreSurroundingText", N_("Cho phép sửa từ đã commit"), true};
     fcitx::Option<bool> shiftSelectFallbackForBrowser{
         this, "ShiftSelectFallbackForBrowser",
         N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "
            "surrounding text"),
         false};
     fcitx::Option<bool> useBackspaceForUrl{
-        this, "UseBackspaceForUrl",
-        N_("Xử lý riêng ô URL và thanh địa chỉ"), true};
+        this, "UseBackspaceForUrl", N_("Xử lý riêng ô URL và thanh địa chỉ"),
+        true};
     fcitx::Option<bool> disableVietnameseInTerminal{
         this, "DisableVietnameseInTerminal",
         N_("Tắt tiếng Việt trong terminal"), false};

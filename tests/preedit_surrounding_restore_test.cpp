@@ -51,12 +51,10 @@ private:
 
 int main() {
   fcitx::InputContextManager manager;
-  areca::PreeditModeHandler::StateFactory factory(
-      [](fcitx::InputContext &) {
-        return new areca::PreeditInputState("Telex 2", true, true, true,
-                                            "Unicode", true, false, 1,
-                                            {{"bt", "Be There"}});
-      });
+  areca::PreeditModeHandler::StateFactory factory([](fcitx::InputContext &) {
+    return new areca::PreeditInputState("Telex 2", true, true, true, "Unicode",
+                                        true, false, 1, {{"bt", "Be There"}});
+  });
   manager.registerProperty("preedit-surrounding-restore-test", &factory);
 
   bool enabled = true;
@@ -106,8 +104,8 @@ int main() {
   assert(context.propertyFor(&factory)->finalizedWordRecovery ==
          areca::FinalizedWordRecoveryState::AwaitingBackspaceRelease);
   assert(requestedBackspaces == 0);
-  fcitx::KeyEvent undoBoundaryRelease(
-      &context, fcitx::Key(FcitxKey_BackSpace), true);
+  fcitx::KeyEvent undoBoundaryRelease(&context, fcitx::Key(FcitxKey_BackSpace),
+                                      true);
   handler.handleKeyEvent(undoBoundaryRelease);
   assert(undoBoundaryRelease.accepted());
   assert(context.deletes.size() == 1);
@@ -125,16 +123,14 @@ int main() {
   TestInputContext macroBypassContext(manager);
   handler.activate(macroBypassContext);
   for (const char key : std::string("bt")) {
-    fcitx::KeyEvent keyEvent(
-        &macroBypassContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&macroBypassContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
     assert(keyEvent.accepted());
   }
   fcitx::KeyEvent bypassSpace(
-      &macroBypassContext,
-      fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift));
+      &macroBypassContext, fcitx::Key(FcitxKey_space, fcitx::KeyState::Shift));
   handler.handleKeyEvent(bypassSpace);
   assert(bypassSpace.accepted());
   assert(macroBypassContext.commits == std::vector<std::string>{"bt "});
@@ -165,10 +161,9 @@ int main() {
   laggingContext.surroundingText().setText("", 0, 0);
   handler.activate(laggingContext);
   for (const char key : std::string("gox ")) {
-    fcitx::KeyEvent keyEvent(
-        &laggingContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&laggingContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
     assert(keyEvent.accepted());
   }
@@ -190,10 +185,9 @@ int main() {
   nbspContext.surroundingText().setText("", 0, 0);
   handler.activate(nbspContext);
   for (const char key : std::string("gox ")) {
-    fcitx::KeyEvent keyEvent(
-        &nbspContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&nbspContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
   auto *nbspState = nbspContext.propertyFor(&factory);
@@ -227,29 +221,25 @@ int main() {
       fcitx::CapabilityFlag::SurroundingText);
   macroBoundaryContext.surroundingText().setText("không", 5, 5);
   handler.activate(macroBoundaryContext);
-  fcitx::KeyEvent macroSpace(&macroBoundaryContext,
-                             fcitx::Key(FcitxKey_space));
+  fcitx::KeyEvent macroSpace(&macroBoundaryContext, fcitx::Key(FcitxKey_space));
   handler.handleKeyEvent(macroSpace);
   assert(!macroSpace.accepted());
   assert(macroBoundaryContext.deletes.empty());
   assert(macroBoundaryContext.propertyFor(&factory)->composing.empty());
-  assert(!macroBoundaryContext.propertyFor(&factory)
-              ->surroundingRestoreArmed);
+  assert(!macroBoundaryContext.propertyFor(&factory)->surroundingRestoreArmed);
 
   // App không có SurroundingText dùng backend Backspace để xóa chính xác từ
   // vừa commit cùng boundary rồi đưa từ trở lại preedit.
   TestInputContext noSurroundingContext(manager);
   handler.activate(noSurroundingContext);
   for (const char key : std::string("as")) {
-    fcitx::KeyEvent keyEvent(
-        &noSurroundingContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&noSurroundingContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
     assert(keyEvent.accepted());
   }
-  fcitx::KeyEvent firstSpace(&noSurroundingContext,
-                             fcitx::Key(FcitxKey_space));
+  fcitx::KeyEvent firstSpace(&noSurroundingContext, fcitx::Key(FcitxKey_space));
   handler.handleKeyEvent(firstSpace);
   assert(firstSpace.accepted());
   assert(noSurroundingContext.commits == std::vector<std::string>{"á "});
@@ -257,8 +247,8 @@ int main() {
   // Frontend thường gửi reset ngay sau commit. Reset này không được xóa
   // snapshot finalized cần cho Backspace quay lại sửa từ vừa gõ.
   handler.requestProtectedReset(noSurroundingContext);
-  assert(noSurroundingContext.propertyFor(&factory)
-             ->resetProtectedUntilUsec != 0);
+  assert(noSurroundingContext.propertyFor(&factory)->resetProtectedUntilUsec !=
+         0);
 
   for (int index = 0; index < 2; ++index) {
     fcitx::KeyEvent extraSpace(&noSurroundingContext,
@@ -279,8 +269,8 @@ int main() {
   assert(restoreWord.accepted());
   assert(noSurroundingContext.propertyFor(&factory)->finalizedWordRecovery ==
          areca::FinalizedWordRecoveryState::AwaitingBackspaceRelease);
-  fcitx::KeyEvent restoreWordRelease(
-      &noSurroundingContext, fcitx::Key(FcitxKey_BackSpace), true);
+  fcitx::KeyEvent restoreWordRelease(&noSurroundingContext,
+                                     fcitx::Key(FcitxKey_BackSpace), true);
   handler.handleKeyEvent(restoreWordRelease);
   assert(restoreWordRelease.accepted());
   assert(requestedBackspaces == 2);
@@ -310,17 +300,17 @@ int main() {
   assert(noSurroundingContext.propertyFor(&factory)->composing == "á");
 
   // Có SurroundingText thì snapshot vẫn sống qua nhiều Space đã commit/forward.
-  // Backspace lùi hết boundary mới xóa chính xác `từ + Space` và mở lại preedit.
+  // Backspace lùi hết boundary mới xóa chính xác `từ + Space` và mở lại
+  // preedit.
   TestInputContext multipleSpacesContext(manager);
   multipleSpacesContext.setCapabilityFlags(
       fcitx::CapabilityFlag::SurroundingText);
   multipleSpacesContext.surroundingText().setText("", 0, 0);
   handler.activate(multipleSpacesContext);
   for (const char key : std::string("as")) {
-    fcitx::KeyEvent keyEvent(
-        &multipleSpacesContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&multipleSpacesContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
   fcitx::KeyEvent committedSpace(&multipleSpacesContext,
@@ -358,10 +348,9 @@ int main() {
   TestInputContext heldBackspaceContext(manager);
   handler.activate(heldBackspaceContext);
   for (const char key : std::string("as ")) {
-    fcitx::KeyEvent keyEvent(
-        &heldBackspaceContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&heldBackspaceContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
   fcitx::KeyEvent heldPress(&heldBackspaceContext,
@@ -376,22 +365,21 @@ int main() {
   assert(heldBackspaceContext.propertyFor(&factory)->finalizedWordRecovery ==
          areca::FinalizedWordRecoveryState::Idle);
   assert(heldBackspaceContext.propertyFor(&factory)
-             ->engine->currentText().empty());
+             ->engine->currentText()
+             .empty());
 
   // Phím kế tiếp bắt đầu composition mới; từ trước đó đã commit ngay từ Space,
   // không có trạng thái pending làm chậm trải nghiệm gõ.
   TestInputContext immediateCommitContext(manager);
   handler.activate(immediateCommitContext);
   for (const char key : std::string("as b")) {
-    fcitx::KeyEvent keyEvent(
-        &immediateCommitContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&immediateCommitContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
     assert(keyEvent.accepted());
   }
-  assert(immediateCommitContext.commits ==
-         std::vector<std::string>{"á "});
+  assert(immediateCommitContext.commits == std::vector<std::string>{"á "});
   assert(immediateCommitContext.propertyFor(&factory)->composing == "b");
 
   // BackspaceRecovery trong Preedit dùng processBackspace thay vì xóa thô, nên
@@ -399,10 +387,9 @@ int main() {
   TestInputContext recoveryContext(manager);
   handler.activate(recoveryContext);
   for (const char key : std::string("nhanhsh")) {
-    fcitx::KeyEvent keyEvent(
-        &recoveryContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&recoveryContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
     assert(keyEvent.accepted());
   }
@@ -417,10 +404,9 @@ int main() {
   TestInputContext recoveryRepeatContext(manager);
   handler.activate(recoveryRepeatContext);
   for (const char key : std::string("nhanhsh")) {
-    fcitx::KeyEvent keyEvent(
-        &recoveryRepeatContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&recoveryRepeatContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
   fcitx::KeyEvent recoveryRepeat(
@@ -428,11 +414,11 @@ int main() {
       fcitx::Key(FcitxKey_BackSpace, fcitx::KeyState::Repeat));
   handler.handleKeyEvent(recoveryRepeat);
   assert(!recoveryRepeat.accepted());
-  assert(recoveryRepeatContext.commits ==
-         std::vector<std::string>{"nhanhsh"});
+  assert(recoveryRepeatContext.commits == std::vector<std::string>{"nhanhsh"});
   assert(recoveryRepeatContext.propertyFor(&factory)->composing.empty());
   assert(recoveryRepeatContext.propertyFor(&factory)
-             ->engine->currentText().empty());
+             ->engine->currentText()
+             .empty());
 
   // IBus không gắn Repeat: nhấn giữ hủy khôi phục từ đã commit.
   {
@@ -440,8 +426,8 @@ int main() {
     handler.activate(ibusContext);
     auto *ibusState = ibusContext.propertyFor(&factory);
     for (const char key : std::string("as ")) {
-      fcitx::KeyEvent typed(
-          &ibusContext, fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
+      fcitx::KeyEvent typed(&ibusContext,
+                            fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
       handler.handleKeyEvent(typed);
     }
     const auto erasuresBefore = requestedBackspaces;
@@ -461,13 +447,12 @@ int main() {
     handler.handleKeyEvent(release);
     assert(!release.accepted());
     assert(requestedBackspaces == erasuresBefore);
-    assert(ibusContext.commits ==
-           std::vector<std::string>{"á "});
+    assert(ibusContext.commits == std::vector<std::string>{"á "});
 
     // Release phải kết thúc lần nhấn giữ để lần gõ sau recovery bình thường.
     for (const char key : std::string("nhanhsh")) {
-      fcitx::KeyEvent typed(
-          &ibusContext, fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
+      fcitx::KeyEvent typed(&ibusContext,
+                            fcitx::Key(fcitx::Key::keySymFromUnicode(key)));
       handler.handleKeyEvent(typed);
     }
     fcitx::KeyEvent tap(&ibusContext, fcitx::Key(FcitxKey_BackSpace));
@@ -486,10 +471,9 @@ int main() {
   TestInputContext plainBackspaceContext(manager);
   handler.activate(plainBackspaceContext);
   for (const char key : std::string("nhanhsh")) {
-    fcitx::KeyEvent keyEvent(
-        &plainBackspaceContext,
-        fcitx::Key(fcitx::Key::keySymFromUnicode(
-            static_cast<unsigned char>(key))));
+    fcitx::KeyEvent keyEvent(&plainBackspaceContext,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                 static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
   fcitx::KeyEvent plainBackspace(&plainBackspaceContext,

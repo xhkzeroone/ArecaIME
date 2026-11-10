@@ -51,9 +51,7 @@ public:
     return observeLateness(deadlineUsec, firedAtUsec, transactionActive_);
   }
 
-  Adjustment observeAckTimeout() {
-    return applyLag(30, true);
-  }
+  Adjustment observeAckTimeout() { return applyLag(30, true); }
 
   Adjustment observeAckRoundtrip(uint64_t roundtripUsec) {
     if (roundtripUsec >= 4000) {
@@ -67,17 +65,11 @@ public:
     return applyLag(suggestedWaitMs, transactionActive_);
   }
 
-  void markSystemStressed() {
-    systemStressed_ = true;
-  }
+  void markSystemStressed() { systemStressed_ = true; }
 
-  void clearSystemStress() {
-    systemStressed_ = false;
-  }
+  void clearSystemStress() { systemStressed_ = false; }
 
-  bool isSystemStressed() const {
-    return systemStressed_;
-  }
+  bool isSystemStressed() const { return systemStressed_; }
 
   Adjustment completeTransaction() {
     transactionActive_ = false;
@@ -116,8 +108,7 @@ private:
         ((clampedLatenessMs + StepMs - 1) / StepMs) * StepMs;
     const uint32_t steppedWaitMs = std::min(MaxWaitMs, extraWaitMs_ + StepMs);
     extraWaitMs_ = std::max(steppedWaitMs, roundedLatenessMs);
-    return extraWaitMs_ != previous ? Adjustment::Increased
-                                    : Adjustment::None;
+    return extraWaitMs_ != previous ? Adjustment::Increased : Adjustment::None;
   }
 
   Adjustment observeLateness(uint64_t deadlineUsec, uint64_t firedAtUsec,

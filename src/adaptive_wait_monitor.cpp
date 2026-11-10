@@ -98,7 +98,8 @@ void AdaptiveWaitMonitor::checkSystemHealth() {
         } else if (avg10 >= 5.0) {
           highCpuPressure = true;
         }
-      } catch (...) {}
+      } catch (...) {
+      }
     }
   }
 
@@ -106,7 +107,8 @@ void AdaptiveWaitMonitor::checkSystemHealth() {
   if (readFirstLine("/proc/loadavg", loadLine)) {
     double load1 = 0.0;
     int runnable = 0;
-    if (std::sscanf(loadLine.c_str(), "%lf %*f %*f %d/", &load1, &runnable) == 2) {
+    if (std::sscanf(loadLine.c_str(), "%lf %*f %*f %d/", &load1, &runnable) ==
+        2) {
       if (runnable >= static_cast<int>(hardwareCores_ * 2) ||
           load1 >= static_cast<double>(hardwareCores_ * 2.0)) {
         severePressure = true;
@@ -127,7 +129,8 @@ void AdaptiveWaitMonitor::checkSystemHealth() {
         if (tempVal > maxTempMilliC) {
           maxTempMilliC = tempVal;
         }
-      } catch (...) {}
+      } catch (...) {
+      }
     }
   }
 
@@ -136,7 +139,8 @@ void AdaptiveWaitMonitor::checkSystemHealth() {
 
   if (severePressure || isThrottlingTemp || (highCpuPressure && isHotTemp)) {
     adaptiveWait_.markSystemStressed();
-    const uint32_t suggestedWaitMs = (severePressure || isThrottlingTemp) ? 30 : 20;
+    const uint32_t suggestedWaitMs =
+        (severePressure || isThrottlingTemp) ? 30 : 20;
     const auto adj = adaptiveWait_.observeSystemStress(suggestedWaitMs);
     if (debugProvider_() && adj == AdaptiveWait::Adjustment::Increased) {
       FCITX_INFO() << "areca: system thermal or load lag detected temp_mc="

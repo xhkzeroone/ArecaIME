@@ -1,8 +1,8 @@
 #pragma once
 
+#include <fcitx/instance.h>
 #include <memory>
 #include <string>
-#include <fcitx/instance.h>
 
 namespace areca {
 
@@ -15,7 +15,8 @@ struct InputMethodIdentity {
 // Watches user switches independently of the announcement destination.
 class InputMethodAnnouncement {
 public:
-  InputMethodAnnouncement(fcitx::Instance &instance, InputMethodIdentity identity);
+  InputMethodAnnouncement(fcitx::Instance &instance,
+                          InputMethodIdentity identity);
   virtual ~InputMethodAnnouncement() = default;
 
 protected:

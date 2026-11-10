@@ -1,12 +1,12 @@
 #include "input_method_announcement.h"
 
-#include <utility>
 #include <fcitx/event.h>
+#include <utility>
 
 namespace areca {
 
-InputMethodAnnouncement::InputMethodAnnouncement(
-    fcitx::Instance &instance, InputMethodIdentity identity)
+InputMethodAnnouncement::InputMethodAnnouncement(fcitx::Instance &instance,
+                                                 InputMethodIdentity identity)
     : instance_(instance), identity_(std::move(identity)) {
   watcher_ = instance_.watchEvent(
       fcitx::EventType::InputContextSwitchInputMethod,

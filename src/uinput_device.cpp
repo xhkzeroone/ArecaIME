@@ -11,9 +11,8 @@
 
 namespace areca {
 
-UinputDevice::UinputDevice(
-    DebugProvider debugProvider,
-    UnavailableCallback unavailableCallback)
+UinputDevice::UinputDevice(DebugProvider debugProvider,
+                           UnavailableCallback unavailableCallback)
     : debugProvider_(std::move(debugProvider)),
       unavailableCallback_(std::move(unavailableCallback)) {}
 
