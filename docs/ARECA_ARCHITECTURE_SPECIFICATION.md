@@ -64,7 +64,7 @@ KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
 6. **Không sleep trên thread chính**: mọi khoảng chờ dùng timer của event loop.
    Việc chặn như D-Bus đồng bộ chạy trên thread riêng.
 7. **Không reset giữa transaction**: reset bị từ chối khi đang có rewrite hoặc
-   trong 20 ms sau commit.
+   trong 50 ms sau commit.
 
 ## 4. Chính sách chọn backend
 

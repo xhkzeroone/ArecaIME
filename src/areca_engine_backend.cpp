@@ -55,6 +55,25 @@ void ArecaEngine::protectBackendVerdict(fcitx::InputContext &inputContext,
   }
 }
 
+bool ArecaEngine::surroundingBackendInUse(fcitx::InputContext &inputContext) {
+  const auto program = resolveProgram(
+      inputContext, inputContext.propertyFor(&rewriteStateFactory_));
+  const auto it = surroundingBackendByApp_.find(program);
+  // Chưa từng chọn backend cho app này thì chưa có lý do để tắt restore.
+  return it == surroundingBackendByApp_.end() || it->second;
+}
+
+void ArecaEngine::noteRewriteBackendChoice(fcitx::InputContext &inputContext,
+                                           const RewriteBackend *backend) {
+  const auto program = resolveProgram(
+      inputContext, inputContext.propertyFor(&rewriteStateFactory_));
+  if (program.empty()) {
+    return;
+  }
+  surroundingBackendByApp_[program] =
+      backend == &surroundingBackend_ || backend == &surroundingV2Backend_;
+}
+
 bool ArecaEngine::backendVerdictProtected(
     fcitx::InputContext &inputContext) const {
   return backendVerdictContextKnown_ && backendVerdict_.known &&
@@ -145,6 +164,8 @@ void ArecaEngine::handleSurroundingProbeFailed(
   auto *state = inputContext.propertyFor(&rewriteStateFactory_);
   const uint32_t wordSerial = state ? state->wordSerial : 0;
   backendVerdict_.probeFailed(wordSerial);
+  // Transaction này đã hoàn tất bằng backend dự phòng.
+  noteRewriteBackendChoice(inputContext, nullptr);
   if (debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe failed, marked unreliable"
                  << " attempt=" << backendVerdict_.probeAttempts
@@ -584,30 +605,21 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
     backendVerdict_.known = true;
   }
 
-  // Tăng cường phân loại: lúc probe, snapshot phải chứa từ đang soạn ngay
-  // trước con trỏ. Frontend gửi surrounding trễ (vd. "g" trong khi ô đã có
-  // "go") thì probe tính expected theo snapshot sai và có thể nhận nhầm update
-  // trễ là xác nhận xoá. Khi đó xếp app là không hỗ trợ surrounding tốt (probe
-  // thất bại -> Backspace/Shift+Left, retry ở từ kế tiếp). App đã được xác
-  // nhận surrounding thì không kiểm tra lại.
+  // Lúc thăm dò, snapshot phải chứa từ đang hiện trong ô. Frontend trễ một nhịp
+  // (báo "g" khi ô đã là "go") khiến probe tính sai kết quả mong đợi rồi nhận
+  // nhầm update cũ là xác nhận xoá. Khi đó coi probe thất bại: dùng
+  // Backspace/Shift+Left và thử lại ở từ kế tiếp.
   const bool staleDuringProbe =
       !browserAutocomplete && backendVerdict_.probePending &&
       backendVerdict_.reliable &&
       surrounding.cursor() == surrounding.anchor() &&
-      !surroundingSnapshotMatchesWord(surrounding.isValid(), surrounding.text(),
-                                      surrounding.cursor(),
-                                      surrounding.anchor(), shownText);
+      !surroundingSnapshotEndsWith(surrounding.isValid(), surrounding.text(),
+                                   surrounding.cursor(), surrounding.anchor(),
+                                   shownText);
   if (staleDuringProbe) {
     // Tính là một lần probe để chỉ retry đúng một lần như probe timeout.
     backendVerdict_.probeStarted();
     backendVerdict_.probeFailed(state ? state->wordSerial : 0);
-    // Restore đọc cùng snapshot nên cũng sẽ nạp sai từ: tắt cho context này.
-    if (state) {
-      state->surroundingSnapshotLagSeen = true;
-    }
-    if (auto *preeditState = inputContext.propertyFor(&preeditStateFactory_)) {
-      preeditState->surroundingSnapshotLagSeen = true;
-    }
     if (debugEnabled()) {
       FCITX_INFO() << "areca: surrounding snapshot stale during probe text="
                    << surrounding.text() << " cursor=" << surrounding.cursor()
@@ -615,7 +627,6 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
                    << " word=" << shownText << " marked_unreliable=1"
                    << " attempt=" << backendVerdict_.probeAttempts
                    << " retry_next_word=" << backendVerdict_.retryOnNextWord
-                   << " restore_disabled=1"
                    << " program=" << programName;
     }
   }

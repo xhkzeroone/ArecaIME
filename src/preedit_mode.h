@@ -46,13 +46,10 @@ struct PreeditInputState final : public fcitx::InputContextProperty {
   // Frontend vừa đổi text hoặc vị trí con trỏ. Phím text kế tiếp được phép thử
   // chuyển từ đã commit trước con trỏ trở lại thành preedit đúng một lần.
   bool surroundingRestoreArmed = false;
-  // Phần đuôi text mà Areca chắc chắn vừa đưa vào ứng dụng (các lần commit
-  // liên tiếp, không có phím nào app tự xử lý hay lệnh xoá xen giữa). Snapshot
-  // đúng phải kết thúc bằng chuỗi này; rỗng nghĩa là không biết.
-  std::string expectedTextBeforeCursor;
-  // Đã bắt gặp frontend gửi surrounding trễ. Restore đọc snapshot đó sẽ xoá và
-  // nạp sai từ nên bị tắt cho context này (không xoá ở reset/focus).
-  bool surroundingSnapshotLagSeen = false;
+  // Đoạn text Areca biết chắc đang nằm ngay trước con trỏ, gom từ các lần
+  // commit liên tiếp không có phím nào ứng dụng tự xử lý xen giữa. Rỗng nghĩa
+  // là không biết.
+  std::string knownTextBeforeCursor;
   FinalizedWordRecoveryState finalizedWordRecovery =
       FinalizedWordRecoveryState::Idle;
   uint64_t resetProtectedUntilUsec = 0;

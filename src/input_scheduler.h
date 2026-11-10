@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <fcitx-utils/event.h>
 
@@ -64,6 +65,10 @@ public:
   using DebugProvider = std::function<bool()>;
   using RewriteBackendSelector = std::function<RewriteBackendSelection(
       fcitx::InputContext &, const BambooResult &)>;
+  // Báo mỗi lần text trong ứng dụng chắc chắn đã đổi do Areca: xoá
+  // `deleteCount` ký tự trước con trỏ rồi chèn `text`.
+  using CommitObserver = std::function<void(
+      fcitx::InputContext &, uint32_t deleteCount, const std::string &text)>;
 
   InputScheduler(fcitx::EventLoop &eventLoop, EngineResolver engineResolver,
                  TimingProvider timingProvider, DebugProvider debugProvider,
@@ -80,6 +85,9 @@ public:
                      const std::string &utf8Text);
   void enqueueBackspace(fcitx::InputContext &inputContext);
   void resetContext(fcitx::InputContext &inputContext);
+  void setCommitObserver(CommitObserver observer) {
+    commitObserver_ = std::move(observer);
+  }
 
   size_t queuedKeyCount() const { return queue_.size(); }
   bool rewritePending() const { return activeTransactionId_ != 0; }
@@ -87,6 +95,11 @@ public:
   bool shouldRejectReset() const;
 
 private:
+  // Trình duyệt thường gửi reset vài chục ms sau khi chữ trong ô đổi. Reset đó
+  // lọt qua sẽ xoá từ đang gõ dở và bắt restore đọc lại snapshot có thể còn
+  // trễ, gây lặp chữ.
+  static constexpr uint64_t kResetRejectWindowUsec = 50 * 1000;
+
   void scheduleNext();
   void processNext();
   void applyResult(fcitx::InputContext &inputContext, VietnameseEngine &engine,
@@ -95,12 +108,19 @@ private:
   void finishKeyAfterDelay();
   void finishKeyAfterCommit();
   void rewriteDone(uint64_t transactionId, RewriteOutcome outcome);
+  void notifyPendingCommit();
 
   fcitx::EventLoop &eventLoop_;
   EngineResolver engineResolver_;
   TimingProvider timingProvider_;
   DebugProvider debugProvider_;
   RewriteBackendSelector rewriteBackendSelector_;
+  CommitObserver commitObserver_;
+  // Kết quả của rewrite đang chờ backend báo xong, để báo observer khi thành
+  // công.
+  fcitx::TrackableObjectReference<fcitx::InputContext> pendingCommitContext_;
+  uint32_t pendingCommitDeleteCount_ = 0;
+  std::string pendingCommitText_;
   KeyQueue queue_;
   std::unique_ptr<fcitx::EventSourceTime> postCommitTimer_;
   SchedulerTiming activeTiming_;

@@ -10,6 +10,8 @@
 #include <fcitx-utils/log.h>
 #include <fcitx/surroundingtext.h>
 
+#include "surrounding_probe_match.h"
+
 namespace areca {
 namespace {
 
@@ -54,6 +56,29 @@ bool isSelectAllShortcut(const fcitx::Key &rawKey) {
   return rawKey.states().test(fcitx::KeyState::Ctrl) &&
          (rawKey.sym() == FcitxKey_a || rawKey.sym() == FcitxKey_A);
 }
+
+// Phím không bị filter được ứng dụng tự xử lý (chèn, xoá, di chuyển) nên Areca
+// không còn biết chắc text trước con trỏ.
+class KnownTextGuard {
+public:
+  KnownTextGuard(fcitx::KeyEvent &event, RewriteInputState &state)
+      : event_(event), state_(state) {}
+  ~KnownTextGuard() {
+    if (!event_.filtered() && !keep_) {
+      state_.knownTextBeforeCursor.clear();
+    }
+  }
+  KnownTextGuard(const KnownTextGuard &) = delete;
+  KnownTextGuard &operator=(const KnownTextGuard &) = delete;
+
+  // Phím đầu từ được forward nguyên vẹn: scheduler đã ghi nhận ký tự đó.
+  void keep() { keep_ = true; }
+
+private:
+  fcitx::KeyEvent &event_;
+  RewriteInputState &state_;
+  bool keep_ = false;
+};
 
 } // namespace
 
@@ -106,6 +131,28 @@ void RewriteModeHandler::activate(fcitx::InputContext &inputContext) {
     // Focus có thể đi vào giữa một từ đã commit. Phím text đầu tiên sau focus
     // được phép đọc surrounding text một lần để phục hồi trạng thái Bamboo.
     state->surroundingRestoreArmed = true;
+    state->knownTextBeforeCursor.clear();
+  }
+}
+
+void RewriteModeHandler::onSurroundingTextUpdated(
+    fcitx::InputContext &inputContext) {
+  auto *state = stateFor(inputContext);
+  // Khi Areca còn biết chắc text trước con trỏ thì update này chỉ phản ánh
+  // chính lần commit vừa rồi, con trỏ không đổi chỗ. Arm ở đây khiến phím đầu
+  // từ mới đọc snapshot, mà frontend trễ thì snapshot còn thiếu dấu cách vừa gõ
+  // nên nạp nhầm từ trước vào từ mới.
+  if (state && state->knownTextBeforeCursor.empty()) {
+    state->surroundingRestoreArmed = true;
+  }
+}
+
+void RewriteModeHandler::noteCommitted(fcitx::InputContext &inputContext,
+                                       uint32_t deleteCount,
+                                       const std::string &text) {
+  if (auto *state = stateFor(inputContext)) {
+    updateKnownTextBeforeCursor(state->knownTextBeforeCursor, deleteCount,
+                                text);
   }
 }
 
@@ -135,16 +182,23 @@ void RewriteModeHandler::tryRestoreFromSurroundingText(
     return;
   }
 
-  if (state.surroundingSnapshotLagSeen) {
-    if (debugProvider_())
-      FCITX_INFO() << "areca: surrounding restore rejected reason=snapshot-lag";
-    return;
-  }
-
   const auto &surrounding = inputContext.surroundingText();
   if (!surrounding.isValid()) {
     if (debugProvider_())
       FCITX_INFO() << "areca: surrounding restore rejected reason=invalid";
+    return;
+  }
+  // Snapshot phải chứa đủ text Areca đã commit trước con trỏ. Thiếu là frontend
+  // còn gửi trễ; nạp theo snapshot đó sẽ lấy nhầm từ, nên bỏ qua lần này.
+  if (!surroundingSnapshotEndsWith(true, surrounding.text(),
+                                   surrounding.cursor(), surrounding.anchor(),
+                                   state.knownTextBeforeCursor)) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: surrounding restore rejected"
+                   << " reason=stale-snapshot text=" << surrounding.text()
+                   << " cursor=" << surrounding.cursor()
+                   << " known=" << state.knownTextBeforeCursor;
+    }
     return;
   }
 
@@ -196,11 +250,6 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
     state.resetProtectedUntilUsec = fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
   }
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
-  // Backspace đã xoá hết composition (hoặc không có composition): caret có
-  // thể lùi vào từ trước đó, nên cho phép phím text kế tiếp restore một lần.
-  if (state.engine && state.engine->currentText().empty()) {
-    state.surroundingRestoreArmed = true;
-  }
   state.forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
   event.forward();
 }
@@ -323,6 +372,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     event.forward();
     return;
   }
+  KnownTextGuard knownTextGuard(event, *state);
 
   const bool suppressMacro = !state->engine->currentText().empty() &&
                              macroBypassMatcher_(normalizedKey);
@@ -350,9 +400,6 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     state->sentenceCapitalization.reset();
     state->engine->reset();
-    // Caret đã di chuyển (mũi tên, Home/End, Ctrl+..., Tab): phím text kế tiếp
-    // có thể đang đứng sau một từ đã commit nên cho phép restore một lần.
-    state->surroundingRestoreArmed = true;
     event.forward();
     return;
   }
@@ -484,6 +531,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (forwardFirstCharacterProvider_(*inputContext) &&
       !state->backspaceRecoveryAwaitingRelease && effectiveTextSym == textSym &&
       scheduler_.handleIdleKey(event, codepoint, utf8Text)) {
+    if (!event.filtered()) {
+      knownTextGuard.keep();
+    }
     return;
   }
   event.filterAndAccept();
@@ -525,6 +575,7 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
     // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái
     // tạo trạng thái từ vị trí con trỏ mới nếu người dùng bật tính năng.
     state->surroundingRestoreArmed = true;
+    state->knownTextBeforeCursor.clear();
     state->wordSerial = 0;
     state->wordBoundaryPending = false;
   }

@@ -70,6 +70,9 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
       // forward() của Fcitx là getter; chính việc không filter/accept event mới
       // cho phím đi tiếp. Không tạo cặp phím giả bằng forwardKey ở đây.
       event.forward();
+      if (commitObserver_) {
+        commitObserver_(*inputContext, 0, utf8Text);
+      }
       // Dù không gọi commitString(), frontend vẫn sắp nhận một ký tự mới từ
       // phím gốc. Giữ single-flight barrier như nhánh commit để phím kế tiếp
       // không bắt đầu rewrite trước khi editor kịp nhận ký tự vừa forward.
@@ -112,7 +115,7 @@ bool InputScheduler::shouldRejectReset() const {
   if (lastRewriteCompletionTimeUsec_ != 0) {
     const uint64_t now = fcitx::now(CLOCK_MONOTONIC);
     if (now >= lastRewriteCompletionTimeUsec_ &&
-        (now - lastRewriteCompletionTimeUsec_) <= 20000) {
+        (now - lastRewriteCompletionTimeUsec_) <= kResetRejectWindowUsec) {
       return true;
     }
   }
@@ -122,7 +125,7 @@ bool InputScheduler::shouldRejectReset() const {
 void InputScheduler::resetContext(fcitx::InputContext &inputContext) {
   if (shouldRejectReset()) {
     if (debugProvider_()) {
-      FCITX_INFO() << "areca: reset rejected (active rewrite or 20ms "
+      FCITX_INFO() << "areca: reset rejected (active rewrite or 50ms "
                       "post-commit window)";
     }
     return;
@@ -205,6 +208,9 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     if (!result.commitText.empty()) {
       inputContext.commitString(result.commitText);
       updateSurroundingCacheAfterCommit(inputContext, result.commitText);
+      if (commitObserver_) {
+        commitObserver_(inputContext, 0, result.commitText);
+      }
     }
     if (debugProvider_()) {
       FCITX_INFO() << "areca: apply no-delete commit=" << result.commitText
@@ -278,6 +284,9 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   }
 
   activeTransactionId_ = plan.transactionId;
+  pendingCommitContext_ = inputContext.watch();
+  pendingCommitDeleteCount_ = result.deleteCount;
+  pendingCommitText_ = result.commitText;
   const auto status =
       backend.apply(inputContext, plan,
                     [this](uint64_t transactionId, RewriteOutcome outcome) {
@@ -290,6 +299,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   }
   if (status == ApplyStatus::Completed) {
     activeTransactionId_ = 0;
+    notifyPendingCommit();
     finishKeyAfterCommit();
   } else if (status == ApplyStatus::Failed) {
     FCITX_ERROR() << "areca: rewrite backend failed tx=" << plan.transactionId
@@ -317,8 +327,20 @@ void InputScheduler::rewriteDone(uint64_t transactionId,
     return;
   }
   activeTransactionId_ = 0;
+  notifyPendingCommit();
   // Start the settle delay from the backend's actual completion barrier.
   finishKeyAfterCommit();
+}
+
+void InputScheduler::notifyPendingCommit() {
+  auto *inputContext = pendingCommitContext_.get();
+  pendingCommitContext_.unwatch();
+  if (inputContext && commitObserver_) {
+    commitObserver_(*inputContext, pendingCommitDeleteCount_,
+                    pendingCommitText_);
+  }
+  pendingCommitDeleteCount_ = 0;
+  pendingCommitText_.clear();
 }
 
 void InputScheduler::finishKey() {

@@ -508,19 +508,40 @@ void testLaggingUpdateDoesNotConfirmEmptyExpectation() {
   assert(doneCalled);
 }
 
-void testSnapshotMatchesWord() {
+void testSnapshotEndsWith() {
   // Snapshot trễ: ô có "go" nhưng frontend báo "g".
-  assert(!areca::surroundingSnapshotMatchesWord(true, "g", 1, 1, "go"));
-  assert(areca::surroundingSnapshotMatchesWord(true, "go", 2, 2, "go"));
-  assert(areca::surroundingSnapshotMatchesWord(true, "xin go", 6, 6, "go"));
-  assert(areca::surroundingSnapshotMatchesWord(true, "go tiep", 2, 2, "go"));
-  assert(!areca::surroundingSnapshotMatchesWord(true, "go tiep", 7, 7, "go"));
-  assert(areca::surroundingSnapshotMatchesWord(true, "gõ", 2, 2, "gõ"));
-  assert(!areca::surroundingSnapshotMatchesWord(false, "", 0, 0, "go"));
-  assert(!areca::surroundingSnapshotMatchesWord(true, "go", 2, 0, "go"));
-  assert(areca::surroundingSnapshotMatchesWord(true, "", 0, 0, ""));
-  assert(areca::surroundingSnapshotMatchesWord(true, "gõ\u00a0", 3, 3, "gõ "));
-  assert(!areca::surroundingSnapshotMatchesWord(true, "gõ", 2, 2, "gõ "));
+  assert(!areca::surroundingSnapshotEndsWith(true, "g", 1, 1, "go"));
+  assert(areca::surroundingSnapshotEndsWith(true, "go", 2, 2, "go"));
+  assert(areca::surroundingSnapshotEndsWith(true, "xin go", 6, 6, "go"));
+  assert(areca::surroundingSnapshotEndsWith(true, "go tiep", 2, 2, "go"));
+  assert(!areca::surroundingSnapshotEndsWith(true, "go tiep", 7, 7, "go"));
+  assert(areca::surroundingSnapshotEndsWith(true, "gõ", 2, 2, "gõ"));
+  assert(!areca::surroundingSnapshotEndsWith(false, "", 0, 0, "go"));
+  assert(!areca::surroundingSnapshotEndsWith(true, "go", 2, 0, "go"));
+  assert(areca::surroundingSnapshotEndsWith(true, "", 0, 0, ""));
+  assert(areca::surroundingSnapshotEndsWith(true, "gõ\u00a0", 3, 3, "gõ "));
+  // Snapshot chưa có dấu cách Areca vừa commit (log anvildroid-gui).
+  assert(!areca::surroundingSnapshotEndsWith(true, "gõ", 2, 2, "gõ "));
+
+  // Text đã biết sau mỗi lần commit: xoá ký tự cuối rồi chèn phần mới.
+  std::string known;
+  areca::updateKnownTextBeforeCursor(known, 0, "go");
+  areca::updateKnownTextBeforeCursor(known, 1, "õ");
+  areca::updateKnownTextBeforeCursor(known, 0, " ");
+  assert(known == "gõ ");
+  areca::updateKnownTextBeforeCursor(known, 0, "ngo");
+  areca::updateKnownTextBeforeCursor(known, 3, "ngô");
+  assert(known == "gõ ngô");
+  // Xoá nhiều hơn phần đã biết: chỉ còn chắc phần vừa chèn.
+  areca::updateKnownTextBeforeCursor(known, 10, "tiếng");
+  assert(known == "tiếng");
+  // Giới hạn kích thước nhưng giữ phần đuôi và biên ký tự UTF-8.
+  for (int i = 0; i < 100; ++i) {
+    areca::updateKnownTextBeforeCursor(known, 0, "ỗ");
+  }
+  assert(known.size() <= areca::kMaxKnownTextBytes);
+  assert(known.ends_with("ỗỗ"));
+  assert(fcitx::utf8::validate(known));
 }
 
 void testAdaptiveWaitIntegration() {
@@ -569,9 +590,9 @@ int main() {
   testProbeSuccessViaSynchronousEvent();
   testProbeAcceptsInvalidEmptyUpdateEvent();
   testProbeAcceptsNormalizedLineEndingSentinel();
-  testAdaptiveWaitIntegration();
   testLaggingUpdateDoesNotConfirmEmptyExpectation();
-  testSnapshotMatchesWord();
+  testSnapshotEndsWith();
+  testAdaptiveWaitIntegration();
   std::cout << "All surrounding text probe tests passed\n";
   return 0;
 }

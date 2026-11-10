@@ -135,10 +135,7 @@ void SurroundingTextBackend::notifySurroundingTextUpdated(
   if (debugProvider_()) {
     FCITX_INFO()
         << "areca: surrounding probe succeeded via SurroundingTextUpdated event"
-        << " tx=" << transactionId_ << " expected_text=" << expectedProbeText_
-        << " actual_text=" << surrounding.text()
-        << " actual_cursor=" << surrounding.cursor()
-        << " updates=" << probeUpdateCount_;
+        << " tx=" << transactionId_;
   }
 
   isProbe_ = false;

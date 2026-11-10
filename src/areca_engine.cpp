@@ -104,7 +104,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           [this]() { return debugEnabled(); },
           [this](fcitx::InputContext &inputContext,
                  const BambooResult &result) -> RewriteBackendSelection {
-            return selectRewriteBackend(inputContext, result);
+            auto selection = selectRewriteBackend(inputContext, result);
+            noteRewriteBackendChoice(inputContext, selection.backend);
+            return selection;
           }),
       rewriteHandler_(
           instance_->eventLoop(), rewriteStateFactory_, scheduler_,
@@ -131,8 +133,22 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             // cho đến khi có shadow snapshot đồng bộ được từng lần xóa. Chỉ
             // tin CapabilityFlag::Url cho quyết định này; nhận diện Omnibox
             // bằng AT-SPI có thể lẹm sang input khác khi focus chuyển nhanh.
-            return !inputContext.capabilityFlags().test(
-                fcitx::CapabilityFlag::Url);
+            if (inputContext.capabilityFlags().test(
+                    fcitx::CapabilityFlag::Url)) {
+              return false;
+            }
+            // App không xoá được bằng surrounding thì snapshot của nó cũng
+            // không đáng tin (vd. anvildroid-gui sau Ctrl+A rồi Backspace vẫn
+            // báo đuôi "đư" của từ cũ, restore nạp nhầm vào ô đã trống).
+            if (!surroundingBackendInUse(inputContext)) {
+              if (debugEnabled()) {
+                FCITX_INFO() << "areca: surrounding restore disabled"
+                             << " reason=non-surrounding-backend"
+                             << " program=" << inputContext.program();
+              }
+              return false;
+            }
+            return true;
           },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(key, config_.macroBypassModifier.value());
@@ -157,6 +173,11 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   inputMethodAnnouncement_ = std::make_unique<DynamicIslandAnnouncement>(
       *instance_, InputMethodIdentity{"areca", "Bộ gõ ArecaIME",
                                       "org.fcitx.Fcitx5.fcitx-areca"});
+  scheduler_.setCommitObserver([this](fcitx::InputContext &inputContext,
+                                      uint32_t deleteCount,
+                                      const std::string &text) {
+    rewriteHandler_.noteCommitted(inputContext, deleteCount, text);
+  });
   surroundingTextWatcher_ = instance_->watchEvent(
       fcitx::EventType::InputContextSurroundingTextUpdated,
       fcitx::EventWatcherPhase::PostInputMethod, [this](fcitx::Event &event) {
@@ -176,15 +197,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         // Callback chỉ ghi nhận rằng frontend đã đổi text hoặc cursor. Việc đọc
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
         // lifecycle và để nhận snapshot surrounding mới nhất.
-        // Rewrite: frontend gửi update sau cả commit của chính Areca, nên arm ở
-        // đây khiến restore chạy ở mọi từ mới. Restore chỉ được arm khi caret
-        // có thể đã sang từ khác (focus, click, phím di chuyển, Backspace hết
-        // composition, reset). Chỉ giữ arm theo event khi không theo dõi được
-        // click chuột.
-        if (auto *state = rewriteHandler_.stateFor(*inputContext);
-            state && !(mouseTracker_ && mouseTracker_->isValid())) {
-          state->surroundingRestoreArmed = true;
-        }
+        rewriteHandler_.onSurroundingTextUpdated(*inputContext);
         if (auto *state = preeditHandler_.stateFor(*inputContext)) {
           state->surroundingRestoreArmed = true;
         }
@@ -621,7 +634,7 @@ void ArecaEngine::reset(const fcitx::InputMethodEntry &,
   if (auto *inputContext = event.inputContext()) {
     if (scheduler_.shouldRejectReset()) {
       if (debugEnabled()) {
-        FCITX_INFO() << "areca: app reset rejected (active rewrite or 20ms "
+        FCITX_INFO() << "areca: app reset rejected (active rewrite or 50ms "
                         "post-commit window)";
       }
       return;

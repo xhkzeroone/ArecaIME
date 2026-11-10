@@ -97,7 +97,7 @@ làm scheduler dừng hẳn để không phá thứ tự phím.
 ### Khoảng bảo vệ reset
 
 `shouldRejectReset()` trả true khi đang xử lý phím, đang có rewrite hoặc trong
-20 ms sau lần commit cuối. Trong khoảng đó reset từ ứng dụng, click chuột và
+50 ms sau lần commit cuối. Trong khoảng đó reset từ ứng dụng, click chuột và
 phím di chuyển do backend phát ra đều không xoá state Bamboo. Rewrite còn có
 thêm 20 ms bảo vệ sau Backspace vì một số frontend X11 gửi reset ngay sau
 Backspace đã forward.
@@ -292,10 +292,16 @@ gõ xong rồi tiếp tục sửa dấu cho từ đó.
 
 - Focus vào ô nhập.
 - Reset context, kể cả reset từ ứng dụng hay click chuột.
-- Phím di chuyển, Tab, Escape hoặc shortcut.
-- Backspace xoá hết từ đang gõ.
-- Rewrite nhận `SurroundingTextUpdated` khi không có mouse tracker. Preedit luôn
-  arm theo sự kiện này.
+- Nhận `SurroundingTextUpdated`, tức mỗi khi ứng dụng báo text hoặc vị trí con
+  trỏ thay đổi. Rewrite chỉ arm theo sự kiện này khi không biết chắc text trước
+  con trỏ (xem dưới), vì update sau chính lần commit của Areca không có nghĩa là
+  con trỏ đã đổi chỗ.
+
+**Text đã biết trước con trỏ.** Mỗi mode giữ `knownTextBeforeCursor`: phần text
+Areca chắc chắn vừa đưa vào ứng dụng. Scheduler báo qua `CommitObserver` mỗi lần
+xoá N ký tự rồi chèn text, kể cả phím đầu từ được forward nguyên vẹn. Phần này bị
+xoá khi focus, reset, click hoặc khi ứng dụng tự xử lý một phím (event không bị
+filter), và giới hạn 256 byte.
 
 **Khi nào chạy.** Ở phím chữ đầu tiên mà Bamboo xử lý được sau khi arm. Phím
 không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước khi kiểm tra điều kiện:
@@ -303,7 +309,12 @@ không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước k
 - Bảng mã Unicode, không phải ô mật khẩu, ứng dụng có `SurroundingText`.
 - Rewrite: không phải ô có `CapabilityFlag::Url`, Bamboo rỗng, không có rewrite,
   queue rỗng, ngoài khoảng bảo vệ reset.
-- Chưa từng thấy snapshot trễ ở context này.
+- Snapshot kết thúc bằng `knownTextBeforeCursor` (NBSP tính như dấu cách). Thiếu
+  thì frontend đang gửi trễ: bỏ qua đúng lần restore đó, lần sau vẫn thử lại.
+- Rewrite: backend rewrite gần nhất của app là surrounding (hoặc chưa từng chọn
+  backend cho app). App phải xoá bằng phím (Backspace, Shift select) thì snapshot
+  của nó cũng không đáng tin nên không restore. Preedit không áp dụng điều kiện
+  này.
 
 **Cách khôi phục.** Extractor quét lùi từ con trỏ, dừng ở ký tự không phải chữ
 Latin hoặc chữ tiếng Việt dựng sẵn, tối đa 16 ký tự. Chuỗi UTF-8 lỗi, dấu tổ hợp
@@ -314,9 +325,7 @@ giữa từ như `tiế|n`.
 
 Rewrite giữ nguyên text trên màn hình, phím kế tiếp tạo diff đi qua scheduler như
 bình thường. Preedit xoá từ cũ bằng `deleteSurroundingText(-N, N)` rồi đưa vào
-preedit. Preedit còn kiểm tra text Areca vừa commit phải nằm ngay trước con trỏ,
-nếu không coi là snapshot trễ và tắt restore. Bamboo lỗi sau khi xoá thì commit
-lại từ cũ trước khi forward phím.
+preedit. Bamboo lỗi sau khi xoá thì commit lại từ cũ trước khi forward phím.
 
 ## Preedit mode
 

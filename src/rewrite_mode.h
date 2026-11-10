@@ -46,10 +46,10 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   // one-shot này cho phép phím text kế tiếp thử nạp lại trạng thái đúng một
   // lần.
   bool surroundingRestoreArmed = false;
-  // Đã bắt gặp frontend gửi surrounding trễ (snapshot không chứa từ vừa soạn).
-  // Restore đọc cùng snapshot đó nên sẽ nạp sai từ; tắt restore cho context
-  // này. Không xoá ở resetContext/focus vì đây là đặc tính của ứng dụng.
-  bool surroundingSnapshotLagSeen = false;
+  // Đoạn text Areca biết chắc đang nằm ngay trước con trỏ, gom từ các lần
+  // commit liên tiếp không có phím nào ứng dụng tự xử lý xen giữa. Rỗng nghĩa
+  // là không biết.
+  std::string knownTextBeforeCursor;
   // Tăng khi ký tự đầu tiên của một từ mới tới sau boundary. Backend dùng số
   // này để chỉ retry surrounding probe ở từ kế tiếp, không retry mỗi ký tự.
   uint32_t wordSerial = 0;
@@ -86,6 +86,11 @@ public:
   void handleKeyEvent(fcitx::KeyEvent &event) override;
   void requestProtectedReset(fcitx::InputContext &inputContext) override;
   void resetContext(fcitx::InputContext &inputContext) override;
+  // Frontend báo text hoặc con trỏ vừa đổi.
+  void onSurroundingTextUpdated(fcitx::InputContext &inputContext);
+  // Scheduler báo text trong ứng dụng vừa đổi do Areca.
+  void noteCommitted(fcitx::InputContext &inputContext, uint32_t deleteCount,
+                     const std::string &text);
 
 private:
   bool syncEngineBackspace(RewriteInputState &state);

@@ -241,7 +241,7 @@ int main() {
     assert(engine->backspaceProcessCount == 0);
 
     // Đợi qua cửa sổ bảo vệ phím inject sau transaction trước đó.
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    std::this_thread::sleep_for(std::chrono::milliseconds(55));
 
     // Giống Preedit: hễ còn composition thì Backspace luôn đi qua
     // processBackspace(), không phụ thuộc cờ trạng thái spellcheck riêng.
@@ -259,7 +259,7 @@ int main() {
     assert(engine->backspaceProcessCount == 1);
     assert(engine->plainBackspaceCount == 0);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    std::this_thread::sleep_for(std::chrono::milliseconds(55));
 
     // Lần Backspace tiếp theo vẫn đi cùng luồng; không có cờ one-shot làm nó
     // rơi sang nhánh forward.
@@ -488,51 +488,59 @@ int main() {
   assert(restoreContext.propertyFor(&restoreFactory)->engine->currentText() ==
          "ếa");
 
-  // Context đã bị phát hiện gửi snapshot trễ: không nạp lại từ snapshot đó.
+  // Log anvildroid-gui: frontend báo surrounding trễ một nhịp. Sau khi Areca
+  // commit "gõ " thì update tới vẫn chỉ là "gõ". Areca đã biết chắc text trước
+  // con trỏ nên không arm restore; nếu arm, phím đầu từ mới sẽ nạp nhầm "gõ".
   TestInputContext laggingContext(restoreManager, "anvildroid-gui");
   laggingContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  laggingContext.surroundingText().setText("gõ", 2, 2);
-  laggingContext.propertyFor(&restoreFactory)->surroundingSnapshotLagSeen =
-      true;
   restoreHandler.activate(laggingContext);
-  fcitx::KeyEvent laggingKey(&laggingContext, fcitx::Key(FcitxKey_a));
-  restoreHandler.handleKeyEvent(laggingKey);
-  assert(laggingKey.accepted());
-  assert(laggingContext.propertyFor(&restoreFactory)->engine->currentText() ==
-         "a");
+  auto *laggingState = laggingContext.propertyFor(&restoreFactory);
+  assert(laggingState->knownTextBeforeCursor.empty());
+  restoreHandler.noteCommitted(laggingContext, 0, "go");
+  restoreHandler.noteCommitted(laggingContext, 1, "õ");
+  restoreHandler.noteCommitted(laggingContext, 0, " ");
+  assert(laggingState->knownTextBeforeCursor == "gõ ");
+  laggingState->surroundingRestoreArmed = false;
+  laggingContext.surroundingText().setText("gõ", 2, 2);
+  restoreHandler.onSurroundingTextUpdated(laggingContext);
+  assert(!laggingState->surroundingRestoreArmed);
 
-  // Restore chỉ được arm khi caret có thể đã sang từ khác: phím di chuyển và
-  // Backspace khi không còn composition.
-  // Scheduler riêng: scheduler ở trên vừa commit nên còn trong cửa sổ chặn
-  // reset 20ms.
-  areca::InputScheduler armScheduler(
-      restoreLoop,
-      [&](fcitx::InputContext &ic) {
-        return ic.propertyFor(&restoreFactory)->engine.get();
-      },
-      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
-      [] { return false; },
-      [](fcitx::InputContext &, const areca::BambooResult &) {
-        return areca::RewriteBackendSelection{};
-      });
-  areca::RewriteModeHandler armHandler(
-      restoreLoop, restoreFactory, armScheduler, [] { return false; },
-      [] { return false; }, [](fcitx::InputContext &, const char *) {},
-      [] { return false; }, [](fcitx::InputContext &) { return false; },
-      [](fcitx::InputContext &) { return true; },
-      [](const fcitx::Key &) { return false; });
-  TestInputContext armContext(restoreManager, "org.gnome.TextEditor");
-  armContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  armHandler.activate(armContext);
-  auto *armState = armContext.propertyFor(&restoreFactory);
-  armState->surroundingRestoreArmed = false;
-  fcitx::KeyEvent leftKey(&armContext, fcitx::Key(FcitxKey_Left));
-  armHandler.handleKeyEvent(leftKey);
-  assert(armState->surroundingRestoreArmed);
-  armState->surroundingRestoreArmed = false;
-  fcitx::KeyEvent emptyBackspace(&armContext, fcitx::Key(FcitxKey_BackSpace));
-  armHandler.handleKeyEvent(emptyBackspace);
-  assert(armState->surroundingRestoreArmed);
+  // Reset làm Areca không còn biết con trỏ đứng sau gì: update lại được arm.
+  restoreHandler.resetContext(laggingContext);
+  assert(laggingState->knownTextBeforeCursor.empty());
+  laggingState->surroundingRestoreArmed = false;
+  restoreHandler.onSurroundingTextUpdated(laggingContext);
+  assert(laggingState->surroundingRestoreArmed);
+
+  // Phím ứng dụng tự xử lý (Enter) làm mất phần text đã biết.
+  restoreHandler.noteCommitted(laggingContext, 0, "ab");
+  fcitx::KeyEvent enterKey(&laggingContext, fcitx::Key(FcitxKey_Return));
+  restoreHandler.handleKeyEvent(enterKey);
+  assert(!enterKey.filtered());
+  assert(laggingState->knownTextBeforeCursor.empty());
+
+  // Restore vẫn được arm (vd. reset) nhưng snapshot thiếu text Areca vừa
+  // commit: bỏ qua lần restore này, không nạp nhầm "gõ" vào từ mới.
+  std::this_thread::sleep_for(std::chrono::milliseconds(55));
+  laggingState->engine->reset();
+  restoreHandler.noteCommitted(laggingContext, 0, "gõ ");
+  laggingContext.surroundingText().setText("gõ", 2, 2);
+  laggingState->surroundingRestoreArmed = true;
+  fcitx::KeyEvent staleKey(&laggingContext, fcitx::Key(FcitxKey_a));
+  restoreHandler.handleKeyEvent(staleKey);
+  assert(staleKey.accepted());
+  assert(laggingState->engine->currentText() == "a");
+
+  // Snapshot đã đủ text: restore chạy bình thường.
+  std::this_thread::sleep_for(std::chrono::milliseconds(55));
+  laggingState->engine->reset();
+  laggingState->knownTextBeforeCursor = "tiế";
+  laggingContext.surroundingText().setText("tiến", 3, 3);
+  laggingState->surroundingRestoreArmed = true;
+  fcitx::KeyEvent freshKey(&laggingContext, fcitx::Key(FcitxKey_a));
+  restoreHandler.handleKeyEvent(freshKey);
+  assert(freshKey.accepted());
+  assert(laggingState->engine->currentText() == "ếa");
 
   // Tạm thời không restore trong address bar: Chromium có thể giữ snapshot
   // getText() cũ sau khi nội dung hiển thị đã bị Backspace xóa sạch.

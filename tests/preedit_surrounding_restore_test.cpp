@@ -154,8 +154,8 @@ int main() {
   assert(!handler.prepareSurroundingRestoreAfterClick(middleContext));
   assert(middleContext.propertyFor(&factory)->composing == "ề");
 
-  // Snapshot trễ (giống log anvildroid-gui): Areca vừa commit "gõ " nhưng app
-  // gửi lại "gõ". Restore phải bị chặn (không xoá gì) và context bị đánh dấu.
+  // Snapshot trễ (log anvildroid-gui): Areca vừa commit "gõ " nhưng app gửi
+  // lại "gõ". Restore lần này phải bị bỏ qua, không xoá gì.
   TestInputContext laggingContext(manager);
   laggingContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
   laggingContext.surroundingText().setText("", 0, 0);
@@ -169,35 +169,51 @@ int main() {
   }
   assert(laggingContext.commits == std::vector<std::string>{"gõ "});
   auto *laggingState = laggingContext.propertyFor(&factory);
-  assert(laggingState->expectedTextBeforeCursor == "gõ ");
+  assert(laggingState->knownTextBeforeCursor == "gõ ");
   laggingContext.surroundingText().setText("gõ", 2, 2);
   laggingState->surroundingRestoreArmed = true;
   fcitx::KeyEvent laggingKey(&laggingContext, fcitx::Key(FcitxKey_n));
   handler.handleKeyEvent(laggingKey);
   assert(laggingKey.accepted());
   assert(laggingContext.deletes.empty());
-  assert(laggingState->surroundingSnapshotLagSeen);
   assert(laggingState->composing == "n");
+
+  // Bỏ qua chỉ áp dụng cho lần đó: sau khi đổi ô, snapshot đúng thì restore
+  // vẫn chạy bình thường.
+  handler.deactivate(laggingContext);
+  laggingContext.surroundingText().setText("tưởng", 5, 5);
+  handler.activate(laggingContext);
+  assert(laggingState->knownTextBeforeCursor.empty());
+  fcitx::KeyEvent nextRestoreKey(&laggingContext, fcitx::Key(FcitxKey_s));
+  handler.handleKeyEvent(nextRestoreKey);
+  assert(nextRestoreKey.accepted());
+  assert(laggingContext.deletes.size() == 1);
+  assert(laggingState->composing == "tướng");
 
   // Chromium báo dấu cách cuối thành NBSP: không được coi là snapshot trễ.
   TestInputContext nbspContext(manager);
   nbspContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
   nbspContext.surroundingText().setText("", 0, 0);
   handler.activate(nbspContext);
-  for (const char key : std::string("gox ")) {
+  for (const char key : std::string("gox")) {
     fcitx::KeyEvent keyEvent(&nbspContext,
                              fcitx::Key(fcitx::Key::keySymFromUnicode(
                                  static_cast<unsigned char>(key))));
     handler.handleKeyEvent(keyEvent);
   }
+  fcitx::KeyEvent nbspSpace(&nbspContext, fcitx::Key(FcitxKey_space));
+  handler.handleKeyEvent(nbspSpace);
   auto *nbspState = nbspContext.propertyFor(&factory);
+  assert(nbspState->knownTextBeforeCursor == "gõ ");
+  // Con trỏ lùi vào cuối "gõ" bằng phím di chuyển ứng dụng không báo: snapshot
+  // vẫn kết thúc bằng NBSP thay cho dấu cách nên restore không bị từ chối.
   nbspContext.surroundingText().setText("gõ\u00a0", 3, 3);
   nbspState->surroundingRestoreArmed = true;
   fcitx::KeyEvent nbspKey(&nbspContext, fcitx::Key(FcitxKey_n));
   handler.handleKeyEvent(nbspKey);
   assert(nbspKey.accepted());
-  assert(!nbspState->surroundingSnapshotLagSeen);
   assert(nbspContext.deletes.empty());
+  assert(nbspState->composing == "n");
 
   // Khi tắt, cùng snapshot chỉ tạo preedit từ phím mới và tuyệt đối không xóa
   // phần text đã commit trước con trỏ.

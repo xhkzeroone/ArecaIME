@@ -55,9 +55,8 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
     return actualText.empty() && actualCursor == 0 && expectedBefore.empty();
   }
 
-  // When the deletion should leave nothing before the cursor, any non-empty
-  // text is unrelated (e.g. a lagging update from before the delete). Without
-  // this, ends_with("") below would accept every update.
+  // Đáng lẽ không còn gì trước con trỏ: text khác rỗng là update trễ từ trước
+  // lệnh xoá. Thiếu điều kiện này, ends_with("") bên dưới nhận mọi update.
   if (expectedBefore.empty() && !actualBefore.empty()) {
     return false;
   }
@@ -89,15 +88,46 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
   return true;
 }
 
-// Returns false when the surrounding snapshot cannot reflect what Areca has
-// already committed for the current word: the text before the cursor must end
-// with the word Bamboo is composing. A frontend that lags one update behind
-// (reports "g" while the field shows "go") fails this check, and deleting
-// relative to such a snapshot is not trustworthy.
-inline bool surroundingSnapshotMatchesWord(bool valid, std::string_view text,
-                                           uint32_t cursor, uint32_t anchor,
-                                           std::string_view word) {
-  if (word.empty()) {
+// Đoạn text Areca biết chắc đang nằm ngay trước con trỏ chỉ cần phần đuôi để
+// so với snapshot, nên giới hạn kích thước.
+inline constexpr std::size_t kMaxKnownTextBytes = 256;
+
+// Cập nhật đoạn text đã biết sau khi Areca xoá `deleteCount` ký tự trước con
+// trỏ rồi chèn `inserted`. Xoá nhiều hơn phần đã biết thì chỉ còn chắc phần vừa
+// chèn.
+inline void updateKnownTextBeforeCursor(std::string &known,
+                                        uint32_t deleteCount,
+                                        std::string_view inserted) {
+  if (deleteCount > 0) {
+    const auto length = fcitx::utf8::lengthValidated(known);
+    if (length == fcitx::utf8::INVALID_LENGTH || length <= deleteCount) {
+      known.clear();
+    } else {
+      const auto keepBytes = fcitx::utf8::ncharByteLength(
+          known.begin(), static_cast<int>(length - deleteCount));
+      known.erase(static_cast<std::size_t>(keepBytes));
+    }
+  }
+  known.append(inserted);
+  if (known.size() > kMaxKnownTextBytes) {
+    // Cắt ở biên ký tự UTF-8 để vẫn so sánh được phần đuôi.
+    std::size_t cut = known.size() - kMaxKnownTextBytes;
+    while (cut < known.size() &&
+           (static_cast<unsigned char>(known[cut]) & 0xC0U) == 0x80U) {
+      ++cut;
+    }
+    known.erase(0, cut);
+  }
+}
+
+// Snapshot có kết thúc bằng `tail` không, tức frontend đã báo đủ những gì
+// Areca biết chắc đang nằm trước con trỏ. Frontend trễ một nhịp (báo "g" khi ô
+// đã là "go") không qua được kiểm tra này. `tail` rỗng nghĩa là không biết nên
+// luôn đúng.
+inline bool surroundingSnapshotEndsWith(bool valid, std::string_view text,
+                                        uint32_t cursor, uint32_t anchor,
+                                        std::string_view tail) {
+  if (tail.empty()) {
     return true;
   }
   if (!valid || cursor != anchor) {
@@ -107,7 +137,7 @@ inline bool surroundingSnapshotMatchesWord(bool valid, std::string_view text,
   if (!textBeforeCursor(text, cursor, before)) {
     return false;
   }
-  if (before.ends_with(word)) {
+  if (before.ends_with(tail)) {
     return true;
   }
   // Chromium báo dấu cách cuối dòng thành NBSP (U+00A0). Coi hai ký tự này là
@@ -126,7 +156,7 @@ inline bool surroundingSnapshotMatchesWord(bool valid, std::string_view text,
     }
     return out;
   };
-  return std::string_view(normalize(before)).ends_with(normalize(word));
+  return std::string_view(normalize(before)).ends_with(normalize(tail));
 }
 
 } // namespace areca

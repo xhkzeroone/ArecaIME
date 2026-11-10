@@ -102,7 +102,7 @@ Dòng liên quan reset và thời gian chờ thích nghi:
 
 ```text
 areca: reset rejected
-areca: app reset rejected (active rewrite or 20ms post-commit window)
+areca: app reset rejected (active rewrite or 50ms post-commit window)
 areca: event loop lag detected lateness_us= adaptive_extra_ms=
 areca: system thermal or load lag detected temp_mc=
 areca: ... adaptive commit wait tx= base_ms= extra_ms= effective_ms=
@@ -120,8 +120,12 @@ rewrite select backend=surrounding-text
 
 Areca đang dùng `deleteSurroundingText()`. Nếu xoá sai, xem dòng
 `reliability first-probe` và `surrounding probe ...`. Dòng
-`surrounding snapshot stale during probe` nghĩa là ứng dụng gửi surrounding trễ;
-Areca sẽ chuyển sang Backspace hoặc Shift select và tắt restore cho ô đó.
+`surrounding snapshot stale during probe` nghĩa là ứng dụng gửi surrounding trễ
+lúc thăm dò; Areca chuyển sang Backspace hoặc Shift select và thử lại ở từ kế
+tiếp. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
+restore bị bỏ qua vì snapshot chưa có text Areca vừa commit. Dòng
+`surrounding restore disabled reason=non-surrounding-backend` nghĩa là app
+đang xoá chữ bằng Backspace hoặc Shift select nên Rewrite không restore.
 
 Khi log có:
 

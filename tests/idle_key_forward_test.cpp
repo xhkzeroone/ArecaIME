@@ -116,11 +116,19 @@ int main() {
         return areca::RewriteBackendSelection{result.deleteCount ? &backend
                                                                  : nullptr};
       });
+  // Observer nhận đúng phần text ứng dụng vừa đổi do Areca để mode handler
+  // biết chắc text trước con trỏ.
+  std::vector<std::string> observed;
+  scheduler.setCommitObserver([&](fcitx::InputContext &, uint32_t deleteCount,
+                                  const std::string &text) {
+    observed.push_back(std::to_string(deleteCount) + ":" + text);
+  });
 
   // Phím đầu không bị nhận/chèn lặp, nhưng Bamboo phải nhớ nó để ghép dấu.
   fcitx::KeyEvent first(&inputContext, fcitx::Key(FcitxKey_a));
   assert(scheduler.handleIdleKey(first, 'a', "a"));
   assert(!first.accepted());
+  assert(observed == std::vector<std::string>{"0:a"});
   assert(inputContext.events.empty());
   assert(engine.currentText() == "a");
 
@@ -135,6 +143,7 @@ int main() {
   assert(scheduler.handleIdleKey(transformed, 'x', "x"));
   assert(transformed.accepted());
   assert(inputContext.events == std::vector<std::string>{"commit:X"});
+  assert(observed.back() == "0:X");
 
   inputContext.events.clear();
   // Dù engine rỗng, rewrite/queue đang chờ vẫn phải giữ thứ tự giao phím.
@@ -146,7 +155,11 @@ int main() {
   assert(engine.currentText().empty());
   scheduler.enqueue(inputContext, 'a', "a");
   assert(!scheduler.handleIdleKey(pending, 'a', "a"));
+  const auto observedBeforeRewrite = observed.size();
   backend.complete();
+  // Rewrite bất đồng bộ chỉ được báo khi backend xác nhận xong.
+  assert(observed.size() > observedBeforeRewrite);
+  assert(observed[observedBeforeRewrite] == "1:r");
   assert(inputContext.events == std::vector<std::string>{"commit:a"});
 
   // Một phím được forward trực tiếp vẫn phải giữ single-flight barrier. Phím
