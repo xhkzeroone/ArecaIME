@@ -123,9 +123,7 @@ Areca đang dùng `deleteSurroundingText()`. Nếu xoá sai, xem dòng
 `surrounding snapshot stale during probe` nghĩa là ứng dụng gửi surrounding trễ
 lúc thăm dò; Areca chuyển sang Backspace hoặc Shift select và thử lại ở từ kế
 tiếp. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
-restore bị bỏ qua vì snapshot chưa có text Areca vừa commit. Dòng
-`surrounding restore disabled reason=non-surrounding-backend` nghĩa là app
-đang xoá chữ bằng Backspace hoặc Shift select nên Rewrite không restore.
+restore bị bỏ qua vì snapshot chưa có text Areca vừa commit.
 
 Khi log có:
 
