@@ -8,3 +8,6 @@ CMakeCache.txt
 /bamboo-bridge/bamboo-bridge
 __pycache__/
 *.pyc
+
+# Ghi chú task cục bộ của Claude (skill areca-task-memory)
+/.claude/task-notes/
