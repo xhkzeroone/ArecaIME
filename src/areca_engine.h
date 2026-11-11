@@ -104,6 +104,11 @@ private:
   void clearBackendVerdictForLifecycle(fcitx::InputContext &inputContext,
                                        const char *eventName);
   bool backendVerdictProtected(fcitx::InputContext &inputContext) const;
+  // Rewrite chỉ restore từ surrounding khi app đang dùng backend surrounding:
+  // app phải xoá bằng phím thì snapshot của nó cũng không đáng tin.
+  bool surroundingBackendInUse(fcitx::InputContext &inputContext);
+  void noteRewriteBackendChoice(fcitx::InputContext &inputContext,
+                                const RewriteBackend *backend);
   bool backspaceRecoveryEnabled() const;
   bool
   eraseFinalizedPreeditWord(fcitx::InputContext &inputContext,
@@ -141,6 +146,9 @@ private:
   uint64_t nextPreeditRecoveryTransactionId_ = 1;
   std::unordered_map<std::string, AppBackendMode> appBackendOverridesMap_;
   std::unordered_map<std::string, AppBackendMode> lastAutoBackendByApp_;
+  // Backend rewrite gần nhất của mỗi app có phải surrounding không. Không xoá ở
+  // reset để restore sau click vẫn biết app có dùng surrounding.
+  std::unordered_map<std::string, bool> surroundingBackendByApp_;
   void rebuildAppBackendOverridesMap();
   PresentationMode activePresentationMode_ = PresentationMode::Rewrite;
   std::string inputMethodEntryIcon_;

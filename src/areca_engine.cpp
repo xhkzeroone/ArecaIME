@@ -104,7 +104,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           [this]() { return debugEnabled(); },
           [this](fcitx::InputContext &inputContext,
                  const BambooResult &result) -> RewriteBackendSelection {
-            return selectRewriteBackend(inputContext, result);
+            auto selection = selectRewriteBackend(inputContext, result);
+            noteRewriteBackendChoice(inputContext, selection.backend);
+            return selection;
           }),
       rewriteHandler_(
           instance_->eventLoop(), rewriteStateFactory_, scheduler_,
@@ -131,8 +133,22 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             // cho đến khi có shadow snapshot đồng bộ được từng lần xóa. Chỉ
             // tin CapabilityFlag::Url cho quyết định này; nhận diện Omnibox
             // bằng AT-SPI có thể lẹm sang input khác khi focus chuyển nhanh.
-            return !inputContext.capabilityFlags().test(
-                fcitx::CapabilityFlag::Url);
+            if (inputContext.capabilityFlags().test(
+                    fcitx::CapabilityFlag::Url)) {
+              return false;
+            }
+            // App không xoá được bằng surrounding thì snapshot của nó cũng
+            // không đáng tin (vd. anvildroid-gui sau Ctrl+A rồi Backspace vẫn
+            // báo đuôi "đư" của từ cũ, restore nạp nhầm vào ô đã trống).
+            if (!surroundingBackendInUse(inputContext)) {
+              if (debugEnabled()) {
+                FCITX_INFO() << "areca: surrounding restore disabled"
+                             << " reason=non-surrounding-backend"
+                             << " program=" << inputContext.program();
+              }
+              return false;
+            }
+            return true;
           },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(key, config_.macroBypassModifier.value());

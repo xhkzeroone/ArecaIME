@@ -55,6 +55,25 @@ void ArecaEngine::protectBackendVerdict(fcitx::InputContext &inputContext,
   }
 }
 
+bool ArecaEngine::surroundingBackendInUse(fcitx::InputContext &inputContext) {
+  const auto program = resolveProgram(
+      inputContext, inputContext.propertyFor(&rewriteStateFactory_));
+  const auto it = surroundingBackendByApp_.find(program);
+  // Chưa từng chọn backend cho app này thì chưa có lý do để tắt restore.
+  return it == surroundingBackendByApp_.end() || it->second;
+}
+
+void ArecaEngine::noteRewriteBackendChoice(fcitx::InputContext &inputContext,
+                                           const RewriteBackend *backend) {
+  const auto program = resolveProgram(
+      inputContext, inputContext.propertyFor(&rewriteStateFactory_));
+  if (program.empty()) {
+    return;
+  }
+  surroundingBackendByApp_[program] =
+      backend == &surroundingBackend_ || backend == &surroundingV2Backend_;
+}
+
 bool ArecaEngine::backendVerdictProtected(
     fcitx::InputContext &inputContext) const {
   return backendVerdictContextKnown_ && backendVerdict_.known &&
@@ -145,6 +164,8 @@ void ArecaEngine::handleSurroundingProbeFailed(
   auto *state = inputContext.propertyFor(&rewriteStateFactory_);
   const uint32_t wordSerial = state ? state->wordSerial : 0;
   backendVerdict_.probeFailed(wordSerial);
+  // Transaction này đã hoàn tất bằng backend dự phòng.
+  noteRewriteBackendChoice(inputContext, nullptr);
   if (debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe failed, marked unreliable"
                  << " attempt=" << backendVerdict_.probeAttempts

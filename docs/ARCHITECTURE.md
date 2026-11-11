@@ -311,6 +311,10 @@ không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước k
   queue rỗng, ngoài khoảng bảo vệ reset.
 - Snapshot kết thúc bằng `knownTextBeforeCursor` (NBSP tính như dấu cách). Thiếu
   thì frontend đang gửi trễ: bỏ qua đúng lần restore đó, lần sau vẫn thử lại.
+- Rewrite: backend rewrite gần nhất của app là surrounding (hoặc chưa từng chọn
+  backend cho app). App phải xoá bằng phím (Backspace, Shift select) thì snapshot
+  của nó cũng không đáng tin nên không restore. Preedit không áp dụng điều kiện
+  này.
 
 **Cách khôi phục.** Extractor quét lùi từ con trỏ, dừng ở ký tự không phải chữ
 Latin hoặc chữ tiếng Việt dựng sẵn, tối đa 16 ký tự. Chuỗi UTF-8 lỗi, dấu tổ hợp
