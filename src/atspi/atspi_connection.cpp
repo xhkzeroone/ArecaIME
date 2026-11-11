@@ -105,8 +105,11 @@ AtspiConnection::connectToAddress(const std::string &address) {
     return {};
 
   DbusErrorGuard error;
-  DbusConnectionPtr bus(dbus_connection_open(address.c_str(), error.get()),
-                        DbusConnectionDeleter{true});
+  // Phải là kết nối riêng: deleter gọi dbus_connection_close, mà libdbus abort
+  // cả fcitx5 khi đóng kết nối dùng chung lấy từ dbus_connection_open.
+  DbusConnectionPtr bus(
+      dbus_connection_open_private(address.c_str(), error.get()),
+      DbusConnectionDeleter{true});
   if (bus && !error.isSet() &&
       dbus_bus_register(bus.get(), error.get()) != FALSE && !error.isSet() &&
       pingRegistry(bus.get())) {
