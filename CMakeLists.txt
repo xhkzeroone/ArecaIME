@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(fcitx5-areca VERSION 8.3.6 LANGUAGES CXX)
+project(fcitx5-areca VERSION 8.3.6 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
 include(CTest)
@@ -145,6 +145,8 @@ set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
 target_compile_features(areca PRIVATE cxx_std_20)
 target_compile_options(areca PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(areca PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" ${DBUS_INCLUDE_DIRS})
+# Addon thiếu symbol chỉ lộ ra lúc fcitx5 nạp; bắt linker báo ngay khi build.
+target_link_options(areca PRIVATE "LINKER:--no-undefined")
 target_link_libraries(areca PRIVATE
     areca-bamboo
     Fcitx5::Core
