@@ -286,7 +286,9 @@ liệu chính và snapshot mới từ ứng dụng sẽ thay cache này.
 ## Sửa từ đã commit
 
 `RestoreSurroundingText=True`, mặc định bật, cho phép đặt con trỏ sau một từ đã
-gõ xong rồi tiếp tục sửa dấu cho từ đó.
+gõ xong rồi tiếp tục sửa dấu cho từ đó. Chỉ áp dụng cho Rewrite: Preedit tắt hẳn
+restore từ surrounding vì nó phải xoá từ cũ khỏi ứng dụng theo snapshot, snapshot
+sai là xoá nhầm chữ.
 
 **Khi nào được arm.** Cờ restore là one-shot theo input context, được bật khi:
 
@@ -313,8 +315,7 @@ không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước k
   thì frontend đang gửi trễ: bỏ qua đúng lần restore đó, lần sau vẫn thử lại.
 - Rewrite: backend rewrite gần nhất của app là surrounding (hoặc chưa từng chọn
   backend cho app). App phải xoá bằng phím (Backspace, Shift select) thì snapshot
-  của nó cũng không đáng tin nên không restore. Preedit không áp dụng điều kiện
-  này.
+  của nó cũng không đáng tin nên không restore.
 
 **Cách khôi phục.** Extractor quét lùi từ con trỏ, dừng ở ký tự không phải chữ
 Latin hoặc chữ tiếng Việt dựng sẵn, tối đa 16 ký tự. Chuỗi UTF-8 lỗi, dấu tổ hợp
@@ -324,8 +325,7 @@ trên màn hình. Không khớp thì bỏ dần ký tự đầu để xử lý t
 giữa từ như `tiế|n`.
 
 Rewrite giữ nguyên text trên màn hình, phím kế tiếp tạo diff đi qua scheduler như
-bình thường. Preedit xoá từ cũ bằng `deleteSurroundingText(-N, N)` rồi đưa vào
-preedit. Bamboo lỗi sau khi xoá thì commit lại từ cũ trước khi forward phím.
+bình thường.
 
 ## Preedit mode
 

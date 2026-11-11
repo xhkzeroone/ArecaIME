@@ -157,7 +157,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           preeditStateFactory_, [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
           [this]() { return backspaceRecoveryEnabled(); },
-          [this]() { return config_.restoreSurroundingText.value(); },
+          // Preedit không restore từ surrounding: restore phải xoá từ cũ khỏi
+          // ứng dụng theo snapshot, snapshot sai là xoá nhầm chữ. Tắt hẳn,
+          // không theo RestoreSurroundingText.
+          [] { return false; },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(key, config_.macroBypassModifier.value());
           },

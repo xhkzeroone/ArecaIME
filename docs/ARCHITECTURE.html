@@ -4269,7 +4269,9 @@ hoặc commit, để thao tác kế tiếp không đọc snapshot cũ. Frontend 
 liệu chính và snapshot mới từ ứng dụng sẽ thay cache này.</p>
 <h2 id="s%E1%BB%ADa-t%E1%BB%AB-%C4%91%C3%A3-commit" tabindex="-1">Sửa từ đã commit</h2>
 <p><code>RestoreSurroundingText=True</code>, mặc định bật, cho phép đặt con trỏ sau một từ đã
-gõ xong rồi tiếp tục sửa dấu cho từ đó.</p>
+gõ xong rồi tiếp tục sửa dấu cho từ đó. Chỉ áp dụng cho Rewrite: Preedit tắt hẳn
+restore từ surrounding vì nó phải xoá từ cũ khỏi ứng dụng theo snapshot, snapshot
+sai là xoá nhầm chữ.</p>
 <p><strong>Khi nào được arm.</strong> Cờ restore là one-shot theo input context, được bật khi:</p>
 <ul><li>Focus vào ô nhập.</li><li>Reset context, kể cả reset từ ứng dụng hay click chuột.</li><li>Nhận <code>SurroundingTextUpdated</code>, tức mỗi khi ứng dụng báo text hoặc vị trí con
 trỏ thay đổi. Rewrite chỉ arm theo sự kiện này khi không biết chắc text trước
@@ -4286,8 +4288,7 @@ không xử lý được như Space tắt cờ. Cờ luôn bị tắt trước k
 queue rỗng, ngoài khoảng bảo vệ reset.</li><li>Snapshot kết thúc bằng <code>knownTextBeforeCursor</code> (NBSP tính như dấu cách). Thiếu
 thì frontend đang gửi trễ: bỏ qua đúng lần restore đó, lần sau vẫn thử lại.</li><li>Rewrite: backend rewrite gần nhất của app là surrounding (hoặc chưa từng chọn
 backend cho app). App phải xoá bằng phím (Backspace, Shift select) thì snapshot
-của nó cũng không đáng tin nên không restore. Preedit không áp dụng điều kiện
-này.</li></ul>
+của nó cũng không đáng tin nên không restore.</li></ul>
 <p><strong>Cách khôi phục.</strong> Extractor quét lùi từ con trỏ, dừng ở ký tự không phải chữ
 Latin hoặc chữ tiếng Việt dựng sẵn, tối đa 16 ký tự. Chuỗi UTF-8 lỗi, dấu tổ hợp
 và từ dài hơn giới hạn bị từ chối. Bridge tách chữ gốc và hiệu ứng dấu, thử một
@@ -4295,8 +4296,7 @@ tập phím hữu hạn trên engine tạm, chỉ nạp vào engine thật khi o
 trên màn hình. Không khớp thì bỏ dần ký tự đầu để xử lý trường hợp con trỏ nằm
 giữa từ như <code>tiế|n</code>.</p>
 <p>Rewrite giữ nguyên text trên màn hình, phím kế tiếp tạo diff đi qua scheduler như
-bình thường. Preedit xoá từ cũ bằng <code>deleteSurroundingText(-N, N)</code> rồi đưa vào
-preedit. Bamboo lỗi sau khi xoá thì commit lại từ cũ trước khi forward phím.</p>
+bình thường.</p>
 <h2 id="preedit-mode" tabindex="-1">Preedit mode</h2>
 <p>Preedit không dùng <code>InputScheduler</code>, rewrite backend hay verdict. Mỗi input
 context có <code>PreeditInputState</code> và engine Bamboo riêng, xử lý phím đồng bộ.</p>
