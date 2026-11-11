@@ -111,6 +111,10 @@ jobs:
             libfontconfig-dev \
             libx11-dev \
             libxtst-dev \
+            libxcb1-dev \
+            libxcb-xtest0-dev \
+            libwayland-dev \
+            libwayland-bin \
             patchelf
           sudo gem install --no-document fpm
 
@@ -219,6 +223,9 @@ jobs:
             --depends libudev1 \
             --depends libx11-6 \
             --depends libxtst6 \
+            --depends libxcb1 \
+            --depends libxcb-xtest0 \
+            --depends libwayland-client0 \
             "${sdl3_depend_args[@]}" \
             -C pkgroot \
             -p "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb" \
@@ -287,6 +294,10 @@ jobs:
                 libfontconfig-dev \
                 libx11-dev \
                 libxtst-dev \
+                libxcb1-dev \
+                libxcb-xtest0-dev \
+                libwayland-dev \
+                libwayland-bin \
                 libsdl3-dev
               gem install --no-document fpm
 
@@ -322,6 +333,9 @@ jobs:
                 --depends libudev1 \
                 --depends libx11-6 \
                 --depends libxtst6 \
+            --depends libxcb1 \
+            --depends libxcb-xtest0 \
+            --depends libwayland-client0 \
                 --depends libsdl3-0 \
                 -C pkgroot-ubuntu25 \
                 -p "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb" \

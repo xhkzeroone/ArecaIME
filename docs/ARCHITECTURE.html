@@ -4127,8 +4127,9 @@ diện. Phím tắt đổi mode toàn cục <code>SwitchModeKey</code> đã bị
 <ol><li>Ứng dụng có mục trong <code>areca-apps.conf</code> với mode <code>Preedit</code> hoặc <code>Redirect</code>
 dùng mode đó.</li><li>Mode <code>Surrounding</code>, <code>Shift select</code>, <code>Backspace</code> dùng Rewrite và ghi đè backend.</li><li><code>Tự động</code> hoặc không có mục dùng mode toàn cục.</li></ol>
 <p>Phím <code>SelectBackendKey</code>, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 6
-lựa chọn: Tự động, Surrounding, Shift select, Backspace, Preedit, Redirect. Tên
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 7
+lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
+Preedit, Redirect. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ <code>Backspace (Uinput)</code>. Lựa chọn
 được lưu vào <code>areca-apps.conf</code> cùng tên frontend. Ứng dụng không báo tên được
 đặt tên tạm <code>context-&lt;uuid&gt;</code>.</p>
@@ -4223,8 +4224,17 @@ kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.<
 <tr><td><code>UinputBackspaceBackend</code></td><td><code>uinput-backspace</code></td><td>Backspace × N qua <code>/dev/uinput</code></td><td>ACK bằng số Backspace quay về Fcitx</td></tr>
 <tr><td><code>XTestBackspaceBackend</code></td><td><code>native-backspace</code></td><td>Backspace × N qua libei hoặc XTest</td><td>Không ACK</td></tr>
 <tr><td><code>ForwardBackspaceBackend</code></td><td><code>forward-backspace</code></td><td><code>forwardKey(Backspace)</code> × N</td><td>Không ACK</td></tr>
+<tr><td><code>VirtualKeyboardBackend</code></td><td><code>virtual-keyboard</code></td><td>Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không <code>commitString</code></td><td>Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng</td></tr>
 </tbody>
 </table>
+<p><code>VirtualKeyboardBackend</code> chỉ dùng khi chọn <strong>Virtual keyboard</strong> cho ứng dụng. Ký
+tự mới được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá
+và chèn đi chung một kênh và thứ tự do compositor hoặc X server giữ:</p>
+<ul><li>Wayland: <code>zwp_virtual_keyboard_v1</code> khi compositor cấp cho kết nối thường
+(wlroots, Hyprland, sway). KWin và Mutter không cấp.</li><li>X11: XCB + XTEST, mỗi ký tự của một lượt mượn một keycode rảnh, trả keymap gốc
+sau 50 ms. Chỉ dùng khi phiên là X11 hoặc ứng dụng đi qua XIM, vì XTEST trên
+XWayland không tới được ứng dụng Wayland.</li><li>Thiết bị chạy trên thread riêng và báo về event loop qua <code>EventDispatcher</code>.
+Không có thiết bị nào khả dụng thì dùng bộ chọn Backspace.</li></ul>
 <p>Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
 X11 hoặc khi libei không khả dụng.</p>
 <p>Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
@@ -4243,7 +4253,8 @@ nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có
 hoặc là gợi ý autocomplete.</li><li><strong>Ô URL trong trình duyệt không có surrounding text</strong> dùng Shift select.
 Ô URL được nhận diện bằng <code>CapabilityFlag::Url</code> hoặc AT-SPI với thanh địa chỉ
 Chromium.</li><li>**<code>UseBackspaceForUrl=True</code> và ô là URL**: Shift select, không có thì Backspace.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
-Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
+Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackend</code> nếu khả dụng, không thì bộ chọn
+Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
 <code>canForwardBackspaces()</code> trả false, ví dụ ứng dụng SDL hay frontend DBus,
 Fcitx4 thiếu capability phù hợp.</li></ul></li></ol>
 <p>Backend tự động được chọn gần nhất cho mỗi ứng dụng được nhớ để hiển thị trong

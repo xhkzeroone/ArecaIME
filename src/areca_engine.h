@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <fcitx-utils/eventdispatcher.h>
 #include <fcitx-utils/signals.h>
 #include <fcitx/action.h>
 #include <fcitx/inputcontext.h>
@@ -30,6 +31,7 @@
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
+#include "virtual_keyboard_backend.h"
 #include "xtest_backspace_backend.h"
 #include "xtest_shift_select_backend.h"
 
@@ -172,6 +174,9 @@ private:
   NativeDevice nativeDevice_;
   XTestBackspaceBackend xtestBackspaceBackend_;
   XTestShiftSelectBackend xtestShiftSelectBackend_;
+  // Đưa kết quả từ thread của phím ảo về event loop; phải hủy sau backend.
+  fcitx::EventDispatcher virtualKeyboardDispatcher_;
+  VirtualKeyboardBackend virtualKeyboardBackend_;
   std::unique_ptr<fcitx::EventSourceTime> deviceWarmupTimer_;
   EventLoopPostTask backendSelectionPost_;
   InputScheduler scheduler_;

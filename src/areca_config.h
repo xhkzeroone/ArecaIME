@@ -96,12 +96,14 @@ enum class AppBackendMode {
   UinputBackspace = 3,
   ForwardKey = 3,
   Preedit = 4,
-  Redirect = 5
+  Redirect = 5,
+  // Xoá và gõ lại bằng phím ảo (Wayland virtual keyboard hoặc X11 XTEST).
+  VirtualKeyboard = 6
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
                                  N_("Surrounding"), N_("Shift select"),
                                  N_("Backspace"), N_("Preedit"),
-                                 N_("Redirect (EN)"));
+                                 N_("Redirect (EN)"), N_("Virtual keyboard"));
 
 inline PresentationMode
 presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
@@ -113,6 +115,7 @@ presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
   case AppBackendMode::SurroundingText:
   case AppBackendMode::ShiftSelect:
   case AppBackendMode::Backspace:
+  case AppBackendMode::VirtualKeyboard:
     return PresentationMode::Rewrite;
   case AppBackendMode::Auto:
     return fallback;

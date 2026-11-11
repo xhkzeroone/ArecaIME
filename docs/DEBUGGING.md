@@ -87,6 +87,9 @@ areca: surrounding probe succeeded via SurroundingTextUpdated event
 areca: surrounding delete unconfirmed after
 areca: fallback from unconfirmed surrounding delete to backend=
 areca: uinput-backspace start tx=
+areca: virtual-keyboard start tx= device= backspaces= commit=
+areca: virtual-keyboard done tx= ok= echo_pending=
+areca: virtual-keyboard unavailable, fallback backend=
 areca: uinput-backspace press tx= seen= expected=
 areca: uinput-backspace ack timeout tx=
 areca: uinput-shift-select start tx= select_left= emit_left=

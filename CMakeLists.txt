@@ -17,6 +17,10 @@ pkg_check_modules(X11_CLIENT REQUIRED IMPORTED_TARGET x11)
 pkg_check_modules(XTEST REQUIRED IMPORTED_TARGET xtst)
 pkg_check_modules(LIBEI QUIET IMPORTED_TARGET libei-1.0>=1.0)
 pkg_check_modules(LIBPORTAL QUIET IMPORTED_TARGET libportal>=0.7.1)
+# Backend Virtual keyboard: thiếu thư viện nào thì phần đó báo không khả dụng.
+pkg_check_modules(WAYLAND_CLIENT QUIET IMPORTED_TARGET wayland-client)
+pkg_check_modules(XCB_XTEST QUIET IMPORTED_TARGET xcb xcb-xtest)
+find_program(WAYLAND_SCANNER wayland-scanner)
 
 add_executable(areca-mouse-monitor tools/mouse_monitor.cpp)
 target_compile_features(areca-mouse-monitor PRIVATE cxx_std_20)
@@ -78,6 +82,10 @@ add_library(areca MODULE
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
+    src/virtual_keyboard_backend.cpp
+    src/virtual_keyboard_device.cpp
+    src/virtual_keyboard_wayland.cpp
+    src/virtual_keyboard_x11.cpp
     src/atspi/atspi_connection.cpp
     src/atspi/atspi_accessible.cpp
     src/window_focus_tracker.cpp
@@ -104,6 +112,33 @@ if(LIBEI_FOUND AND LIBPORTAL_FOUND)
     target_link_libraries(areca PRIVATE PkgConfig::LIBEI PkgConfig::LIBPORTAL)
 else()
     message(WARNING "Native Wayland backend disabled; XTest fallback will be used")
+endif()
+if(WAYLAND_CLIENT_FOUND AND WAYLAND_SCANNER)
+    set(ARECA_VK_XML "${CMAKE_CURRENT_SOURCE_DIR}/protocols/virtual-keyboard-unstable-v1.xml")
+    set(ARECA_VK_HEADER "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-client-protocol.h")
+    set(ARECA_VK_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-protocol.c")
+    add_custom_command(
+        OUTPUT "${ARECA_VK_HEADER}"
+        COMMAND "${WAYLAND_SCANNER}" client-header "${ARECA_VK_XML}" "${ARECA_VK_HEADER}"
+        DEPENDS "${ARECA_VK_XML}" VERBATIM)
+    add_custom_command(
+        OUTPUT "${ARECA_VK_SOURCE}"
+        COMMAND "${WAYLAND_SCANNER}" private-code "${ARECA_VK_XML}" "${ARECA_VK_SOURCE}"
+        DEPENDS "${ARECA_VK_XML}" VERBATIM)
+    target_sources(areca PRIVATE "${ARECA_VK_HEADER}" "${ARECA_VK_SOURCE}")
+    target_include_directories(areca PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_definitions(areca PRIVATE ARECA_HAVE_WAYLAND_VK=1)
+    target_link_libraries(areca PRIVATE PkgConfig::WAYLAND_CLIENT)
+    message(STATUS "Virtual keyboard backend: Wayland enabled")
+else()
+    message(WARNING "Virtual keyboard backend: Wayland disabled (wayland-client or wayland-scanner missing)")
+endif()
+if(XCB_XTEST_FOUND)
+    target_compile_definitions(areca PRIVATE ARECA_HAVE_XCB_XTEST=1)
+    target_link_libraries(areca PRIVATE PkgConfig::XCB_XTEST)
+    message(STATUS "Virtual keyboard backend: X11 enabled")
+else()
+    message(WARNING "Virtual keyboard backend: X11 disabled (xcb or xcb-xtest missing)")
 endif()
 add_dependencies(areca areca-mouse-monitor)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")
@@ -398,6 +433,19 @@ if(BUILD_TESTING)
     target_link_libraries(areca-xtest-backspace-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME xtest-backspace COMMAND areca-xtest-backspace-test)
+
+    add_executable(areca-virtual-keyboard-test
+        tests/virtual_keyboard_backend_test.cpp
+        src/virtual_keyboard_backend.cpp
+        src/virtual_keyboard_device.cpp)
+    target_compile_features(areca-virtual-keyboard-test PRIVATE cxx_std_20)
+    target_compile_options(areca-virtual-keyboard-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-virtual-keyboard-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(areca-virtual-keyboard-test PRIVATE
+        Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME virtual-keyboard COMMAND areca-virtual-keyboard-test)
 
     add_executable(areca-xtest-shift-select-test
         tests/xtest_shift_select_backend_test.cpp

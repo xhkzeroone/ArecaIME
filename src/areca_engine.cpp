@@ -91,6 +91,13 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       xtestShiftSelectBackend_(instance_->eventLoop(), nativeDevice_,
                                adaptiveWait_,
                                [this]() { return debugEnabled(); }),
+      virtualKeyboardBackend_(
+          instance_->eventLoop(), createWaylandVirtualKeyboard(),
+          createX11VirtualKeyboard(),
+          [this](std::function<void()> task) {
+            virtualKeyboardDispatcher_.schedule(std::move(task));
+          },
+          [this]() { return debugEnabled(); }),
       backendSelectionPost_(instance_->eventLoop()),
       scheduler_(
           instance_->eventLoop(),
@@ -210,6 +217,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   config_.outputCharset.annotation().setList(
       BambooEngineAdapter::charsetNames());
   reloadConfig();
+  virtualKeyboardDispatcher_.attach(&instance_->eventLoop());
   focusTracker_ = std::make_unique<WindowFocusTracker>(debugEnabled());
   // Keep AT-SPI monitoring alive in the background. The worker reconnects
   // when the accessibility bus appears, so fallback data is cached before a
@@ -221,6 +229,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
 }
 
 ArecaEngine::~ArecaEngine() {
+  virtualKeyboardDispatcher_.detach();
   inputTypeDetector_.setFocusTracker(nullptr);
   if (focusTracker_) {
     focusTracker_->stop();
@@ -531,6 +540,10 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   }
   // Shift-select forward Left và chờ Shift up quay lại trước khi commit.
   if (uinputShiftSelectBackend_.handleKeyEvent(event)) {
+    return;
+  }
+  // Phím ảo vừa gõ quay lại fcitx5: chuyển thẳng cho ứng dụng.
+  if (virtualKeyboardBackend_.handleKeyEvent(event)) {
     return;
   }
   if (!event.isRelease()) {

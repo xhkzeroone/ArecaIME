@@ -613,7 +613,8 @@ namespace areca::settings {
                 bsName += ")";
 
                 const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
-                                           bsName.c_str(), "Preedit",       "Redirect (EN)"};
+                                           bsName.c_str(), "Preedit",       "Redirect (EN)",
+                                           "Virtual keyboard"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));
@@ -635,7 +636,7 @@ namespace areca::settings {
 
                     ImGui::TableSetColumnIndex(2);
                     int currentMode = static_cast<int>(overrides[i].mode.value());
-                    if (currentMode < 0 || currentMode > 5) {
+                    if (currentMode < 0 || currentMode >= static_cast<int>(IM_ARRAYSIZE(modeNames))) {
                         currentMode = 0;
                     }
                     ImGui::SetNextItemWidth(-1.0F);

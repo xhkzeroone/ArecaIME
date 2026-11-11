@@ -72,8 +72,8 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
 
   auto candList = std::make_unique<fcitx::CommonCandidateList>();
   candList->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
-  candList->setLabels({"1. ", "2. ", "3. ", "4. ", "A. ", "E. "});
-  candList->setPageSize(6);
+  candList->setLabels({"1. ", "2. ", "3. ", "4. ", "5. ", "A. ", "E. "});
+  candList->setPageSize(7);
 
   const char *frontend = inputContext.frontend();
   const bool isTerminal = inputTypeDetector_.isTerminal(appName, frontend);
@@ -93,16 +93,20 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       "Shift select (" + describeShiftSelectBackend() + ")";
   const std::string backspaceTitle =
       "Backspace (" + describeBackspaceBackend(preferHardware) + ")";
+  const std::string virtualKeyboardTitle =
+      "Virtual keyboard (" + virtualKeyboardBackend_.describe(inputContext) +
+      ")";
 
   struct BackendOption {
     AppBackendMode mode;
     std::string title;
   };
-  const std::array<BackendOption, 6> options = {{
+  const std::array<BackendOption, 7> options = {{
       {AppBackendMode::Auto, autoTitle},
       {AppBackendMode::SurroundingText, surroundingTitle},
       {AppBackendMode::ShiftSelect, shiftTitle},
       {AppBackendMode::Backspace, backspaceTitle},
+      {AppBackendMode::VirtualKeyboard, virtualKeyboardTitle},
       {AppBackendMode::Preedit, "Preedit"},
       {AppBackendMode::Redirect, "Redirect (EN)"},
   }};
@@ -202,6 +206,10 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
   case AppBackendMode::Redirect:
     modeDesc = "Redirect (EN)";
     break;
+  case AppBackendMode::VirtualKeyboard:
+    modeDesc = "Virtual keyboard (" +
+               virtualKeyboardBackend_.describe(inputContext) + ")";
+    break;
   }
 
   const std::string infoMsg = appName + " -> " + modeDesc;
@@ -243,7 +251,7 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
     return true;
   }
 
-  if (sym >= FcitxKey_1 && sym <= FcitxKey_4) {
+  if (sym >= FcitxKey_1 && sym <= FcitxKey_5) {
     const int idx = sym - FcitxKey_1;
     if (idx < commonList->size()) {
       commonList->candidate(idx).select(&inputContext);
@@ -252,12 +260,12 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
   }
 
   if (sym == FcitxKey_a || sym == FcitxKey_A) {
-    commonList->candidate(4).select(&inputContext);
+    commonList->candidate(5).select(&inputContext);
     return true;
   }
 
   if (sym == FcitxKey_e || sym == FcitxKey_E) {
-    commonList->candidate(5).select(&inputContext);
+    commonList->candidate(6).select(&inputContext);
     return true;
   }
 
