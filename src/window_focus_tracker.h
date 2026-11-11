@@ -18,8 +18,6 @@ public:
   WindowFocusTracker(const WindowFocusTracker &) = delete;
   WindowFocusTracker &operator=(const WindowFocusTracker &) = delete;
 
-  static bool isAvailable();
-
   bool start();
   void stop();
   void requestAccessibilityPoke() {
@@ -58,16 +56,26 @@ private:
   void clearFocus();
   void loseFocus(const char *sender, const char *path = nullptr);
   struct PokeSchedule;
+  // Focus mới nhất trong một lượt đọc message; chỉ lần cuối được hỏi chi tiết.
+  struct PendingFocus {
+    std::string sender;
+    std::string path;
+    bool pending = false;
+  };
   bool registerEvents(DBusConnection *bus);
   void addEventMatches(DBusConnection *bus);
   void runConnection(DBusConnection *bus);
   void runEventLoop(DBusConnection *bus);
-  void processMessage(DBusConnection *bus, DBusMessage *message,
-                      PokeSchedule &schedule);
-  bool processStateChanged(DBusMessage *message);
-  void processNameOwnerChanged(DBusMessage *message, PokeSchedule &schedule);
-  void processFocusEvent(DBusConnection *bus, DBusMessage *message);
+  void processMessage(DBusMessage *message, PokeSchedule &schedule,
+                      PendingFocus &pendingFocus);
+  bool processStateChanged(DBusMessage *message, PendingFocus &pendingFocus);
+  void processNameOwnerChanged(DBusMessage *message, PokeSchedule &schedule,
+                               PendingFocus &pendingFocus);
+  void processFocusEvent(DBusConnection *bus, const std::string &sender,
+                         const std::string &path);
   void waitBeforeReconnect(int intervals);
+
+  static constexpr int kReadTimeoutMs = 100;
   void threadFunc();
 
   // Owned by the monitor thread.

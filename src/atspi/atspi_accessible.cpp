@@ -14,13 +14,16 @@ namespace {
 constexpr int ROLE_TERMINAL = 60;
 constexpr int ROLE_DOCUMENT_WEB = 95;
 constexpr int ROLE_DOCUMENT_FRAME = 82;
-constexpr int MAX_ANCESTOR_DEPTH = 64;
+constexpr int MAX_ANCESTOR_DEPTH = 32;
+// Mỗi lần hỏi một ứng dụng chặn luồng tracker tới hết thời gian này nếu ứng
+// dụng treo. Ứng dụng khoẻ trả lời trong vài ms.
+constexpr int APP_QUERY_TIMEOUT_MS = 200;
 
 template <typename AppendFn>
 DbusMessagePtr callMethodWithArgs(DBusConnection *bus, const char *destination,
                                   const char *path, const char *interface,
                                   const char *method, AppendFn &&appendFn,
-                                  int timeoutMs = 500) {
+                                  int timeoutMs = APP_QUERY_TIMEOUT_MS) {
   if (!bus || !destination || !path || !interface || !method)
     return nullptr;
   DbusMessagePtr message(
@@ -39,7 +42,8 @@ DbusMessagePtr callMethodWithArgs(DBusConnection *bus, const char *destination,
 
 DbusMessagePtr callMethod(DBusConnection *bus, const char *destination,
                           const char *path, const char *interface,
-                          const char *method, int timeoutMs = 500) {
+                          const char *method,
+                          int timeoutMs = APP_QUERY_TIMEOUT_MS) {
   return callMethodWithArgs(
       bus, destination, path, interface, method, [](DBusMessage *) {},
       timeoutMs);
@@ -318,10 +322,23 @@ bool isWindowManagerProcess(const std::string &program) {
 
 } // namespace
 
+int AtspiAccessible::senderProcessId(const char *sender) const {
+  return queryConnectionPid(bus_, sender);
+}
+
+std::string AtspiAccessible::programForProcess(int processId) {
+  return programForPid(processId);
+}
+
+bool AtspiAccessible::isWindowManagerProgram(const std::string &program) {
+  return isWindowManagerProcess(program);
+}
+
 AtspiFocusInfo AtspiAccessible::inspectFocus(const char *sender,
-                                             const char *path) const {
+                                             const char *path,
+                                             int processId) const {
   AtspiFocusInfo info;
-  info.processId = queryConnectionPid(bus_, sender);
+  info.processId = processId;
   info.program = programForPid(info.processId);
   if (isWindowManagerProcess(info.program)) {
     info.ignoredWindowManager = true;
@@ -336,9 +353,11 @@ AtspiFocusInfo AtspiAccessible::inspectFocus(const char *sender,
 
   info.role = queryRole(bus_, sender, path);
   info.terminal = isTerminalNode(bus_, sender, path, info.role);
-  info.documentWeb =
-      !info.terminal && hasDocumentWebAncestor(bus_, sender, path);
-  if (info.processId <= 0 && info.documentWeb) {
+  // Dò cây cha tốn tới hai lời gọi mỗi tầng, nên chỉ làm khi cần nó để tìm tiến
+  // trình thật của trang web (bus daemon không trả được PID).
+  info.documentWeb = info.processId <= 0 && !info.terminal &&
+                     hasDocumentWebAncestor(bus_, sender, path);
+  if (info.documentWeb) {
     info.processId = queryProcessId(bus_, sender, path);
     info.program = programForPid(info.processId);
     if (isChromiumBrowser(info.program)) {
@@ -378,12 +397,18 @@ void AtspiAccessible::pokeApps() const {
     }
 
     if (appBus && appPath && appPath[0] == '/') {
-      DbusMessagePtr poke =
-          callMethod(bus_, appBus, appPath, "org.a11y.atspi.Accessible",
-                     "GetRelationSet", 500);
+      // Chỉ cần ứng dụng nhận được lời gọi để bật accessibility; chờ trả lời
+      // từng ứng dụng sẽ chặn luồng tracker tới 500 ms mỗi app treo.
+      DbusMessagePtr poke(dbus_message_new_method_call(
+          appBus, appPath, "org.a11y.atspi.Accessible", "GetRelationSet"));
+      if (poke) {
+        dbus_message_set_no_reply(poke.get(), TRUE);
+        dbus_connection_send(bus_, poke.get(), nullptr);
+      }
     }
     dbus_message_iter_next(&applications);
   }
+  dbus_connection_flush(bus_);
 }
 
 } // namespace areca

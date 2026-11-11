@@ -40,11 +40,6 @@ WindowFocusTracker::WindowFocusTracker(bool debugEnabled)
 
 WindowFocusTracker::~WindowFocusTracker() { stop(); }
 
-bool WindowFocusTracker::isAvailable() {
-  AtspiConnection connection;
-  return connection.get() != nullptr;
-}
-
 void WindowFocusTracker::connectionEstablished() {
   connectionFailureReported_.store(false, std::memory_order_relaxed);
   valid_.store(true, std::memory_order_relaxed);
@@ -158,14 +153,21 @@ void WindowFocusTracker::runEventLoop(DBusConnection *bus) {
 
   PokeSchedule schedule;
   while (!stopRequested_.load()) {
-    if (!dbus_connection_read_write(bus, 30))
+    // 100 ms đủ để dừng và poke kịp thời mà không thức dậy 33 lần mỗi giây.
+    if (!dbus_connection_read_write(bus, kReadTimeoutMs))
       break;
 
+    // Chuyển focus nhanh (Alt+Tab, click liên tục) sinh nhiều sự kiện liền
+    // nhau. Hỏi chi tiết từng cái sẽ dồn hàng trên luồng này, nên chỉ xử lý
+    // focus cuối cùng của lượt.
+    PendingFocus pendingFocus;
     DbusMessagePtr message(dbus_connection_pop_message(bus));
     while (message) {
-      processMessage(bus, message.get(), schedule);
+      processMessage(message.get(), schedule, pendingFocus);
       message.reset(dbus_connection_pop_message(bus));
     }
+    if (pendingFocus.pending)
+      processFocusEvent(bus, pendingFocus.sender, pendingFocus.path);
 
     if (pokeRequested_.exchange(false, std::memory_order_relaxed)) {
       accessible.pokeApps();
@@ -179,31 +181,38 @@ void WindowFocusTracker::runEventLoop(DBusConnection *bus) {
   }
 }
 
-void WindowFocusTracker::processMessage(DBusConnection *bus,
-                                        DBusMessage *message,
-                                        PokeSchedule &schedule) {
+void WindowFocusTracker::processMessage(DBusMessage *message,
+                                        PokeSchedule &schedule,
+                                        PendingFocus &pendingFocus) {
   const char *interface = dbus_message_get_interface(message);
   const char *member = dbus_message_get_member(message);
-  bool focusEvent = false;
+  if (!interface || !member)
+    return;
 
-  if (interface && member &&
-      strcmp(interface, "org.a11y.atspi.Event.Object") == 0 &&
+  bool focusEvent = false;
+  if (strcmp(interface, "org.a11y.atspi.Event.Object") == 0 &&
       strcmp(member, "StateChanged") == 0) {
-    focusEvent = processStateChanged(message);
-  }
-  if (interface && member &&
-      strcmp(interface, "org.a11y.atspi.Event.Focus") == 0) {
+    focusEvent = processStateChanged(message, pendingFocus);
+  } else if (strcmp(interface, "org.a11y.atspi.Event.Focus") == 0) {
     focusEvent = true;
+  } else if (strcmp(interface, "org.freedesktop.DBus") == 0 &&
+             strcmp(member, "NameOwnerChanged") == 0) {
+    processNameOwnerChanged(message, schedule, pendingFocus);
   }
-  if (interface && member && strcmp(interface, "org.freedesktop.DBus") == 0 &&
-      strcmp(member, "NameOwnerChanged") == 0) {
-    processNameOwnerChanged(message, schedule);
+  if (!focusEvent)
+    return;
+
+  const char *sender = dbus_message_get_sender(message);
+  const char *path = dbus_message_get_path(message);
+  if (sender && path) {
+    pendingFocus.sender = sender;
+    pendingFocus.path = path;
+    pendingFocus.pending = true;
   }
-  if (focusEvent)
-    processFocusEvent(bus, message);
 }
 
-bool WindowFocusTracker::processStateChanged(DBusMessage *message) {
+bool WindowFocusTracker::processStateChanged(DBusMessage *message,
+                                             PendingFocus &pendingFocus) {
   DBusMessageIter iter;
   if (!dbus_message_iter_init(message, &iter) ||
       dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
@@ -222,13 +231,20 @@ bool WindowFocusTracker::processStateChanged(DBusMessage *message) {
   dbus_int32_t detail = 0;
   dbus_message_iter_get_basic(&iter, &detail);
   if (detail == 0) {
-    loseFocus(dbus_message_get_sender(message), dbus_message_get_path(message));
+    const char *sender = dbus_message_get_sender(message);
+    const char *path = dbus_message_get_path(message);
+    loseFocus(sender, path);
+    if (pendingFocus.pending && sender && path &&
+        pendingFocus.sender == sender && pendingFocus.path == path) {
+      pendingFocus.pending = false;
+    }
   }
   return detail == 1;
 }
 
 void WindowFocusTracker::processNameOwnerChanged(DBusMessage *message,
-                                                 PokeSchedule &schedule) {
+                                                 PokeSchedule &schedule,
+                                                 PendingFocus &pendingFocus) {
   const char *busName = nullptr;
   const char *oldOwner = nullptr;
   const char *newOwner = nullptr;
@@ -238,6 +254,8 @@ void WindowFocusTracker::processNameOwnerChanged(DBusMessage *message,
                             &newOwner, DBUS_TYPE_INVALID)) {
     if (oldOwner && oldOwner[0] && newOwner && !newOwner[0]) {
       loseFocus(busName);
+      if (pendingFocus.pending && busName && pendingFocus.sender == busName)
+        pendingFocus.pending = false;
     }
     if (newOwner && newOwner[0])
       schedule.applicationConnected();
@@ -245,22 +263,33 @@ void WindowFocusTracker::processNameOwnerChanged(DBusMessage *message,
 }
 
 void WindowFocusTracker::processFocusEvent(DBusConnection *bus,
-                                           DBusMessage *message) {
-  const char *sender = dbus_message_get_sender(message);
-  const char *path = dbus_message_get_path(message);
-  if (!sender || !path)
-    return;
-
+                                           const std::string &sender,
+                                           const std::string &path) {
   clearFocus();
   focusBus_ = sender;
   focusPath_ = path;
 
-  const AtspiFocusInfo info = AtspiAccessible(bus).inspectFocus(sender, path);
+  const AtspiAccessible accessible(bus);
+  // Tên chương trình chỉ cần bus daemon và /proc nên có ngay. Công bố trước để
+  // phím gõ trong lúc còn hỏi ứng dụng chi tiết (role, terminal) đã thấy đúng
+  // app thay vì chuỗi rỗng.
+  const int processId = accessible.senderProcessId(sender.c_str());
+  const std::string program = AtspiAccessible::programForProcess(processId);
+  if (AtspiAccessible::isWindowManagerProgram(program)) {
+    clearFocus();
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(focusProgramMutex_);
+    focusProgram_ = program;
+  }
+
+  const AtspiFocusInfo info =
+      accessible.inspectFocus(sender.c_str(), path.c_str(), processId);
   if (info.ignoredWindowManager) {
     clearFocus();
     return;
   }
-
   focusInTerminal_.store(info.terminal, std::memory_order_relaxed);
   {
     std::lock_guard<std::mutex> lock(focusProgramMutex_);

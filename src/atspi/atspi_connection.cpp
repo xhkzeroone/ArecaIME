@@ -25,6 +25,11 @@ std::string AtspiConnection::environmentBusAddress() {
 }
 
 std::string AtspiConnection::x11BusAddress() {
+  // Phải chạy tiến trình xprop nên chỉ dùng khi các cách khác thất bại, và chỉ
+  // khi có X display.
+  const char *display = getenv("DISPLAY");
+  if (!display || !display[0])
+    return {};
   FILE *file =
       popen("xprop -root AT_SPI_BUS 2>/dev/null | cut -d'\"' -f2", "r");
   if (file) {
@@ -48,9 +53,14 @@ std::string AtspiConnection::x11BusAddress() {
 
 std::string AtspiConnection::sessionBusAddress() {
   DbusErrorGuard error;
-  DbusConnectionPtr session(dbus_bus_get(DBUS_BUS_SESSION, error.get()));
+  // Kết nối riêng chỉ cho một lần hỏi địa chỉ: kết nối dùng chung của libdbus
+  // có thể đang được thư viện khác trong fcitx5 dùng, và mặc định thoát tiến
+  // trình khi session bus mất kết nối.
+  DbusConnectionPtr session(dbus_bus_get_private(DBUS_BUS_SESSION, error.get()),
+                            DbusConnectionDeleter{true});
   if (!session || error.isSet())
     return {};
+  dbus_connection_set_exit_on_disconnect(session.get(), FALSE);
 
   DbusMessagePtr message(dbus_message_new_method_call(
       "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress"));
@@ -77,11 +87,13 @@ std::string AtspiConnection::findBusAddress() {
   if (!address.empty())
     return address;
 
-  address = x11BusAddress();
+  // org.a11y.Bus là cách chuẩn trên mọi phiên; xprop chỉ là dự phòng cho phiên
+  // X11 cũ không có dịch vụ này.
+  address = sessionBusAddress();
   if (!address.empty())
     return address;
 
-  return sessionBusAddress();
+  return x11BusAddress();
 }
 
 bool AtspiConnection::pingRegistry(DBusConnection *bus) {
@@ -120,10 +132,15 @@ AtspiConnection::connectToAddress(const std::string &address) {
 
 DbusConnectionPtr AtspiConnection::connectSessionBus() {
   DbusErrorGuard error;
-  DbusConnectionPtr bus(dbus_bus_get(DBUS_BUS_SESSION, error.get()));
-  if (bus && !error.isSet() && pingRegistry(bus.get())) {
+  // Luồng tracker đọc và lấy hết message trên kết nối này, nên không được dùng
+  // kết nối dùng chung của tiến trình.
+  DbusConnectionPtr bus(dbus_bus_get_private(DBUS_BUS_SESSION, error.get()),
+                        DbusConnectionDeleter{true});
+  if (!bus || error.isSet())
+    return {};
+  dbus_connection_set_exit_on_disconnect(bus.get(), FALSE);
+  if (pingRegistry(bus.get()))
     return bus;
-  }
   return {};
 }
 
