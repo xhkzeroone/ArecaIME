@@ -377,6 +377,6 @@ Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 | `ForwardFirstCharacter` | advanced | `True` | Bật nhánh phím đầu cho trình duyệt |
 | `ShiftSelectFallbackForBrowser` | areca | `False` | Trình duyệt không dùng được surrounding thì dùng Shift select |
 | `UseBackspaceForUrl` | areca | `True` | Xử lý riêng ô URL bằng Shift select |
-| `RestoreSurroundingText` | areca | `True` | Sửa từ đã commit |
+| `RestoreSurroundingText` | areca | `False` | Sửa từ đã commit |
 | `DisableVietnameseInTerminal` | areca | `False` | Forward nguyên phím trong terminal |
 | `SelectBackendKey` | areca | phím dấu huyền | Mở menu chọn mode, backend cho ứng dụng |

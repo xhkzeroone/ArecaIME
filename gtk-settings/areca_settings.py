@@ -73,7 +73,7 @@ MAIN_DEFAULTS = {
     "RevertMacroOnBackspace": True,
     "MacroBypassModifier": "Shift",
     "BackspaceRecovery": True,
-    "RestoreSurroundingText": True,
+    "RestoreSurroundingText": False,
     "ShiftSelectFallbackForBrowser": False,
     "UseBackspaceForUrl": True,
     "DisableVietnameseInTerminal": False,

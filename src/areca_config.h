@@ -377,7 +377,7 @@ FCITX_CONFIGURATION(
         this, "BackspaceRecovery",
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> restoreSurroundingText{
-        this, "RestoreSurroundingText", N_("Cho phép sửa từ đã commit"), true};
+        this, "RestoreSurroundingText", N_("Cho phép sửa từ đã commit"), false};
     fcitx::Option<bool> shiftSelectFallbackForBrowser{
         this, "ShiftSelectFallbackForBrowser",
         N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "

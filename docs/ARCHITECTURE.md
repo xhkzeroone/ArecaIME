@@ -285,7 +285,7 @@ liệu chính và snapshot mới từ ứng dụng sẽ thay cache này.
 
 ## Sửa từ đã commit
 
-`RestoreSurroundingText=True`, mặc định bật, cho phép đặt con trỏ sau một từ đã
+`RestoreSurroundingText=True`, mặc định tắt, cho phép đặt con trỏ sau một từ đã
 gõ xong rồi tiếp tục sửa dấu cho từ đó. Chỉ áp dụng cho Rewrite: Preedit tắt hẳn
 restore từ surrounding vì nó phải xoá từ cũ khỏi ứng dụng theo snapshot, snapshot
 sai là xoá nhầm chữ.
