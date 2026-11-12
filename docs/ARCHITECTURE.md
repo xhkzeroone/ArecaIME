@@ -56,12 +56,13 @@ Mode thực tế của một input context được quyết định theo ứng d
 
 1. Ứng dụng có mục trong `areca-apps.conf` với mode `Preedit` hoặc `Redirect`
    dùng mode đó.
-2. Mode `Surrounding`, `Shift select`, `Backspace` dùng Rewrite và ghi đè backend.
+2. Mode `Surrounding`, `Shift select`, `Backspace`, `Virtual keyboard` dùng Rewrite và ghi đè backend.
 3. `Tự động` hoặc không có mục dùng mode toàn cục.
 
 Phím `SelectBackendKey`, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 6
-lựa chọn: Tự động, Surrounding, Shift select, Backspace, Preedit, Redirect. Tên
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 7
+lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
+Preedit, Redirect. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
 được lưu vào `areca-apps.conf` cùng tên frontend. Ứng dụng không báo tên được
 đặt tên tạm `context-<uuid>`.
@@ -214,7 +215,9 @@ kiểm tra chính tả, ví dụ `nhanhsh` về `nhánh`.
 được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
 đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
 này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
-chạy trên thread riêng và báo về event loop qua `EventDispatcher`.
+chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Dùng khi chọn
+**Virtual keyboard** cho ứng dụng, hoặc thay uinput khi bật
+`UseVirtualKeyboardInsteadOfUinput`.
 
 Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
 X11 hoặc khi libei không khả dụng.
@@ -252,6 +255,8 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
      Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.
    - `Shift select`: Shift select trừ terminal, không có thì Backspace.
    - `Backspace`: bộ chọn Backspace.
+   - `Virtual keyboard`: `VirtualKeyboardBackend` nếu compositor hỗ trợ, không thì
+     bộ chọn Backspace.
 6. **Tự động**:
    - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
    - Trình duyệt và `ShiftSelectFallbackForBrowser=True`: Shift select.

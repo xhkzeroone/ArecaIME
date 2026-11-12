@@ -615,7 +615,8 @@ namespace areca::settings {
                 bsName += ")";
 
                 const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
-                                           bsName.c_str(), "Preedit",       "Redirect (EN)"};
+                                           bsName.c_str(), "Preedit",       "Redirect (EN)",
+                                           "Virtual keyboard"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));
