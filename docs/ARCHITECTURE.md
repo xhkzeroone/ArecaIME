@@ -63,8 +63,8 @@ Phím `SelectBackendKey`, mặc định phím dấu huyền, mở menu chọn ng
 dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có tối đa 8
 lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
 Native, Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ,
-Native bị ẩn khi bản build không có libei, phiên không phải Wayland hoặc portal
-đã từ chối, trừ khi ứng dụng đang chọn mục đó. Các mục còn lại đánh số liên tiếp,
+Native bị ẩn khi compositor có phím ảo, bản build không có libei, phiên không
+phải Wayland hoặc portal đã từ chối, trừ khi ứng dụng đang chọn mục đó. Các mục còn lại đánh số liên tiếp,
 Preedit và Redirect luôn là A và E. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
 được lưu vào `areca-apps.conf` cùng tên frontend. Ứng dụng không báo tên được

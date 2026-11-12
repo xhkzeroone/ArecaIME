@@ -106,13 +106,17 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
   };
   // Mục chỉ có trên một số máy được ẩn khi không dùng được, trừ khi ứng dụng
   // đang chọn nó để người dùng còn thấy và đổi.
-  if (virtualKeyboardDevice_.isAvailable() ||
+  const bool virtualKeyboardAvailable = virtualKeyboardDevice_.isAvailable();
+  if (virtualKeyboardAvailable ||
       currentMode == AppBackendMode::VirtualKeyboard) {
     options.push_back(
         {AppBackendMode::VirtualKeyboard, "Virtual keyboard (Wayland)"});
   }
-  // isSupported() không xin quyền libei, nên mở menu không bật hộp thoại.
-  if (nativeDevice_.isSupported() || currentMode == AppBackendMode::Native) {
+  // Compositor cấp phím ảo (wlroots) thì không có portal libei, và ngược lại
+  // (KWin, Mutter), nên chỉ hiện một trong hai. isSupported() không xin quyền
+  // libei, nên mở menu không bật hộp thoại.
+  if ((!virtualKeyboardAvailable && nativeDevice_.isSupported()) ||
+      currentMode == AppBackendMode::Native) {
     options.push_back({AppBackendMode::Native, "Native (libei)"});
   }
   std::vector<std::string> labels;
