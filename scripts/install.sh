@@ -84,12 +84,18 @@ install_deps_debian() {
   local common=(build-essential cmake ninja-build pkg-config extra-cmake-modules
                 golang-go libinput-dev libudev-dev libdbus-1-dev
                 libfontconfig-dev python3-gi gir1.2-gtk-4.0
-                gir1.2-gdkpixbuf-2.0)
+                gir1.2-gdkpixbuf-2.0 libwayland-dev libwayland-bin)
   local fcitx=(fcitx5 fcitx5-config-qt libfcitx5core-dev
                libfcitx5config-dev libfcitx5utils-dev)
   if ! sudo apt-get install -y "${common[@]}" "${fcitx[@]}"; then
     echo "[areca] Individual Fcitx development packages unavailable; trying fcitx5-dev"
     sudo apt-get install -y "${common[@]}" fcitx5 fcitx5-config-qt fcitx5-dev
+  fi
+
+  # libei/libportal cho backend Native chưa có trên bản Ubuntu cũ (Mint 21);
+  # thiếu thì vẫn build được, chỉ không có Native.
+  if ! sudo apt-get install -y libei-dev libportal-dev; then
+    echo "[areca] libei-dev/libportal-dev unavailable; Native backend will be disabled"
   fi
 
   # SDL3 is not available in the repositories of several supported Ubuntu
@@ -127,7 +133,7 @@ install_deps_arch() {
   local packages=(base-devel cmake ninja pkgconf extra-cmake-modules go
                   gtk4 python python-gobject gdk-pixbuf2
                   libinput systemd-libs dbus fcitx5
-                  fcitx5-configtool sdl3 fontconfig)
+                  fcitx5-configtool sdl3 fontconfig wayland libei libportal)
   if [[ "$ARECA_UPDATE_SYSTEM" == 1 ]]; then
     echo "[areca] Updating Arch system and installing build dependencies"
     sudo pacman -Syu --needed --noconfirm "${packages[@]}"
@@ -153,7 +159,8 @@ install_deps_fedora() {
     gcc-c++ cmake ninja-build pkgconf-pkg-config extra-cmake-modules go \
     python3-gobject gtk4 gdk-pixbuf2 \
     libinput-devel systemd-devel dbus-devel SDL3-devel fontconfig-devel \
-    fcitx5 fcitx5-devel fcitx5-configtool
+    fcitx5 fcitx5-devel fcitx5-configtool \
+    wayland-devel libei-devel libportal-devel
 }
 
 install_deps_opensuse() {
@@ -163,7 +170,8 @@ install_deps_opensuse() {
     python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-4_0 \
     libgtk-4-1 typelib-1_0-GdkPixbuf-2_0 \
     libinput-devel systemd-devel fcitx5 fcitx5-devel SDL3-devel \
-    fontconfig-devel dbus-1-devel libudev-devel
+    fontconfig-devel dbus-1-devel libudev-devel \
+    wayland-devel libei-devel libportal-devel
 }
 
 distro_matches() {

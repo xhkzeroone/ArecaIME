@@ -366,7 +366,9 @@ Cách đọc log của từng backend nằm trong [tài liệu debug](docs/DEBUG
 ## Build từ mã nguồn
 
 Cần bộ biên dịch C++20, CMake, Extra CMake Modules, Ninja, Go và gói phát triển
-của Fcitx5, SDL3, libinput, libudev, DBus, Fontconfig.
+của Fcitx5, SDL3, libinput, libudev, DBus, Fontconfig, Wayland (kèm
+`wayland-scanner`, cho backend Virtual keyboard), libei và libportal (cho backend
+Native). Thiếu Wayland hoặc libei thì vẫn build được, chỉ tắt backend tương ứng.
 
 ```bash
 git clone --recurse-submodules https://github.com/xhkzeroone/ArecaIME.git

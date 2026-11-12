@@ -19,5 +19,7 @@ pkgs.mkShell {
     (python3.withPackages (ps: [ ps.pygobject3 ]))
     libei
     libportal
+    wayland
+    wayland-scanner
   ];
 }

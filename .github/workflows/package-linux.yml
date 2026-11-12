@@ -382,6 +382,7 @@ jobs:
                 ninja \
                 pkgconf \
                 fontconfig \
+                wayland \
                 systemd-libs \
                 dbus \
                 sdl3
@@ -452,7 +453,10 @@ jobs:
                 fontconfig-devel \
                 fcitx5 \
                 fcitx5-devel \
-                fcitx5-configtool
+                fcitx5-configtool \
+                libei-devel \
+                libportal-devel \
+                wayland-devel
               gem install --no-document fpm
 
               cmake -S . -B build-pkg-fedora -G Ninja \
@@ -482,6 +486,9 @@ jobs:
                 --depends systemd-libs \
                 --depends SDL3 \
                 --depends fontconfig \
+                --depends libei \
+                --depends libportal \
+                --depends libwayland-client \
                 -C pkgroot-fedora \
                 -p "dist/fcitx5-areca-${VERSION}.fedora${{ matrix.version }}.x86_64.rpm" \
                 .
@@ -543,6 +550,7 @@ jobs:
                 fontconfig-devel \
                 libei-devel \
                 libportal-devel \
+                wayland-devel \
                 fcitx5 \
                 fcitx5-devel
               gem install --no-document --bindir /usr/local/bin fpm
@@ -581,6 +589,9 @@ jobs:
                 --depends libinput10 \
                 --depends SDL3 \
                 --depends fontconfig \
+                --depends libei1 \
+                --depends libportal1 \
+                --depends libwayland-client0 \
                 -C pkgroot-opensuse \
                 -p "dist/fcitx5-areca-${VERSION}.opensuse-tumbleweed.x86_64.rpm" \
                 .
