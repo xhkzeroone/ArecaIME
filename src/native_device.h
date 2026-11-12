@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 
+#include <fcitx-utils/dbus/bus.h>
 #include <fcitx-utils/event.h>
 
 #include "native_keyboard_device.h"
@@ -16,8 +17,11 @@ namespace areca {
 class NativeDevice final : public NativeKeyboardDevice {
 public:
   using DebugProvider = std::function<bool()>;
+  // Bus session của fcitx5 để hỏi portal; trả nullptr khi không có.
+  using BusProvider = std::function<fcitx::dbus::Bus *()>;
 
-  NativeDevice(fcitx::EventLoop &eventLoop, DebugProvider debugProvider);
+  NativeDevice(fcitx::EventLoop &eventLoop, DebugProvider debugProvider,
+               BusProvider busProvider);
   ~NativeDevice() override;
 
   NativeDevice(const NativeDevice &) = delete;
@@ -28,6 +32,9 @@ public:
   bool sendShift(bool press) override;
   bool sendLeft() override;
   bool warmUp();
+  // Hỏi portal có RemoteDesktop kèm ConnectToEIS và bàn phím không, chỉ đọc
+  // thuộc tính nên không mở hộp thoại xin quyền. Kết quả về bất đồng bộ.
+  void probeSupport();
   // Có thể dùng được hay không mà không xin quyền: false khi bản build không
   // có libei, phiên không phải Wayland, hoặc portal đã từ chối.
   bool isSupported() const;

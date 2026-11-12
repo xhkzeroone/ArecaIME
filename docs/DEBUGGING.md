@@ -92,6 +92,8 @@ areca: virtual-keyboard-backspace done tx= ok= echo_pending=
 areca: virtual-keyboard-backspace unavailable, fallback backend=
 areca: virtual-keyboard-device unavailable reason=
 areca: native unavailable, fallback backend=
+areca: native-device portal remote-desktop version= devices=
+areca: native-device unsupported reason=
 areca: uinput-backspace press tx= seen= expected=
 areca: uinput-backspace ack timeout tx=
 areca: uinput-shift-select start tx= select_left= emit_left=

@@ -11,6 +11,7 @@
 
 #include "fcitx_notifications_compat.h"
 #include "program_compatibility.h"
+#include <fcitx-utils/dbus/bus.h>
 #include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/misc.h>
@@ -23,6 +24,8 @@
 
 #include "mouse_click_tracker.h"
 #include "window_focus_tracker.h"
+
+FCITX_ADDON_DECLARE_FUNCTION(DBusModule, bus, fcitx::dbus::Bus *());
 
 namespace areca {
 
@@ -83,8 +86,12 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       uinputShiftSelectBackend_(instance_->eventLoop(), uinputDevice_,
                                 adaptiveWait_,
                                 [this]() { return debugEnabled(); }),
-      nativeDevice_(instance_->eventLoop(),
-                    [this]() { return debugEnabled(); }),
+      nativeDevice_(
+          instance_->eventLoop(), [this]() { return debugEnabled(); },
+          [this]() -> fcitx::dbus::Bus * {
+            auto *addon = instance_->addonManager().addon("dbus", true);
+            return addon ? addon->call<fcitx::IDBusModule::bus>() : nullptr;
+          }),
       nativeBackspaceBackend_(instance_->eventLoop(), nativeDevice_,
                               adaptiveWait_,
                               [this]() { return debugEnabled(); }),
@@ -324,6 +331,9 @@ void ArecaEngine::scheduleDeviceWarmup() {
         // Warmup chỉ chuẩn bị thiết bị. Chỉ báo lỗi khi routing thực sự thử
         // chọn uinput cho một thao tác gõ/xoá.
         const bool uinputAvailable = uinputDevice_.warmUp();
+        // Chỉ đọc thuộc tính portal, không xin quyền, để menu biết có nên
+        // hiện Native không.
+        nativeDevice_.probeSupport();
         const bool nativeStarted = warmUpNative && nativeDevice_.warmUp();
         // Dò phím ảo sớm để menu chọn backend biết compositor có hỗ trợ không;
         // việc dò không mở hộp thoại nào.

@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <fcitx-utils/dbus/message.h>
+#include <fcitx-utils/dbus/variant.h>
 #include <fcitx-utils/log.h>
 #include <linux/input-event-codes.h>
 
@@ -38,9 +40,12 @@ bool isWaylandSession() {
 struct NativeDevice::Impl {
   enum class State { Idle, Pending, Ready, Failed };
 
-  Impl(fcitx::EventLoop &eventLoop, DebugProvider provider)
+  enum class Support { Unknown, Supported, Unsupported };
+
+  Impl(fcitx::EventLoop &eventLoop, DebugProvider provider,
+       BusProvider busProvider)
       : eventLoop(eventLoop), debugProvider(std::move(provider)),
-        wayland(isWaylandSession()) {}
+        busProvider(std::move(busProvider)), wayland(isWaylandSession()) {}
 
   ~Impl() {
 #ifdef ARECA_HAVE_LIBEI
@@ -51,8 +56,90 @@ struct NativeDevice::Impl {
 
   fcitx::EventLoop &eventLoop;
   DebugProvider debugProvider;
+  BusProvider busProvider;
   const bool wayland;
   State state = State::Idle;
+  Support support = Support::Unknown;
+  std::unique_ptr<fcitx::dbus::Slot> probeSlot;
+
+  // ConnectToEIS có từ RemoteDesktop phiên bản 2.
+  static constexpr uint32_t MinRemoteDesktopVersion = 2;
+  // Bit bàn phím trong AvailableDeviceTypes.
+  static constexpr uint32_t KeyboardDeviceType = 1;
+  // Portal có thể được D-Bus khởi động lần đầu nên chờ rộng tay.
+  static constexpr uint64_t ProbeTimeoutUsec = 5 * 1000 * 1000;
+
+  void markUnsupported(const char *reason) {
+    support = Support::Unsupported;
+    if (state == State::Idle) {
+      // Không xin quyền trên máy chắc chắn không có đường libei.
+      state = State::Failed;
+    }
+    if (debugProvider()) {
+      FCITX_INFO() << "areca: native-device unsupported reason=" << reason;
+    }
+  }
+
+  void handleProbeReply(fcitx::dbus::Message &reply) {
+    if (reply.isError()) {
+      // Backend portal không làm RemoteDesktop (wlroots, niri...).
+      markUnsupported("no-remote-desktop-portal");
+      return;
+    }
+    std::vector<fcitx::dbus::DictEntry<std::string, fcitx::dbus::Variant>>
+        properties;
+    reply >> properties;
+    uint32_t version = 0;
+    uint32_t deviceTypes = 0;
+    for (const auto &entry : properties) {
+      const auto &value = entry.value();
+      if (value.signature() != "u") {
+        continue;
+      }
+      if (entry.key() == "version") {
+        version = value.dataAs<uint32_t>();
+      } else if (entry.key() == "AvailableDeviceTypes") {
+        deviceTypes = value.dataAs<uint32_t>();
+      }
+    }
+    if (debugProvider()) {
+      FCITX_INFO() << "areca: native-device portal remote-desktop version="
+                   << version << " devices=" << deviceTypes;
+    }
+    if (version < MinRemoteDesktopVersion) {
+      markUnsupported("portal-without-connect-to-eis");
+    } else if (!(deviceTypes & KeyboardDeviceType)) {
+      markUnsupported("portal-without-keyboard");
+    } else {
+      support = Support::Supported;
+    }
+  }
+
+  void probeSupport() {
+    if (support != Support::Unknown || probeSlot) {
+      return;
+    }
+    if (!wayland) {
+      markUnsupported("not-wayland");
+      return;
+    }
+    auto *bus = busProvider ? busProvider() : nullptr;
+    if (!bus) {
+      // Không hỏi được thì giữ cách cũ: thử khi cần.
+      support = Support::Supported;
+      return;
+    }
+    auto call = bus->createMethodCall(
+        "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+        "org.freedesktop.DBus.Properties", "GetAll");
+    call << std::string("org.freedesktop.portal.RemoteDesktop");
+    probeSlot =
+        call.callAsync(ProbeTimeoutUsec, [this](fcitx::dbus::Message &reply) {
+          auto slot = std::move(probeSlot);
+          handleProbeReply(reply);
+          return true;
+        });
+  }
 
 #ifdef ARECA_HAVE_LIBEI
   struct ei *connection = nullptr;
@@ -429,6 +516,10 @@ struct NativeDevice::Impl {
     if (state != State::Idle) {
       return state != State::Failed;
     }
+    if (support == Support::Unsupported) {
+      state = State::Failed;
+      return false;
+    }
     resultFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     workerWakeFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (resultFd < 0 || workerWakeFd < 0) {
@@ -482,8 +573,15 @@ struct NativeDevice::Impl {
 };
 
 NativeDevice::NativeDevice(fcitx::EventLoop &eventLoop,
-                           DebugProvider debugProvider)
-    : impl_(std::make_unique<Impl>(eventLoop, std::move(debugProvider))) {}
+                           DebugProvider debugProvider, BusProvider busProvider)
+    : impl_(std::make_unique<Impl>(eventLoop, std::move(debugProvider),
+                                   std::move(busProvider))) {}
+
+void NativeDevice::probeSupport() {
+#ifdef ARECA_HAVE_LIBEI
+  impl_->probeSupport();
+#endif
+}
 
 NativeDevice::~NativeDevice() = default;
 
@@ -500,7 +598,8 @@ bool NativeDevice::warmUp() {
 
 bool NativeDevice::isSupported() const {
 #ifdef ARECA_HAVE_LIBEI
-  return impl_->wayland && impl_->state != Impl::State::Failed;
+  return impl_->wayland && impl_->support == Impl::Support::Supported &&
+         impl_->state != Impl::State::Failed;
 #else
   return false;
 #endif
