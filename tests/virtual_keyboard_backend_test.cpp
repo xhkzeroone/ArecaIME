@@ -1,5 +1,4 @@
 #include <cassert>
-#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,7 +68,6 @@ areca::RewritePlan makePlan(uint64_t id, uint32_t backspaces,
   plan.transactionId = id;
   plan.backspaceCount = backspaces;
   plan.commitText = std::move(text);
-  plan.backspaceDelayMs = 2;
   return plan;
 }
 
@@ -104,86 +102,77 @@ void testPureHelpers() {
                      ">") == std::string::npos);
 }
 
-void testDeviceSelectionAndCompletion() {
+void testAvailabilityAndCompletion() {
   fcitx::EventLoop loop;
   fcitx::InputContextManager manager;
-  TestInputContext waylandContext(manager, "wayland");
-  TestInputContext ximContext(manager, "xim");
+  TestInputContext context(manager, "wayland");
 
-  // Phiên Wayland không có phím ảo: X11 chỉ dùng cho app X11 (frontend xim).
-  setenv("WAYLAND_DISPLAY", "wayland-test", 1);
-  setenv("XDG_SESSION_TYPE", "wayland", 1);
-  auto wayland = std::make_unique<FakeDevice>("wayland", false);
-  auto x11 = std::make_unique<FakeDevice>("x11", true);
-  auto *x11Device = x11.get();
-  areca::VirtualKeyboardBackend backend(
-      loop, std::move(wayland), std::move(x11),
+  // Compositor không có phím ảo (KWin, GNOME): không khả dụng, không nhận giao
+  // dịch, để bộ chọn Backspace dùng uinput.
+  areca::VirtualKeyboardBackend unavailable(
+      loop, std::make_unique<FakeDevice>("wayland", false),
       [](std::function<void()> task) { task(); }, [] { return false; });
-
-  assert(!backend.isAvailable(waylandContext));
-  assert(backend.describe(waylandContext) == "không khả dụng");
-  assert(backend.apply(waylandContext, makePlan(1, 1, "õ"), nullptr) ==
+  assert(!unavailable.isAvailable());
+  assert(unavailable.apply(context, makePlan(1, 1, "õ"), nullptr) ==
          areca::ApplyStatus::Failed);
-  assert(backend.isAvailable(ximContext));
-  assert(backend.describe(ximContext) == "X11");
+
+  // Bản build không có Wayland.
+  areca::VirtualKeyboardBackend missing(
+      loop, nullptr, [](std::function<void()> task) { task(); },
+      [] { return false; });
+  assert(!missing.isAvailable());
+
+  auto device = std::make_unique<FakeDevice>("wayland", true);
+  auto *fake = device.get();
+  areca::VirtualKeyboardBackend backend(
+      loop, std::move(device), [](std::function<void()> task) { task(); },
+      [] { return false; });
+  assert(backend.isAvailable());
 
   uint64_t doneId = 0;
   areca::RewriteOutcome outcome = areca::RewriteOutcome::Failed;
   const auto status =
-      backend.apply(ximContext, makePlan(7, 1, "õ"),
+      backend.apply(context, makePlan(7, 1, "õ"),
                     [&](uint64_t id, areca::RewriteOutcome result) {
                       doneId = id;
                       outcome = result;
                     });
   assert(status == areca::ApplyStatus::Pending);
   assert(backend.hasPending());
-  assert(x11Device->requests.size() == 1);
-  assert(x11Device->requests[0].deleteCount == 1);
-  assert(x11Device->requests[0].text == "õ");
-  assert(x11Device->requests[0].keyIntervalMs == 2);
+  assert(fake->requests.size() == 1);
+  assert(fake->requests[0].deleteCount == 1);
+  assert(fake->requests[0].text == "õ");
   // Đang có giao dịch thì không nhận giao dịch mới.
-  assert(backend.apply(ximContext, makePlan(8, 1, "a"), nullptr) ==
+  assert(backend.apply(context, makePlan(8, 1, "a"), nullptr) ==
          areca::ApplyStatus::Failed);
 
-  x11Device->finish(true);
+  fake->finish(true);
   assert(doneId == 7);
   assert(outcome == areca::RewriteOutcome::Succeeded);
   assert(!backend.hasPending());
   // Không bao giờ commitString: chữ đi bằng phím ảo.
-  assert(ximContext.commits.empty());
+  assert(context.commits.empty());
 
   // Thiết bị báo hỏng thì giao dịch thất bại.
-  assert(backend.apply(ximContext, makePlan(9, 0, "a"),
+  assert(backend.apply(context, makePlan(9, 0, "a"),
                        [&](uint64_t id, areca::RewriteOutcome result) {
                          doneId = id;
                          outcome = result;
                        }) == areca::ApplyStatus::Pending);
-  x11Device->finish(false);
+  fake->finish(false);
   assert(doneId == 9);
   assert(outcome == areca::RewriteOutcome::Failed);
-}
-
-void testWaylandPreferredWhenAvailable() {
-  fcitx::EventLoop loop;
-  fcitx::InputContextManager manager;
-  TestInputContext context(manager, "wayland");
-  areca::VirtualKeyboardBackend backend(
-      loop, std::make_unique<FakeDevice>("wayland", true),
-      std::make_unique<FakeDevice>("x11", true),
-      [](std::function<void()> task) { task(); }, [] { return false; });
-  assert(backend.describe(context) == "Wayland");
 }
 
 void testEchoKeysPassThrough() {
   fcitx::EventLoop loop;
   fcitx::InputContextManager manager;
-  TestInputContext context(manager, "xim");
-  TestInputContext other(manager, "xim");
-  setenv("XDG_SESSION_TYPE", "x11", 1);
-  auto x11 = std::make_unique<FakeDevice>("x11", true);
-  auto *device = x11.get();
+  TestInputContext context(manager, "wayland");
+  TestInputContext other(manager, "wayland");
+  auto device = std::make_unique<FakeDevice>("wayland", true);
+  auto *fake = device.get();
   areca::VirtualKeyboardBackend backend(
-      loop, nullptr, std::move(x11), [](std::function<void()> task) { task(); },
+      loop, std::move(device), [](std::function<void()> task) { task(); },
       [] { return false; });
 
   assert(backend.apply(context, makePlan(3, 1, "õ"),
@@ -205,7 +194,7 @@ void testEchoKeysPassThrough() {
   assert(backend.handleKeyEvent(backspaceUp));
 
   // Dội ngược đến sau khi thiết bị đã báo xong vẫn được nhận.
-  device->finish(true);
+  fake->finish(true);
   fcitx::KeyEvent text(&context,
                        fcitx::Key(fcitx::Key::keySymFromUnicode(0xf5)));
   assert(backend.handleKeyEvent(text));
@@ -220,8 +209,7 @@ void testEchoKeysPassThrough() {
 
 int main() {
   testPureHelpers();
-  testDeviceSelectionAndCompletion();
-  testWaylandPreferredWhenAvailable();
+  testAvailabilityAndCompletion();
   testEchoKeysPassThrough();
   return 0;
 }

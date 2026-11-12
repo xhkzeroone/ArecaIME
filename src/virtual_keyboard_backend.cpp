@@ -1,7 +1,5 @@
 #include "virtual_keyboard_backend.h"
 
-#include <cstdlib>
-#include <string_view>
 #include <utility>
 
 #include <fcitx-utils/key.h>
@@ -9,64 +7,22 @@
 #include <fcitx-utils/log.h>
 
 namespace areca {
-namespace {
-
-bool x11Session() {
-  const char *type = std::getenv("XDG_SESSION_TYPE");
-  if (type && std::string_view(type) == "x11") {
-    return true;
-  }
-  const char *wayland = std::getenv("WAYLAND_DISPLAY");
-  return !wayland || !wayland[0];
-}
-
-} // namespace
-
 VirtualKeyboardBackend::VirtualKeyboardBackend(
-    fcitx::EventLoop &eventLoop, std::unique_ptr<VirtualKeyboardDevice> wayland,
-    std::unique_ptr<VirtualKeyboardDevice> x11, MainThreadPoster postToMain,
-    DebugProvider debugProvider)
-    : eventLoop_(eventLoop), wayland_(std::move(wayland)), x11_(std::move(x11)),
+    fcitx::EventLoop &eventLoop, std::unique_ptr<VirtualKeyboardDevice> device,
+    MainThreadPoster postToMain, DebugProvider debugProvider)
+    : eventLoop_(eventLoop), device_(std::move(device)),
       postToMain_(std::move(postToMain)),
       debugProvider_(std::move(debugProvider)) {}
 
 VirtualKeyboardBackend::~VirtualKeyboardBackend() {
   *alive_ = false;
-  if (wayland_) {
-    wayland_->cancel();
-  }
-  if (x11_) {
-    x11_->cancel();
+  if (device_) {
+    device_->cancel();
   }
 }
 
-VirtualKeyboardDevice *
-VirtualKeyboardBackend::deviceFor(fcitx::InputContext &inputContext) {
-  if (wayland_ && wayland_->isAvailable()) {
-    return wayland_.get();
-  }
-  // XTEST chỉ tới được client X11. Trên phiên Wayland, phím gửi qua XWayland sẽ
-  // không tới app Wayland và chữ bị mất, nên chỉ dùng khi chắc là app X11.
-  const char *frontend = inputContext.frontend();
-  const bool x11Client =
-      x11Session() || (frontend && std::string_view(frontend) == "xim");
-  if (x11_ && x11Client && x11_->isAvailable()) {
-    return x11_.get();
-  }
-  return nullptr;
-}
-
-bool VirtualKeyboardBackend::isAvailable(fcitx::InputContext &inputContext) {
-  return deviceFor(inputContext) != nullptr;
-}
-
-std::string
-VirtualKeyboardBackend::describe(fcitx::InputContext &inputContext) {
-  auto *device = deviceFor(inputContext);
-  if (!device) {
-    return "không khả dụng";
-  }
-  return std::string_view(device->kind()) == "wayland" ? "Wayland" : "X11";
+bool VirtualKeyboardBackend::isAvailable() {
+  return device_ && device_->isAvailable();
 }
 
 ApplyStatus VirtualKeyboardBackend::apply(fcitx::InputContext &inputContext,
@@ -75,10 +31,10 @@ ApplyStatus VirtualKeyboardBackend::apply(fcitx::InputContext &inputContext,
   if (hasPending() || !plan.transactionId) {
     return ApplyStatus::Failed;
   }
-  auto *device = deviceFor(inputContext);
-  if (!device) {
+  if (!isAvailable()) {
     return ApplyStatus::Failed;
   }
+  auto *device = device_.get();
 
   transactionId_ = plan.transactionId;
   onDone_ = std::move(onDone);
@@ -117,7 +73,6 @@ ApplyStatus VirtualKeyboardBackend::apply(fcitx::InputContext &inputContext,
   VirtualKeyboardRequest request;
   request.deleteCount = plan.backspaceCount;
   request.text = plan.commitText;
-  request.keyIntervalMs = plan.backspaceDelayMs;
   std::weak_ptr<bool> alive = alive_;
   device->replace(request, [this, alive, transactionId](bool ok) {
     postToMain_([this, alive, transactionId, ok] {

@@ -537,6 +537,8 @@ namespace areca::settings {
         checkbox("Dùng Surrounding v2 thay cho Surrounding v1", config.advanced.useSurroundingV2InsteadOfSurroundingV1);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
         checkbox("Dùng Native (Libei, fallback XTest) thay thế uinput", config.advanced.useXTestInsteadOfUinput);
+        checkbox("Dùng phím ảo Wayland (virtual keyboard) thay thế uinput",
+                 config.advanced.useVirtualKeyboardInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
         checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
         endSettingsCard();
@@ -613,8 +615,7 @@ namespace areca::settings {
                 bsName += ")";
 
                 const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
-                                           bsName.c_str(), "Preedit",       "Redirect (EN)",
-                                           "Virtual keyboard"};
+                                           bsName.c_str(), "Preedit",       "Redirect (EN)"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));

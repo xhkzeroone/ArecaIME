@@ -19,7 +19,6 @@ depends=(
   'fontconfig'
   'libx11'
   'libxtst'
-  'libxcb'
   'wayland'
 )
 makedepends=(
@@ -33,7 +32,6 @@ makedepends=(
   'fontconfig'
   'libx11'
   'libxtst'
-  'libxcb'
   'wayland'
 )
 source=("${pkgname}-${pkgver}.tar.gz")

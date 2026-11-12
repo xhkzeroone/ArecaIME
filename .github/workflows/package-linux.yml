@@ -111,8 +111,6 @@ jobs:
             libfontconfig-dev \
             libx11-dev \
             libxtst-dev \
-            libxcb1-dev \
-            libxcb-xtest0-dev \
             libwayland-dev \
             libwayland-bin \
             patchelf
@@ -223,8 +221,6 @@ jobs:
             --depends libudev1 \
             --depends libx11-6 \
             --depends libxtst6 \
-            --depends libxcb1 \
-            --depends libxcb-xtest0 \
             --depends libwayland-client0 \
             "${sdl3_depend_args[@]}" \
             -C pkgroot \
@@ -294,8 +290,6 @@ jobs:
                 libfontconfig-dev \
                 libx11-dev \
                 libxtst-dev \
-                libxcb1-dev \
-                libxcb-xtest0-dev \
                 libwayland-dev \
                 libwayland-bin \
                 libsdl3-dev
@@ -333,8 +327,6 @@ jobs:
                 --depends libudev1 \
                 --depends libx11-6 \
                 --depends libxtst6 \
-            --depends libxcb1 \
-            --depends libxcb-xtest0 \
             --depends libwayland-client0 \
                 --depends libsdl3-0 \
                 -C pkgroot-ubuntu25 \

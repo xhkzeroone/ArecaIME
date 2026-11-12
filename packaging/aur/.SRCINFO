@@ -16,7 +16,6 @@ pkgbase = fcitx5-areca
 	makedepends = fontconfig
 	makedepends = libx11
 	makedepends = libxtst
-	makedepends = libxcb
 	makedepends = wayland
 	depends = fcitx5
 	depends = gtk4
@@ -31,7 +30,6 @@ pkgbase = fcitx5-areca
 	depends = fontconfig
 	depends = libx11
 	depends = libxtst
-	depends = libxcb
 	depends = wayland
 	optdepends = fcitx5-configtool: graphical configuration tool
 	source = fcitx5-areca::git+https://github.com/xhkzeroone/ArecaIME.git#tag=v8.3.6

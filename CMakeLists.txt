@@ -17,9 +17,8 @@ pkg_check_modules(X11_CLIENT REQUIRED IMPORTED_TARGET x11)
 pkg_check_modules(XTEST REQUIRED IMPORTED_TARGET xtst)
 pkg_check_modules(LIBEI QUIET IMPORTED_TARGET libei-1.0>=1.0)
 pkg_check_modules(LIBPORTAL QUIET IMPORTED_TARGET libportal>=0.7.1)
-# Backend Virtual keyboard: thiếu thư viện nào thì phần đó báo không khả dụng.
+# Backend phím ảo Wayland: thiếu thì backend báo không khả dụng.
 pkg_check_modules(WAYLAND_CLIENT QUIET IMPORTED_TARGET wayland-client)
-pkg_check_modules(XCB_XTEST QUIET IMPORTED_TARGET xcb xcb-xtest)
 find_program(WAYLAND_SCANNER wayland-scanner)
 
 add_executable(areca-mouse-monitor tools/mouse_monitor.cpp)
@@ -85,7 +84,6 @@ add_library(areca MODULE
     src/virtual_keyboard_backend.cpp
     src/virtual_keyboard_device.cpp
     src/virtual_keyboard_wayland.cpp
-    src/virtual_keyboard_x11.cpp
     src/atspi/atspi_connection.cpp
     src/atspi/atspi_accessible.cpp
     src/window_focus_tracker.cpp
@@ -129,16 +127,9 @@ if(WAYLAND_CLIENT_FOUND AND WAYLAND_SCANNER)
     target_include_directories(areca PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     target_compile_definitions(areca PRIVATE ARECA_HAVE_WAYLAND_VK=1)
     target_link_libraries(areca PRIVATE PkgConfig::WAYLAND_CLIENT)
-    message(STATUS "Virtual keyboard backend: Wayland enabled")
+    message(STATUS "Virtual keyboard backend enabled")
 else()
-    message(WARNING "Virtual keyboard backend: Wayland disabled (wayland-client or wayland-scanner missing)")
-endif()
-if(XCB_XTEST_FOUND)
-    target_compile_definitions(areca PRIVATE ARECA_HAVE_XCB_XTEST=1)
-    target_link_libraries(areca PRIVATE PkgConfig::XCB_XTEST)
-    message(STATUS "Virtual keyboard backend: X11 enabled")
-else()
-    message(WARNING "Virtual keyboard backend: X11 disabled (xcb or xcb-xtest missing)")
+    message(WARNING "Virtual keyboard backend disabled (wayland-client or wayland-scanner missing)")
 endif()
 add_dependencies(areca areca-mouse-monitor)
 set_target_properties(areca PROPERTIES PREFIX "" OUTPUT_NAME "areca")

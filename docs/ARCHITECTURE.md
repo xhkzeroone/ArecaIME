@@ -60,9 +60,8 @@ Mode thực tế của một input context được quyết định theo ứng d
 3. `Tự động` hoặc không có mục dùng mode toàn cục.
 
 Phím `SelectBackendKey`, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 7
-lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
-Preedit, Redirect. Tên
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 6
+lựa chọn: Tự động, Surrounding, Shift select, Backspace, Preedit, Redirect. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
 được lưu vào `areca-apps.conf` cùng tên frontend. Ứng dụng không báo tên được
 đặt tên tạm `context-<uuid>`.
@@ -211,17 +210,11 @@ kiểm tra chính tả, ví dụ `nhanhsh` về `nhánh`.
 | `ForwardBackspaceBackend` | `forward-backspace` | `forwardKey(Backspace)` × N | Không ACK |
 | `VirtualKeyboardBackend` | `virtual-keyboard` | Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không `commitString` | Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng |
 
-`VirtualKeyboardBackend` chỉ dùng khi chọn **Virtual keyboard** cho ứng dụng. Ký
-tự mới được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá
-và chèn đi chung một kênh và thứ tự do compositor hoặc X server giữ:
-
-- Wayland: `zwp_virtual_keyboard_v1` khi compositor cấp cho kết nối thường
-  (wlroots, Hyprland, sway). KWin và Mutter không cấp.
-- X11: XCB + XTEST, mỗi ký tự của một lượt mượn một keycode rảnh, trả keymap gốc
-  sau 50 ms. Chỉ dùng khi phiên là X11 hoặc ứng dụng đi qua XIM, vì XTEST trên
-  XWayland không tới được ứng dụng Wayland.
-- Thiết bị chạy trên thread riêng và báo về event loop qua `EventDispatcher`.
-  Không có thiết bị nào khả dụng thì dùng bộ chọn Backspace.
+`VirtualKeyboardBackend` dùng `zwp_virtual_keyboard_v1` của Wayland. Ký tự mới
+được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
+đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
+này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
+chạy trên thread riêng và báo về event loop qua `EventDispatcher`.
 
 Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
 X11 hoặc khi libei không khả dụng.
@@ -237,7 +230,9 @@ Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:
 - **Shift select**: Native nếu `UseXTestInsteadOfUinput=True` và khả dụng, rồi
   uinput, rồi Native.
 - **Backspace**: khi cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey=True`,
-  thử Native nếu được ưu tiên, rồi uinput, rồi Native; cuối cùng là ForwardKey.
+  thử Native nếu được ưu tiên, rồi phím ảo Wayland nếu bật
+  `UseVirtualKeyboardInsteadOfUinput` và compositor hỗ trợ, rồi uinput, rồi
+  Native; cuối cùng là ForwardKey.
 
 ## Chọn backend
 
@@ -257,8 +252,6 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
      Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.
    - `Shift select`: Shift select trừ terminal, không có thì Backspace.
    - `Backspace`: bộ chọn Backspace.
-   - `Virtual keyboard`: `VirtualKeyboardBackend` nếu khả dụng, không thì bộ chọn
-     Backspace.
 6. **Tự động**:
    - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
    - Trình duyệt và `ShiftSelectFallbackForBrowser=True`: Shift select.

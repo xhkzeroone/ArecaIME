@@ -213,6 +213,12 @@ ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
         xtestBackspaceBackend_.isAvailable()) {
       return &xtestBackspaceBackend_;
     }
+    // Phím ảo Wayland xoá và gõ chữ mới trên cùng một kênh; chỉ có khi
+    // compositor cấp zwp_virtual_keyboard_v1, không thì vẫn dùng uinput.
+    if (advancedConfig_.useVirtualKeyboardInsteadOfUinput.value() &&
+        virtualKeyboardBackend_.isAvailable()) {
+      return &virtualKeyboardBackend_;
+    }
     if (uinputBackspaceBackend_.isAvailable()) {
       return &uinputBackspaceBackend_;
     }
@@ -270,6 +276,9 @@ std::string ArecaEngine::describeBackspaceBackend(bool preferHardware) {
     }
     if (name.starts_with("uinput")) {
       return "Uinput";
+    }
+    if (name == "virtual-keyboard") {
+      return "Virtual keyboard";
     }
   }
   return "ForwardKey";
@@ -491,26 +500,6 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         if (debugEnabled()) {
           FCITX_INFO() << "areca: app-override selected backspace backend="
                        << bsBackend->name() << " program=" << program;
-        }
-        return {bsBackend};
-      }
-      case AppBackendMode::VirtualKeyboard: {
-        if (virtualKeyboardBackend_.isAvailable(inputContext)) {
-          if (debugEnabled()) {
-            FCITX_INFO() << "areca: app-override selected virtual-keyboard"
-                         << " device="
-                         << virtualKeyboardBackend_.describe(inputContext)
-                         << " program=" << program;
-          }
-          return {&virtualKeyboardBackend_};
-        }
-        // Compositor không có phím ảo (KWin, GNOME) hoặc app Wayland trên
-        // XWayland: dùng Backspace như khi chọn Backspace.
-        auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
-        if (debugEnabled()) {
-          FCITX_INFO() << "areca: virtual-keyboard unavailable, fallback "
-                       << "backend=" << bsBackend->name()
-                       << " program=" << program;
         }
         return {bsBackend};
       }

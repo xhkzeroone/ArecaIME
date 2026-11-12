@@ -17,9 +17,9 @@
 
 namespace areca {
 
-// Xoá và gõ lại chữ hoàn toàn bằng phím ảo (Wayland zwp_virtual_keyboard_v1
-// hoặc X11 XTEST), không dùng commitString. Chỉ dùng khi người dùng chọn cho
-// từng ứng dụng.
+// Xoá và gõ lại chữ hoàn toàn bằng phím ảo Wayland (zwp_virtual_keyboard_v1),
+// không dùng commitString. Thay uinput khi bật
+// UseVirtualKeyboardInsteadOfUinput và compositor có hỗ trợ.
 class VirtualKeyboardBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
@@ -27,8 +27,7 @@ public:
   using MainThreadPoster = std::function<void(std::function<void()>)>;
 
   VirtualKeyboardBackend(fcitx::EventLoop &eventLoop,
-                         std::unique_ptr<VirtualKeyboardDevice> wayland,
-                         std::unique_ptr<VirtualKeyboardDevice> x11,
+                         std::unique_ptr<VirtualKeyboardDevice> device,
                          MainThreadPoster postToMain,
                          DebugProvider debugProvider);
   ~VirtualKeyboardBackend() override;
@@ -40,9 +39,7 @@ public:
   ApplyStatus apply(fcitx::InputContext &inputContext, const RewritePlan &plan,
                     RewriteDone onDone) override;
 
-  bool isAvailable(fcitx::InputContext &inputContext);
-  // Tên thiết bị sẽ dùng, hoặc "không khả dụng", để hiện trong menu.
-  std::string describe(fcitx::InputContext &inputContext);
+  bool isAvailable();
   bool hasPending() const { return transactionId_ != 0; }
   // Phím ảo đi vào ứng dụng rồi quay lại fcitx5; chuyển thẳng cho ứng dụng thay
   // vì để Bamboo xử lý lại.
@@ -54,13 +51,11 @@ public:
   static constexpr uint64_t kEchoGraceUsec = 1000 * 1000;
 
 private:
-  VirtualKeyboardDevice *deviceFor(fcitx::InputContext &inputContext);
   void finish(uint64_t transactionId, bool ok);
   void clearEcho();
 
   fcitx::EventLoop &eventLoop_;
-  std::unique_ptr<VirtualKeyboardDevice> wayland_;
-  std::unique_ptr<VirtualKeyboardDevice> x11_;
+  std::unique_ptr<VirtualKeyboardDevice> device_;
   MainThreadPoster postToMain_;
   DebugProvider debugProvider_;
   // Callback từ thread thiết bị chỉ chạy tiếp khi backend còn sống.

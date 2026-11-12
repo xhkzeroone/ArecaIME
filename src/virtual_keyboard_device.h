@@ -13,12 +13,10 @@ namespace areca {
 // Thay chữ bằng phím ảo trên một kênh duy nhất: xoá `deleteCount` ký tự bằng
 // Backspace rồi gõ `text`. Ký tự không có trên bàn phím được gán tạm vào
 // keycode rảnh qua keymap, nên không cần commitString và thứ tự xoá/chèn do
-// chính compositor hoặc X server giữ.
+// chính compositor giữ.
 struct VirtualKeyboardRequest {
   uint32_t deleteCount = 0;
   std::string text;
-  // Nghỉ giữa hai phím, chỉ dùng cho X11 nơi mỗi phím đổi keymap toàn cục.
-  uint32_t keyIntervalMs = 1;
 };
 
 class VirtualKeyboardDevice {
@@ -35,12 +33,8 @@ public:
   virtual void cancel() = 0;
 };
 
-// Trả nullptr khi bản build không có phần tương ứng.
+// Trả nullptr khi bản build không có Wayland.
 std::unique_ptr<VirtualKeyboardDevice> createWaylandVirtualKeyboard();
-std::unique_ptr<VirtualKeyboardDevice> createX11VirtualKeyboard();
-
-// Keysym X11 của phím Backspace, dùng để nhận ra phím dội ngược.
-inline constexpr uint32_t kVirtualKeyboardBackSpaceKeysym = 0xff08;
 
 // Phím ảo đi vào ứng dụng qua đường bàn phím nên quay lại fcitx5 như phím người
 // dùng gõ. Danh sách này theo đúng thứ tự phát: 0 là Backspace, còn lại là mã

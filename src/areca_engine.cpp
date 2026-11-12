@@ -93,7 +93,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                [this]() { return debugEnabled(); }),
       virtualKeyboardBackend_(
           instance_->eventLoop(), createWaylandVirtualKeyboard(),
-          createX11VirtualKeyboard(),
           [this](std::function<void()> task) {
             virtualKeyboardDispatcher_.schedule(std::move(task));
           },

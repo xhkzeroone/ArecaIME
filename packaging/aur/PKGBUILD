@@ -19,7 +19,6 @@ depends=(
   'fontconfig'
   'libx11'
   'libxtst'
-  'libxcb'
   'wayland'
 )
 makedepends=(
@@ -34,7 +33,6 @@ makedepends=(
   'fontconfig'
   'libx11'
   'libxtst'
-  'libxcb'
   'wayland'
 )
 optdepends=('fcitx5-configtool: graphical configuration tool')
