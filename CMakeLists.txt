@@ -79,9 +79,9 @@ add_library(areca MODULE
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
-    src/virtual_keyboard_backend.cpp
+    src/virtual_keyboard_backspace_backend.cpp
     src/virtual_keyboard_device.cpp
-    src/virtual_keyboard_wayland.cpp
+    src/virtual_keyboard_keymap.cpp
     src/atspi/atspi_connection.cpp
     src/atspi/atspi_accessible.cpp
     src/window_focus_tracker.cpp
@@ -422,18 +422,19 @@ if(BUILD_TESTING)
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME native-backspace COMMAND areca-native-backspace-test)
 
-    add_executable(areca-virtual-keyboard-test
-        tests/virtual_keyboard_backend_test.cpp
-        src/virtual_keyboard_backend.cpp
-        src/virtual_keyboard_device.cpp)
-    target_compile_features(areca-virtual-keyboard-test PRIVATE cxx_std_20)
-    target_compile_options(areca-virtual-keyboard-test PRIVATE
+    add_executable(areca-virtual-keyboard-backspace-test
+        tests/virtual_keyboard_backspace_backend_test.cpp
+        src/virtual_keyboard_backspace_backend.cpp
+        src/virtual_keyboard_device.cpp
+        src/virtual_keyboard_keymap.cpp)
+    target_compile_features(areca-virtual-keyboard-backspace-test PRIVATE cxx_std_20)
+    target_compile_options(areca-virtual-keyboard-backspace-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-virtual-keyboard-test PRIVATE
+    target_include_directories(areca-virtual-keyboard-backspace-test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_link_libraries(areca-virtual-keyboard-test PRIVATE
+    target_link_libraries(areca-virtual-keyboard-backspace-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
-    add_test(NAME virtual-keyboard COMMAND areca-virtual-keyboard-test)
+    add_test(NAME virtual-keyboard-backspace COMMAND areca-virtual-keyboard-backspace-test)
 
     add_executable(areca-native-shift-select-test
         tests/native_shift_select_backend_test.cpp

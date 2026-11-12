@@ -487,20 +487,21 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         return {bsBackend};
       }
       case AppBackendMode::VirtualKeyboard: {
-        if (virtualKeyboardBackend_.isAvailable()) {
+        if (virtualKeyboardBackspaceBackend_.isAvailable()) {
           if (debugEnabled()) {
-            FCITX_INFO() << "areca: app-override selected virtual-keyboard"
-                         << " program=" << program;
+            FCITX_INFO()
+                << "areca: app-override selected virtual-keyboard-backspace"
+                << " program=" << program;
           }
-          return {&virtualKeyboardBackend_};
+          return {&virtualKeyboardBackspaceBackend_};
         }
         // Compositor không cấp phím ảo (KWin, GNOME): dùng như khi chọn
         // Backspace.
         auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
         if (debugEnabled()) {
-          FCITX_INFO() << "areca: virtual-keyboard unavailable, fallback "
-                       << "backend=" << bsBackend->name()
-                       << " program=" << program;
+          FCITX_INFO()
+              << "areca: virtual-keyboard-backspace unavailable, fallback "
+              << "backend=" << bsBackend->name() << " program=" << program;
         }
         return {bsBackend};
       }

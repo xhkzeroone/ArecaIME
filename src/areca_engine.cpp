@@ -91,13 +91,11 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       nativeShiftSelectBackend_(instance_->eventLoop(), nativeDevice_,
                                 adaptiveWait_,
                                 [this]() { return debugEnabled(); }),
-      virtualKeyboardBackend_(
-          "virtual-keyboard", instance_->eventLoop(),
-          createWaylandVirtualKeyboard(),
-          [this](std::function<void()> task) {
-            virtualKeyboardDispatcher_.schedule(std::move(task));
-          },
-          [this]() { return debugEnabled(); }),
+      virtualKeyboardDevice_(instance_->eventLoop(),
+                             [this]() { return debugEnabled(); }),
+      virtualKeyboardBackspaceBackend_(instance_->eventLoop(),
+                                       virtualKeyboardDevice_,
+                                       [this]() { return debugEnabled(); }),
       backendSelectionPost_(instance_->eventLoop()),
       scheduler_(
           instance_->eventLoop(),
@@ -217,7 +215,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   config_.outputCharset.annotation().setList(
       BambooEngineAdapter::charsetNames());
   reloadConfig();
-  virtualKeyboardDispatcher_.attach(&instance_->eventLoop());
   focusTracker_ = std::make_unique<WindowFocusTracker>(debugEnabled());
   // Keep AT-SPI monitoring alive in the background. The worker reconnects
   // when the accessibility bus appears, so fallback data is cached before a
@@ -229,7 +226,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
 }
 
 ArecaEngine::~ArecaEngine() {
-  virtualKeyboardDispatcher_.detach();
   inputTypeDetector_.setFocusTracker(nullptr);
   if (focusTracker_) {
     focusTracker_->stop();
@@ -329,11 +325,16 @@ void ArecaEngine::scheduleDeviceWarmup() {
         // chọn uinput cho một thao tác gõ/xoá.
         const bool uinputAvailable = uinputDevice_.warmUp();
         const bool nativeStarted = warmUpNative && nativeDevice_.warmUp();
+        // Dò phím ảo sớm để menu chọn backend biết compositor có hỗ trợ không;
+        // việc dò không mở hộp thoại nào.
+        const bool virtualKeyboardStarted = virtualKeyboardDevice_.warmUp();
         if (debugEnabled()) {
           FCITX_INFO() << "areca: device warmup completed"
                        << " uinput-available=" << uinputAvailable
                        << " native-requested=" << warmUpNative
-                       << " native-started=" << nativeStarted;
+                       << " native-started=" << nativeStarted
+                       << " virtual-keyboard-started="
+                       << virtualKeyboardStarted;
         }
         return false;
       });
@@ -539,7 +540,7 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   // Phím ảo vừa gõ quay lại fcitx5: chuyển thẳng cho ứng dụng.
-  if (virtualKeyboardBackend_.handleKeyEvent(event)) {
+  if (virtualKeyboardBackspaceBackend_.handleKeyEvent(event)) {
     return;
   }
   if (!event.isRelease()) {

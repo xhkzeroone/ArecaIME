@@ -209,14 +209,16 @@ kiểm tra chính tả, ví dụ `nhanhsh` về `nhánh`.
 | `UinputBackspaceBackend` | `uinput-backspace` | Backspace × N qua `/dev/uinput` | ACK bằng số Backspace quay về Fcitx |
 | `NativeBackspaceBackend` | `native-backspace` | Backspace × N qua libei | Không ACK |
 | `ForwardBackspaceBackend` | `forward-backspace` | `forwardKey(Backspace)` × N | Không ACK |
-| `VirtualKeyboardBackend` | `virtual-keyboard` | Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không `commitString` | Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng |
+| `VirtualKeyboardBackspaceBackend` | `virtual-keyboard-backspace` | Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không `commitString` | Compositor trả lời sync sau mỗi đợt; phím dội ngược được chuyển thẳng cho ứng dụng |
 
-`VirtualKeyboardBackend` dùng `zwp_virtual_keyboard_v1` của Wayland. Ký tự mới
-được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
-đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
-này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
-chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Chỉ dùng khi chọn
-**Virtual keyboard** cho ứng dụng.
+`VirtualKeyboardBackspaceBackend` dùng `VirtualKeyboardDevice`, tức
+`zwp_virtual_keyboard_v1` của Wayland. Mỗi đợt gửi một keymap gán tối đa 36 ký tự
+mới lên các phím chữ cái và chữ số, bấm Backspace (đợt đầu) rồi bấm các phím đó, và
+chờ compositor trả lời `wl_display_sync` trước khi sang đợt sau. Xoá và chèn đi chung
+một kênh nên thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức này cho
+kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Kết nối Wayland
+được theo dõi trên event loop của fcitx5 bằng `addIOEvent`, không có thread riêng.
+Chỉ dùng khi chọn **Virtual keyboard** cho ứng dụng.
 
 Mục **Native** ép `native-backspace`: Backspace qua libei rồi `commitString`.
 
@@ -253,7 +255,7 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
      Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.
    - `Shift select`: Shift select trừ terminal, không có thì Backspace.
    - `Backspace`: bộ chọn Backspace.
-   - `Virtual keyboard`: `VirtualKeyboardBackend` nếu compositor hỗ trợ, không thì
+   - `Virtual keyboard`: `VirtualKeyboardBackspaceBackend` nếu compositor hỗ trợ, không thì
      bộ chọn Backspace.
    - `Native`: `native-backspace` nếu đã có quyền libei, không thì bộ chọn Backspace.
 6. **Tự động**:

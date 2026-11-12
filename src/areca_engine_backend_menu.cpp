@@ -95,7 +95,8 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       "Backspace (" + describeBackspaceBackend(preferHardware) + ")";
   const std::string virtualKeyboardTitle =
       std::string("Virtual keyboard (") +
-      (virtualKeyboardBackend_.isAvailable() ? "Wayland" : "không khả dụng") +
+      (virtualKeyboardBackspaceBackend_.isAvailable() ? "Wayland"
+                                                      : "không khả dụng") +
       ")";
 
   struct BackendOption {
@@ -210,7 +211,7 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
     modeDesc = "Redirect (EN)";
     break;
   case AppBackendMode::VirtualKeyboard:
-    modeDesc = virtualKeyboardBackend_.isAvailable()
+    modeDesc = virtualKeyboardBackspaceBackend_.isAvailable()
                    ? "Virtual keyboard (Wayland)"
                    : "Virtual keyboard (không khả dụng, dùng Backspace)";
     break;

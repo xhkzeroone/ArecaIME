@@ -4224,15 +4224,17 @@ kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.<
 <tr><td><code>UinputBackspaceBackend</code></td><td><code>uinput-backspace</code></td><td>Backspace × N qua <code>/dev/uinput</code></td><td>ACK bằng số Backspace quay về Fcitx</td></tr>
 <tr><td><code>NativeBackspaceBackend</code></td><td><code>native-backspace</code></td><td>Backspace × N qua libei</td><td>Không ACK</td></tr>
 <tr><td><code>ForwardBackspaceBackend</code></td><td><code>forward-backspace</code></td><td><code>forwardKey(Backspace)</code> × N</td><td>Không ACK</td></tr>
-<tr><td><code>VirtualKeyboardBackend</code></td><td><code>virtual-keyboard</code></td><td>Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không <code>commitString</code></td><td>Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng</td></tr>
+<tr><td><code>VirtualKeyboardBackspaceBackend</code></td><td><code>virtual-keyboard-backspace</code></td><td>Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không <code>commitString</code></td><td>Compositor trả lời sync sau mỗi đợt; phím dội ngược được chuyển thẳng cho ứng dụng</td></tr>
 </tbody>
 </table>
-<p><code>VirtualKeyboardBackend</code> dùng <code>zwp_virtual_keyboard_v1</code> của Wayland. Ký tự mới
-được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
-đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
-này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
-chạy trên thread riêng và báo về event loop qua <code>EventDispatcher</code>. Chỉ dùng khi chọn
-<strong>Virtual keyboard</strong> cho ứng dụng.</p>
+<p><code>VirtualKeyboardBackspaceBackend</code> dùng <code>VirtualKeyboardDevice</code>, tức
+<code>zwp_virtual_keyboard_v1</code> của Wayland. Mỗi đợt gửi một keymap gán tối đa 36 ký tự
+mới lên các phím chữ cái và chữ số, bấm Backspace (đợt đầu) rồi bấm các phím đó, và
+chờ compositor trả lời <code>wl_display_sync</code> trước khi sang đợt sau. Xoá và chèn đi chung
+một kênh nên thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức này cho
+kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Kết nối Wayland
+được theo dõi trên event loop của fcitx5 bằng <code>addIOEvent</code>, không có thread riêng.
+Chỉ dùng khi chọn <strong>Virtual keyboard</strong> cho ứng dụng.</p>
 <p>Mục <strong>Native</strong> ép <code>native-backspace</code>: Backspace qua libei rồi <code>commitString</code>.</p>
 <p>Native chỉ dùng libei qua phiên RemoteDesktop portal trên Wayland. Không có
 libei hoặc portal từ chối thì Native không khả dụng và bộ chọn dùng uinput.</p>
@@ -4251,7 +4253,7 @@ nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có
 hoặc là gợi ý autocomplete.</li><li><strong>Ô URL trong trình duyệt không có surrounding text</strong> dùng Shift select.
 Ô URL được nhận diện bằng <code>CapabilityFlag::Url</code> hoặc AT-SPI với thanh địa chỉ
 Chromium.</li><li>**<code>UseBackspaceForUrl=True</code> và ô là URL**: Shift select, không có thì Backspace.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
-Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackend</code> nếu compositor hỗ trợ, không thì bộ chọn Backspace.</li><li><code>Native</code>: <code>native-backspace</code> nếu đã có quyền libei, không thì bộ chọn Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
+Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackspaceBackend</code> nếu compositor hỗ trợ, không thì bộ chọn Backspace.</li><li><code>Native</code>: <code>native-backspace</code> nếu đã có quyền libei, không thì bộ chọn Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
 <code>canForwardBackspaces()</code> trả false, ví dụ ứng dụng SDL hay frontend DBus,
 Fcitx4 thiếu capability phù hợp.</li></ul></li></ol>
 <p>Backend tự động được chọn gần nhất cho mỗi ứng dụng được nhớ để hiển thị trong
