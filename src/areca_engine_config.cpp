@@ -227,12 +227,13 @@ void ArecaEngine::applyConfig() {
        requestedMode](fcitx::InputContext *inputContext) {
         auto *rewriteState = rewriteHandler_.stateFor(*inputContext);
         const std::string program = resolveProgram(*inputContext, rewriteState);
-        auto modeFor = [&program](const auto &overrides,
-                                  PresentationMode fallback) {
+        auto modeFor = [this, &program](const auto &overrides,
+                                        PresentationMode fallback) {
           const auto it = overrides.find(program);
           return it == overrides.end()
                      ? fallback
-                     : presentationModeForAppSetting(it->second, fallback);
+                     : presentationModeForAppSetting(
+                           effectiveAppBackendMode(it->second), fallback);
         };
         const PresentationMode previousMode =
             modeFor(previousOverrides, previousDefaultMode);

@@ -215,6 +215,23 @@ ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
   return &forwardBackspaceBackend_;
 }
 
+bool ArecaEngine::isBackendModeOffered(AppBackendMode mode) {
+  switch (mode) {
+  case AppBackendMode::VirtualKeyboard:
+    return virtualKeyboardDevice_.isAvailable();
+  case AppBackendMode::Native:
+    // Compositor cấp phím ảo (wlroots) thì không có portal libei, và ngược lại
+    // (KWin, Mutter). isSupported() không xin quyền libei.
+    return !virtualKeyboardDevice_.isAvailable() && nativeDevice_.isSupported();
+  default:
+    return true;
+  }
+}
+
+AppBackendMode ArecaEngine::effectiveAppBackendMode(AppBackendMode saved) {
+  return isBackendModeOffered(saved) ? saved : AppBackendMode::Auto;
+}
+
 std::string ArecaEngine::describeAutoBackend(const std::string &appName) {
   auto it = lastAutoBackendByApp_.find(appName);
   if (it != lastAutoBackendByApp_.end()) {
@@ -432,9 +449,11 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
 
   if (!program.empty()) {
     auto it = appBackendOverridesMap_.find(program);
-    if (it != appBackendOverridesMap_.end() &&
-        it->second != AppBackendMode::Auto) {
-      switch (it->second) {
+    const AppBackendMode appMode = it != appBackendOverridesMap_.end()
+                                       ? effectiveAppBackendMode(it->second)
+                                       : AppBackendMode::Auto;
+    if (appMode != AppBackendMode::Auto) {
+      switch (appMode) {
       case AppBackendMode::SurroundingText:
         if (decision.useSurrounding) {
           auto *surBackend = resolvePreferredSurroundingBackend();
@@ -495,8 +514,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {&virtualKeyboardBackspaceBackend_};
         }
-        // Compositor không cấp phím ảo (KWin, GNOME): dùng như khi chọn
-        // Backspace.
+        // Kết nối phím ảo vừa hỏng giữa chừng: dùng như khi chọn Backspace.
         auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
         if (debugEnabled()) {
           FCITX_INFO()
@@ -513,8 +531,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
           }
           return {&nativeBackspaceBackend_};
         }
-        // Chưa có quyền libei (đang xin hoặc bị từ chối): dùng như khi chọn
-        // Backspace.
+        // Chưa có quyền libei (đang xin): dùng như khi chọn Backspace.
         auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
         if (debugEnabled()) {
           FCITX_INFO() << "areca: native unavailable, fallback "

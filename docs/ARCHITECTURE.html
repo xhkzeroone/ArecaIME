@@ -4132,7 +4132,8 @@ lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboa
 Native, Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ,
 Native bị ẩn khi compositor có phím ảo, bản build không có libei, phiên không
 phải Wayland, portal không có RemoteDesktop phiên bản 2 trở lên kèm bàn phím, hoặc
-portal đã từ chối, trừ khi ứng dụng đang chọn mục đó. Các mục còn lại đánh số liên tiếp,
+portal đã từ chối. Ứng dụng đã lưu một mục mà máy không hỗ trợ được coi là
+Tự động, cả khi gõ lẫn khi mở menu; cấu hình đã lưu không bị sửa. Các mục còn lại đánh số liên tiếp,
 Preedit và Redirect luôn là A và E. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ <code>Backspace (Uinput)</code>. Lựa chọn
 được lưu vào <code>areca-apps.conf</code> cùng tên frontend. Ứng dụng không báo tên được
@@ -4257,7 +4258,7 @@ nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có
 hoặc là gợi ý autocomplete.</li><li><strong>Ô URL trong trình duyệt không có surrounding text</strong> dùng Shift select.
 Ô URL được nhận diện bằng <code>CapabilityFlag::Url</code> hoặc AT-SPI với thanh địa chỉ
 Chromium.</li><li>**<code>UseBackspaceForUrl=True</code> và ô là URL**: Shift select, không có thì Backspace.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
-Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackspaceBackend</code> nếu compositor hỗ trợ, không thì bộ chọn Backspace.</li><li><code>Native</code>: <code>native-backspace</code> nếu đã có quyền libei, không thì bộ chọn Backspace.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
+Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackspaceBackend</code>. Compositor không có phím ảo thì coi như Tự động.</li><li><code>Native</code>: <code>native-backspace</code> khi đã có quyền libei, đang xin quyền thì bộ chọn Backspace. Máy không hỗ trợ Native thì coi như Tự động.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
 <code>canForwardBackspaces()</code> trả false, ví dụ ứng dụng SDL hay frontend DBus,
 Fcitx4 thiếu capability phù hợp.</li></ul></li></ol>
 <p>Backend tự động được chọn gần nhất cho mỗi ứng dụng được nhớ để hiển thị trong

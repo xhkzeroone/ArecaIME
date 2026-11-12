@@ -65,7 +65,8 @@ lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboa
 Native, Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ,
 Native bị ẩn khi compositor có phím ảo, bản build không có libei, phiên không
 phải Wayland, portal không có RemoteDesktop phiên bản 2 trở lên kèm bàn phím, hoặc
-portal đã từ chối, trừ khi ứng dụng đang chọn mục đó. Các mục còn lại đánh số liên tiếp,
+portal đã từ chối. Ứng dụng đã lưu một mục mà máy không hỗ trợ được coi là
+Tự động, cả khi gõ lẫn khi mở menu; cấu hình đã lưu không bị sửa. Các mục còn lại đánh số liên tiếp,
 Preedit và Redirect luôn là A và E. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
 được lưu vào `areca-apps.conf` cùng tên frontend. Ứng dụng không báo tên được
@@ -259,9 +260,10 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
      Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.
    - `Shift select`: Shift select trừ terminal, không có thì Backspace.
    - `Backspace`: bộ chọn Backspace.
-   - `Virtual keyboard`: `VirtualKeyboardBackspaceBackend` nếu compositor hỗ trợ, không thì
-     bộ chọn Backspace.
-   - `Native`: `native-backspace` nếu đã có quyền libei, không thì bộ chọn Backspace.
+   - `Virtual keyboard`: `VirtualKeyboardBackspaceBackend`. Compositor không có phím
+     ảo thì coi như Tự động.
+   - `Native`: `native-backspace` khi đã có quyền libei, đang xin quyền thì bộ chọn
+     Backspace. Máy không hỗ trợ Native thì coi như Tự động.
 6. **Tự động**:
    - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
    - Trình duyệt và `ShiftSelectFallbackForBrowser=True`: Shift select.

@@ -68,9 +68,11 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
   }
 
   auto currentIt = appBackendOverridesMap_.find(appName);
+  // Mode máy này không hỗ trợ được hiện như Tự động.
   const AppBackendMode currentMode =
-      (currentIt != appBackendOverridesMap_.end()) ? currentIt->second
-                                                   : AppBackendMode::Auto;
+      (currentIt != appBackendOverridesMap_.end())
+          ? effectiveAppBackendMode(currentIt->second)
+          : AppBackendMode::Auto;
 
   auto candList = std::make_unique<fcitx::CommonCandidateList>();
   candList->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
@@ -104,19 +106,12 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       {AppBackendMode::ShiftSelect, shiftTitle},
       {AppBackendMode::Backspace, backspaceTitle},
   };
-  // Mục chỉ có trên một số máy được ẩn khi không dùng được, trừ khi ứng dụng
-  // đang chọn nó để người dùng còn thấy và đổi.
-  const bool virtualKeyboardAvailable = virtualKeyboardDevice_.isAvailable();
-  if (virtualKeyboardAvailable ||
-      currentMode == AppBackendMode::VirtualKeyboard) {
+  // Mục chỉ có trên một số máy được ẩn khi máy không hỗ trợ.
+  if (isBackendModeOffered(AppBackendMode::VirtualKeyboard)) {
     options.push_back(
         {AppBackendMode::VirtualKeyboard, "Virtual keyboard (Wayland)"});
   }
-  // Compositor cấp phím ảo (wlroots) thì không có portal libei, và ngược lại
-  // (KWin, Mutter), nên chỉ hiện một trong hai. isSupported() không xin quyền
-  // libei, nên mở menu không bật hộp thoại.
-  if ((!virtualKeyboardAvailable && nativeDevice_.isSupported()) ||
-      currentMode == AppBackendMode::Native) {
+  if (isBackendModeOffered(AppBackendMode::Native)) {
     options.push_back({AppBackendMode::Native, "Native (libei)"});
   }
   std::vector<std::string> labels;
@@ -226,9 +221,7 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
     modeDesc = "Redirect (EN)";
     break;
   case AppBackendMode::VirtualKeyboard:
-    modeDesc = virtualKeyboardBackspaceBackend_.isAvailable()
-                   ? "Virtual keyboard (Wayland)"
-                   : "Virtual keyboard (không khả dụng, dùng Backspace)";
+    modeDesc = "Virtual keyboard (Wayland)";
     break;
   case AppBackendMode::Native:
     modeDesc = "Native (libei)";

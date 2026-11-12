@@ -360,7 +360,8 @@ ArecaEngine::effectivePresentationMode(fcitx::InputContext &inputContext) {
   if (!program.empty()) {
     const auto it = appBackendOverridesMap_.find(program);
     if (it != appBackendOverridesMap_.end()) {
-      return presentationModeForAppSetting(it->second, activePresentationMode_);
+      return presentationModeForAppSetting(effectiveAppBackendMode(it->second),
+                                           activePresentationMode_);
     }
   }
   return activePresentationMode_;
