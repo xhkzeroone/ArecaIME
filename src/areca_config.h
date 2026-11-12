@@ -284,9 +284,6 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useXTestInsteadOfUinput{
         this, "UseXTestInsteadOfUinput",
         N_("Dùng Native (Libei/XTest) thay thế uinput"), false};
-    fcitx::Option<bool> useVirtualKeyboardInsteadOfUinput{
-        this, "UseVirtualKeyboardInsteadOfUinput",
-        N_("Dùng phím ảo Wayland (virtual keyboard) thay thế uinput"), false};
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
         true};

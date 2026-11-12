@@ -18,8 +18,8 @@
 namespace areca {
 
 // Xoá và gõ lại chữ hoàn toàn bằng phím ảo Wayland (zwp_virtual_keyboard_v1),
-// không dùng commitString. Thay uinput khi bật
-// UseVirtualKeyboardInsteadOfUinput và compositor có hỗ trợ.
+// không dùng commitString. Chỉ dùng khi chọn Virtual keyboard cho ứng dụng và
+// compositor có hỗ trợ.
 class VirtualKeyboardBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;

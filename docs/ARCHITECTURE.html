@@ -4231,9 +4231,8 @@ kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.<
 được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
 đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
 này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
-chạy trên thread riêng và báo về event loop qua <code>EventDispatcher</code>. Dùng khi chọn
-<strong>Virtual keyboard</strong> cho ứng dụng, hoặc thay uinput khi bật
-<code>UseVirtualKeyboardInsteadOfUinput</code>.</p>
+chạy trên thread riêng và báo về event loop qua <code>EventDispatcher</code>. Chỉ dùng khi chọn
+<strong>Virtual keyboard</strong> cho ứng dụng.</p>
 <p>Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
 X11 hoặc khi libei không khả dụng.</p>
 <p>Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
@@ -4243,9 +4242,7 @@ từng backend nằm trong <a href="ARECA_ARCHITECTURE_SPECIFICATION.md#5-sequen
 <p>Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:</p>
 <ul><li><strong>Surrounding</strong>: V2 nếu <code>UseSurroundingV2InsteadOfSurroundingV1=True</code>, ngược lại V1.</li><li><strong>Shift select</strong>: Native nếu <code>UseXTestInsteadOfUinput=True</code> và khả dụng, rồi
 uinput, rồi Native.</li><li><strong>Backspace</strong>: khi cần phím phần cứng hoặc <code>UseUinputInsteadOfForwardKey=True</code>,
-thử Native nếu được ưu tiên, rồi phím ảo Wayland nếu bật
-<code>UseVirtualKeyboardInsteadOfUinput</code> và compositor hỗ trợ, rồi uinput, rồi
-Native; cuối cùng là ForwardKey.</li></ul>
+thử Native nếu được ưu tiên, rồi uinput, rồi Native; cuối cùng là ForwardKey.</li></ul>
 <h2 id="ch%E1%BB%8Dn-backend" tabindex="-1">Chọn backend</h2>
 <p>Khi <code>deleteCount &gt; 0</code>, <code>selectRewriteBackend()</code> quyết định theo thứ tự:</p>
 <ol><li><strong>Terminal</strong> dùng bộ chọn Backspace có ưu tiên phím phần cứng. Terminal được

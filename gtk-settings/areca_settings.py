@@ -115,7 +115,6 @@ ADVANCED_DEFAULTS = {
     "UseSurroundingV2InsteadOfSurroundingV1": False,
     "UseUinputInsteadOfForwardKey": True,
     "UseXTestInsteadOfUinput": False,
-    "UseVirtualKeyboardInsteadOfUinput": False,
     "EnableMouseTracking": True,
     "ForwardFirstCharacter": True,
 }
@@ -1206,7 +1205,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Dùng Surrounding v2 thay v1", "UseSurroundingV2InsteadOfSurroundingV1"),
             ("Dùng uinput thay ForwardKey", "UseUinputInsteadOfForwardKey"),
             ("Dùng Native (Libei/XTest) thay uinput", "UseXTestInsteadOfUinput"),
-            ("Dùng phím ảo Wayland thay uinput", "UseVirtualKeyboardInsteadOfUinput"),
             ("Reset bộ gõ sau khi click chuột", "EnableMouseTracking"),
             ("Chuyển tiếp phím đầu cho trình duyệt", "ForwardFirstCharacter"),
         ]:

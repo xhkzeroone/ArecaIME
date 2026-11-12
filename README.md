@@ -52,7 +52,7 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
   ứng dụng không hỗ trợ surrounding text.
 - Phím ảo Wayland (`zwp_virtual_keyboard_v1`) xoá và gõ lại chữ trên cùng một
   kênh, không dùng commitString. Chỉ có trên compositor hỗ trợ giao thức này
-  (wlroots, Hyprland, sway); chọn cho từng ứng dụng hoặc bật thay uinput.
+  (wlroots, Hyprland, sway); chọn cho từng ứng dụng.
 - Xử lý riêng ô URL, thanh địa chỉ và gợi ý tự hoàn thành của trình duyệt.
 - Tự nhận ra ứng dụng đang focus qua AT-SPI. Có thể ghi đè chế độ và backend
   cho từng ứng dụng, hoặc bấm phím tắt để chọn ngay trên ứng dụng đang dùng.

@@ -215,9 +215,8 @@ kiểm tra chính tả, ví dụ `nhanhsh` về `nhánh`.
 được gán tạm vào keycode rảnh qua keymap rồi phát như phím thường, nên xoá và chèn
 đi chung một kênh và thứ tự do compositor giữ. Chỉ có khi compositor cấp giao thức
 này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
-chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Dùng khi chọn
-**Virtual keyboard** cho ứng dụng, hoặc thay uinput khi bật
-`UseVirtualKeyboardInsteadOfUinput`.
+chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Chỉ dùng khi chọn
+**Virtual keyboard** cho ứng dụng.
 
 Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
 X11 hoặc khi libei không khả dụng.
@@ -233,9 +232,7 @@ Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:
 - **Shift select**: Native nếu `UseXTestInsteadOfUinput=True` và khả dụng, rồi
   uinput, rồi Native.
 - **Backspace**: khi cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey=True`,
-  thử Native nếu được ưu tiên, rồi phím ảo Wayland nếu bật
-  `UseVirtualKeyboardInsteadOfUinput` và compositor hỗ trợ, rồi uinput, rồi
-  Native; cuối cùng là ForwardKey.
+  thử Native nếu được ưu tiên, rồi uinput, rồi Native; cuối cùng là ForwardKey.
 
 ## Chọn backend
 
