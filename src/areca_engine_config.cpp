@@ -183,8 +183,8 @@ void ArecaEngine::applyConfig() {
   const PresentationMode previousDefaultMode = activePresentationMode_;
   const PresentationMode requestedMode = config_.presentationMode.value();
   rebuildAppBackendOverridesMap();
-  // Xin quyền libei cho Native trước lượt rewrite đầu tiên khi bật
-  // UseXTestInsteadOfUinput (tên khoá cũ, giữ để không mất cấu hình).
+  // Xin quyền libei cho Native trước lượt rewrite đầu tiên khi có ứng dụng
+  // chọn Native.
   scheduleDeviceWarmup();
 
   // Tắt là hủy cả watcher, pipe, cờ click và process con; không chỉ bỏ qua

@@ -33,7 +33,7 @@ public:
   virtual void cancel() = 0;
 };
 
-// Trả nullptr khi bản build không có Wayland.
+// Trả nullptr khi bản build không có phần tương ứng.
 std::unique_ptr<VirtualKeyboardDevice> createWaylandVirtualKeyboard();
 
 // Phím ảo đi vào ứng dụng qua đường bàn phím nên quay lại fcitx5 như phím người

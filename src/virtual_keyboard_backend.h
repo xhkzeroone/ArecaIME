@@ -18,15 +18,15 @@
 namespace areca {
 
 // Xoá và gõ lại chữ hoàn toàn bằng phím ảo Wayland (zwp_virtual_keyboard_v1),
-// không dùng commitString. Chỉ dùng khi chọn Virtual keyboard cho ứng dụng và
-// compositor có hỗ trợ.
+// không dùng commitString. Chỉ dùng khi chọn Virtual keyboard cho ứng dụng.
 class VirtualKeyboardBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
   // Chạy hàm trên event loop của fcitx5; phải gọi được từ thread khác.
   using MainThreadPoster = std::function<void(std::function<void()>)>;
 
-  VirtualKeyboardBackend(fcitx::EventLoop &eventLoop,
+  // `name` là tên backend trong log, ví dụ "virtual-keyboard".
+  VirtualKeyboardBackend(const char *name, fcitx::EventLoop &eventLoop,
                          std::unique_ptr<VirtualKeyboardDevice> device,
                          MainThreadPoster postToMain,
                          DebugProvider debugProvider);
@@ -35,7 +35,7 @@ public:
   VirtualKeyboardBackend(const VirtualKeyboardBackend &) = delete;
   VirtualKeyboardBackend &operator=(const VirtualKeyboardBackend &) = delete;
 
-  const char *name() const override { return "virtual-keyboard"; }
+  const char *name() const override { return name_; }
   ApplyStatus apply(fcitx::InputContext &inputContext, const RewritePlan &plan,
                     RewriteDone onDone) override;
 
@@ -54,6 +54,7 @@ private:
   void finish(uint64_t transactionId, bool ok);
   void clearEcho();
 
+  const char *name_;
   fcitx::EventLoop &eventLoop_;
   std::unique_ptr<VirtualKeyboardDevice> device_;
   MainThreadPoster postToMain_;

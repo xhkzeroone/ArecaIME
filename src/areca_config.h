@@ -98,12 +98,15 @@ enum class AppBackendMode {
   Preedit = 4,
   Redirect = 5,
   // Xoá và gõ lại bằng phím ảo Wayland (zwp_virtual_keyboard_v1).
-  VirtualKeyboard = 6
+  VirtualKeyboard = 6,
+  // Xoá bằng Backspace qua libei rồi commitString.
+  Native = 7
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
                                  N_("Surrounding"), N_("Shift select"),
                                  N_("Backspace"), N_("Preedit"),
-                                 N_("Redirect (EN)"), N_("Virtual keyboard"));
+                                 N_("Redirect (EN)"), N_("Virtual keyboard"),
+                                 N_("Native"));
 
 inline PresentationMode
 presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
@@ -116,6 +119,7 @@ presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
   case AppBackendMode::ShiftSelect:
   case AppBackendMode::Backspace:
   case AppBackendMode::VirtualKeyboard:
+  case AppBackendMode::Native:
     return PresentationMode::Rewrite;
   case AppBackendMode::Auto:
     return fallback;
@@ -281,9 +285,6 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useUinputInsteadOfForwardKey{
         this, "UseUinputInsteadOfForwardKey",
         N_("Dùng uinput thay cho ForwardKey"), true};
-    fcitx::Option<bool> useXTestInsteadOfUinput{
-        this, "UseXTestInsteadOfUinput",
-        N_("Dùng Native (libei) thay thế uinput"), false};
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
         true};

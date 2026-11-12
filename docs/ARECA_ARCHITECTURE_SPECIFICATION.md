@@ -115,8 +115,8 @@ Thứ tự trong từng nhóm backend:
 | Nhóm | Thứ tự |
 | --- | --- |
 | Surrounding | V2 nếu `UseSurroundingV2InsteadOfSurroundingV1`, ngược lại V1 |
-| Shift select | Native nếu `UseXTestInsteadOfUinput` → uinput → Native |
-| Backspace | Nếu cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey`: Native nếu được ưu tiên → uinput → Native. Cuối cùng ForwardKey |
+| Shift select | uinput → Native |
+| Backspace | Nếu cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey`: uinput → Native. Cuối cùng ForwardKey |
 
 Cần phím phần cứng khi ứng dụng là terminal hoặc `canForwardBackspaces()` trả
 false: ứng dụng SDL, frontend DBus thiếu `KeyEventOrderFix` và `SurroundingText`,
@@ -372,7 +372,6 @@ Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 | --- | --- | --- | --- |
 | `UseSurroundingV2InsteadOfSurroundingV1` | advanced | `False` | Dùng V2 cho nhóm Surrounding |
 | `UseUinputInsteadOfForwardKey` | advanced | `True` | Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng |
-| `UseXTestInsteadOfUinput` | advanced | `False` | Ưu tiên Native trước uinput |
 | `EnableMouseTracking` | advanced | `True` | Chạy helper chuột để reset khi click |
 | `ForwardFirstCharacter` | advanced | `True` | Bật nhánh phím đầu cho trình duyệt |
 | `ShiftSelectFallbackForBrowser` | areca | `False` | Trình duyệt không dùng được surrounding thì dùng Shift select |

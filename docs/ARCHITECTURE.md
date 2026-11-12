@@ -56,13 +56,13 @@ Mode thực tế của một input context được quyết định theo ứng d
 
 1. Ứng dụng có mục trong `areca-apps.conf` với mode `Preedit` hoặc `Redirect`
    dùng mode đó.
-2. Mode `Surrounding`, `Shift select`, `Backspace`, `Virtual keyboard` dùng Rewrite và ghi đè backend.
+2. Mode `Surrounding`, `Shift select`, `Backspace`, `Virtual keyboard`, `Native` dùng Rewrite và ghi đè backend.
 3. `Tự động` hoặc không có mục dùng mode toàn cục.
 
 Phím `SelectBackendKey`, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 7
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 8
 lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
-Preedit, Redirect. Tên
+Native, Preedit, Redirect. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
 được lưu vào `areca-apps.conf` cùng tên frontend. Ứng dụng không báo tên được
 đặt tên tạm `context-<uuid>`.
@@ -218,6 +218,8 @@ này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không
 chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Chỉ dùng khi chọn
 **Virtual keyboard** cho ứng dụng.
 
+Mục **Native** ép `native-backspace`: Backspace qua libei rồi `commitString`.
+
 Native chỉ dùng libei qua phiên RemoteDesktop portal trên Wayland. Không có
 libei hoặc portal từ chối thì Native không khả dụng và bộ chọn dùng uinput.
 
@@ -229,10 +231,9 @@ từng backend nằm trong [đặc tả](ARECA_ARCHITECTURE_SPECIFICATION.md#5-s
 Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:
 
 - **Surrounding**: V2 nếu `UseSurroundingV2InsteadOfSurroundingV1=True`, ngược lại V1.
-- **Shift select**: Native nếu `UseXTestInsteadOfUinput=True` và khả dụng, rồi
-  uinput, rồi Native.
+- **Shift select**: uinput, rồi Native.
 - **Backspace**: khi cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey=True`,
-  thử Native nếu được ưu tiên, rồi uinput, rồi Native; cuối cùng là ForwardKey.
+  thử uinput, rồi Native; cuối cùng là ForwardKey.
 
 ## Chọn backend
 
@@ -254,6 +255,7 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
    - `Backspace`: bộ chọn Backspace.
    - `Virtual keyboard`: `VirtualKeyboardBackend` nếu compositor hỗ trợ, không thì
      bộ chọn Backspace.
+   - `Native`: `native-backspace` nếu đã có quyền libei, không thì bộ chọn Backspace.
 6. **Tự động**:
    - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
    - Trình duyệt và `ShiftSelectFallbackForBrowser=True`: Shift select.

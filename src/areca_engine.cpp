@@ -92,7 +92,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                 adaptiveWait_,
                                 [this]() { return debugEnabled(); }),
       virtualKeyboardBackend_(
-          instance_->eventLoop(), createWaylandVirtualKeyboard(),
+          "virtual-keyboard", instance_->eventLoop(),
+          createWaylandVirtualKeyboard(),
           [this](std::function<void()> task) {
             virtualKeyboardDispatcher_.schedule(std::move(task));
           },
@@ -312,15 +313,11 @@ void ArecaEngine::notifyUinputUnavailable() {
 
 void ArecaEngine::scheduleDeviceWarmup() {
   deviceWarmupTimer_.reset();
-  bool warmUpNative = advancedConfig_.useXTestInsteadOfUinput.value();
-  if (!warmUpNative) {
-    for (const auto &pair : appBackendOverridesMap_) {
-      if ((pair.second == AppBackendMode::ShiftSelect ||
-           pair.second == AppBackendMode::Backspace) &&
-          advancedConfig_.useXTestInsteadOfUinput.value()) {
-        warmUpNative = true;
-        break;
-      }
+  bool warmUpNative = false;
+  for (const auto &pair : appBackendOverridesMap_) {
+    if (pair.second == AppBackendMode::Native) {
+      warmUpNative = true;
+      break;
     }
   }
   const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC);

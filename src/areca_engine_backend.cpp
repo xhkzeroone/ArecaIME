@@ -193,10 +193,6 @@ RewriteBackend *ArecaEngine::resolveSurroundingFallbackBackend(
 }
 
 RewriteBackend *ArecaEngine::resolvePreferredShiftSelectBackend() {
-  if (advancedConfig_.useXTestInsteadOfUinput.value() &&
-      nativeShiftSelectBackend_.isAvailable()) {
-    return &nativeShiftSelectBackend_;
-  }
   if (uinputShiftSelectBackend_.isAvailable()) {
     return &uinputShiftSelectBackend_;
   }
@@ -209,10 +205,6 @@ RewriteBackend *ArecaEngine::resolvePreferredShiftSelectBackend() {
 RewriteBackend *
 ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
   if (preferHardware || advancedConfig_.useUinputInsteadOfForwardKey.value()) {
-    if (advancedConfig_.useXTestInsteadOfUinput.value() &&
-        nativeBackspaceBackend_.isAvailable()) {
-      return &nativeBackspaceBackend_;
-    }
     if (uinputBackspaceBackend_.isAvailable()) {
       return &uinputBackspaceBackend_;
     }
@@ -259,7 +251,7 @@ std::string ArecaEngine::describeShiftSelectBackend() {
       return "Uinput";
     }
   }
-  return advancedConfig_.useXTestInsteadOfUinput.value() ? "Native" : "Uinput";
+  return "Uinput";
 }
 
 std::string ArecaEngine::describeBackspaceBackend(bool preferHardware) {
@@ -507,6 +499,24 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
         if (debugEnabled()) {
           FCITX_INFO() << "areca: virtual-keyboard unavailable, fallback "
+                       << "backend=" << bsBackend->name()
+                       << " program=" << program;
+        }
+        return {bsBackend};
+      }
+      case AppBackendMode::Native: {
+        if (nativeBackspaceBackend_.isAvailable()) {
+          if (debugEnabled()) {
+            FCITX_INFO() << "areca: app-override selected native-backspace"
+                         << " program=" << program;
+          }
+          return {&nativeBackspaceBackend_};
+        }
+        // Chưa có quyền libei (đang xin hoặc bị từ chối): dùng như khi chọn
+        // Backspace.
+        auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: native unavailable, fallback "
                        << "backend=" << bsBackend->name()
                        << " program=" << program;
         }

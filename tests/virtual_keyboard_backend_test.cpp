@@ -110,7 +110,7 @@ void testAvailabilityAndCompletion() {
   // Compositor không có phím ảo (KWin, GNOME): không khả dụng, không nhận giao
   // dịch, để bộ chọn Backspace dùng uinput.
   areca::VirtualKeyboardBackend unavailable(
-      loop, std::make_unique<FakeDevice>("wayland", false),
+      "virtual-keyboard", loop, std::make_unique<FakeDevice>("wayland", false),
       [](std::function<void()> task) { task(); }, [] { return false; });
   assert(!unavailable.isAvailable());
   assert(unavailable.apply(context, makePlan(1, 1, "õ"), nullptr) ==
@@ -118,15 +118,15 @@ void testAvailabilityAndCompletion() {
 
   // Bản build không có Wayland.
   areca::VirtualKeyboardBackend missing(
-      loop, nullptr, [](std::function<void()> task) { task(); },
-      [] { return false; });
+      "virtual-keyboard", loop, nullptr,
+      [](std::function<void()> task) { task(); }, [] { return false; });
   assert(!missing.isAvailable());
 
   auto device = std::make_unique<FakeDevice>("wayland", true);
   auto *fake = device.get();
   areca::VirtualKeyboardBackend backend(
-      loop, std::move(device), [](std::function<void()> task) { task(); },
-      [] { return false; });
+      "virtual-keyboard", loop, std::move(device),
+      [](std::function<void()> task) { task(); }, [] { return false; });
   assert(backend.isAvailable());
 
   uint64_t doneId = 0;
@@ -172,8 +172,8 @@ void testEchoKeysPassThrough() {
   auto device = std::make_unique<FakeDevice>("wayland", true);
   auto *fake = device.get();
   areca::VirtualKeyboardBackend backend(
-      loop, std::move(device), [](std::function<void()> task) { task(); },
-      [] { return false; });
+      "virtual-keyboard", loop, std::move(device),
+      [](std::function<void()> task) { task(); }, [] { return false; });
 
   assert(backend.apply(context, makePlan(3, 1, "õ"),
                        [](uint64_t, areca::RewriteOutcome) {}) ==

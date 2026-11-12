@@ -8,9 +8,10 @@
 
 namespace areca {
 VirtualKeyboardBackend::VirtualKeyboardBackend(
-    fcitx::EventLoop &eventLoop, std::unique_ptr<VirtualKeyboardDevice> device,
-    MainThreadPoster postToMain, DebugProvider debugProvider)
-    : eventLoop_(eventLoop), device_(std::move(device)),
+    const char *name, fcitx::EventLoop &eventLoop,
+    std::unique_ptr<VirtualKeyboardDevice> device, MainThreadPoster postToMain,
+    DebugProvider debugProvider)
+    : name_(name), eventLoop_(eventLoop), device_(std::move(device)),
       postToMain_(std::move(postToMain)),
       debugProvider_(std::move(debugProvider)) {}
 
@@ -52,7 +53,7 @@ ApplyStatus VirtualKeyboardBackend::apply(fcitx::InputContext &inputContext,
                       uint64_t{kWatchdogMs} * 1000 + kEchoGraceUsec;
 
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: virtual-keyboard start tx=" << transactionId_
+    FCITX_INFO() << "areca: " << name_ << " start tx=" << transactionId_
                  << " device=" << device->kind()
                  << " backspaces=" << plan.backspaceCount
                  << " commit=" << plan.commitText;
@@ -63,8 +64,8 @@ ApplyStatus VirtualKeyboardBackend::apply(fcitx::InputContext &inputContext,
       CLOCK_MONOTONIC,
       fcitx::now(CLOCK_MONOTONIC) + uint64_t{kWatchdogMs} * 1000, 0,
       [this, transactionId](fcitx::EventSourceTime *, uint64_t) {
-        FCITX_ERROR() << "areca: virtual-keyboard timed out tx="
-                      << transactionId;
+        FCITX_ERROR() << "areca: " << name_
+                      << " timed out tx=" << transactionId;
         finish(transactionId, false);
         return true;
       });
@@ -93,7 +94,7 @@ void VirtualKeyboardBackend::finish(uint64_t transactionId, bool ok) {
   transactionId_ = 0;
   echoDeadlineUsec_ = fcitx::now(CLOCK_MONOTONIC) + kEchoGraceUsec;
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: virtual-keyboard done tx=" << transactionId
+    FCITX_INFO() << "areca: " << name_ << " done tx=" << transactionId
                  << " ok=" << ok << " echo_pending=" << pendingEcho_.size();
   }
   if (onDone) {

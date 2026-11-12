@@ -72,8 +72,8 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
 
   auto candList = std::make_unique<fcitx::CommonCandidateList>();
   candList->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
-  candList->setLabels({"1. ", "2. ", "3. ", "4. ", "5. ", "A. ", "E. "});
-  candList->setPageSize(7);
+  candList->setLabels({"1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "A. ", "E. "});
+  candList->setPageSize(8);
 
   const char *frontend = inputContext.frontend();
   const bool isTerminal = inputTypeDetector_.isTerminal(appName, frontend);
@@ -102,12 +102,14 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
     AppBackendMode mode;
     std::string title;
   };
-  const std::array<BackendOption, 7> options = {{
+  const std::array<BackendOption, 8> options = {{
       {AppBackendMode::Auto, autoTitle},
       {AppBackendMode::SurroundingText, surroundingTitle},
       {AppBackendMode::ShiftSelect, shiftTitle},
       {AppBackendMode::Backspace, backspaceTitle},
       {AppBackendMode::VirtualKeyboard, virtualKeyboardTitle},
+      // Không hỏi isAvailable() ở đây: lần đầu sẽ mở hộp thoại xin quyền libei.
+      {AppBackendMode::Native, "Native (libei)"},
       {AppBackendMode::Preedit, "Preedit"},
       {AppBackendMode::Redirect, "Redirect (EN)"},
   }};
@@ -212,6 +214,9 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
                    ? "Virtual keyboard (Wayland)"
                    : "Virtual keyboard (không khả dụng, dùng Backspace)";
     break;
+  case AppBackendMode::Native:
+    modeDesc = "Native (libei)";
+    break;
   }
 
   const std::string infoMsg = appName + " -> " + modeDesc;
@@ -253,7 +258,7 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
     return true;
   }
 
-  if (sym >= FcitxKey_1 && sym <= FcitxKey_5) {
+  if (sym >= FcitxKey_1 && sym <= FcitxKey_6) {
     const int idx = sym - FcitxKey_1;
     if (idx < commonList->size()) {
       commonList->candidate(idx).select(&inputContext);
@@ -262,12 +267,12 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
   }
 
   if (sym == FcitxKey_a || sym == FcitxKey_A) {
-    commonList->candidate(5).select(&inputContext);
+    commonList->candidate(6).select(&inputContext);
     return true;
   }
 
   if (sym == FcitxKey_e || sym == FcitxKey_E) {
-    commonList->candidate(6).select(&inputContext);
+    commonList->candidate(7).select(&inputContext);
     return true;
   }
 

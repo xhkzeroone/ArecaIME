@@ -536,7 +536,6 @@ namespace areca::settings {
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Dùng Surrounding v2 thay cho Surrounding v1", config.advanced.useSurroundingV2InsteadOfSurroundingV1);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
-        checkbox("Dùng Native (libei) thay thế uinput", config.advanced.useXTestInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
         checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
         endSettingsCard();
@@ -601,12 +600,12 @@ namespace areca::settings {
                 surName += ")";
 
                 std::string shiftName = "Shift select (";
-                shiftName += config.advanced.useXTestInsteadOfUinput.value() ? "Native" : "Uinput";
+                shiftName += "Uinput";
                 shiftName += ")";
 
                 std::string bsName = "Backspace (";
                 if (config.advanced.useUinputInsteadOfForwardKey.value()) {
-                    bsName += config.advanced.useXTestInsteadOfUinput.value() ? "Native" : "Uinput";
+                    bsName += "Uinput";
                 } else {
                     bsName += "ForwardKey";
                 }
@@ -614,7 +613,7 @@ namespace areca::settings {
 
                 const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
                                            bsName.c_str(), "Preedit",       "Redirect (EN)",
-                                           "Virtual keyboard"};
+                                           "Virtual keyboard", "Native"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));
