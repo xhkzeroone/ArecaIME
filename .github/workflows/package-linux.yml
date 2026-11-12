@@ -109,8 +109,6 @@ jobs:
             libfcitx5config-dev \
             libfcitx5utils-dev \
             libfontconfig-dev \
-            libx11-dev \
-            libxtst-dev \
             libwayland-dev \
             libwayland-bin \
             patchelf
@@ -219,8 +217,6 @@ jobs:
             --depends libinput10 \
             --depends libportal1 \
             --depends libudev1 \
-            --depends libx11-6 \
-            --depends libxtst6 \
             --depends libwayland-client0 \
             "${sdl3_depend_args[@]}" \
             -C pkgroot \
@@ -288,8 +284,6 @@ jobs:
                 libfcitx5config-dev \
                 libfcitx5utils-dev \
                 libfontconfig-dev \
-                libx11-dev \
-                libxtst-dev \
                 libwayland-dev \
                 libwayland-bin \
                 libsdl3-dev
@@ -325,8 +319,6 @@ jobs:
                 --depends libinput10 \
                 --depends libportal1 \
                 --depends libudev1 \
-                --depends libx11-6 \
-                --depends libxtst6 \
             --depends libwayland-client0 \
                 --depends libsdl3-0 \
                 -C pkgroot-ubuntu25 \
@@ -390,8 +382,6 @@ jobs:
                 ninja \
                 pkgconf \
                 fontconfig \
-                libx11 \
-                libxtst \
                 systemd-libs \
                 dbus \
                 sdl3
@@ -460,8 +450,6 @@ jobs:
                 SDL3-devel \
                 fontconfig \
                 fontconfig-devel \
-                libX11-devel \
-                libXtst-devel \
                 fcitx5 \
                 fcitx5-devel \
                 fcitx5-configtool
@@ -494,8 +482,6 @@ jobs:
                 --depends systemd-libs \
                 --depends SDL3 \
                 --depends fontconfig \
-                --depends libX11 \
-                --depends libXtst \
                 -C pkgroot-fedora \
                 -p "dist/fcitx5-areca-${VERSION}.fedora${{ matrix.version }}.x86_64.rpm" \
                 .
@@ -555,8 +541,6 @@ jobs:
                 systemd-devel \
                 SDL3-devel \
                 fontconfig-devel \
-                libX11-devel \
-                libXtst-devel \
                 libei-devel \
                 libportal-devel \
                 fcitx5 \
@@ -597,8 +581,6 @@ jobs:
                 --depends libinput10 \
                 --depends SDL3 \
                 --depends fontconfig \
-                --depends libX11-6 \
-                --depends libXtst6 \
                 -C pkgroot-opensuse \
                 -p "dist/fcitx5-areca-${VERSION}.opensuse-tumbleweed.x86_64.rpm" \
                 .

@@ -264,9 +264,9 @@ sequenceDiagram
 Mọi Left và Shift quay về đều được forward tới ứng dụng. Shift up là ACK duy nhất.
 `commitText` rỗng thì backend phát một Backspace để xoá vùng chọn.
 
-### 5.4. `XTestShiftSelectBackend`
+### 5.4. `NativeShiftSelectBackend`
 
-Giống 5.3 nhưng phát Shift, Left qua libei hoặc XTest, khoảng cách giữa các Left
+Giống 5.3 nhưng phát Shift, Left qua libei, khoảng cách giữa các Left
 cộng thêm adaptive, và không chờ ACK: thả Shift xong là bắt đầu chờ commit.
 
 ### 5.5. `UinputBackspaceBackend`
@@ -304,9 +304,9 @@ sequenceDiagram
 Mọi Backspace quay về đều được forward. `seen` chỉ là mốc để bắt đầu chờ, không
 dùng để lọc phím. Commit không bao giờ xảy ra trước khi phát hết N phím.
 
-### 5.6. `XTestBackspaceBackend`
+### 5.6. `NativeBackspaceBackend`
 
-Phát Backspace × N qua libei hoặc XTest với `XTestBackspaceDelayMs` cộng adaptive,
+Phát Backspace × N qua libei với `XTestBackspaceDelayMs` cộng adaptive,
 rồi chờ `AfterXTestBackspaceWaitMs` theo frontend cộng extra và commit ở pha post.
 Không có ACK.
 

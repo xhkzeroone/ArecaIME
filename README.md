@@ -48,7 +48,7 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
 
 **Tự chọn backend sửa chữ theo ứng dụng**
 - Surrounding text khi ứng dụng hỗ trợ xoá qua giao thức input method.
-- Backspace hoặc Shift+Left phát qua uinput, Libei/XTest hoặc ForwardKey khi
+- Backspace hoặc Shift+Left phát qua uinput, libei hoặc ForwardKey khi
   ứng dụng không hỗ trợ surrounding text.
 - Phím ảo Wayland (`zwp_virtual_keyboard_v1`) xoá và gõ lại chữ trên cùng một
   kênh, không dùng commitString. Chỉ có trên compositor hỗ trợ giao thức này
@@ -269,7 +269,7 @@ Các nhóm cấu hình chính:
 | Chung | Kiểu gõ, bảng mã, kiểm tra chính tả, kiểu đặt dấu, tự viết hoa, phím chọn chế độ cho ứng dụng |
 | Macro | Bật tắt macro, bảng từ viết tắt, hoàn tác bằng Backspace, phím bỏ qua macro |
 | Theo ứng dụng | Ghi đè chế độ và backend cho từng ứng dụng hoặc frontend |
-| Nâng cao | Thời gian chờ của từng backend, chọn uinput hay Libei/XTest, log debug |
+| Nâng cao | Thời gian chờ của từng backend, chọn uinput hay libei, log debug |
 
 Cấu hình được lưu ở `~/.config/fcitx5/conf/areca*.conf`.
 
@@ -366,7 +366,7 @@ Cách đọc log của từng backend nằm trong [tài liệu debug](docs/DEBUG
 ## Build từ mã nguồn
 
 Cần bộ biên dịch C++20, CMake, Extra CMake Modules, Ninja, Go và gói phát triển
-của Fcitx5, SDL3, libinput, libudev, DBus, Fontconfig, X11, Xtst.
+của Fcitx5, SDL3, libinput, libudev, DBus, Fontconfig.
 
 ```bash
 git clone --recurse-submodules https://github.com/xhkzeroone/ArecaIME.git
@@ -442,7 +442,7 @@ Xin cảm ơn những người đã đóng góp trực tiếp cho Areca:
       Tác giả và người phát triển chính.
       <ul>
         <li>Kiến trúc addon Fcitx5, hàng đợi phím và chế độ Rewrite, Preedit</li>
-        <li>Các backend sửa chữ: surrounding text, uinput, Shift+Left, Libei/XTest, ForwardKey</li>
+        <li>Các backend sửa chữ: surrounding text, uinput, Shift+Left, libei, ForwardKey</li>
         <li>Nhận diện ứng dụng qua AT-SPI, xử lý trình duyệt và thanh địa chỉ</li>
         <li>Sửa từ đã commit, thời gian chờ thích nghi</li>
         <li>Ứng dụng cài đặt GTK, installer, gói phân phối và website</li>

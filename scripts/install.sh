@@ -82,8 +82,8 @@ install_deps_debian() {
   echo "[areca] Installing build dependencies with apt"
   sudo apt-get update
   local common=(build-essential cmake ninja-build pkg-config extra-cmake-modules
-                golang-go libinput-dev libudev-dev libdbus-1-dev libx11-dev
-                libxtst-dev libfontconfig-dev python3-gi gir1.2-gtk-4.0
+                golang-go libinput-dev libudev-dev libdbus-1-dev
+                libfontconfig-dev python3-gi gir1.2-gtk-4.0
                 gir1.2-gdkpixbuf-2.0)
   local fcitx=(fcitx5 fcitx5-config-qt libfcitx5core-dev
                libfcitx5config-dev libfcitx5utils-dev)
@@ -126,7 +126,7 @@ install_deps_debian() {
 install_deps_arch() {
   local packages=(base-devel cmake ninja pkgconf extra-cmake-modules go
                   gtk4 python python-gobject gdk-pixbuf2
-                  libinput systemd-libs dbus libx11 libxtst fcitx5
+                  libinput systemd-libs dbus fcitx5
                   fcitx5-configtool sdl3 fontconfig)
   if [[ "$ARECA_UPDATE_SYSTEM" == 1 ]]; then
     echo "[areca] Updating Arch system and installing build dependencies"
@@ -153,7 +153,7 @@ install_deps_fedora() {
     gcc-c++ cmake ninja-build pkgconf-pkg-config extra-cmake-modules go \
     python3-gobject gtk4 gdk-pixbuf2 \
     libinput-devel systemd-devel dbus-devel SDL3-devel fontconfig-devel \
-    libX11-devel libXtst-devel fcitx5 fcitx5-devel fcitx5-configtool
+    fcitx5 fcitx5-devel fcitx5-configtool
 }
 
 install_deps_opensuse() {
@@ -163,7 +163,7 @@ install_deps_opensuse() {
     python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-4_0 \
     libgtk-4-1 typelib-1_0-GdkPixbuf-2_0 \
     libinput-devel systemd-devel fcitx5 fcitx5-devel SDL3-devel \
-    fontconfig-devel libX11-devel libXtst-devel dbus-1-devel libudev-devel
+    fontconfig-devel dbus-1-devel libudev-devel
 }
 
 distro_matches() {

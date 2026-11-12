@@ -4220,9 +4220,9 @@ kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.<
 <tr><td><code>SurroundingTextBackend</code></td><td><code>surrounding-text</code></td><td><code>deleteSurroundingText(-N, N)</code> một lần</td><td>Probe bằng <code>SurroundingTextUpdated</code> ở lần đầu</td></tr>
 <tr><td><code>SurroundingTextV2Backend</code></td><td><code>surrounding-text-v2</code></td><td><code>deleteSurroundingText(-1, 1)</code> N lần</td><td>Xác nhận lần xoá cuối ở mọi rewrite</td></tr>
 <tr><td><code>UinputShiftSelectBackend</code></td><td><code>uinput-shift-select</code></td><td>Shift giữ + Left × N qua <code>/dev/uinput</code>, commit đè vùng chọn</td><td>ACK bằng Shift up quay về Fcitx</td></tr>
-<tr><td><code>XTestShiftSelectBackend</code></td><td><code>native-shift-select</code></td><td>Như trên qua libei hoặc XTest</td><td>Không ACK</td></tr>
+<tr><td><code>NativeShiftSelectBackend</code></td><td><code>native-shift-select</code></td><td>Như trên qua libei</td><td>Không ACK</td></tr>
 <tr><td><code>UinputBackspaceBackend</code></td><td><code>uinput-backspace</code></td><td>Backspace × N qua <code>/dev/uinput</code></td><td>ACK bằng số Backspace quay về Fcitx</td></tr>
-<tr><td><code>XTestBackspaceBackend</code></td><td><code>native-backspace</code></td><td>Backspace × N qua libei hoặc XTest</td><td>Không ACK</td></tr>
+<tr><td><code>NativeBackspaceBackend</code></td><td><code>native-backspace</code></td><td>Backspace × N qua libei</td><td>Không ACK</td></tr>
 <tr><td><code>ForwardBackspaceBackend</code></td><td><code>forward-backspace</code></td><td><code>forwardKey(Backspace)</code> × N</td><td>Không ACK</td></tr>
 <tr><td><code>VirtualKeyboardBackend</code></td><td><code>virtual-keyboard</code></td><td>Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không <code>commitString</code></td><td>Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng</td></tr>
 </tbody>
@@ -4233,8 +4233,8 @@ kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.<
 này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. Thiết bị
 chạy trên thread riêng và báo về event loop qua <code>EventDispatcher</code>. Chỉ dùng khi chọn
 <strong>Virtual keyboard</strong> cho ứng dụng.</p>
-<p>Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
-X11 hoặc khi libei không khả dụng.</p>
+<p>Native chỉ dùng libei qua phiên RemoteDesktop portal trên Wayland. Không có
+libei hoặc portal từ chối thì Native không khả dụng và bộ chọn dùng uinput.</p>
 <p>Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
 <code>AdaptiveWait</code>. Commit luôn được đưa sang pha post của event loop bằng
 <code>EventLoopPostTask</code>. Timer giữa các bước xoá chạy callback trực tiếp. Chi tiết

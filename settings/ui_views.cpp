@@ -514,7 +514,7 @@ namespace areca::settings {
         endSettingsCard();
 
         beginSettingsCard(
-            "XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua Libei hoặc XTest fallback."
+            "XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei."
         );
         inputInt("Delay giữa Backspace Native (ms)", config.advanced.xtestBackspaceDelayMs);
         inputInt("Chờ sau Backspace Native (ms)", config.advanced.afterXTestBackspaceWaitMs);
@@ -536,7 +536,7 @@ namespace areca::settings {
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Dùng Surrounding v2 thay cho Surrounding v1", config.advanced.useSurroundingV2InsteadOfSurroundingV1);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
-        checkbox("Dùng Native (Libei, fallback XTest) thay thế uinput", config.advanced.useXTestInsteadOfUinput);
+        checkbox("Dùng Native (libei) thay thế uinput", config.advanced.useXTestInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
         checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
         endSettingsCard();

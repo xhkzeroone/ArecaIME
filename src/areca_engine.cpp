@@ -85,12 +85,12 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                 [this]() { return debugEnabled(); }),
       nativeDevice_(instance_->eventLoop(),
                     [this]() { return debugEnabled(); }),
-      xtestBackspaceBackend_(instance_->eventLoop(), nativeDevice_,
-                             adaptiveWait_,
-                             [this]() { return debugEnabled(); }),
-      xtestShiftSelectBackend_(instance_->eventLoop(), nativeDevice_,
-                               adaptiveWait_,
-                               [this]() { return debugEnabled(); }),
+      nativeBackspaceBackend_(instance_->eventLoop(), nativeDevice_,
+                              adaptiveWait_,
+                              [this]() { return debugEnabled(); }),
+      nativeShiftSelectBackend_(instance_->eventLoop(), nativeDevice_,
+                                adaptiveWait_,
+                                [this]() { return debugEnabled(); }),
       virtualKeyboardBackend_(
           instance_->eventLoop(), createWaylandVirtualKeyboard(),
           [this](std::function<void()> task) {

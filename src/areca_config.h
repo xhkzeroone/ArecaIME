@@ -283,7 +283,7 @@ FCITX_CONFIGURATION(
         N_("Dùng uinput thay cho ForwardKey"), true};
     fcitx::Option<bool> useXTestInsteadOfUinput{
         this, "UseXTestInsteadOfUinput",
-        N_("Dùng Native (Libei/XTest) thay thế uinput"), false};
+        N_("Dùng Native (libei) thay thế uinput"), false};
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
         true};

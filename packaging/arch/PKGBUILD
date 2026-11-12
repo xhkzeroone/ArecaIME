@@ -17,8 +17,6 @@ depends=(
   'systemd-libs'
   'sdl3'
   'fontconfig'
-  'libx11'
-  'libxtst'
   'wayland'
 )
 makedepends=(
@@ -30,8 +28,6 @@ makedepends=(
   'dbus'
   'sdl3'
   'fontconfig'
-  'libx11'
-  'libxtst'
   'wayland'
 )
 source=("${pkgname}-${pkgver}.tar.gz")

@@ -12,8 +12,6 @@ pkgs.mkShell {
     libinput
     systemd
     dbus
-    libX11
-    libXtst
     SDL3
     fontconfig
     gtk4

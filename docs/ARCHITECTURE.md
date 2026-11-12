@@ -205,9 +205,9 @@ kiểm tra chính tả, ví dụ `nhanhsh` về `nhánh`.
 | `SurroundingTextBackend` | `surrounding-text` | `deleteSurroundingText(-N, N)` một lần | Probe bằng `SurroundingTextUpdated` ở lần đầu |
 | `SurroundingTextV2Backend` | `surrounding-text-v2` | `deleteSurroundingText(-1, 1)` N lần | Xác nhận lần xoá cuối ở mọi rewrite |
 | `UinputShiftSelectBackend` | `uinput-shift-select` | Shift giữ + Left × N qua `/dev/uinput`, commit đè vùng chọn | ACK bằng Shift up quay về Fcitx |
-| `XTestShiftSelectBackend` | `native-shift-select` | Như trên qua libei hoặc XTest | Không ACK |
+| `NativeShiftSelectBackend` | `native-shift-select` | Như trên qua libei | Không ACK |
 | `UinputBackspaceBackend` | `uinput-backspace` | Backspace × N qua `/dev/uinput` | ACK bằng số Backspace quay về Fcitx |
-| `XTestBackspaceBackend` | `native-backspace` | Backspace × N qua libei hoặc XTest | Không ACK |
+| `NativeBackspaceBackend` | `native-backspace` | Backspace × N qua libei | Không ACK |
 | `ForwardBackspaceBackend` | `forward-backspace` | `forwardKey(Backspace)` × N | Không ACK |
 | `VirtualKeyboardBackend` | `virtual-keyboard` | Backspace × N rồi gõ luôn chữ mới bằng phím ảo, không `commitString` | Thiết bị báo phát xong; phím dội ngược được chuyển thẳng cho ứng dụng |
 
@@ -218,8 +218,8 @@ này cho kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không
 chạy trên thread riêng và báo về event loop qua `EventDispatcher`. Chỉ dùng khi chọn
 **Virtual keyboard** cho ứng dụng.
 
-Native dùng phiên RemoteDesktop portal với libei trên Wayland, lùi về XTest trên
-X11 hoặc khi libei không khả dụng.
+Native chỉ dùng libei qua phiên RemoteDesktop portal trên Wayland. Không có
+libei hoặc portal từ chối thì Native không khả dụng và bộ chọn dùng uinput.
 
 Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
 `AdaptiveWait`. Commit luôn được đưa sang pha post của event loop bằng

@@ -13,8 +13,6 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(DBUS REQUIRED dbus-1)
 pkg_check_modules(LIBINPUT REQUIRED IMPORTED_TARGET libinput)
 pkg_check_modules(UDEV REQUIRED IMPORTED_TARGET libudev)
-pkg_check_modules(X11_CLIENT REQUIRED IMPORTED_TARGET x11)
-pkg_check_modules(XTEST REQUIRED IMPORTED_TARGET xtst)
 pkg_check_modules(LIBEI QUIET IMPORTED_TARGET libei-1.0>=1.0)
 pkg_check_modules(LIBPORTAL QUIET IMPORTED_TARGET libportal>=0.7.1)
 # Backend phím ảo Wayland: thiếu thì backend báo không khả dụng.
@@ -90,9 +88,8 @@ add_library(areca MODULE
     src/mouse_click_tracker.cpp
     src/native_device.cpp
     src/word_segment.cpp
-    src/xtest_backspace_backend.cpp
-    src/xtest_device.cpp
-    src/xtest_shift_select_backend.cpp)
+    src/native_backspace_backend.cpp
+    src/native_shift_select_backend.cpp)
 target_compile_definitions(areca PRIVATE
     ARECA_MOUSE_HELPER_PATH="${CMAKE_INSTALL_FULL_LIBEXECDIR}/areca-mouse-monitor"
     ARECA_SETTINGS_PATH="${CMAKE_INSTALL_FULL_BINDIR}/areca-settings")
@@ -109,7 +106,7 @@ if(LIBEI_FOUND AND LIBPORTAL_FOUND)
     endif()
     target_link_libraries(areca PRIVATE PkgConfig::LIBEI PkgConfig::LIBPORTAL)
 else()
-    message(WARNING "Native Wayland backend disabled; XTest fallback will be used")
+    message(WARNING "Native Wayland backend disabled (libei or libportal missing)")
 endif()
 if(WAYLAND_CLIENT_FOUND AND WAYLAND_SCANNER)
     set(ARECA_VK_XML "${CMAKE_CURRENT_SOURCE_DIR}/protocols/virtual-keyboard-unstable-v1.xml")
@@ -144,8 +141,6 @@ target_link_libraries(areca PRIVATE
     Fcitx5::Config
     Fcitx5::Utils
     ${DBUS_LIBRARIES}
-    PkgConfig::X11_CLIENT
-    PkgConfig::XTEST
     pthread dl m)
 
 if(ARECA_BUILD_LEGACY_SETTINGS)
@@ -415,17 +410,17 @@ if(BUILD_TESTING)
     target_link_libraries(areca-uinput-shift-select-test PRIVATE Fcitx5::Core Fcitx5::Utils)
     add_test(NAME uinput-shift-select COMMAND areca-uinput-shift-select-test)
 
-    add_executable(areca-xtest-backspace-test
-        tests/xtest_backspace_backend_test.cpp
-        src/xtest_backspace_backend.cpp)
-    target_compile_features(areca-xtest-backspace-test PRIVATE cxx_std_20)
-    target_compile_options(areca-xtest-backspace-test PRIVATE
+    add_executable(areca-native-backspace-test
+        tests/native_backspace_backend_test.cpp
+        src/native_backspace_backend.cpp)
+    target_compile_features(areca-native-backspace-test PRIVATE cxx_std_20)
+    target_compile_options(areca-native-backspace-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-xtest-backspace-test PRIVATE
+    target_include_directories(areca-native-backspace-test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_link_libraries(areca-xtest-backspace-test PRIVATE
+    target_link_libraries(areca-native-backspace-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
-    add_test(NAME xtest-backspace COMMAND areca-xtest-backspace-test)
+    add_test(NAME native-backspace COMMAND areca-native-backspace-test)
 
     add_executable(areca-virtual-keyboard-test
         tests/virtual_keyboard_backend_test.cpp
@@ -440,17 +435,17 @@ if(BUILD_TESTING)
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME virtual-keyboard COMMAND areca-virtual-keyboard-test)
 
-    add_executable(areca-xtest-shift-select-test
-        tests/xtest_shift_select_backend_test.cpp
-        src/xtest_shift_select_backend.cpp)
-    target_compile_features(areca-xtest-shift-select-test PRIVATE cxx_std_20)
-    target_compile_options(areca-xtest-shift-select-test PRIVATE
+    add_executable(areca-native-shift-select-test
+        tests/native_shift_select_backend_test.cpp
+        src/native_shift_select_backend.cpp)
+    target_compile_features(areca-native-shift-select-test PRIVATE cxx_std_20)
+    target_compile_options(areca-native-shift-select-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-xtest-shift-select-test PRIVATE
+    target_include_directories(areca-native-shift-select-test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_link_libraries(areca-xtest-shift-select-test PRIVATE
+    target_link_libraries(areca-native-shift-select-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
-    add_test(NAME xtest-shift-select COMMAND areca-xtest-shift-select-test)
+    add_test(NAME native-shift-select COMMAND areca-native-shift-select-test)
 
     add_executable(areca-surrounding-text-v2-test
         tests/surrounding_text_v2_backend_test.cpp

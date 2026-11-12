@@ -153,7 +153,7 @@ Khi log có `rewrite select backend=uinput-shift-select`, kiểm tra:
 4. `shift-up ack timeout` nghĩa là Shift up không quay về trong 150 ms. Backend
    vẫn commit nhưng tăng thời gian chờ adaptive.
 
-`native-shift-select` và `native-backspace` phát phím qua libei hoặc XTest và
+`native-shift-select` và `native-backspace` phát phím qua libei và
 không có ACK, nên log chỉ có dòng start, các bước phát phím và commit.
 
 ## Chọn backend theo ứng dụng

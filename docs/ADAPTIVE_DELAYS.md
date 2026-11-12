@@ -175,8 +175,8 @@ thông tin về tình trạng chậm của hệ thống vẫn được giữ khi
 | `ForwardBackspaceBackend` | Có | Có | Có | Không |
 | `UinputBackspaceBackend` | Có | Có | Có | Có |
 | `UinputShiftSelectBackend` | Có | Không dùng adaptive giữa các phím Left | Không | Có |
-| `XTestBackspaceBackend` | Có | Có | Có | Không |
-| `XTestShiftSelectBackend` | Có | Có | Không | Không |
+| `NativeBackspaceBackend` | Có | Có | Có | Không |
+| `NativeShiftSelectBackend` | Có | Có | Không | Không |
 
 Tất cả backend vẫn nhận delay do monitor toàn cục cập nhật. Khác biệt trong bảng
 chỉ thể hiện khả năng tự đo timer hoặc ACK của từng transaction.

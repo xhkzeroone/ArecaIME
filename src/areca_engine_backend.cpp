@@ -194,14 +194,14 @@ RewriteBackend *ArecaEngine::resolveSurroundingFallbackBackend(
 
 RewriteBackend *ArecaEngine::resolvePreferredShiftSelectBackend() {
   if (advancedConfig_.useXTestInsteadOfUinput.value() &&
-      xtestShiftSelectBackend_.isAvailable()) {
-    return &xtestShiftSelectBackend_;
+      nativeShiftSelectBackend_.isAvailable()) {
+    return &nativeShiftSelectBackend_;
   }
   if (uinputShiftSelectBackend_.isAvailable()) {
     return &uinputShiftSelectBackend_;
   }
-  if (xtestShiftSelectBackend_.isAvailable()) {
-    return &xtestShiftSelectBackend_;
+  if (nativeShiftSelectBackend_.isAvailable()) {
+    return &nativeShiftSelectBackend_;
   }
   return nullptr;
 }
@@ -210,14 +210,14 @@ RewriteBackend *
 ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
   if (preferHardware || advancedConfig_.useUinputInsteadOfForwardKey.value()) {
     if (advancedConfig_.useXTestInsteadOfUinput.value() &&
-        xtestBackspaceBackend_.isAvailable()) {
-      return &xtestBackspaceBackend_;
+        nativeBackspaceBackend_.isAvailable()) {
+      return &nativeBackspaceBackend_;
     }
     if (uinputBackspaceBackend_.isAvailable()) {
       return &uinputBackspaceBackend_;
     }
-    if (xtestBackspaceBackend_.isAvailable()) {
-      return &xtestBackspaceBackend_;
+    if (nativeBackspaceBackend_.isAvailable()) {
+      return &nativeBackspaceBackend_;
     }
   }
   return &forwardBackspaceBackend_;

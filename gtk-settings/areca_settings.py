@@ -1204,7 +1204,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Dùng timer độ chính xác cao", "PreciseTiming"),
             ("Dùng Surrounding v2 thay v1", "UseSurroundingV2InsteadOfSurroundingV1"),
             ("Dùng uinput thay ForwardKey", "UseUinputInsteadOfForwardKey"),
-            ("Dùng Native (Libei/XTest) thay uinput", "UseXTestInsteadOfUinput"),
+            ("Dùng Native (libei) thay uinput", "UseXTestInsteadOfUinput"),
             ("Reset bộ gõ sau khi click chuột", "EnableMouseTracking"),
             ("Chuyển tiếp phím đầu cho trình duyệt", "ForwardFirstCharacter"),
         ]:

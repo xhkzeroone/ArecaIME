@@ -20,7 +20,9 @@
 #include "forward_backspace_backend.h"
 #include "input_scheduler.h"
 #include "input_type_detector.h"
+#include "native_backspace_backend.h"
 #include "native_device.h"
+#include "native_shift_select_backend.h"
 #include "notification/input_method_announcement.h"
 #include "preedit_mode.h"
 #include "redirect_mode.h"
@@ -32,8 +34,6 @@
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
 #include "virtual_keyboard_backend.h"
-#include "xtest_backspace_backend.h"
-#include "xtest_shift_select_backend.h"
 
 namespace areca {
 
@@ -172,8 +172,8 @@ private:
   UinputBackspaceBackend uinputBackspaceBackend_;
   UinputShiftSelectBackend uinputShiftSelectBackend_;
   NativeDevice nativeDevice_;
-  XTestBackspaceBackend xtestBackspaceBackend_;
-  XTestShiftSelectBackend xtestShiftSelectBackend_;
+  NativeBackspaceBackend nativeBackspaceBackend_;
+  NativeShiftSelectBackend nativeShiftSelectBackend_;
   // Đưa kết quả từ thread của phím ảo về event loop; phải hủy sau backend.
   fcitx::EventDispatcher virtualKeyboardDispatcher_;
   VirtualKeyboardBackend virtualKeyboardBackend_;

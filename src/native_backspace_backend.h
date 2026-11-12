@@ -10,47 +10,46 @@
 
 #include "adaptive_wait.h"
 #include "event_loop_post.h"
+#include "native_keyboard_device.h"
 #include "rewrite_backend.h"
-#include "types.h"
-#include "xtest_device.h"
 
 namespace areca {
 
-class XTestShiftSelectBackend final : public RewriteBackend {
+class NativeBackspaceBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
 
-  XTestShiftSelectBackend(fcitx::EventLoop &eventLoop,
-                          XTestBackspaceDevice &device,
-                          AdaptiveWait &adaptiveWait,
-                          DebugProvider debugProvider);
-  ~XTestShiftSelectBackend() override;
+  NativeBackspaceBackend(fcitx::EventLoop &eventLoop,
+                         NativeKeyboardDevice &device,
+                         AdaptiveWait &adaptiveWait,
+                         DebugProvider debugProvider);
+  ~NativeBackspaceBackend() override;
 
-  const char *name() const override { return "native-shift-select"; }
+  const char *name() const override { return "native-backspace"; }
   ApplyStatus apply(fcitx::InputContext &inputContext, const RewritePlan &plan,
                     RewriteDone onDone) override;
 
-  bool isAvailable() { return device_.isAvailable(); }
+  bool isAvailable();
   bool hasPending() const { return transactionId_ != 0; }
 
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
 
-  bool beginSelection(bool notifyFailure);
-  bool sendNextSelectionLeft(bool notifyFailure);
-  void releaseShiftThenCommit();
-  void releaseShift();
-  void commitSelectionAndComplete();
-  void scheduleCommit();
-  void completeWithoutCommit();
+  bool sendNextBackspace(bool notifyFailure = true);
   void failTransaction(bool notifyFailure);
-  void finishTransaction();
+  void scheduleNextBackspace();
+  void scheduleCommit();
+  void commitAfterAdaptiveWait(uint32_t appliedExtraWaitMs);
+  void commitAndComplete();
+  void completeWithoutCommit();
   void schedule(uint32_t delayMs, TimerDispatch dispatch,
                 std::function<void()> callback);
+  void dispatchPostEvent(uint64_t deadlineUsec, std::function<void()> callback);
+  void observeAndRun(uint64_t deadlineUsec, std::function<void()> callback);
   void clearPending();
 
   fcitx::EventLoop &eventLoop_;
-  XTestBackspaceDevice &device_;
+  NativeKeyboardDevice &device_;
   EventLoopPostTask commitPost_;
   AdaptiveWait &adaptiveWait_;
   DebugProvider debugProvider_;
@@ -59,12 +58,11 @@ private:
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;
   RewriteDone onDone_;
   uint64_t transactionId_ = 0;
-  uint32_t selectedCharacters_ = 0;
-  uint32_t remainingLefts_ = 0;
-  uint32_t shiftSelectDelayMs_ = 0;
-  uint32_t afterSelectWaitMs_ = 0;
+  uint32_t remainingBackspaces_ = 0;
+  uint32_t sentBackspaces_ = 0;
+  uint32_t backspaceDelayMs_ = 0;
+  uint32_t afterBackspaceWaitMs_ = 0;
   uint64_t timerAccuracyUsec_ = 1;
-  bool shiftHeld_ = false;
   std::string commitText_;
 };
 

@@ -13,12 +13,12 @@
 #include <unistd.h>
 
 #include <fcitx-utils/log.h>
+#include <linux/input-event-codes.h>
 
 #ifdef ARECA_HAVE_LIBEI
 #include <glib-unix.h>
 #include <libei.h>
 #include <libportal/portal.h>
-#include <linux/input-event-codes.h>
 #include <sys/eventfd.h>
 #include <sys/stat.h>
 #endif
@@ -40,7 +40,7 @@ struct NativeDevice::Impl {
 
   Impl(fcitx::EventLoop &eventLoop, DebugProvider provider)
       : eventLoop(eventLoop), debugProvider(std::move(provider)),
-        xtest(debugProvider), wayland(isWaylandSession()) {}
+        wayland(isWaylandSession()) {}
 
   ~Impl() {
 #ifdef ARECA_HAVE_LIBEI
@@ -51,7 +51,6 @@ struct NativeDevice::Impl {
 
   fcitx::EventLoop &eventLoop;
   DebugProvider debugProvider;
-  XTestDevice xtest;
   const bool wayland;
   State state = State::Idle;
 
@@ -96,18 +95,15 @@ struct NativeDevice::Impl {
 #endif
   }
 
-  void failToXTest(const char *reason) {
+  void fail(const char *reason) {
     if (state == State::Failed) {
       return;
     }
     state = State::Failed;
     if (debugProvider()) {
-      FCITX_WARN() << "areca: libei unavailable, falling back to XTest: "
+      FCITX_WARN() << "areca: libei unavailable: "
                    << (reason ? reason : "unknown error");
     }
-    // Request fallback permission as soon as the portal path fails, rather
-    // than waiting for the next typed character.
-    xtest.warmUp();
   }
 
 #ifdef ARECA_HAVE_LIBEI
@@ -340,12 +336,12 @@ struct NativeDevice::Impl {
     connection = ei_new_sender(this);
     if (!connection) {
       close(fd);
-      failToXTest("ei_new_sender failed");
+      fail("ei_new_sender failed");
       return false;
     }
     ei_configure_name(connection, "Areca Vietnamese Input Method");
     if (ei_setup_backend_fd(connection, fd) < 0) {
-      failToXTest("EI handshake setup failed");
+      fail("EI handshake setup failed");
       return false;
     }
     eiSource = eventLoop.addIOEvent(
@@ -356,7 +352,7 @@ struct NativeDevice::Impl {
           return handleEi(flags);
         });
     if (!eiSource) {
-      failToXTest("cannot watch EIS file descriptor");
+      fail("cannot watch EIS file descriptor");
       return false;
     }
     return true;
@@ -365,7 +361,7 @@ struct NativeDevice::Impl {
   bool handlePortalResult(fcitx::IOEventFlags flags) {
     if (flags.test(fcitx::IOEventFlag::Hup) ||
         flags.test(fcitx::IOEventFlag::Err)) {
-      failToXTest("portal worker notification channel closed");
+      fail("portal worker notification channel closed");
       return false;
     }
     uint64_t value = 0;
@@ -383,7 +379,7 @@ struct NativeDevice::Impl {
       if (fd >= 0) {
         close(fd);
       }
-      failToXTest(error.c_str());
+      fail(error.c_str());
       return true;
     }
     if (fd >= 0) {
@@ -396,7 +392,7 @@ struct NativeDevice::Impl {
   bool handleEi(fcitx::IOEventFlags flags) {
     if (flags.test(fcitx::IOEventFlag::Hup) ||
         flags.test(fcitx::IOEventFlag::Err)) {
-      failToXTest("EIS connection closed");
+      fail("EIS connection closed");
       return false;
     }
     ei_dispatch(connection);
@@ -417,11 +413,11 @@ struct NativeDevice::Impl {
                  device == keyboard) {
         keyboard = ei_device_unref(keyboard);
         ei_event_unref(event);
-        failToXTest("EIS keyboard paused or removed");
+        fail("EIS keyboard paused or removed");
         return false;
       } else if (type == EI_EVENT_DISCONNECT) {
         ei_event_unref(event);
-        failToXTest("EIS disconnected");
+        fail("EIS disconnected");
         return false;
       }
       ei_event_unref(event);
@@ -436,7 +432,7 @@ struct NativeDevice::Impl {
     resultFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     workerWakeFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (resultFd < 0 || workerWakeFd < 0) {
-      failToXTest("cannot create portal worker notification channel");
+      fail("cannot create portal worker notification channel");
       return false;
     }
     resultSource = eventLoop.addIOEvent(
@@ -447,7 +443,7 @@ struct NativeDevice::Impl {
           return handlePortalResult(flags);
         });
     if (!resultSource) {
-      failToXTest("cannot watch portal worker notification channel");
+      fail("cannot watch portal worker notification channel");
       return false;
     }
     state = State::Pending;
@@ -492,98 +488,56 @@ NativeDevice::NativeDevice(fcitx::EventLoop &eventLoop,
 NativeDevice::~NativeDevice() = default;
 
 bool NativeDevice::warmUp() {
-  if (!impl_->wayland) {
-    return impl_->xtest.ensureDevice();
-  }
 #ifdef ARECA_HAVE_LIBEI
+  if (!impl_->wayland) {
+    return false;
+  }
   return impl_->startPortalWorker();
 #else
-  return impl_->xtest.warmUp();
+  return false;
 #endif
 }
 
 bool NativeDevice::isAvailable() {
-  if (!impl_->wayland) {
-    return impl_->xtest.isAvailable();
-  }
 #ifdef ARECA_HAVE_LIBEI
+  if (!impl_->wayland) {
+    return false;
+  }
   if (impl_->state == Impl::State::Idle) {
     impl_->startPortalWorker();
   }
-  if (impl_->state == Impl::State::Ready) {
-    return true;
-  }
-  if (impl_->state == Impl::State::Failed) {
-    return impl_->xtest.isAvailable();
-  }
-  return false;
+  return impl_->state == Impl::State::Ready;
 #else
-  return impl_->xtest.isAvailable();
+  return false;
 #endif
 }
 
-bool NativeDevice::sendBackspace() {
-  if (!impl_->wayland) {
-    return impl_->xtest.sendBackspace();
-  }
-#ifdef ARECA_HAVE_LIBEI
-  if (impl_->state == Impl::State::Ready && impl_->keyboard &&
-      impl_->connection) {
-    ei_device_keyboard_key(impl_->keyboard, KEY_BACKSPACE, true);
-    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
-    ei_device_keyboard_key(impl_->keyboard, KEY_BACKSPACE, false);
-    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
-    return true;
-  }
-  if (impl_->state == Impl::State::Failed) {
-    return impl_->xtest.sendBackspace();
-  }
-  return false;
-#else
-  return impl_->xtest.sendBackspace();
-#endif
-}
+bool NativeDevice::sendBackspace() { return tapKey(KEY_BACKSPACE); }
 
 bool NativeDevice::sendShift(bool press) {
-  if (!impl_->wayland) {
-    return impl_->xtest.sendShift(press);
-  }
+  return sendKey(KEY_LEFTSHIFT, press);
+}
+
+bool NativeDevice::sendLeft() { return tapKey(KEY_LEFT); }
+
+bool NativeDevice::sendKey(uint32_t keycode, bool press) {
 #ifdef ARECA_HAVE_LIBEI
-  if (impl_->state == Impl::State::Ready && impl_->keyboard &&
-      impl_->connection) {
-    ei_device_keyboard_key(impl_->keyboard, KEY_LEFTSHIFT, press);
-    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
-    return true;
+  if (impl_->state != Impl::State::Ready || !impl_->keyboard ||
+      !impl_->connection) {
+    return false;
   }
-  if (impl_->state == Impl::State::Failed) {
-    return impl_->xtest.sendShift(press);
-  }
-  return false;
+  ei_device_keyboard_key(impl_->keyboard, keycode, press);
+  ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
+  return true;
 #else
-  return impl_->xtest.sendShift(press);
+  (void)keycode;
+  (void)press;
+  return false;
 #endif
 }
 
-bool NativeDevice::sendLeft() {
-  if (!impl_->wayland) {
-    return impl_->xtest.sendLeft();
-  }
-#ifdef ARECA_HAVE_LIBEI
-  if (impl_->state == Impl::State::Ready && impl_->keyboard &&
-      impl_->connection) {
-    ei_device_keyboard_key(impl_->keyboard, KEY_LEFT, true);
-    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
-    ei_device_keyboard_key(impl_->keyboard, KEY_LEFT, false);
-    ei_device_frame(impl_->keyboard, ei_now(impl_->connection));
-    return true;
-  }
-  if (impl_->state == Impl::State::Failed) {
-    return impl_->xtest.sendLeft();
-  }
-  return false;
-#else
-  return impl_->xtest.sendLeft();
-#endif
+bool NativeDevice::tapKey(uint32_t keycode) {
+  return sendKey(keycode, true) && sendKey(keycode, false);
 }
 
 } // namespace areca
