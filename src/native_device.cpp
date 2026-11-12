@@ -498,6 +498,14 @@ bool NativeDevice::warmUp() {
 #endif
 }
 
+bool NativeDevice::isSupported() const {
+#ifdef ARECA_HAVE_LIBEI
+  return impl_->wayland && impl_->state != Impl::State::Failed;
+#else
+  return false;
+#endif
+}
+
 bool NativeDevice::isAvailable() {
 #ifdef ARECA_HAVE_LIBEI
   if (!impl_->wayland) {

@@ -28,6 +28,9 @@ public:
   bool sendShift(bool press) override;
   bool sendLeft() override;
   bool warmUp();
+  // Có thể dùng được hay không mà không xin quyền: false khi bản build không
+  // có libei, phiên không phải Wayland, hoặc portal đã từ chối.
+  bool isSupported() const;
 
 private:
   bool sendKey(uint32_t keycode, bool press);

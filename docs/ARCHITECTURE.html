@@ -4127,9 +4127,12 @@ diện. Phím tắt đổi mode toàn cục <code>SwitchModeKey</code> đã bị
 <ol><li>Ứng dụng có mục trong <code>areca-apps.conf</code> với mode <code>Preedit</code> hoặc <code>Redirect</code>
 dùng mode đó.</li><li>Mode <code>Surrounding</code>, <code>Shift select</code>, <code>Backspace</code>, <code>Virtual keyboard</code>, <code>Native</code> dùng Rewrite và ghi đè backend.</li><li><code>Tự động</code> hoặc không có mục dùng mode toàn cục.</li></ol>
 <p>Phím <code>SelectBackendKey</code>, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có 8
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có tối đa 8
 lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
-Native, Preedit, Redirect. Tên
+Native, Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ,
+Native bị ẩn khi bản build không có libei, phiên không phải Wayland hoặc portal
+đã từ chối, trừ khi ứng dụng đang chọn mục đó. Các mục còn lại đánh số liên tiếp,
+Preedit và Redirect luôn là A và E. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ <code>Backspace (Uinput)</code>. Lựa chọn
 được lưu vào <code>areca-apps.conf</code> cùng tên frontend. Ứng dụng không báo tên được
 đặt tên tạm <code>context-&lt;uuid&gt;</code>.</p>

@@ -1,7 +1,9 @@
 #include "areca_engine.h"
 
 #include <functional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
@@ -72,8 +74,6 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
 
   auto candList = std::make_unique<fcitx::CommonCandidateList>();
   candList->setLayoutHint(fcitx::CandidateLayoutHint::Vertical);
-  candList->setLabels({"1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "A. ", "E. "});
-  candList->setPageSize(8);
 
   const char *frontend = inputContext.frontend();
   const bool isTerminal = inputTypeDetector_.isTerminal(appName, frontend);
@@ -93,27 +93,38 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       "Shift select (" + describeShiftSelectBackend() + ")";
   const std::string backspaceTitle =
       "Backspace (" + describeBackspaceBackend(preferHardware) + ")";
-  const std::string virtualKeyboardTitle =
-      std::string("Virtual keyboard (") +
-      (virtualKeyboardBackspaceBackend_.isAvailable() ? "Wayland"
-                                                      : "không khả dụng") +
-      ")";
 
   struct BackendOption {
     AppBackendMode mode;
     std::string title;
   };
-  const std::array<BackendOption, 8> options = {{
+  std::vector<BackendOption> options = {
       {AppBackendMode::Auto, autoTitle},
       {AppBackendMode::SurroundingText, surroundingTitle},
       {AppBackendMode::ShiftSelect, shiftTitle},
       {AppBackendMode::Backspace, backspaceTitle},
-      {AppBackendMode::VirtualKeyboard, virtualKeyboardTitle},
-      // Không hỏi isAvailable() ở đây: lần đầu sẽ mở hộp thoại xin quyền libei.
-      {AppBackendMode::Native, "Native (libei)"},
-      {AppBackendMode::Preedit, "Preedit"},
-      {AppBackendMode::Redirect, "Redirect (EN)"},
-  }};
+  };
+  // Mục chỉ có trên một số máy được ẩn khi không dùng được, trừ khi ứng dụng
+  // đang chọn nó để người dùng còn thấy và đổi.
+  if (virtualKeyboardDevice_.isAvailable() ||
+      currentMode == AppBackendMode::VirtualKeyboard) {
+    options.push_back(
+        {AppBackendMode::VirtualKeyboard, "Virtual keyboard (Wayland)"});
+  }
+  // isSupported() không xin quyền libei, nên mở menu không bật hộp thoại.
+  if (nativeDevice_.isSupported() || currentMode == AppBackendMode::Native) {
+    options.push_back({AppBackendMode::Native, "Native (libei)"});
+  }
+  std::vector<std::string> labels;
+  for (size_t i = 0; i < options.size(); ++i) {
+    labels.push_back(std::to_string(i + 1) + ". ");
+  }
+  options.push_back({AppBackendMode::Preedit, "Preedit"});
+  labels.push_back("A. ");
+  options.push_back({AppBackendMode::Redirect, "Redirect (EN)"});
+  labels.push_back("E. ");
+  candList->setLabels(labels);
+  candList->setPageSize(static_cast<int>(options.size()));
 
   int initialCursor = 0;
   for (size_t i = 0; i < options.size(); ++i) {
@@ -259,21 +270,38 @@ bool ArecaEngine::handleBackendSelectionKey(fcitx::InputContext &inputContext,
     return true;
   }
 
-  if (sym >= FcitxKey_1 && sym <= FcitxKey_6) {
+  // Số mục đánh số thay đổi theo máy, nên A/E tìm theo mode thay vì vị trí.
+  const auto selectMode = [&](AppBackendMode mode) {
+    for (int i = 0; i < commonList->size(); ++i) {
+      const auto *word =
+          dynamic_cast<const BackendCandidateWord *>(&commonList->candidate(i));
+      if (word && word->mode() == mode) {
+        word->select(&inputContext);
+        return;
+      }
+    }
+  };
+
+  if (sym >= FcitxKey_1 && sym <= FcitxKey_9) {
     const int idx = sym - FcitxKey_1;
     if (idx < commonList->size()) {
-      commonList->candidate(idx).select(&inputContext);
+      const auto *word = dynamic_cast<const BackendCandidateWord *>(
+          &commonList->candidate(idx));
+      if (word && word->mode() != AppBackendMode::Preedit &&
+          word->mode() != AppBackendMode::Redirect) {
+        word->select(&inputContext);
+      }
     }
     return true;
   }
 
   if (sym == FcitxKey_a || sym == FcitxKey_A) {
-    commonList->candidate(6).select(&inputContext);
+    selectMode(AppBackendMode::Preedit);
     return true;
   }
 
   if (sym == FcitxKey_e || sym == FcitxKey_E) {
-    commonList->candidate(7).select(&inputContext);
+    selectMode(AppBackendMode::Redirect);
     return true;
   }
 
