@@ -72,7 +72,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 | Danh sách app đặc biệt | `src/program_compatibility.cpp` |
 | AT-SPI | `src/window_focus_tracker.cpp`, `src/atspi/` |
 | App cài đặt GTK | `gtk-settings/areca_settings.py` |
-| Version | `CMakeLists.txt`, `packaging/{arch,aur}/PKGBUILD`, `packaging/aur/.SRCINFO`, ví dụ trong `docs/AUR_PUBLISHING_GUIDE.md` và `packaging/aur/README.md` |
+| Version, release note | Theo skill `areca-release` (danh sách file version, `docs/release-notes/`) |
 
 ## 4. Quy tắc đọc
 
@@ -97,7 +97,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 ## 6. Quy trình lặp lại trong repo này (khỏi phải tìm lại)
 
 - Main checkout bị hook chặn sửa trực tiếp. Sửa trong worktree, commit, rồi `git -C <main> cherry-pick <sha>`. Worktree lệch thì `git reset --hard main`.
-- Không tự push. Người dùng tự tag và push. Commit không có dòng attribution.
+- Không tự push. Chỉ tag và push khi người dùng bảo, theo skill `areca-release`. Commit không có dòng attribution.
 - Trước commit: `clang-format -i` các file đã sửa, `git clang-format --diff main` phải sạch, build không warning, `ctest` qua hết.
 - Sửa `docs/ARCHITECTURE.md` thì cập nhật luôn `docs/ARCHITECTURE.html`. Script dựng HTML nằm trong scratchpad và có thể đã mất; khi đó sửa tay đúng đoạn HTML tương ứng.
 - Scratchpad bị dọn khi qua ngày: đừng để thứ cần giữ ở đó.
