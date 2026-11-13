@@ -45,7 +45,7 @@ Lưu ý: Tên gói được đặt là `fcitx5-areca` để tránh trùng lặp 
 ### Bước 1: Xác nhận tag phiên bản trên GitHub
 Phiên bản khai báo trong PKGBUILD phải có Git tag tương ứng trên remote repository GitHub trước khi build:
 ```bash
-git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.3.10
+git ls-remote --tags https://github.com/xhkzeroone/ArecaIME.git v8.3.11
 ```
 
 ### Bước 2: Clone repository trắng từ AUR
