@@ -585,17 +585,6 @@ void NativeDevice::probeSupport() {
 
 NativeDevice::~NativeDevice() = default;
 
-bool NativeDevice::warmUp() {
-#ifdef ARECA_HAVE_LIBEI
-  if (!impl_->wayland) {
-    return false;
-  }
-  return impl_->startPortalWorker();
-#else
-  return false;
-#endif
-}
-
 bool NativeDevice::isSupported() const {
 #ifdef ARECA_HAVE_LIBEI
   return impl_->wayland && impl_->support == Impl::Support::Supported &&

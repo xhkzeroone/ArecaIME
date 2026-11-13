@@ -266,26 +266,34 @@ std::string ArecaEngine::describeSurroundingBackend() {
   return "V1";
 }
 
+// Tên backend cho menu đi theo thứ tự của bộ chọn nhưng chỉ hỏi
+// nativeDevice_.isSupported(): isAvailable() của Native mở phiên libei và bật
+// hộp thoại xin quyền, chỉ được gọi khi thật sự gửi phím.
 std::string ArecaEngine::describeShiftSelectBackend() {
-  if (auto *shiftBackend = resolvePreferredShiftSelectBackend()) {
-    if (std::string_view(shiftBackend->name()).starts_with("native")) {
-      return "Native";
-    }
-    if (std::string_view(shiftBackend->name()).starts_with("uinput")) {
-      return "Uinput";
-    }
+  const bool nativeSupported = nativeDevice_.isSupported();
+  if (advancedConfig_.useNativeInsteadOfUinput.value() && nativeSupported) {
+    return "Native";
+  }
+  if (uinputShiftSelectBackend_.isAvailable()) {
+    return "Uinput";
+  }
+  if (nativeSupported) {
+    return "Native";
   }
   return advancedConfig_.useNativeInsteadOfUinput.value() ? "Native" : "Uinput";
 }
 
 std::string ArecaEngine::describeBackspaceBackend(bool preferHardware) {
-  if (auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware)) {
-    const std::string_view name = bsBackend->name();
-    if (name.starts_with("native")) {
+  if (preferHardware || advancedConfig_.useUinputInsteadOfForwardKey.value()) {
+    const bool nativeSupported = nativeDevice_.isSupported();
+    if (advancedConfig_.useNativeInsteadOfUinput.value() && nativeSupported) {
       return "Native";
     }
-    if (name.starts_with("uinput")) {
+    if (uinputBackspaceBackend_.isAvailable()) {
       return "Uinput";
+    }
+    if (nativeSupported) {
+      return "Native";
     }
   }
   return "ForwardKey";

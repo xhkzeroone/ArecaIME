@@ -31,7 +31,6 @@ public:
   bool sendBackspace() override;
   bool sendShift(bool press) override;
   bool sendLeft() override;
-  bool warmUp();
   // Hỏi portal có RemoteDesktop kèm ConnectToEIS và bàn phím không, chỉ đọc
   // thuộc tính nên không mở hộp thoại xin quyền. Kết quả về bất đồng bộ.
   void probeSupport();

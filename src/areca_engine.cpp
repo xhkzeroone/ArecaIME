@@ -316,27 +316,23 @@ void ArecaEngine::notifyUinputUnavailable() {
 
 void ArecaEngine::scheduleDeviceWarmup() {
   deviceWarmupTimer_.reset();
-  const bool warmUpNative = advancedConfig_.useNativeInsteadOfUinput.value();
   const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC);
   deviceWarmupTimer_ = instance_->eventLoop().addTimeEvent(
-      CLOCK_MONOTONIC, deadline, 0,
-      [this, warmUpNative](fcitx::EventSourceTime *, uint64_t) {
+      CLOCK_MONOTONIC, deadline, 0, [this](fcitx::EventSourceTime *, uint64_t) {
         auto timer = std::move(deviceWarmupTimer_);
         // Warmup chỉ chuẩn bị thiết bị. Chỉ báo lỗi khi routing thực sự thử
         // chọn uinput cho một thao tác gõ/xoá.
         const bool uinputAvailable = uinputDevice_.warmUp();
         // Chỉ đọc thuộc tính portal, không xin quyền, để máy không có libei
-        // khỏi mở phiên Native khi cần dự phòng cho uinput.
+        // khỏi mở phiên Native khi cần dự phòng cho uinput. Phiên libei (và
+        // hộp thoại xin quyền) chỉ mở ở lần đầu thật sự gửi phím qua Native.
         nativeDevice_.probeSupport();
-        const bool nativeStarted = warmUpNative && nativeDevice_.warmUp();
         // Dò phím ảo sớm để menu chọn backend biết compositor có hỗ trợ không;
         // việc dò không mở hộp thoại nào.
         const bool virtualKeyboardStarted = virtualKeyboardDevice_.warmUp();
         if (debugEnabled()) {
           FCITX_INFO() << "areca: device warmup completed"
                        << " uinput-available=" << uinputAvailable
-                       << " native-requested=" << warmUpNative
-                       << " native-started=" << nativeStarted
                        << " virtual-keyboard-started="
                        << virtualKeyboardStarted;
         }

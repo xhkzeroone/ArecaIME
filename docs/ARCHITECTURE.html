@@ -4241,7 +4241,9 @@ Chỉ dùng khi chọn <strong>Virtual keyboard</strong> cho ứng dụng.</p>
 <p>Native gửi phím qua libei bằng phiên RemoteDesktop portal trên Wayland, chữ vẫn
 <code>commitString</code>. Native thay uinput khi bật <code>UseXTestInsteadOfUinput</code> (tên khoá cũ,
 nhãn &quot;Dùng Native (libei) thay thế uinput&quot;), và là dự phòng khi không có uinput.
-Không có libei, portal không hỗ trợ bàn phím hoặc từ chối thì Native không khả dụng.</p>
+Không có libei, portal không hỗ trợ bàn phím hoặc từ chối thì Native không khả dụng. Phiên libei
+chỉ mở ở lần đầu thật sự gửi phím qua Native, không mở lúc khởi động hay khi mở
+menu; quyền được nhớ bằng restore token nên chỉ hỏi một lần.</p>
 <p>Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
 <code>AdaptiveWait</code>. Commit luôn được đưa sang pha post của event loop bằng
 <code>EventLoopPostTask</code>. Timer giữa các bước xoá chạy callback trực tiếp. Chi tiết
