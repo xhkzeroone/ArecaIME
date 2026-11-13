@@ -422,9 +422,15 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     state->sentenceCapitalization.reset();
     if (!state->forwardedBackspacePresses.empty()) {
-      const bool replay =
-          event.time() != 0 && state->forwardedBackspacePresses.contains(
-                                   {event.time(), event.rawKey().code()});
+      // Frontend Wayland tự phát phím lặp với timestamp của lần nhấn gốc, nên
+      // press có cờ Repeat ở đó là phím giữ thật chứ không phải phím phát lại.
+      const char *replayFrontend = inputContext->frontend();
+      const bool waylandRepeat =
+          isRepeat && replayFrontend &&
+          std::string_view(replayFrontend).starts_with("wayland");
+      const bool replay = !waylandRepeat && event.time() != 0 &&
+                          state->forwardedBackspacePresses.contains(
+                              {event.time(), event.rawKey().code()});
       if (replay) {
         if (debugProvider_()) {
           FCITX_INFO() << "areca: backspace route=forward reason=replayed-press"

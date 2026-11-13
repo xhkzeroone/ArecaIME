@@ -170,10 +170,61 @@ void testForwardedBackspaceReplay() {
   assert(state->forwardedBackspacePresses.empty());
 }
 
+// Frontend Wayland phát phím lặp với timestamp của lần nhấn gốc. Giữ Backspace
+// sau một từ đã commit phải xoá dần composition, không bị coi là phím phát lại.
+void testWaylandHeldBackspaceRepeat() {
+  fcitx::EventLoop loop;
+  fcitx::InputContextManager manager;
+  areca::RewriteModeHandler::StateFactory factory([](fcitx::InputContext &) {
+    return new areca::RewriteInputState("Telex 2", true, true, true, "Unicode",
+                                        false, false, 1, {});
+  });
+  manager.registerProperty("rewrite-wayland-held-backspace-test", &factory);
+  areca::InputScheduler scheduler(
+      loop,
+      [&](fcitx::InputContext &ic) {
+        return ic.propertyFor(&factory)->engine.get();
+      },
+      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+      [] { return false; },
+      [](fcitx::InputContext &, const areca::BambooResult &) {
+        return areca::RewriteBackendSelection{};
+      });
+  areca::RewriteModeHandler handler(
+      loop, factory, scheduler, [] { return false; }, [] { return false; },
+      [](fcitx::InputContext &, const char *) {}, [] { return true; },
+      [](fcitx::InputContext &) { return false; },
+      [](fcitx::InputContext &) { return false; },
+      [](const fcitx::Key &) { return false; });
+  for (const char *frontend : {"wayland", "wayland_v2"}) {
+    TestInputContext context(manager, "foot", frontend);
+    auto *state = context.propertyFor(&factory);
+    for (char c : std::string("ddungs "))
+      state->engine->process(c, std::string(1, c));
+    auto press = [&](bool repeat) {
+      fcitx::KeyEvent event(&context,
+                            fcitx::Key(FcitxKey_BackSpace,
+                                       repeat ? fcitx::KeyState::Repeat
+                                              : fcitx::KeyState::NoState,
+                                       22),
+                            false, 1000);
+      handler.handleKeyEvent(event);
+      assert(!event.filtered() && !event.accepted());
+    };
+    press(false); // Xoá dấu cách, khôi phục từ đã finalize.
+    assert(state->engine->currentText() == "đúng");
+    press(true);
+    assert(state->engine->currentText() == "đún");
+    press(true);
+    assert(state->engine->currentText() == "đú");
+  }
+}
+
 } // namespace
 
 int main() {
   testForwardedBackspaceReplay();
+  testWaylandHeldBackspaceRepeat();
   // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
   // Backspace, giống BackspaceRecovery thường.
   // GNOME/IBus gửi các press lặp không kèm cờ Repeat.
