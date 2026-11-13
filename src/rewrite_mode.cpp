@@ -250,7 +250,8 @@ void RewriteModeHandler::forwardSyncedBackspace(fcitx::KeyEvent &event,
     state.resetProtectedUntilUsec = fcitx::now(CLOCK_MONOTONIC) + 20 * 1000;
   }
   // Kết thúc: Giữ snapshot Bamboo qua reset/deactivate của Edge X11
-  state.forwardedBackspacePresses.emplace(event.time(), event.rawKey().code());
+  state.backspaceReplay.forwarded(event.time(), event.rawKey().code(),
+                                  fcitx::now(CLOCK_MONOTONIC));
   event.forward();
 }
 
@@ -341,7 +342,7 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   }
   if (event.isRelease()) {
     if (isBackspace && state)
-      state->forwardedBackspacePresses.clear();
+      state->backspaceReplay.clear();
     if (isBackspace && state && state->engine &&
         state->backspaceRecoveryAwaitingRelease) {
       if (isRepeat) {
@@ -421,16 +422,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       return;
     }
     state->sentenceCapitalization.reset();
-    if (!state->forwardedBackspacePresses.empty()) {
-      // Frontend Wayland tự phát phím lặp với timestamp của lần nhấn gốc, nên
-      // press có cờ Repeat ở đó là phím giữ thật chứ không phải phím phát lại.
-      const char *replayFrontend = inputContext->frontend();
-      const bool waylandRepeat =
-          isRepeat && replayFrontend &&
-          std::string_view(replayFrontend).starts_with("wayland");
-      const bool replay = !waylandRepeat && event.time() != 0 &&
-                          state->forwardedBackspacePresses.contains(
-                              {event.time(), event.rawKey().code()});
+    if (state->backspaceReplay.holding()) {
+      const bool replay = state->backspaceReplay.takeReplay(
+          event.time(), event.rawKey().code(), fcitx::now(CLOCK_MONOTONIC));
       if (replay) {
         if (debugProvider_()) {
           FCITX_INFO() << "areca: backspace route=forward reason=replayed-press"
@@ -460,8 +454,8 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
                        << " program=" << inputContext->program();
         }
         resetContext(*inputContext);
-        state->forwardedBackspacePresses.emplace(event.time(),
-                                                 event.rawKey().code());
+        state->backspaceReplay.forwarded(event.time(), event.rawKey().code(),
+                                         fcitx::now(CLOCK_MONOTONIC));
         event.forward();
         return;
       }
@@ -575,7 +569,7 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
   scheduler_.resetContext(inputContext);
   if (auto *state = stateFor(inputContext)) {
     state->backspaceRecoveryAwaitingRelease = false;
-    state->forwardedBackspacePresses.clear();
+    state->backspaceReplay.clear();
     state->resetProtectedUntilUsec = 0;
     state->sentenceCapitalization.reset();
     // Sau reset, composition cũ đã mất. Arm lại để phím text kế tiếp có thể tái

@@ -11,6 +11,7 @@
 #include <fcitx/inputcontextmanager.h>
 
 #include "areca_config.h"
+#include "backspace_replay_guard.h"
 #include "input_scheduler.h"
 #include "rewrite_mode.h"
 
@@ -140,7 +141,7 @@ void testForwardedBackspaceReplay() {
         true, 1100);
     handler.handleKeyEvent(event);
     assert(!event.accepted() && !event.filtered());
-    assert(state->forwardedBackspacePresses.empty());
+    assert(!state->backspaceReplay.holding());
   };
   for (bool repeatFlag : {false, true}) {
     prepare();
@@ -158,16 +159,14 @@ void testForwardedBackspaceReplay() {
     press(1000, false);
     press(1001, repeatFlag); // A real held press has a different timestamp.
     assert(state->engine->currentText() == "đún");
-    press(1001, true);
-    assert(state->engine->currentText() == "đún");
-    press(1000, true); // A delayed old replay must also remain harmless.
+    press(1001, true); // Bản gửi lại ngay sau press 1001.
     assert(state->engine->currentText() == "đún");
     release();
   }
   prepare();
   press(1000, false);
   handler.resetContext(context);
-  assert(state->forwardedBackspacePresses.empty());
+  assert(!state->backspaceReplay.holding());
 }
 
 // Frontend Wayland phát phím lặp với timestamp của lần nhấn gốc. Giữ Backspace
@@ -213,6 +212,9 @@ void testWaylandHeldBackspaceRepeat() {
     };
     press(false); // Xoá dấu cách, khôi phục từ đã finalize.
     assert(state->engine->currentText() == "đúng");
+    // Phím lặp đầu tới sau độ trễ lặp phím, quá cửa sổ gửi lại.
+    std::this_thread::sleep_for(std::chrono::microseconds(
+        areca::BackspaceReplayGuard::ReplayWindowUsec + 20 * 1000));
     press(true);
     assert(state->engine->currentText() == "đún");
     press(true);
@@ -220,9 +222,45 @@ void testWaylandHeldBackspaceRepeat() {
   }
 }
 
+// Logic thuần: gửi lại chỉ một lần, chỉ trong cửa sổ, và phím lặp cùng
+// timestamp không mở cửa sổ mới.
+void testBackspaceReplayGuard() {
+  using areca::BackspaceReplayGuard;
+  constexpr uint64_t window = BackspaceReplayGuard::ReplayWindowUsec;
+
+  BackspaceReplayGuard guard;
+  assert(!guard.holding());
+  guard.forwarded(1000, 22, 0);
+  assert(guard.holding());
+  assert(guard.takeReplay(1000, 22, 3000));  // GNOME: vài ms sau.
+  assert(!guard.takeReplay(1000, 22, 4000)); // Chỉ một lần.
+
+  // Quá cửa sổ: phím lặp đầu của Wayland là phím thật.
+  guard.clear();
+  guard.forwarded(1000, 22, 0);
+  assert(!guard.takeReplay(1000, 22, window + 1));
+  // Phím lặp cùng timestamp đã chuyển tiếp không mở cửa sổ mới.
+  guard.forwarded(1000, 22, window + 1);
+  assert(!guard.takeReplay(1000, 22, window + 20 * 1000));
+
+  // Press mới (timestamp khác) mở cửa sổ mới; keycode khác thì không khớp.
+  guard.forwarded(1001, 22, 100 * 1000);
+  assert(!guard.takeReplay(1001, 23, 101 * 1000));
+  guard.forwarded(1002, 22, 200 * 1000);
+  assert(guard.takeReplay(1002, 22, 201 * 1000));
+
+  // Timestamp 0 không đáng tin để so khớp.
+  guard.forwarded(0, 22, 300 * 1000);
+  assert(!guard.takeReplay(0, 22, 300 * 1000));
+
+  guard.clear();
+  assert(!guard.holding());
+}
+
 } // namespace
 
 int main() {
+  testBackspaceReplayGuard();
   testForwardedBackspaceReplay();
   testWaylandHeldBackspaceRepeat();
   // Macro undo phải chặn cứng auto-repeat và chỉ xử lý đúng một lần khi thả
