@@ -618,6 +618,8 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -629,10 +631,12 @@ jobs:
         run: |
           set -euo pipefail
           tag="$GITHUB_REF_NAME"
-          if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" \
-              --title "$tag" \
-              --notes "Areca packages for Arch Linux, CachyOS, Manjaro, EndeavourOS, Garuda, Ubuntu, Pop!_OS, Linux Mint, Zorin OS, Fedora, Nobara, Bazzite, and openSUSE."
+          .github/scripts/release-notes.sh "$tag" "$GH_REPO" > release-notes.md
+          # Release tạo tay trước khi CI xong vẫn được ghi đè note theo cùng mẫu.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --notes-file release-notes.md
+          else
+            gh release create "$tag" --title "$tag" --notes-file release-notes.md
           fi
           find artifacts -type f -print0 | \
             xargs -0 gh release upload "$tag" --clobber
