@@ -111,9 +111,6 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
     options.push_back(
         {AppBackendMode::VirtualKeyboard, "Virtual keyboard (Wayland)"});
   }
-  if (isBackendModeOffered(AppBackendMode::Native)) {
-    options.push_back({AppBackendMode::Native, "Native (libei)"});
-  }
   std::vector<std::string> labels;
   for (size_t i = 0; i < options.size(); ++i) {
     labels.push_back(std::to_string(i + 1) + ". ");

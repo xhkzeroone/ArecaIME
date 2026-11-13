@@ -60,7 +60,7 @@ SPELLCHECK = [
     "Khôi phục từ ngay trong lúc gõ",
 ]
 MACRO_BYPASS = ["Tắt", "Shift", "Ctrl", "Alt", "Super"]
-APP_MODES = ["Tự động", "Surrounding", "Shift select", "Backspace", "Preedit", "Redirect (EN)", "Virtual keyboard", "Native"]
+APP_MODES = ["Tự động", "Surrounding", "Shift select", "Backspace", "Preedit", "Redirect (EN)", "Virtual keyboard"]
 
 MAIN_DEFAULTS = {
     "BambooInputMethod": "Telex 2",
@@ -114,6 +114,7 @@ ADVANCED_DEFAULTS = {
     "PreciseTiming": True,
     "UseSurroundingV2InsteadOfSurroundingV1": False,
     "UseUinputInsteadOfForwardKey": True,
+    "UseXTestInsteadOfUinput": False,
     "EnableMouseTracking": True,
     "ForwardFirstCharacter": True,
 }
@@ -1203,6 +1204,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Dùng timer độ chính xác cao", "PreciseTiming"),
             ("Dùng Surrounding v2 thay v1", "UseSurroundingV2InsteadOfSurroundingV1"),
             ("Dùng uinput thay ForwardKey", "UseUinputInsteadOfForwardKey"),
+            ("Dùng Native (libei) thay uinput", "UseXTestInsteadOfUinput"),
             ("Reset bộ gõ sau khi click chuột", "EnableMouseTracking"),
             ("Chuyển tiếp phím đầu cho trình duyệt", "ForwardFirstCharacter"),
         ]:

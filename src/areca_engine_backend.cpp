@@ -193,6 +193,10 @@ RewriteBackend *ArecaEngine::resolveSurroundingFallbackBackend(
 }
 
 RewriteBackend *ArecaEngine::resolvePreferredShiftSelectBackend() {
+  if (advancedConfig_.useNativeInsteadOfUinput.value() &&
+      nativeShiftSelectBackend_.isAvailable()) {
+    return &nativeShiftSelectBackend_;
+  }
   if (uinputShiftSelectBackend_.isAvailable()) {
     return &uinputShiftSelectBackend_;
   }
@@ -205,6 +209,10 @@ RewriteBackend *ArecaEngine::resolvePreferredShiftSelectBackend() {
 RewriteBackend *
 ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
   if (preferHardware || advancedConfig_.useUinputInsteadOfForwardKey.value()) {
+    if (advancedConfig_.useNativeInsteadOfUinput.value() &&
+        nativeBackspaceBackend_.isAvailable()) {
+      return &nativeBackspaceBackend_;
+    }
     if (uinputBackspaceBackend_.isAvailable()) {
       return &uinputBackspaceBackend_;
     }
@@ -220,9 +228,8 @@ bool ArecaEngine::isBackendModeOffered(AppBackendMode mode) {
   case AppBackendMode::VirtualKeyboard:
     return virtualKeyboardDevice_.isAvailable();
   case AppBackendMode::Native:
-    // Compositor cấp phím ảo (wlroots) thì không có portal libei, và ngược lại
-    // (KWin, Mutter). isSupported() không xin quyền libei.
-    return !virtualKeyboardDevice_.isAvailable() && nativeDevice_.isSupported();
+    // Native chỉ còn là tuỳ chọn nâng cao thay uinput.
+    return false;
   default:
     return true;
   }
@@ -268,7 +275,7 @@ std::string ArecaEngine::describeShiftSelectBackend() {
       return "Uinput";
     }
   }
-  return "Uinput";
+  return advancedConfig_.useNativeInsteadOfUinput.value() ? "Native" : "Uinput";
 }
 
 std::string ArecaEngine::describeBackspaceBackend(bool preferHardware) {
@@ -523,23 +530,7 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         }
         return {bsBackend};
       }
-      case AppBackendMode::Native: {
-        if (nativeBackspaceBackend_.isAvailable()) {
-          if (debugEnabled()) {
-            FCITX_INFO() << "areca: app-override selected native-backspace"
-                         << " program=" << program;
-          }
-          return {&nativeBackspaceBackend_};
-        }
-        // Chưa có quyền libei (đang xin): dùng như khi chọn Backspace.
-        auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
-        if (debugEnabled()) {
-          FCITX_INFO() << "areca: native unavailable, fallback "
-                       << "backend=" << bsBackend->name()
-                       << " program=" << program;
-        }
-        return {bsBackend};
-      }
+      case AppBackendMode::Native:
       case AppBackendMode::Preedit:
       case AppBackendMode::Redirect:
         // Mode routing happens before key handling, so these entries must not

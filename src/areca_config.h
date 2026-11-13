@@ -99,7 +99,8 @@ enum class AppBackendMode {
   Redirect = 5,
   // Xoá và gõ lại bằng phím ảo Wayland (zwp_virtual_keyboard_v1).
   VirtualKeyboard = 6,
-  // Xoá bằng Backspace qua libei rồi commitString.
+  // Không còn trong menu; giữ để cấu hình cũ vẫn đọc được và được coi là
+  // Tự động. Native giờ là tuỳ chọn nâng cao thay uinput.
   Native = 7
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
@@ -285,6 +286,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> useUinputInsteadOfForwardKey{
         this, "UseUinputInsteadOfForwardKey",
         N_("Dùng uinput thay cho ForwardKey"), true};
+    // Tên khoá cũ từ thời còn XTest, giữ để không mất cấu hình đã lưu.
+    fcitx::Option<bool> useNativeInsteadOfUinput{
+        this, "UseXTestInsteadOfUinput",
+        N_("Dùng Native (libei) thay thế uinput"), false};
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
         true};

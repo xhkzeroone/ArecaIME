@@ -92,8 +92,8 @@ private:
   resolveSurroundingFallbackBackend(fcitx::InputContext &inputContext);
   RewriteBackend *resolvePreferredShiftSelectBackend();
   RewriteBackend *resolvePreferredBackspaceBackend(bool preferHardware = false);
-  // Virtual keyboard chỉ có khi compositor cấp phím ảo; Native chỉ có khi
-  // không có phím ảo và portal hỗ trợ libei.
+  // Virtual keyboard chỉ có khi compositor cấp phím ảo; Native không còn
+  // trong menu.
   bool isBackendModeOffered(AppBackendMode mode);
   // Mode đã lưu cho app; mode mà máy này không hỗ trợ được coi là Tự động.
   AppBackendMode effectiveAppBackendMode(AppBackendMode saved);

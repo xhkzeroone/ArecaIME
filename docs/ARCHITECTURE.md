@@ -56,16 +56,15 @@ Mode thực tế của một input context được quyết định theo ứng d
 
 1. Ứng dụng có mục trong `areca-apps.conf` với mode `Preedit` hoặc `Redirect`
    dùng mode đó.
-2. Mode `Surrounding`, `Shift select`, `Backspace`, `Virtual keyboard`, `Native` dùng Rewrite và ghi đè backend.
+2. Mode `Surrounding`, `Shift select`, `Backspace`, `Virtual keyboard` dùng Rewrite và ghi đè backend.
 3. `Tự động` hoặc không có mục dùng mode toàn cục.
 
 Phím `SelectBackendKey`, mặc định phím dấu huyền, mở menu chọn ngay trên ứng
-dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có tối đa 8
+dụng đang dùng khi không có composition và không có rewrite đang chạy. Menu có tối đa 7
 lựa chọn: Tự động, Surrounding, Shift select, Backspace, Virtual keyboard,
-Native, Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ,
-Native bị ẩn khi compositor có phím ảo, bản build không có libei, phiên không
-phải Wayland, portal không có RemoteDesktop phiên bản 2 trở lên kèm bàn phím, hoặc
-portal đã từ chối. Ứng dụng đã lưu một mục mà máy không hỗ trợ được coi là
+Preedit, Redirect. Virtual keyboard bị ẩn khi compositor không hỗ trợ. Native
+không có trong menu: cấu hình cũ đã lưu mode Native được coi là Tự động. Ứng dụng
+đã lưu một mục mà máy không hỗ trợ được coi là
 Tự động, cả khi gõ lẫn khi mở menu; cấu hình đã lưu không bị sửa. Các mục còn lại đánh số liên tiếp,
 Preedit và Redirect luôn là A và E. Tên
 mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinput)`. Lựa chọn
@@ -225,10 +224,10 @@ kết nối thường (wlroots, Hyprland, sway); KWin và Mutter không cấp. K
 được theo dõi trên event loop của fcitx5 bằng `addIOEvent`, không có thread riêng.
 Chỉ dùng khi chọn **Virtual keyboard** cho ứng dụng.
 
-Mục **Native** ép `native-backspace`: Backspace qua libei rồi `commitString`.
-
-Native chỉ dùng libei qua phiên RemoteDesktop portal trên Wayland. Không có
-libei hoặc portal từ chối thì Native không khả dụng và bộ chọn dùng uinput.
+Native gửi phím qua libei bằng phiên RemoteDesktop portal trên Wayland, chữ vẫn
+`commitString`. Native thay uinput khi bật `UseXTestInsteadOfUinput` (tên khoá cũ,
+nhãn "Dùng Native (libei) thay thế uinput"), và là dự phòng khi không có uinput.
+Không có libei, portal không hỗ trợ bàn phím hoặc từ chối thì Native không khả dụng.
 
 Mọi backend chờ một khoảng trước commit, khoảng này cộng thêm phần của
 `AdaptiveWait`. Commit luôn được đưa sang pha post của event loop bằng
@@ -238,9 +237,10 @@ từng backend nằm trong [đặc tả](ARECA_ARCHITECTURE_SPECIFICATION.md#5-s
 Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:
 
 - **Surrounding**: V2 nếu `UseSurroundingV2InsteadOfSurroundingV1=True`, ngược lại V1.
-- **Shift select**: uinput, rồi Native.
+- **Shift select**: Native nếu bật `UseXTestInsteadOfUinput`, rồi uinput, rồi Native.
 - **Backspace**: khi cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey=True`,
-  thử uinput, rồi Native; cuối cùng là ForwardKey.
+  thử Native nếu bật `UseXTestInsteadOfUinput`, rồi uinput, rồi Native; cuối cùng
+  là ForwardKey.
 
 ## Chọn backend
 
@@ -262,8 +262,6 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
    - `Backspace`: bộ chọn Backspace.
    - `Virtual keyboard`: `VirtualKeyboardBackspaceBackend`. Compositor không có phím
      ảo thì coi như Tự động.
-   - `Native`: `native-backspace` khi đã có quyền libei, đang xin quyền thì bộ chọn
-     Backspace. Máy không hỗ trợ Native thì coi như Tự động.
 6. **Tự động**:
    - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
    - Trình duyệt và `ShiftSelectFallbackForBrowser=True`: Shift select.

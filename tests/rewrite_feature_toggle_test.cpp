@@ -713,6 +713,7 @@ int main() {
   areca::AdvancedConfig advancedConfig;
   assert(!advancedConfig.useSurroundingV2InsteadOfSurroundingV1.value());
   assert(advancedConfig.useUinputInsteadOfForwardKey.value());
+  assert(!advancedConfig.useNativeInsteadOfUinput.value());
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
 
   advancedConfig.ximAfterBackspaceWaitMs.setValue(21);

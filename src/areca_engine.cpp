@@ -316,13 +316,7 @@ void ArecaEngine::notifyUinputUnavailable() {
 
 void ArecaEngine::scheduleDeviceWarmup() {
   deviceWarmupTimer_.reset();
-  bool warmUpNative = false;
-  for (const auto &pair : appBackendOverridesMap_) {
-    if (pair.second == AppBackendMode::Native) {
-      warmUpNative = true;
-      break;
-    }
-  }
+  const bool warmUpNative = advancedConfig_.useNativeInsteadOfUinput.value();
   const uint64_t deadline = fcitx::now(CLOCK_MONOTONIC);
   deviceWarmupTimer_ = instance_->eventLoop().addTimeEvent(
       CLOCK_MONOTONIC, deadline, 0,
@@ -331,8 +325,8 @@ void ArecaEngine::scheduleDeviceWarmup() {
         // Warmup chỉ chuẩn bị thiết bị. Chỉ báo lỗi khi routing thực sự thử
         // chọn uinput cho một thao tác gõ/xoá.
         const bool uinputAvailable = uinputDevice_.warmUp();
-        // Chỉ đọc thuộc tính portal, không xin quyền, để menu biết có nên
-        // hiện Native không.
+        // Chỉ đọc thuộc tính portal, không xin quyền, để máy không có libei
+        // khỏi mở phiên Native khi cần dự phòng cho uinput.
         nativeDevice_.probeSupport();
         const bool nativeStarted = warmUpNative && nativeDevice_.warmUp();
         // Dò phím ảo sớm để menu chọn backend biết compositor có hỗ trợ không;
