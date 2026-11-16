@@ -632,11 +632,17 @@ jobs:
           set -euo pipefail
           tag="$GITHUB_REF_NAME"
           .github/scripts/release-notes.sh "$tag" "$GH_REPO" > release-notes.md
+          # Bản thử nghiệm: note viết tay mở đầu bằng <!-- prerelease -->. GitHub
+          # gắn nhãn Pre-release và /releases/latest (installer) bỏ qua bản này.
+          prerelease=false
+          if head -n 1 "docs/release-notes/$tag.md" 2>/dev/null | grep -qx '<!-- prerelease -->'; then
+            prerelease=true
+          fi
           # Release tạo tay trước khi CI xong vẫn được ghi đè note theo cùng mẫu.
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --notes-file release-notes.md
+            gh release edit "$tag" --notes-file release-notes.md --prerelease="$prerelease"
           else
-            gh release create "$tag" --title "$tag" --notes-file release-notes.md
+            gh release create "$tag" --title "$tag" --notes-file release-notes.md --prerelease="$prerelease"
           fi
           find artifacts -type f -print0 | \
             xargs -0 gh release upload "$tag" --clobber

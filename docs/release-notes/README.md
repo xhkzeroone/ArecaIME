@@ -7,3 +7,6 @@ cài đặt (`.github/scripts/release-notes.sh`). Không có file thì release c
 danh sách PR và đoạn cài đặt.
 
 Agent làm việc trong repo phải theo skill `.claude/skills/areca-release/SKILL.md`.
+
+Bản thử nghiệm: dòng đầu tiên của file là `<!-- prerelease -->`; release sẽ được gắn nhãn
+Pre-release và installer không tự cài.

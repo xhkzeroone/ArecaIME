@@ -33,6 +33,10 @@ Mẫu:
 ### Sửa lỗi
 - **Triệu chứng người dùng gặp.** Nguyên nhân bằng lời thường và giờ Areca làm gì. Có người báo/gửi PR thì cảm ơn `@tên` kèm PR #số.
 ```
+- **Bản thử nghiệm** (người dùng nói "thử nghiệm", "beta", "pre-release"): dòng **đầu tiên** của file là
+  `<!-- prerelease -->`, tiêu đề ghi `## Areca vx.y.z (thử nghiệm)`, và nói ngắn trong note là bản thử nghiệm.
+  CI gắn nhãn Pre-release; installer (`/releases/latest`) không tự cài bản này. Version vẫn là số thường
+  `x.y.z`, không thêm hậu tố vào tag hay `pkgver`.
 - Viết tiếng Việt cho người dùng cuối, không nêu tên hàm, tên class hay hash commit.
 - Chỉ giữ các mục có nội dung (`Tính năng mới`, `Thay đổi`, `Sửa lỗi`, `Phát hành`...).
 - Nội dung lấy từ `git log v<bản trước>..HEAD`. Không bịa thay đổi chưa có trong log.

@@ -17,7 +17,8 @@ if generated="$(gh api "repos/$repo/releases/generate-notes" \
 fi
 
 if [ -f "$handwritten" ]; then
-  cat "$handwritten"
+  # Dòng đánh dấu bản thử nghiệm chỉ dành cho workflow.
+  grep -vx '<!-- prerelease -->' "$handwritten" || true
   printf '\n'
 else
   printf '## Areca %s\n\n' "$tag"
