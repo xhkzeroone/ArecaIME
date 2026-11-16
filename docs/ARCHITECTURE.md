@@ -24,7 +24,7 @@ Xem thêm:
 | `BambooEngineAdapter` | `src/bamboo_engine_adapter.*`, `bamboo-bridge/main.go` | Gọi `bamboo-core` qua cgo, trả `BambooResult`. |
 | `BackendVerdict` | `src/surrounding_reliability.h` | Kết quả probe surrounding text của context hiện tại, số lần probe và retry. |
 | Rewrite backend | `src/*_backend.*` | 7 backend implement `RewriteBackend`, xem [bảng backend](#rewrite-backend). |
-| `AdaptiveWait`, `AdaptiveWaitMonitor` | `src/adaptive_wait*` | Tăng thời gian chờ khi timer trễ, ACK chậm hoặc máy bận. |
+| `AdaptiveWait` | `src/adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm. |
 | `EventLoopPostTask` | `src/event_loop_post.h` | Đưa commit sang pha post của event loop. |
 | `InputTypeDetector` | `src/input_type_detector.*` | Nhận diện trình duyệt, terminal, thanh địa chỉ Chromium, khả năng forward Backspace. |
 | `WindowFocusTracker` | `src/window_focus_tracker.*`, `src/atspi/` | Thread riêng đọc AT-SPI để biết chương trình và ô đang focus. |

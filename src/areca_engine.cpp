@@ -50,8 +50,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             macroRevision_, macroDefinitions(),
             config_.revertMacroOnBackspace.value());
       }),
-      adaptiveWaitMonitor_(instance_->eventLoop(), adaptiveWait_,
-                           [this]() { return debugEnabled(); }),
       surroundingBackend_(
           instance_->eventLoop(), [this]() { return debugEnabled(); },
           [this](fcitx::InputContext &inputContext) {

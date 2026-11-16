@@ -552,7 +552,7 @@ void testAdaptiveWaitIntegration() {
   inputContext.surroundingText().setText("go", 2, 2);
 
   areca::AdaptiveWait adaptiveWait;
-  adaptiveWait.observeSystemStress(20);
+  adaptiveWait.observeTimer(0, 20000);
   assert(adaptiveWait.extraWaitMs() == 20);
 
   bool doneCalled = false;

@@ -17,7 +17,7 @@ Areca là bộ gõ tiếng Việt chạy dạng addon fcitx5, C++20, dùng `bamb
 | Khôi phục từ đã commit | `src/surrounding_text_restore.*` | Extractor từ trước con trỏ, tối đa 16 ký tự |
 | So khớp snapshot | `src/surrounding_probe_match.h` | `surroundingProbeMatches`, `surroundingSnapshotEndsWith` (NBSP coi như dấu cách), `updateKnownTextBeforeCursor` |
 | Logic preedit | `src/preedit_logic.*` | |
-| Thời gian chờ thích nghi | `src/adaptive_wait.h` | Logic thuần; phần đo máy bận trong `adaptive_wait_monitor.*` cần viết lại cho GLib |
+| Thời gian chờ thích nghi | `src/adaptive_wait.h` | Logic thuần, chỉ học từ số đo của backend trong lúc sửa chữ; không có monitor nền |
 | Nhận diện ứng dụng | `src/program_compatibility.*`, `src/browser_autocomplete.*` | Danh sách terminal, IDE, office, trình duyệt, họ VS Code, Discord/Signal |
 | Thiết bị phát phím | `src/uinput_device.*`, `src/xtest_device.*`, `src/native_device.*` | uinput không phụ thuộc IM framework; Native dùng libei qua RemoteDesktop portal hoặc XTest |
 | AT-SPI | `src/window_focus_tracker.*`, `src/atspi/` | Thread riêng, xem bài học bên dưới |

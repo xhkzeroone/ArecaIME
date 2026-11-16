@@ -274,7 +274,7 @@ void testPartialProbeFallsBackOnlyRemainingDelete() {
   inputContext.surroundingText().setText("goo", 3, 3);
 
   areca::AdaptiveWait adaptiveWait;
-  adaptiveWait.observeSystemStress(20);
+  adaptiveWait.observeTimer(0, 20000);
   bool probeFailed = false;
   bool fallbackCalled = false;
   bool doneCalled = false;

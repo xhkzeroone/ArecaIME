@@ -4095,7 +4095,7 @@ chọn backend, sequence diagram từng backend và bảng timing.</li><li><a hr
 <tr><td><code>BambooEngineAdapter</code></td><td><code>src/bamboo_engine_adapter.*</code>, <code>bamboo-bridge/main.go</code></td><td>Gọi <code>bamboo-core</code> qua cgo, trả <code>BambooResult</code>.</td></tr>
 <tr><td><code>BackendVerdict</code></td><td><code>src/surrounding_reliability.h</code></td><td>Kết quả probe surrounding text của context hiện tại, số lần probe và retry.</td></tr>
 <tr><td>Rewrite backend</td><td><code>src/*_backend.*</code></td><td>7 backend implement <code>RewriteBackend</code>, xem <a href="#rewrite-backend">bảng backend</a>.</td></tr>
-<tr><td><code>AdaptiveWait</code>, <code>AdaptiveWaitMonitor</code></td><td><code>src/adaptive_wait*</code></td><td>Tăng thời gian chờ khi timer trễ, ACK chậm hoặc máy bận.</td></tr>
+<tr><td><code>AdaptiveWait</code></td><td><code>src/adaptive_wait.h</code></td><td>Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm.</td></tr>
 <tr><td><code>EventLoopPostTask</code></td><td><code>src/event_loop_post.h</code></td><td>Đưa commit sang pha post của event loop.</td></tr>
 <tr><td><code>InputTypeDetector</code></td><td><code>src/input_type_detector.*</code></td><td>Nhận diện trình duyệt, terminal, thanh địa chỉ Chromium, khả năng forward Backspace.</td></tr>
 <tr><td><code>WindowFocusTracker</code></td><td><code>src/window_focus_tracker.*</code>, <code>src/atspi/</code></td><td>Thread riêng đọc AT-SPI để biết chương trình và ô đang focus.</td></tr>

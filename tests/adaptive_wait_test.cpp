@@ -14,12 +14,13 @@ int main() {
   assert(wait.extraWaitMs() == 0);
   assert(wait.completeTransaction() == areca::AdaptiveWait::Adjustment::None);
 
-  // A system-wide probe can raise the wait before a Backspace transaction
-  // starts. The measured lag is rounded to a 10 ms step.
-  adjustment = wait.observeSystemTimer(1000, 13903);
+  // The measured lag is rounded to a 10 ms step.
+  wait.beginTransaction();
+  adjustment = wait.observeTimer(1000, 13903);
   assert(adjustment == areca::AdaptiveWait::Adjustment::Increased);
   assert(wait.extraWaitMs() == 20);
   assert(wait.effectiveWaitMs(3) == 23);
+  assert(wait.completeTransaction() == areca::AdaptiveWait::Adjustment::None);
 
   // On-time timers inside the same transaction must not decay the wait.
   wait.beginTransaction();
@@ -85,17 +86,9 @@ int main() {
   assert(ackWait.extraWaitMs() == 30);
   assert(ackWait.effectiveBackspaceDelayMs(1) == 4);
 
-  // Test system stress blocking decay.
-  ackWait.markSystemStressed();
-  assert(ackWait.isSystemStressed());
-  for (uint32_t i = 0; i < 20; ++i) {
-    ackWait.beginTransaction();
-    assert(ackWait.completeTransaction() ==
-           areca::AdaptiveWait::Adjustment::None);
-    assert(ackWait.extraWaitMs() == 30);
-  }
-  ackWait.clearSystemStress();
-  assert(!ackWait.isSystemStressed());
+  // The transaction that saw lag does not count toward decay.
+  assert(ackWait.completeTransaction() ==
+         areca::AdaptiveWait::Adjustment::None);
   for (uint32_t i = 1; i < areca::AdaptiveWait::StableTransactionsToDecay;
        ++i) {
     ackWait.beginTransaction();

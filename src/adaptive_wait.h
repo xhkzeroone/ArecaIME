@@ -14,15 +14,9 @@ public:
   static constexpr uint64_t LagThresholdUsec = 5000;
   static constexpr uint32_t StableTransactionsToDecay = 5;
 
-  void beginTransaction() {
-    transactionActive_ = true;
-    lagObservedInTransaction_ = false;
-  }
+  void beginTransaction() { lagObservedInTransaction_ = false; }
 
-  void cancelTransaction() {
-    transactionActive_ = false;
-    lagObservedInTransaction_ = false;
-  }
+  void cancelTransaction() { lagObservedInTransaction_ = false; }
 
   uint32_t effectiveWaitMs(uint32_t baseWaitMs) const {
     if (baseWaitMs >= MaxWaitMs) {
@@ -43,42 +37,32 @@ public:
     return std::min(5U, baseDelayMs + addedDelay);
   }
 
+  // Chỉ học từ số đo của chính lượt sửa chữ (timer trễ, ACK của uinput), không
+  // theo dõi máy lúc không gõ.
   Adjustment observeTimer(uint64_t deadlineUsec, uint64_t firedAtUsec) {
-    return observeLateness(deadlineUsec, firedAtUsec, true);
+    const uint64_t latenessUsec =
+        firedAtUsec > deadlineUsec ? firedAtUsec - deadlineUsec : 0;
+    if (latenessUsec < LagThresholdUsec) {
+      return Adjustment::None;
+    }
+    const uint64_t latenessMs = std::min<uint64_t>(
+        MaxWaitMs, latenessUsec / 1000 + (latenessUsec % 1000 != 0));
+    return applyLag(static_cast<uint32_t>(latenessMs));
   }
 
-  Adjustment observeSystemTimer(uint64_t deadlineUsec, uint64_t firedAtUsec) {
-    return observeLateness(deadlineUsec, firedAtUsec, transactionActive_);
-  }
-
-  Adjustment observeAckTimeout() { return applyLag(30, true); }
+  Adjustment observeAckTimeout() { return applyLag(30); }
 
   Adjustment observeAckRoundtrip(uint64_t roundtripUsec) {
     if (roundtripUsec >= 4000) {
       const uint32_t latenessMs = static_cast<uint32_t>(roundtripUsec / 1000);
-      return applyLag(latenessMs, true);
+      return applyLag(latenessMs);
     }
     return Adjustment::None;
   }
 
-  Adjustment observeSystemStress(uint32_t suggestedWaitMs) {
-    return applyLag(suggestedWaitMs, transactionActive_);
-  }
-
-  void markSystemStressed() { systemStressed_ = true; }
-
-  void clearSystemStress() { systemStressed_ = false; }
-
-  bool isSystemStressed() const { return systemStressed_; }
-
   Adjustment completeTransaction() {
-    transactionActive_ = false;
     if (lagObservedInTransaction_) {
       lagObservedInTransaction_ = false;
-      return Adjustment::None;
-    }
-    if (systemStressed_) {
-      stableTransactions_ = 0;
       return Adjustment::None;
     }
     if (extraWaitMs_ == 0) {
@@ -97,10 +81,8 @@ public:
   uint32_t extraWaitMs() const { return extraWaitMs_; }
 
 private:
-  Adjustment applyLag(uint32_t latenessMs, bool markTransaction) {
-    if (markTransaction) {
-      lagObservedInTransaction_ = true;
-    }
+  Adjustment applyLag(uint32_t latenessMs) {
+    lagObservedInTransaction_ = true;
     stableTransactions_ = 0;
     const uint32_t previous = extraWaitMs_;
     const uint32_t clampedLatenessMs = std::min(MaxWaitMs, latenessMs);
@@ -111,24 +93,9 @@ private:
     return extraWaitMs_ != previous ? Adjustment::Increased : Adjustment::None;
   }
 
-  Adjustment observeLateness(uint64_t deadlineUsec, uint64_t firedAtUsec,
-                             bool markTransaction) {
-    const uint64_t latenessUsec =
-        firedAtUsec > deadlineUsec ? firedAtUsec - deadlineUsec : 0;
-    if (latenessUsec >= LagThresholdUsec) {
-      const uint64_t latenessMs = std::min<uint64_t>(
-          MaxWaitMs, latenessUsec / 1000 + (latenessUsec % 1000 != 0));
-      return applyLag(static_cast<uint32_t>(latenessMs), markTransaction);
-    }
-
-    return Adjustment::None;
-  }
-
   uint32_t extraWaitMs_ = 0;
   uint32_t stableTransactions_ = 0;
-  bool transactionActive_ = false;
   bool lagObservedInTransaction_ = false;
-  bool systemStressed_ = false;
 };
 
 } // namespace areca

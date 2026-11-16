@@ -53,7 +53,6 @@ set_target_properties(areca-bamboo PROPERTIES IMPORTED_LOCATION "${BAMBOO_ARCHIV
 add_dependencies(areca-bamboo areca-bamboo-bridge)
 
 add_library(areca MODULE
-    src/adaptive_wait_monitor.cpp
     src/areca_engine.cpp
     src/areca_engine_actions.cpp
     src/areca_engine_backend.cpp

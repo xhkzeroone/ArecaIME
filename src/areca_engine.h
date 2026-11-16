@@ -12,7 +12,7 @@
 #include <fcitx/instance.h>
 #include <fcitx/menu.h>
 
-#include "adaptive_wait_monitor.h"
+#include "adaptive_wait.h"
 #include "areca_config.h"
 #include "bamboo_engine_adapter.h"
 #include "event_loop_post.h"
@@ -169,7 +169,6 @@ private:
   // thông tin máy đang chậm không bị mất.
   AdaptiveWait adaptiveWait_;
   // Probe toàn cục chỉ cung cấp tín hiệu cho adaptiveWait_.
-  AdaptiveWaitMonitor adaptiveWaitMonitor_;
   SurroundingTextBackend surroundingBackend_;
   SurroundingTextV2Backend surroundingV2Backend_;
   ForwardBackspaceBackend forwardBackspaceBackend_;

@@ -10,8 +10,8 @@ xóa hoặc chọn văn bản → chờ ứng dụng xử lý → chèn văn b�
 ```
 
 Khi máy hoạt động bình thường, ArecaIME dùng delay cơ bản trong cấu hình. Khi
-phát hiện event loop phản hồi chậm, frontend trả ACK chậm, CPU quá tải hoặc nhiệt
-độ cao, cơ chế tăng thời gian chờ trong giới hạn cho phép.
+phát hiện timer của backend chạy trễ hoặc frontend trả ACK chậm trong lúc sửa
+chữ, cơ chế tăng thời gian chờ trong giới hạn cho phép.
 
 Khoảng chờ bổ sung giúp ứng dụng xử lý xong Backspace hoặc Shift+Left trước khi
 `commitString()` chèn nội dung mới. Điều này giảm nguy cơ xóa thiếu, xóa thừa,
@@ -25,26 +25,13 @@ không khóa main thread.
 | Tín hiệu | Cách đo | Ngưỡng | Kết quả |
 |---|---|---:|---|
 | Timer của transaction | `firedAtUsec - deadlineUsec` bằng đồng hồ monotonic | Từ 5.000 µs | Tăng thời gian chờ và ghi nhận transaction có lag |
-| Event loop toàn cục | Probe mỗi 50.000 µs, accuracy 1.000 µs | Từ 5.000 µs | Cập nhật delay ngay cả khi chưa có transaction |
 | ACK của `uinput` | Thời gian từ lúc phát xong chuỗi phím đến khi Fcitx nhận đủ sự kiện quay về | Từ 4.000 µs | Điều chỉnh theo round-trip thực tế |
 | ACK timeout | Frontend không trả đủ ACK đúng hạn | Mỗi lần timeout | Đề nghị mức chờ 30 ms |
-| Linux CPU PSI | `avg10` trong `/proc/pressure/cpu` | `>= 5`: cao; `>= 15`: nghiêm trọng | Đề nghị 20 hoặc 30 ms |
-| System load | `load1` và runnable task trong `/proc/loadavg` | So sánh với số core logic | Đề nghị 20 hoặc 30 ms |
-| Nhiệt độ CPU | Giá trị lớn nhất trong tối đa 16 thermal zone phù hợp | `>= 80°C`: nóng; `>= 85°C`: throttling | Kết hợp với CPU pressure để điều chỉnh |
 | Transaction ổn định | Transaction hoàn tất mà không có lag | 5 lần liên tiếp | Giảm delay đã học đi 10 ms |
 
-CPU pressure được coi là cao nếu PSI `avg10 >= 5`, số runnable task lớn hơn
-hoặc bằng số core, hoặc `load1 >= 1,5 × số core`. Mức nghiêm trọng được xác định
-khi PSI `avg10 >= 15`, runnable task lớn hơn hoặc bằng hai lần số core, hoặc
-`load1 >= 2 × số core`.
-
-`systemStressed` được bật khi tải nghiêm trọng, nhiệt độ đạt 85°C, hoặc CPU
-pressure cao xảy ra cùng nhiệt độ từ 80°C. Mức đề nghị là 30 ms cho tải nghiêm
-trọng hoặc throttling, và 20 ms cho pressure cao đi cùng nhiệt độ cao.
-
-Probe event loop chạy mỗi 50 ms. PSI, load average và nhiệt độ được kiểm tra
-khoảng mỗi 250 ms. Các giá trị chỉ tồn tại trong bộ nhớ tiến trình. Source hiện
-không theo dõi RAM, I/O, pin, GPU hay tần số CPU.
+Chỉ đo trong lúc sửa chữ: không có timer nền, không đọc PSI, load average hay
+nhiệt độ. Máy bận chỉ làm tăng thời gian chờ khi nó thật sự làm timer của
+backend trễ hoặc ACK chậm. Các giá trị chỉ tồn tại trong bộ nhớ tiến trình.
 
 ## Cách tính thời gian chờ
 
@@ -106,18 +93,6 @@ sequenceDiagram
     participant A as AdaptiveWait
     participant E as Fcitx EventLoop
     participant F as Frontend / ứng dụng
-    participant M as AdaptiveWaitMonitor
-
-    loop Probe mỗi 50 ms, kiểm tra hệ thống khoảng 250 ms
-        M->>E: Đặt probe timer
-        E-->>M: Gọi callback
-        M->>A: observeSystemTimer(deadline, firedAt)
-        M->>M: Đọc PSI, loadavg và thermal zone
-        opt Hệ thống quá tải hoặc nhiệt độ cao
-            M->>A: markSystemStressed()
-            M->>A: observeSystemStress(20 hoặc 30 ms)
-        end
-    end
 
     U->>S: Gõ phím làm phát sinh rewrite
     S->>B: apply(plan)
@@ -151,7 +126,7 @@ sequenceDiagram
     end
     B->>F: commitString(văn bản mới)
     B->>A: completeTransaction()
-    A-->>A: Giữ mức nếu có lag hoặc stress
+    A-->>A: Giữ mức nếu lượt này có lag
     A-->>A: Giảm 10 ms sau 5 transaction ổn định
     B-->>S: Transaction hoàn tất
 ```
@@ -161,7 +136,7 @@ Trước khi commit, backend đọc lại mức adaptive. Nếu mức chờ tăn
 
 Sơ đồ thể hiện luồng tổng quát. Hai backend Shift+Select hiện không gọi
 `observeTimer()` cho timer cục bộ giống nhóm Backspace; chúng vẫn dùng trạng
-thái từ monitor toàn cục. `UinputShiftSelectBackend` còn cập nhật qua ACK.
+thái đã học từ các backend khác. `UinputShiftSelectBackend` còn cập nhật qua ACK.
 
 ## Phạm vi áp dụng
 
@@ -178,7 +153,7 @@ thông tin về tình trạng chậm của hệ thống vẫn được giữ khi
 | `NativeBackspaceBackend` | Có | Có | Có | Không |
 | `NativeShiftSelectBackend` | Có | Có | Không | Không |
 
-Tất cả backend vẫn nhận delay do monitor toàn cục cập nhật. Khác biệt trong bảng
+Tất cả backend dùng chung mức delay đã học. Khác biệt trong bảng
 chỉ thể hiện khả năng tự đo timer hoặc ACK của từng transaction.
 
 `cancelTransaction()` kết thúc transaction và bỏ cờ lag của lượt đang chạy,
@@ -189,7 +164,7 @@ dùng cho transaction sau.
 
 - Giảm nguy cơ commit khi ứng dụng chưa xử lý xong thao tác xóa.
 - Hạn chế xóa thiếu, xóa thừa hoặc chèn chữ sai vị trí khi máy khựng.
-- Phản ứng với độ trễ event loop, ACK, tải CPU và nhiệt độ.
+- Phản ứng với độ trễ timer và ACK đo được trong lúc sửa chữ.
 - Giữ trạng thái khi chuyển giữa các backend rewrite.
 - Không khóa main thread.
 - Tự giảm thời gian chờ khi hệ thống ổn định.
@@ -206,7 +181,7 @@ và độ chính xác của thứ tự xử lý.
 ### Thời gian giảm lâu hơn thời gian tăng
 
 Mỗi tín hiệu lag có thể tăng ít nhất 10 ms, trong khi cần 5 transaction ổn định
-để giảm 10 ms. Khi `systemStressed` còn bật, quá trình giảm bị tạm dừng. Cách
+để giảm 10 ms. Cách
 làm này tránh delay thay đổi liên tục nhưng có thể giữ mức cao thêm một số
 transaction sau khi hệ thống bắt đầu ổn định.
 
@@ -219,15 +194,13 @@ lại, cơ chế không phải học lại từ đầu khi backend fallback ho�
 
 ### Chi phí theo dõi
 
-Monitor duy trì timer 50 ms và đọc PSI, loadavg, thermal khoảng mỗi 250 ms.
-Thermal zone chỉ được tìm một lần khi khởi tạo, giới hạn ở 16 zone và lọc theo
-một số tên CPU phổ biến. Nếu hệ thống không cung cấp các interface này, timer
-drift và ACK vẫn tiếp tục hoạt động.
+Không có monitor nền: ngoài lúc sửa chữ, cơ chế không đặt timer và không đọc
+file hệ thống nào.
 
 ### Không loại bỏ hoàn toàn lỗi do lag
 
 Giới hạn 50 ms có thể không đủ nếu ứng dụng treo lâu. ACK chỉ có ở backend
-uinput; pressure và nhiệt độ chỉ là chỉ báo. Adaptive Delays giảm xác suất race
+uinput. Adaptive Delays giảm xác suất race
 condition nhưng vẫn cần phối hợp với surrounding-text probe, ACK timeout và cơ
 chế fallback backend.
 
@@ -236,18 +209,15 @@ chế fallback backend.
 Giả sử base wait sau Backspace là 3 ms và base delay giữa phím là 1 ms:
 
 1. Máy bình thường, `extraWaitMs = 0`: phím cách nhau 1 ms, commit sau 3 ms.
-2. Event loop trễ 13,903 ms: mẫu được làm tròn thành 20 ms, phím cách nhau 3 ms
+2. Timer của backend trễ 13,903 ms: mẫu được làm tròn thành 20 ms, phím cách nhau 3 ms
    và commit sau 23 ms.
 3. Transaction sau tiếp tục trễ 7 ms: mức tăng từ 20 lên 30 ms, phím cách nhau
    4 ms và commit sau 33 ms.
-4. Sau 5 transaction không lag và không còn stress, mức giảm từ 30 xuống 20 ms.
-5. Nếu nhiệt độ vẫn từ 85°C hoặc tải còn nghiêm trọng, mức chờ chưa được giảm.
+4. Sau 5 transaction không lag, mức giảm từ 30 xuống 20 ms.
 
 ## Các file liên quan
 
 - Thuật toán và hằng số: `src/adaptive_wait.h`.
-- Theo dõi event loop, PSI, load average và nhiệt độ:
-  `src/adaptive_wait_monitor.h`, `src/adaptive_wait_monitor.cpp`.
 - Khởi tạo trạng thái dùng chung: `src/areca_engine.h`, `src/areca_engine.cpp`.
 - Các backend: `src/*backspace_backend.cpp`, `src/*shift_select_backend.cpp`,
   `src/surrounding_text_backend.cpp`, `src/surrounding_text_v2_backend.cpp`.
