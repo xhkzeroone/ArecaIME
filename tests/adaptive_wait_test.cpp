@@ -77,10 +77,13 @@ int main() {
   ackWait.beginTransaction();
   assert(ackWait.observeAckRoundtrip(1000) ==
          areca::AdaptiveWait::Adjustment::None);
-  assert(ackWait.observeAckRoundtrip(6000) ==
+  assert(ackWait.observeAckRoundtrip(14999) ==
+         areca::AdaptiveWait::Adjustment::None);
+  assert(ackWait.extraWaitMs() == 0);
+  assert(ackWait.observeAckRoundtrip(15000) ==
          areca::AdaptiveWait::Adjustment::Increased);
-  assert(ackWait.extraWaitMs() == 10);
-  assert(ackWait.effectiveBackspaceDelayMs(1) == 2);
+  assert(ackWait.extraWaitMs() == 20);
+  assert(ackWait.effectiveBackspaceDelayMs(1) == 3);
   assert(ackWait.observeAckTimeout() ==
          areca::AdaptiveWait::Adjustment::Increased);
   assert(ackWait.extraWaitMs() == 30);

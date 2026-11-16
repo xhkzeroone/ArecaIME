@@ -13,6 +13,9 @@ public:
   static constexpr uint32_t MaxWaitMs = 50;
   static constexpr uint64_t LagThresholdUsec = 5000;
   static constexpr uint32_t StableTransactionsToDecay = 5;
+  // Roundtrip uinput gồm cả quãng đi qua compositor và fcitx, nên lúc bình
+  // thường đã tốn vài ms; chỉ coi là lag khi vượt ngưỡng này.
+  static constexpr uint64_t AckRoundtripLagThresholdUsec = 15000;
 
   void beginTransaction() { lagObservedInTransaction_ = false; }
 
@@ -53,7 +56,7 @@ public:
   Adjustment observeAckTimeout() { return applyLag(30); }
 
   Adjustment observeAckRoundtrip(uint64_t roundtripUsec) {
-    if (roundtripUsec >= 4000) {
+    if (roundtripUsec >= AckRoundtripLagThresholdUsec) {
       const uint32_t latenessMs = static_cast<uint32_t>(roundtripUsec / 1000);
       return applyLag(latenessMs);
     }
