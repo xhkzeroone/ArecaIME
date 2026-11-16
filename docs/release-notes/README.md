@@ -8,5 +8,6 @@ danh sách PR và đoạn cài đặt.
 
 Agent làm việc trong repo phải theo skill `.claude/skills/areca-release/SKILL.md`.
 
-Bản thử nghiệm: dòng đầu tiên của file là `<!-- prerelease -->`; release sẽ được gắn nhãn
+Bản thử nghiệm vẫn phát hành thường, ghi in đậm "THỬ NGHIỆM" dưới tiêu đề. Chỉ khi cần
+nhãn Pre-release thì dòng đầu tiên của file là `<!-- prerelease -->`; release sẽ được gắn nhãn
 Pre-release và installer không tự cài.
