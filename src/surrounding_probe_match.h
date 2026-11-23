@@ -6,6 +6,8 @@
 
 #include <fcitx-utils/utf8.h>
 
+#include "types.h"
+
 namespace areca {
 
 inline bool textBeforeCursor(std::string_view text, uint32_t cursor,
@@ -65,6 +67,16 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
   // cursor, so this is the old snapshot.
   if (actualBefore.ends_with(originalBefore)) {
     return false;
+  }
+  // Snapshot gốc đã gồm marker commit ngay trước lệnh xoá. Update trễ từ lúc
+  // marker chưa vào ô cũng là snapshot cũ; thiếu kiểm tra này, ô có "aaa" xoá
+  // một "a" sẽ nhận nhầm "aaa" cũ là đã xoá xong và đánh giá sai surrounding.
+  if (originalBefore.ends_with(kRewriteMarker)) {
+    const auto beforeMarker =
+        originalBefore.substr(0, originalBefore.size() - kRewriteMarker.size());
+    if (!beforeMarker.empty() && actualBefore.ends_with(beforeMarker)) {
+      return false;
+    }
   }
   if (!actualBefore.ends_with(expectedBefore)) {
     return false;
