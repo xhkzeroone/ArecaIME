@@ -77,7 +77,8 @@ areca: reliability cached known= reliable= force_forward=
 areca: auto selected surrounding backend=
 areca: app-override selected ... backend=
 areca: terminal selected backend=
-areca: rewrite marker tx= backend= wait_ms=
+areca: rewrite marker tx= backend= wait_ms= wait_echo=
+areca: rewrite marker settled tx= reason=echo|timeout
 areca: rewrite select backend= tx= bamboo_delete= plan_backspaces=
 areca: surrounding-text start tx=
 areca: surrounding probe succeeded via SurroundingTextUpdated event

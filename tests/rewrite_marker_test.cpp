@@ -164,6 +164,41 @@ void testTypedDeliveryLeavesMarkerToBackend() {
           std::vector<std::string>{"delete:2:typed", "commit:ê"}));
 }
 
+void testInputMethodWaitsForMarkerEcho() {
+  Harness h(areca::MarkerDelivery::InputMethod);
+  h.context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  h.context.surroundingText().setText("go", 2, 2);
+  h.scheduler.enqueue(h.context, 'r', "r");
+  // Ứng dụng chưa báo marker đã vào ô: chưa được xoá.
+  assert((h.context.events == std::vector<std::string>{"commit:" + kMarker}));
+
+  // Update cũ từ trước marker không đủ.
+  h.context.surroundingText().setText("go", 2, 2);
+  h.scheduler.notifySurroundingTextUpdated(h.context);
+  assert(h.context.events.size() == 1);
+
+  // Ứng dụng báo "go·": bắt đầu xoá ngay, không đợi hết giờ.
+  h.context.surroundingText().setText("go" + kMarker, 3, 3);
+  h.scheduler.notifySurroundingTextUpdated(h.context);
+  assert(
+      (h.context.events ==
+       std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
+  assert((h.observed == std::vector<std::string>{"1:ê"}));
+}
+
+void testInputMethodDeletesWhenEchoNeverComes() {
+  Harness h(areca::MarkerDelivery::InputMethod);
+  h.context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  h.context.surroundingText().setText("go", 2, 2);
+  h.scheduler.enqueue(h.context, 'r', "r");
+  assert(h.context.events.size() == 1);
+  // Mặc định đợi tối đa bằng thời gian probe surrounding (80 ms).
+  h.runFor(200 * 1000);
+  assert(
+      (h.context.events ==
+       std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
+}
+
 void testCacheCommitReplacesSelection() {
   fcitx::InputContextManager manager;
   TestInputContext context(manager);
@@ -183,6 +218,8 @@ int main() {
   testKeysDeliveryWaitsForMarker();
   testKeysDeliveryWithoutWaitAppliesImmediately();
   testTypedDeliveryLeavesMarkerToBackend();
+  testInputMethodWaitsForMarkerEcho();
+  testInputMethodDeletesWhenEchoNeverComes();
   testCacheCommitReplacesSelection();
   std::cout << "Rewrite marker test passed successfully\n";
   return 0;

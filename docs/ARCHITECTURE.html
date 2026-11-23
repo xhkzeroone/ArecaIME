@@ -4224,8 +4224,8 @@ URL, thanh địa chỉ và ô có gợi ý được xoá như ô thường, kh�
 <table>
 <thead><tr><th>Kiểu</th><th>Backend</th><th>Cách đưa marker</th></tr></thead>
 <tbody>
-<tr><td><code>InputMethod</code></td><td>Surrounding v1, v2</td><td><code>commitString(&quot;·&quot;)</code>, cập nhật surrounding cache rồi xoá ngay, vì lệnh xoá đi cùng giao thức bộ gõ</td></tr>
-<tr><td><code>Keys</code></td><td>Backspace (uinput, libei, ForwardKey), Shift select</td><td><code>commitString(&quot;·&quot;)</code> rồi chờ <code>AfterMarkerCommitWaitMs</code> (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit</td></tr>
+<tr><td><code>InputMethod</code></td><td>Surrounding v1, v2</td><td><code>commitString(&quot;·&quot;)</code>, cập nhật surrounding cache, đợi ứng dụng báo surrounding có <code>·</code> trước con trỏ (tối đa <code>SurroundingProbeTimeoutMs</code>) rồi xoá. Chromium bỏ qua lệnh xoá tới liền sau commit khi nó chưa báo lại trạng thái mới</td></tr>
+<tr><td><code>Keys</code></td><td>Backspace (uinput, libei, ForwardKey), Shift select</td><td><code>commitString(&quot;·&quot;)</code> rồi chờ <code>AfterMarkerCommitWaitMs</code> (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit; ứng dụng báo surrounding có <code>·</code> sớm hơn thì phát ngay</td></tr>
 <tr><td><code>Typed</code></td><td>Virtual keyboard</td><td>Backend tự gõ <code>·</code> bằng phím ảo trước các Backspace, cùng một kết nối Wayland</td></tr>
 </tbody>
 </table>

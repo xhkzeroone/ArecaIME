@@ -3,9 +3,11 @@
 #include <exception>
 #include <utility>
 
+#include <fcitx-utils/capabilityflags.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
 
+#include "surrounding_probe_match.h"
 #include "surrounding_text_cache.h"
 
 namespace areca {
@@ -337,49 +339,96 @@ void InputScheduler::commitMarkerThenApply(fcitx::InputContext &inputContext,
   }
 
   const std::string marker(kRewriteMarker);
+  // Snapshot trước marker: chỉ khi ứng dụng có surrounding mới chờ nó báo lại.
+  const bool canEcho = inputContext.capabilityFlags().test(
+                           fcitx::CapabilityFlag::SurroundingText) &&
+                       inputContext.surroundingText().isValid();
   inputContext.commitString(marker);
   // Frontend đổi số ký tự cần xoá ra byte theo snapshot đang giữ, nên snapshot
   // phải có marker trước khi backend surrounding xoá.
   updateSurroundingCacheAfterCommit(inputContext, marker);
 
-  const uint32_t waitMs = delivery == MarkerDelivery::Keys
-                              ? resolveAfterMarkerCommitWaitMs(
-                                    inputContext.frontend(), activeTiming_)
-                              : 0;
+  // Chromium bỏ qua lệnh xoá tới liền sau commit, khi nó chưa kịp báo lại trạng
+  // thái mới: marker còn nguyên và probe hết giờ. Vì vậy đợi ứng dụng báo
+  // surrounding có marker rồi mới xoá; ứng dụng không báo thì xoá khi hết giờ.
+  // Phím xoá đi kênh khác commit cũng phải đợi, kẻo tới trước marker và xoá
+  // nhầm một ký tự thật.
+  uint32_t waitMs = 0;
+  if (delivery == MarkerDelivery::Keys) {
+    waitMs =
+        resolveAfterMarkerCommitWaitMs(inputContext.frontend(), activeTiming_);
+  } else if (canEcho) {
+    waitMs = activeTiming_.surroundingProbeTimeoutMs;
+  }
   if (debugProvider_()) {
     FCITX_INFO() << "areca: rewrite marker tx=" << plan.transactionId
-                 << " backend=" << backend.name() << " wait_ms=" << waitMs;
+                 << " backend=" << backend.name() << " wait_ms=" << waitMs
+                 << " wait_echo=" << canEcho;
   }
   if (waitMs == 0) {
     startRewrite(inputContext, backend, plan);
     return;
   }
 
-  // Phím xoá đi kênh khác commit: phát ngay có thể tới ứng dụng trước marker
-  // và xoá nhầm một ký tự thật.
+  markerContext_ = inputContext.watch();
+  markerBackend_ = &backend;
+  markerPlan_ = std::move(plan);
+  markerAwaitsEcho_ = canEcho;
   const uint64_t deadline =
       fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(waitMs) * 1000;
   markerTimer_ = eventLoop_.addTimeEvent(
       CLOCK_MONOTONIC, deadline, activeTiming_.timerAccuracyUsec,
-      [this, watch = inputContext.watch(), &backend,
-       plan](fcitx::EventSourceTime *, uint64_t) {
+      [this](fcitx::EventSourceTime *, uint64_t) {
         auto firedTimer = std::move(markerTimer_);
-        if (auto *ic = watch.get()) {
-          startRewrite(*ic, backend, plan);
-        } else {
-          // Ô nhập đã mất: không còn gì để xoá hay commit.
-          activeTransactionId_ = 0;
-          pendingCommitContext_.unwatch();
-          pendingCommitText_.clear();
-          finishKey();
-        }
+        proceedAfterMarker("timeout");
         return false;
       });
   if (!markerTimer_) {
-    startRewrite(inputContext, backend, plan);
+    proceedAfterMarker("no-timer");
     return;
   }
   markerTimer_->setOneShot();
+}
+
+void InputScheduler::notifySurroundingTextUpdated(
+    fcitx::InputContext &inputContext) {
+  if (!markerBackend_ || !markerAwaitsEcho_ ||
+      markerContext_.get() != &inputContext) {
+    return;
+  }
+  const auto &surrounding = inputContext.surroundingText();
+  std::string_view before;
+  if (!surrounding.isValid() || surrounding.cursor() != surrounding.anchor() ||
+      !textBeforeCursor(surrounding.text(), surrounding.cursor(), before) ||
+      !before.ends_with(kRewriteMarker)) {
+    // Update cũ từ trước khi marker vào ô.
+    return;
+  }
+  markerTimer_.reset();
+  proceedAfterMarker("echo");
+}
+
+void InputScheduler::proceedAfterMarker(const char *reason) {
+  auto *backend = std::exchange(markerBackend_, nullptr);
+  auto *inputContext = markerContext_.get();
+  markerContext_.unwatch();
+  markerAwaitsEcho_ = false;
+  if (!backend) {
+    return;
+  }
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: rewrite marker settled tx="
+                 << markerPlan_.transactionId << " reason=" << reason;
+  }
+  if (!inputContext) {
+    // Ô nhập đã mất: không còn gì để xoá hay commit.
+    activeTransactionId_ = 0;
+    pendingCommitContext_.unwatch();
+    pendingCommitText_.clear();
+    finishKey();
+    return;
+  }
+  startRewrite(*inputContext, *backend, markerPlan_);
 }
 
 void InputScheduler::startRewrite(fcitx::InputContext &inputContext,

@@ -214,6 +214,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         if (auto *state = preeditHandler_.stateFor(*inputContext)) {
           state->surroundingRestoreArmed = true;
         }
+        // Cuối cùng mới báo scheduler: nó có thể bắt đầu xoá ngay, và update
+        // này là của lúc marker vừa vào, không phải xác nhận xoá.
+        scheduler_.notifySurroundingTextUpdated(*inputContext);
       });
   config_.bambooInputMethod.annotation().setList(
       BambooEngineAdapter::inputMethodNames());

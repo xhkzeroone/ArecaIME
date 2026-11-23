@@ -214,8 +214,8 @@ Mỗi backend khai báo `markerDelivery()`:
 
 | Kiểu | Backend | Cách đưa marker |
 | --- | --- | --- |
-| `InputMethod` | Surrounding v1, v2 | `commitString("·")`, cập nhật surrounding cache rồi xoá ngay, vì lệnh xoá đi cùng giao thức bộ gõ |
-| `Keys` | Backspace (uinput, libei, ForwardKey), Shift select | `commitString("·")` rồi chờ `AfterMarkerCommitWaitMs` (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit |
+| `InputMethod` | Surrounding v1, v2 | `commitString("·")`, cập nhật surrounding cache, đợi ứng dụng báo surrounding có `·` trước con trỏ (tối đa `SurroundingProbeTimeoutMs`) rồi xoá. Chromium bỏ qua lệnh xoá tới liền sau commit khi nó chưa báo lại trạng thái mới |
+| `Keys` | Backspace (uinput, libei, ForwardKey), Shift select | `commitString("·")` rồi chờ `AfterMarkerCommitWaitMs` (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit; ứng dụng báo surrounding có `·` sớm hơn thì phát ngay |
 | `Typed` | Virtual keyboard | Backend tự gõ `·` bằng phím ảo trước các Backspace, cùng một kết nối Wayland |
 
 Commit observer và `knownTextBeforeCursor` vẫn chỉ thấy "xoá N, chèn chữ mới".

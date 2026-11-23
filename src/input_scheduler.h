@@ -119,6 +119,9 @@ public:
   void enqueueReplacement(fcitx::InputContext &inputContext, std::string text,
                           ReplacedTextResolver replaced);
   void resetContext(fcitx::InputContext &inputContext);
+  // Frontend báo surrounding mới: rewrite đang đợi marker vào ô thì bắt đầu
+  // xoá.
+  void notifySurroundingTextUpdated(fcitx::InputContext &inputContext);
   void setCommitObserver(CommitObserver observer) {
     commitObserver_ = std::move(observer);
   }
@@ -145,6 +148,7 @@ private:
                              RewriteBackend &backend, RewritePlan plan);
   void startRewrite(fcitx::InputContext &inputContext, RewriteBackend &backend,
                     const RewritePlan &plan);
+  void proceedAfterMarker(const char *reason);
   void rewriteDone(uint64_t transactionId, RewriteOutcome outcome);
   void notifyPendingCommit();
 
@@ -162,6 +166,11 @@ private:
   KeyQueue queue_;
   std::unique_ptr<fcitx::EventSourceTime> postCommitTimer_;
   std::unique_ptr<fcitx::EventSourceTime> markerTimer_;
+  // Rewrite đã commit marker, đang đợi nó tới ứng dụng rồi mới xoá.
+  fcitx::TrackableObjectReference<fcitx::InputContext> markerContext_;
+  RewriteBackend *markerBackend_ = nullptr;
+  RewritePlan markerPlan_;
+  bool markerAwaitsEcho_ = false;
   SchedulerTiming activeTiming_;
   uint64_t nextSequence_ = 1;
   uint64_t nextTransactionId_ = 1;
