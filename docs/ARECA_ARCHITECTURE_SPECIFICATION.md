@@ -11,7 +11,7 @@ Fcitx5 KeyEvent
    │
    ├─ ô mật khẩu, terminal bị tắt tiếng Việt, mode Redirect ─► forward nguyên bản
    ├─ phím do backend phát ra quay về ─► backend xử lý ACK và forward
-   ├─ phím đầu trong trình duyệt, Bamboo rỗng ─► handleIdleKey
+   ├─ phím đầu, Bamboo rỗng ─► handleIdleKey
    │
    ▼ filterAndAccept
 KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
@@ -363,7 +363,7 @@ Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 | `UseSurroundingV2InsteadOfSurroundingV1` | advanced | `False` | Dùng V2 cho nhóm Surrounding |
 | `UseUinputInsteadOfForwardKey` | advanced | `True` | Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng |
 | `EnableMouseTracking` | advanced | `True` | Chạy helper chuột để reset khi click |
-| `ForwardFirstCharacter` | advanced | `True` | Bật nhánh phím đầu cho trình duyệt |
+| `ForwardFirstCharacter` | advanced (ẩn) | `True` | Bật nhánh phím đầu cho mọi ứng dụng |
 | `RestoreSurroundingText` | areca | `False` | Sửa từ đã commit |
 | `DisableVietnameseInTerminal` | areca | `False` | Forward nguyên phím trong terminal |
 | `SelectBackendKey` | areca | phím dấu huyền | Mở menu chọn mode, backend cho ứng dụng |

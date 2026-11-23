@@ -307,9 +307,10 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> enableMouseTracking{
         this, "EnableMouseTracking", N_("Tự reset bộ gõ sau khi click chuột"),
         true};
-    fcitx::Option<bool> forwardFirstCharacter{
-        this, "ForwardFirstCharacter",
-        N_("Chuyển tiếp phím đầu để tương thích trình duyệt"), true};);
+    // Ẩn khỏi giao diện cài đặt; vẫn tắt được bằng tay trong
+    // areca-advanced.conf nếu một ứng dụng gặp lỗi.
+    fcitx::HiddenOption<bool> forwardFirstCharacter{
+        this, "ForwardFirstCharacter", N_("Chuyển tiếp phím đầu"), true};);
 
 inline void applyBestPerformancePreset(AdvancedConfig &config) {
   constexpr int rewriteWaitMs = 5;

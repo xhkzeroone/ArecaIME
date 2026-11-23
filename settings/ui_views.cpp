@@ -529,7 +529,6 @@ namespace areca::settings {
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
         checkbox("Dùng Native (libei) thay thế uinput", config.advanced.useNativeInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
-        checkbox("Chuyển tiếp phím đầu để tương thích trình duyệt", config.advanced.forwardFirstCharacter);
         endSettingsCard();
     }
 

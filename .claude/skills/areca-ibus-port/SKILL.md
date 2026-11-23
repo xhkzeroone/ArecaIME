@@ -43,7 +43,7 @@ Bamboo bridge cung cấp: `ArecaBambooCreate(method, modernStyle)`, `Destroy`, `
 - **Chặn reset 50 ms sau commit** (`kResetRejectWindowUsec`), và chặn suốt lúc đang rewrite. Trình duyệt hay gửi reset vài chục ms sau khi chữ trong ô đổi; để lọt reset đó thì mất từ đang gõ và restore chạy giữa từ, gây lặp chữ. Đánh đổi: Backspace hay phím mũi tên thật của người dùng trong 50 ms đó bị coi như phím Areca tự phát.
 - Chỉ scheduler và backend được commit hoặc xoá surrounding ở Rewrite.
 
-**Phím đầu từ khi rảnh** (`ForwardFirstCharacter`, trình duyệt): Bamboo xử lý phím đúng một lần; nếu đầu ra không đổi thì để phím gốc đi tiếp cho ứng dụng (editor web cần thấy key event thật để mở chế độ soạn thảo).
+**Phím đầu từ khi rảnh** (`ForwardFirstCharacter`, mọi ứng dụng, option ẩn): Bamboo xử lý phím đúng một lần; nếu đầu ra không đổi thì để phím gốc đi tiếp cho ứng dụng (editor web cần thấy key event thật để mở chế độ soạn thảo).
 
 ## Backend xoá chữ và cách chọn
 

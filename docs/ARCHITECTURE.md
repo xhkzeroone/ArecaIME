@@ -86,7 +86,7 @@ mỗi lựa chọn kèm backend cụ thể sẽ dùng, ví dụ `Backspace (Uinp
      restore rồi forward.
    - Backspace đồng bộ Bamboo hoặc chạy khôi phục chính tả.
    - Phím chữ Bamboo xử lý được thử restore surrounding nếu đang arm.
-   - Trình duyệt bật `ForwardFirstCharacter` thử `InputScheduler::handleIdleKey()`.
+   - Khi `ForwardFirstCharacter` bật (mặc định, ẩn khỏi cài đặt), mọi ứng dụng thử `InputScheduler::handleIdleKey()`.
    - Phím còn lại được `filterAndAccept()` rồi đưa vào `KeyQueue`.
 8. Scheduler đang rảnh thì xử lý ngay đúng một phím: gọi Bamboo, nhận
    `BambooResult`.
@@ -113,7 +113,7 @@ chạy ngay nếu không nằm trong khoảng bảo vệ, không có timer trì 
 ## Phím đầu khi Rewrite đang rảnh
 
 Một số editor web cần nhận sự kiện phím qua frontend để mở chế độ soạn thảo. Khi
-`ForwardFirstCharacter=True`, với input context của trình duyệt, chưa chờ
+`ForwardFirstCharacter=True` (mặc định, option ẩn), ở mọi ứng dụng, chưa chờ
 Backspace release và phím không bị tự viết hoa đổi, handler thử
 `InputScheduler::handleIdleKey()` trước `filterAndAccept()`.
 

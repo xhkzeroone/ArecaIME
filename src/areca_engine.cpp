@@ -127,13 +127,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             protectBackendVerdict(inputContext, reason);
           },
           [this]() { return backspaceRecoveryEnabled(); },
-          [this](fcitx::InputContext &inputContext) {
-            if (!advancedConfig_.forwardFirstCharacter.value()) {
-              return false;
-            }
-            auto *state = inputContext.propertyFor(&rewriteStateFactory_);
-            return inputTypeDetector_.isBrowser(
-                resolveProgram(inputContext, state));
+          // Mọi ứng dụng: phím đầu không đổi đầu ra đi thẳng qua frontend, nên
+          // editor web hay app nào cần phím thật đều nhận được.
+          [this](fcitx::InputContext &) {
+            return advancedConfig_.forwardFirstCharacter.value();
           },
           [this](fcitx::InputContext &inputContext) {
             if (!config_.restoreSurroundingText.value()) {

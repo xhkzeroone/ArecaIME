@@ -115,7 +115,6 @@ ADVANCED_DEFAULTS = {
     "UseUinputInsteadOfForwardKey": True,
     "UseXTestInsteadOfUinput": False,
     "EnableMouseTracking": True,
-    "ForwardFirstCharacter": True,
 }
 
 
@@ -1204,7 +1203,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
             ("Dùng uinput thay ForwardKey", "UseUinputInsteadOfForwardKey"),
             ("Dùng Native (libei) thay uinput", "UseXTestInsteadOfUinput"),
             ("Reset bộ gõ sau khi click chuột", "EnableMouseTracking"),
-            ("Chuyển tiếp phím đầu cho trình duyệt", "ForwardFirstCharacter"),
         ]:
             self._switch_doc(compat, title, self.store.advanced, key)
         preset = Gtk.Button(label="Áp dụng preset hiệu năng")

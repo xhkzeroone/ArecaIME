@@ -475,9 +475,7 @@ int main() {
     areca::RewriteModeHandler handler(
         loop, factory, scheduler, [] { return false; }, [] { return false; },
         [](fcitx::InputContext &, const char *) {}, [] { return false; },
-        [&](fcitx::InputContext &ic) {
-          return enabled && ic.program() == "google-chrome";
-        },
+        [&](fcitx::InputContext &) { return enabled; },
         [](fcitx::InputContext &) { return false; },
         [](const fcitx::Key &) { return false; });
     if (enabled) {
@@ -520,14 +518,6 @@ int main() {
     assert(key.accepted() == legacyKey.accepted());
     assert(context.propertyFor(&factory)->engine->currentText() ==
            legacyEngine.currentText());
-
-    // Bật option không được forward phím đầu trong ứng dụng ngoài trình duyệt.
-    enabled = true;
-    TestInputContext nonBrowserContext(manager, "org.gnome.TextEditor");
-    fcitx::KeyEvent nonBrowserKey(&nonBrowserContext, fcitx::Key(FcitxKey_a));
-    handler.handleKeyEvent(nonBrowserKey);
-    assert(nonBrowserKey.accepted());
-    assert(nonBrowserContext.events == std::vector<std::string>{"commit:a"});
   }
 
   // Restore được gọi đúng một lần trước phím text đầu tiên và phần text đã
