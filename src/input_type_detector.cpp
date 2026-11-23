@@ -50,19 +50,6 @@ bool InputTypeDetector::isBrowser(const std::string &program) const {
   return true;
 }
 
-bool InputTypeDetector::isChromiumBrowser(const std::string &program) const {
-  if (!program.empty()) {
-    return areca::isChromiumBrowser(program);
-  }
-  if (tracker_ && tracker_->isValid()) {
-    const std::string tracked = tracker_->focusProgram();
-    if (!tracked.empty()) {
-      return areca::isChromiumBrowser(tracked);
-    }
-  }
-  return false;
-}
-
 bool InputTypeDetector::isTerminal(const std::string &program,
                                    const char *frontend) const {
   if (isTerminalProgram(program)) {
@@ -117,23 +104,6 @@ bool InputTypeDetector::canForwardBackspaces(
   }
 
   return false;
-}
-
-bool InputTypeDetector::inChromiumAddressBar(
-    const fcitx::InputContext &inputContext, const std::string &program) const {
-  // Url is authoritative. AT-SPI only fills the gap for Chromium frontends
-  // that do not expose CapabilityFlag::Url.
-  if (inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Url)) {
-    return true;
-  }
-  if (!tracker_ || !tracker_->isValid())
-    return false;
-  const auto focus = tracker_->browserFocus();
-  std::string prog = program.empty() ? inputContext.program() : program;
-  if (prog.empty())
-    prog = focus.program;
-  return isChromiumBrowser(prog) && isChromiumBrowser(focus.program) &&
-         focus.className.find("Omnibox") != std::string::npos;
 }
 
 } // namespace areca

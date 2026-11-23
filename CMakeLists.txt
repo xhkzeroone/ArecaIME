@@ -60,7 +60,6 @@ add_library(areca MODULE
     src/areca_engine_config.cpp
     src/areca_engine_emoji.cpp
     src/bamboo_engine_adapter.cpp
-    src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp
     src/notification/dynamic_island_announcement.cpp
     src/notification/input_method_announcement.cpp
@@ -317,17 +316,6 @@ if(BUILD_TESTING)
     target_link_libraries(areca-word-segment-test PRIVATE Fcitx5::Utils)
     add_test(NAME word-segment COMMAND areca-word-segment-test)
 
-    add_executable(areca-browser-autocomplete-test
-        tests/browser_autocomplete_test.cpp
-        src/browser_autocomplete.cpp
-        src/program_compatibility.cpp)
-    target_compile_features(areca-browser-autocomplete-test PRIVATE cxx_std_20)
-    target_compile_options(areca-browser-autocomplete-test PRIVATE
-        -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-browser-autocomplete-test PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_link_libraries(areca-browser-autocomplete-test PRIVATE Fcitx5::Utils)
-    add_test(NAME browser-autocomplete COMMAND areca-browser-autocomplete-test)
 
     add_executable(areca-sentence-capitalizer-test
         tests/sentence_capitalizer_test.cpp
@@ -487,7 +475,6 @@ if(BUILD_TESTING)
 
     add_executable(areca-input-type-detector-test
         tests/input_type_detector_test.cpp
-        src/browser_autocomplete.cpp
         src/input_type_detector.cpp
         src/program_compatibility.cpp
         src/atspi/atspi_connection.cpp
@@ -568,4 +555,15 @@ if(BUILD_TESTING)
     target_link_libraries(areca-emoji-suggestion-test PRIVATE
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME emoji-suggestion COMMAND areca-emoji-suggestion-test)
+
+    add_executable(areca-rewrite-marker-test
+        tests/rewrite_marker_test.cpp src/input_scheduler.cpp
+        src/surrounding_text_cache.cpp)
+    target_compile_features(areca-rewrite-marker-test PRIVATE cxx_std_20)
+    target_compile_options(areca-rewrite-marker-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-rewrite-marker-test PRIVATE src)
+    target_link_libraries(areca-rewrite-marker-test PRIVATE
+        Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME rewrite-marker COMMAND areca-rewrite-marker-test)
 endif()

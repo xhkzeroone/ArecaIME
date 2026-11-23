@@ -15,7 +15,8 @@ std::vector<uint32_t> utf8Codepoints(std::string_view text);
 // dùng gõ. Danh sách này theo đúng thứ tự phát: 0 là Backspace, còn lại là mã
 // Unicode của từng ký tự.
 std::vector<uint32_t> virtualKeyboardEchoSequence(uint32_t deleteCount,
-                                                  std::string_view text);
+                                                  std::string_view text,
+                                                  std::string_view marker = {});
 
 // Mỗi keymap chỉ chở được chừng này ký tự (26 chữ cái + 10 chữ số); chuỗi dài
 // hơn được chia thành nhiều đợt, mỗi đợt một keymap.

@@ -4097,7 +4097,7 @@ chọn backend, sequence diagram từng backend và bảng timing.</li><li><a hr
 <tr><td>Rewrite backend</td><td><code>src/*_backend.*</code></td><td>7 backend implement <code>RewriteBackend</code>, xem <a href="#rewrite-backend">bảng backend</a>.</td></tr>
 <tr><td><code>AdaptiveWait</code></td><td><code>src/adaptive_wait.h</code></td><td>Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm.</td></tr>
 <tr><td><code>EventLoopPostTask</code></td><td><code>src/event_loop_post.h</code></td><td>Đưa commit sang pha post của event loop.</td></tr>
-<tr><td><code>InputTypeDetector</code></td><td><code>src/input_type_detector.*</code></td><td>Nhận diện trình duyệt, terminal, thanh địa chỉ Chromium, khả năng forward Backspace.</td></tr>
+<tr><td><code>InputTypeDetector</code></td><td><code>src/input_type_detector.*</code></td><td>Nhận diện trình duyệt, terminal, khả năng forward Backspace.</td></tr>
 <tr><td><code>WindowFocusTracker</code></td><td><code>src/window_focus_tracker.*</code>, <code>src/atspi/</code></td><td>Thread riêng đọc AT-SPI để biết chương trình và ô đang focus.</td></tr>
 <tr><td><code>MouseClickTracker</code>, <code>areca-mouse-monitor</code></td><td><code>src/mouse_click_tracker.*</code></td><td>Process con libinput báo click qua pipe để reset composition.</td></tr>
 <tr><td><code>DynamicIslandAnnouncement</code></td><td><code>src/notification/</code></td><td>Phát tín hiệu D-Bus khi chọn Areca, xem <a href="input-method-announcement.md">tài liệu riêng</a>.</td></tr>
@@ -4214,6 +4214,23 @@ composition được phục hồi để phím sau còn sửa được dấu. Com
 khi bắt đầu từ mới hoặc khi reset thật sự chạy.</p>
 <p><code>BackspaceRecovery=True</code> cho phép Backspace trong từ đang gõ dựng lại chuỗi đã
 kiểm tra chính tả, ví dụ <code>nhanhsh</code> về <code>nhánh</code>.</p>
+<h2 id="marker-tr%C6%B0%E1%BB%9Bc-khi-xo%C3%A1" tabindex="-1">Marker trước khi xoá</h2>
+<p>Mỗi khi Bamboo trả <code>deleteCount = N &gt; 0</code>, scheduler commit ký tự <code>·</code> (U+00B7) trước,
+rồi cho backend xoá <strong>N+1</strong> ký tự và commit chữ mới. Không gợi ý tự hoàn thành nào
+bắt đầu bằng <code>·</code>, nên trình duyệt bỏ gợi ý và vùng chọn sau con trỏ ngay khi marker
+vào ô; vùng chọn của người dùng cũng bị marker thay như khi gõ một phím. Nhờ vậy ô
+URL, thanh địa chỉ và ô có gợi ý được xoá như ô thường, không cần nhánh riêng.</p>
+<p>Mỗi backend khai báo <code>markerDelivery()</code>:</p>
+<table>
+<thead><tr><th>Kiểu</th><th>Backend</th><th>Cách đưa marker</th></tr></thead>
+<tbody>
+<tr><td><code>InputMethod</code></td><td>Surrounding v1, v2</td><td><code>commitString(&quot;·&quot;)</code>, cập nhật surrounding cache rồi xoá ngay, vì lệnh xoá đi cùng giao thức bộ gõ</td></tr>
+<tr><td><code>Keys</code></td><td>Backspace (uinput, libei, ForwardKey), Shift select</td><td><code>commitString(&quot;·&quot;)</code> rồi chờ <code>AfterMarkerCommitWaitMs</code> (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit</td></tr>
+<tr><td><code>Typed</code></td><td>Virtual keyboard</td><td>Backend tự gõ <code>·</code> bằng phím ảo trước các Backspace, cùng một kết nối Wayland</td></tr>
+</tbody>
+</table>
+<p>Commit observer và <code>knownTextBeforeCursor</code> vẫn chỉ thấy &quot;xoá N, chèn chữ mới&quot;.
+Chế độ Preedit không dùng marker.</p>
 <h2 id="rewrite-backend" tabindex="-1">Rewrite backend</h2>
 <table>
 <thead>
@@ -4255,12 +4272,8 @@ là ForwardKey.</li></ul>
 <h2 id="ch%E1%BB%8Dn-backend" tabindex="-1">Chọn backend</h2>
 <p>Khi <code>deleteCount &gt; 0</code>, <code>selectRewriteBackend()</code> quyết định theo thứ tự:</p>
 <ol><li><strong>Terminal</strong> dùng bộ chọn Backspace có ưu tiên phím phần cứng. Terminal được
-nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có tên.</li><li><strong>Autocomplete trình duyệt hoặc đang có vùng chọn</strong>: ô URL dùng Shift select.
-Ô khác dùng Backspace, thêm 1 Backspace nếu vùng chọn nằm ngay sau từ đang gõ
-hoặc là gợi ý autocomplete.</li><li><strong>Ô URL trong trình duyệt không có surrounding text</strong> dùng Shift select.
-Ô URL được nhận diện bằng <code>CapabilityFlag::Url</code> hoặc AT-SPI với thanh địa chỉ
-Chromium.</li><li>**<code>UseBackspaceForUrl=True</code> và ô là URL**: Shift select, không có thì Backspace.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
-Shift select khi bật fallback trình duyệt, cuối cùng là Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackspaceBackend</code>. Compositor không có phím ảo thì coi như Tự động.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Trình duyệt và <code>ShiftSelectFallbackForBrowser=True</code>: Shift select.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
+nhận diện theo tên chương trình, AT-SPI, hoặc frontend DBus không có tên.</li><li><strong>Cấu hình theo ứng dụng</strong>:<ul><li><code>Surrounding</code>: dùng bộ chọn Surrounding nếu verdict cho phép, không thì
+Backspace.</li><li><code>Shift select</code>: Shift select trừ terminal, không có thì Backspace.</li><li><code>Backspace</code>: bộ chọn Backspace.</li><li><code>Virtual keyboard</code>: <code>VirtualKeyboardBackspaceBackend</code>. Compositor không có phím ảo thì coi như Tự động.</li></ul></li><li><strong>Tự động</strong>:<ul><li>Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.</li><li>Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
 <code>canForwardBackspaces()</code> trả false, ví dụ ứng dụng SDL hay frontend DBus,
 Fcitx4 thiếu capability phù hợp.</li></ul></li></ol>
 <p>Backend tự động được chọn gần nhất cho mỗi ứng dụng được nhớ để hiển thị trong
@@ -4268,7 +4281,7 @@ menu chọn backend.</p>
 <h2 id="verdict-surrounding-text" tabindex="-1">Verdict surrounding text</h2>
 <p>Verdict được đánh giá ở rewrite đầu tiên cần xoá trong một input context:</p>
 <ul><li>Snapshot có text, cursor và anchor đều lớn hơn 0 thì được đánh dấu tin cậy và
-chờ probe.</li><li>Chương trình lập trình, terminal, office luôn bị buộc dùng Backspace.</li><li>Họ VS Code với capability mask <code>0x72</code> cũng bị buộc dùng Backspace.</li><li>Snapshot gợi ý autocomplete không được dùng để probe.</li><li>Trong lúc chờ probe, snapshot không chứa từ đang gõ ngay trước con trỏ nghĩa
+chờ probe.</li><li>Chương trình lập trình, terminal, office luôn bị buộc dùng Backspace.</li><li>Họ VS Code với capability mask <code>0x72</code> cũng bị buộc dùng Backspace.</li><li>Trong lúc chờ probe, snapshot không chứa từ đang gõ ngay trước con trỏ nghĩa
 là frontend gửi surrounding trễ. Probe bị tính là thất bại và restore surrounding
 bị tắt cho context đó.</li></ul>
 <p>Probe gửi lệnh xoá rồi chờ <code>SurroundingTextUpdated</code> khớp ngữ nghĩa theo
@@ -4346,10 +4359,9 @@ theo click. Xem <a href="DEBUGGING.md#mouse-tracker">debug mouse tracker</a>.</p
 <h2 id="nh%E1%BA%ADn-di%E1%BB%87n-%E1%BB%A9ng-d%E1%BB%A5ng" tabindex="-1">Nhận diện ứng dụng</h2>
 <ul><li>Tên chương trình lấy từ <code>InputContext::program()</code>. Khi trống hoặc là proxy của
 GNOME Shell, Areca dùng tên từ <code>WindowFocusTracker</code> và cache vào state.</li><li><code>WindowFocusTracker</code> chạy thread riêng, kết nối bus accessibility, theo dõi sự
-kiện focus và lưu chương trình, class, cờ terminal. Thread chính chỉ đọc qua
+kiện focus và lưu chương trình, cờ terminal. Thread chính chỉ đọc qua
 atomic và mutex ngắn.</li><li><code>InputTypeDetector</code> dùng các thông tin trên cùng danh sách trong
-<code>program_compatibility.cpp</code> để nhận diện trình duyệt, Chromium, terminal, thanh
-địa chỉ Omnibox và ứng dụng SDL.</li></ul>
+<code>program_compatibility.cpp</code> để nhận diện trình duyệt, terminal và ứng dụng SDL.</li></ul>
 </main>
 </body>
 </html>

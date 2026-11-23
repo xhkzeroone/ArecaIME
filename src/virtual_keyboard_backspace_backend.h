@@ -37,6 +37,9 @@ public:
   operator=(const VirtualKeyboardBackspaceBackend &) = delete;
 
   const char *name() const override { return "virtual-keyboard-backspace"; }
+  MarkerDelivery markerDelivery() const override {
+    return MarkerDelivery::Typed;
+  }
   ApplyStatus apply(fcitx::InputContext &inputContext, const RewritePlan &plan,
                     RewriteDone onDone) override;
 
@@ -69,6 +72,7 @@ private:
   RewriteDone onDone_;
   uint64_t transactionId_ = 0;
   uint32_t deletesLeft_ = 0;
+  bool markerBurstPending_ = false;
   std::deque<std::vector<uint32_t>> bursts_;
 
   fcitx::TrackableObjectReference<fcitx::InputContext> echoContext_;

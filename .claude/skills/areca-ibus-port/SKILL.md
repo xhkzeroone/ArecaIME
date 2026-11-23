@@ -18,7 +18,7 @@ Areca là bộ gõ tiếng Việt chạy dạng addon fcitx5, C++20, dùng `bamb
 | So khớp snapshot | `src/surrounding_probe_match.h` | `surroundingProbeMatches`, `surroundingSnapshotEndsWith` (NBSP coi như dấu cách), `updateKnownTextBeforeCursor` |
 | Logic preedit | `src/preedit_logic.*` | |
 | Thời gian chờ thích nghi | `src/adaptive_wait.h` | Logic thuần, chỉ học từ số đo của backend trong lúc sửa chữ; không có monitor nền |
-| Nhận diện ứng dụng | `src/program_compatibility.*`, `src/browser_autocomplete.*` | Danh sách terminal, IDE, office, trình duyệt, họ VS Code, Discord/Signal |
+| Nhận diện ứng dụng | `src/program_compatibility.*` | Danh sách terminal, IDE, office, trình duyệt, họ VS Code, Discord/Signal |
 | Thiết bị phát phím | `src/uinput_device.*`, `src/xtest_device.*`, `src/native_device.*` | uinput không phụ thuộc IM framework; Native dùng libei qua RemoteDesktop portal hoặc XTest |
 | AT-SPI | `src/window_focus_tracker.*`, `src/atspi/` | Thread riêng, xem bài học bên dưới |
 | Click chuột | `src/mouse_click_tracker.*`, `areca-mouse-monitor` | Process con libinput, báo qua pipe |
@@ -58,11 +58,10 @@ Bamboo bridge cung cấp: `ArecaBambooCreate(method, modernStyle)`, `Destroy`, `
 
 Thứ tự chọn khi `deleteCount > 0` (`selectRewriteBackend`, `src/areca_engine_backend.cpp`):
 1. Terminal: Backspace, ưu tiên phím phần cứng.
-2. Gợi ý autocomplete của trình duyệt hoặc đang có vùng chọn: ô URL dùng Shift-select; ô khác Backspace, thêm 1 Backspace nếu vùng chọn là gợi ý ngay sau từ.
-3. Ô URL không có surrounding: Shift-select.
-4. `UseBackspaceForUrl` và ô URL: Shift-select, không có thì Backspace.
-5. Ghi đè theo ứng dụng.
-6. Tự động: surrounding nếu verdict cho phép; trình duyệt + `ShiftSelectFallbackForBrowser` thì Shift-select; còn lại Backspace.
+2. Ghi đè theo ứng dụng (Shift-select chỉ khi người dùng chọn).
+3. Tự động: surrounding nếu verdict cho phép; còn lại Backspace.
+
+Trước mỗi lần xoá N ký tự, scheduler commit marker `·` (U+00B7) rồi backend xoá N+1 (`RewriteBackend::markerDelivery()`: surrounding xoá ngay, backend kênh phím chờ `AfterMarkerCommitWaitMs`, phím ảo tự gõ marker). Marker làm trình duyệt bỏ gợi ý tự hoàn thành và vùng chọn, nên không có nhánh riêng cho autocomplete, ô URL hay thanh địa chỉ.
 
 **Verdict surrounding** (theo input context, xoá khi focus, reset hay click trừ khi đang được bảo vệ 1 s sau Backspace, Ctrl+A, di chuyển):
 - Snapshot có text, cursor và anchor đều lớn hơn 0 thì được tin và vào probe.
@@ -118,7 +117,7 @@ Lưu ý khi port scheduler: IBus đòi `process-key-event` trả về ngay. Như
 
 ## Cấu hình người dùng cần giữ
 
-`areca.conf` (khoá ini, mặc định): `BambooInputMethod` (Telex 2), `OutputCharset` (Unicode), `SpellcheckMode` (khôi phục ngay khi gõ), `ModernStyle` (true), `EnableMacro` (true), `CapitalizeMacro` (true), `RevertMacroOnBackspace` (true), `MacroBypassModifier` (Shift), `AutoCapitalizeAfterPunctuation` (false), `BackspaceRecovery` (true), `RestoreSurroundingText` (false), `ShiftSelectFallbackForBrowser` (false), `UseBackspaceForUrl` (true), `DisableVietnameseInTerminal` (false), `Debug` (false). `areca-advanced.conf` giữ timing từng backend và các lựa chọn uinput/Native, mouse tracking, phím đầu. Định nghĩa đầy đủ trong `src/areca_config.h`.
+`areca.conf` (khoá ini, mặc định): `BambooInputMethod` (Telex 2), `OutputCharset` (Unicode), `SpellcheckMode` (khôi phục ngay khi gõ), `ModernStyle` (true), `EnableMacro` (true), `CapitalizeMacro` (true), `RevertMacroOnBackspace` (true), `MacroBypassModifier` (Shift), `AutoCapitalizeAfterPunctuation` (false), `BackspaceRecovery` (true), `RestoreSurroundingText` (false), `DisableVietnameseInTerminal` (false), `Debug` (false). `areca-advanced.conf` giữ timing từng backend và các lựa chọn uinput/Native, mouse tracking, phím đầu. Định nghĩa đầy đủ trong `src/areca_config.h`.
 
 ## Kiểm thử
 

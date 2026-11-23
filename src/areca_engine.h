@@ -39,7 +39,6 @@ namespace areca {
 
 struct ReliabilityDecision {
   bool useSurrounding = false;
-  bool browserAutocomplete = false;
 };
 
 class WindowFocusTracker;

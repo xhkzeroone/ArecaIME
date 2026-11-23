@@ -44,8 +44,10 @@ std::vector<uint32_t> utf8Codepoints(std::string_view text) {
 }
 
 std::vector<uint32_t> virtualKeyboardEchoSequence(uint32_t deleteCount,
-                                                  std::string_view text) {
-  std::vector<uint32_t> sequence(deleteCount, 0);
+                                                  std::string_view text,
+                                                  std::string_view marker) {
+  std::vector<uint32_t> sequence = utf8Codepoints(marker);
+  sequence.insert(sequence.end(), deleteCount, 0);
   const auto codepoints = utf8Codepoints(text);
   sequence.insert(sequence.end(), codepoints.begin(), codepoints.end());
   return sequence;

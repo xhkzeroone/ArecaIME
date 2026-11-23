@@ -247,13 +247,7 @@ namespace areca::settings {
             ImGui::TableNextColumn();
             checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
             ImGui::TableNextColumn();
-            checkbox("Fallback Shift+Left cho trình duyệt", config.main.shiftSelectFallbackForBrowser);
-            ImGui::TableNextColumn();
-            checkbox("Xử lý riêng ô URL và thanh địa chỉ",
-                     config.main.useBackspaceForUrl);
-            ImGui::TableNextColumn();
-            checkbox("Tắt tiếng Việt trong terminal",
-                     config.main.disableVietnameseInTerminal);
+            checkbox("Tắt tiếng Việt trong terminal", config.main.disableVietnameseInTerminal);
             ImGui::TableNextColumn();
             checkbox("Bật macro", config.main.enableMacro);
             ImGui::TableNextColumn();
@@ -277,20 +271,17 @@ namespace areca::settings {
             "MacroBehaviorCard", "Hành vi macro",
             "Giữ modifier đã chọn rồi nhấn Space để giữ nguyên từ viết tắt trong lần đó."
         );
-        constexpr std::array<const char*, 5> macroBypassNames = {
-            "Tắt", "Shift", "Ctrl", "Alt", "Super"
-        };
+        constexpr std::array<const char*, 5> macroBypassNames = {"Tắt", "Shift", "Ctrl", "Alt", "Super"};
         int macroBypass = static_cast<int>(config.main.macroBypassModifier.value());
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Phím giữ để tạm bỏ qua:");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(180.0F);
         if (ImGui::Combo(
-                "##MacroBypassModifier", &macroBypass,
-                macroBypassNames.data(), static_cast<int>(macroBypassNames.size())
+                "##MacroBypassModifier", &macroBypass, macroBypassNames.data(),
+                static_cast<int>(macroBypassNames.size())
             )) {
-            config.main.macroBypassModifier.setValue(
-                static_cast<areca::MacroBypassModifier>(macroBypass));
+            config.main.macroBypassModifier.setValue(static_cast<areca::MacroBypassModifier>(macroBypass));
         }
         ImGui::SameLine();
         ImGui::TextDisabled("+ Space");
@@ -490,6 +481,12 @@ namespace areca::settings {
         inputInt("Chờ sau Backspace Fcitx4 (ms)", config.advanced.fcitx4AfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace DBus (ms)", config.advanced.dbusAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace IBus (ms)", config.advanced.ibusAfterBackspaceWaitMs);
+        inputInt("Chờ sau marker trước khi xoá (ms)", config.advanced.afterMarkerCommitWaitMs);
+        inputInt("Chờ sau marker Wayland (ms)", config.advanced.waylandAfterMarkerCommitWaitMs);
+        inputInt("Chờ sau marker XIM (ms)", config.advanced.ximAfterMarkerCommitWaitMs);
+        inputInt("Chờ sau marker Fcitx4 (ms)", config.advanced.fcitx4AfterMarkerCommitWaitMs);
+        inputInt("Chờ sau marker DBus (ms)", config.advanced.dbusAfterMarkerCommitWaitMs);
+        inputInt("Chờ sau marker IBus (ms)", config.advanced.ibusAfterMarkerCommitWaitMs);
         endSettingsCard();
 
         beginSettingsCard(
@@ -515,9 +512,7 @@ namespace areca::settings {
         inputInt("Chờ sau lệnh xóa surrounding v2 cuối (ms)", config.advanced.afterSurroundingDeleteWaitMs);
         endSettingsCard();
 
-        beginSettingsCard(
-            "XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei."
-        );
+        beginSettingsCard("XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei.");
         inputInt("Delay giữa Backspace Native (ms)", config.advanced.xtestBackspaceDelayMs);
         inputInt("Chờ sau Backspace Native (ms)", config.advanced.afterXTestBackspaceWaitMs);
         inputInt("Chờ sau Backspace Native Wayland (ms)", config.advanced.waylandAfterXTestBackspaceWaitMs);
@@ -614,9 +609,8 @@ namespace areca::settings {
                 }
                 bsName += ")";
 
-                const char* modeNames[] = {"Tự động",      surName.c_str(), shiftName.c_str(),
-                                           bsName.c_str(), "Preedit",       "Redirect (EN)",
-                                           "Virtual keyboard"};
+                const char* modeNames[] = {"Tự động", surName.c_str(), shiftName.c_str(), bsName.c_str(),
+                                           "Preedit", "Redirect (EN)", "Virtual keyboard"};
 
                 for (size_t i = 0; i < overrides.size(); ++i) {
                     ImGui::PushID(static_cast<int>(i));
@@ -843,8 +837,8 @@ namespace areca::settings {
             || !(config.main.macroBypassModifier == savedConfig.main.macroBypassModifier)
             || !(config.main.revertMacroOnBackspace == savedConfig.main.revertMacroOnBackspace);
 
-        const bool tab2Dirty = !(config.apps == savedConfig.apps)
-            || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
+        const bool tab2Dirty =
+            !(config.apps == savedConfig.apps) || !(config.main.selectBackendKey == savedConfig.main.selectBackendKey);
 
         const bool tab3Dirty = !(config.advanced == savedConfig.advanced)
             || !(config.main.backspaceRecovery == savedConfig.main.backspaceRecovery);

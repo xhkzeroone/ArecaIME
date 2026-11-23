@@ -162,6 +162,16 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
           advancedConfig_.dbusAfterXTestBackspaceWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.ibusAfterXTestBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.afterMarkerCommitWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.waylandAfterMarkerCommitWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.ximAfterMarkerCommitWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.fcitx4AfterMarkerCommitWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.dbusAfterMarkerCommitWaitMs.value()),
+      static_cast<uint32_t>(
+          advancedConfig_.ibusAfterMarkerCommitWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
       advancedConfig_.preciseTiming.value() ? 1U : 0U};
 }

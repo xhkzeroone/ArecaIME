@@ -42,11 +42,17 @@ VirtualKeyboardBackspaceBackend::apply(fcitx::InputContext &inputContext,
   deletesLeft_ = plan.backspaceCount;
   const auto bursts = splitVirtualKeyboardBursts(codepoints);
   bursts_.assign(bursts.begin(), bursts.end());
+  const std::string_view marker = plan.typeMarker ? kRewriteMarker : "";
+  if (plan.typeMarker) {
+    // Marker đi riêng một đợt đầu, gõ trước các Backspace của đợt đó.
+    bursts_.push_front(utf8Codepoints(marker));
+    markerBurstPending_ = true;
+  }
 
   clearEcho();
   echoContext_ = inputContext.watch();
   const auto echo =
-      virtualKeyboardEchoSequence(plan.backspaceCount, plan.commitText);
+      virtualKeyboardEchoSequence(plan.backspaceCount, plan.commitText, marker);
   pendingEcho_.assign(echo.begin(), echo.end());
   for (const auto value : echo) {
     if (value != 0) {
@@ -75,14 +81,26 @@ bool VirtualKeyboardBackspaceBackend::sendNextBurst() {
   const auto burst = std::move(bursts_.front());
   bursts_.pop_front();
   bool sent = device_.setKeymap(buildVirtualKeyboardKeymap(burst));
-  // Backspace đi cùng đợt đầu, trước mọi ký tự mới.
-  for (; sent && deletesLeft_ > 0; --deletesLeft_) {
-    sent = device_.sendKey(KEY_BACKSPACE, true) &&
-           device_.sendKey(KEY_BACKSPACE, false);
-  }
-  for (size_t slot = 0; sent && slot < burst.size(); ++slot) {
-    const uint32_t keycode = virtualKeyboardCarrierKeycode(slot);
-    sent = device_.sendKey(keycode, true) && device_.sendKey(keycode, false);
+  const auto sendBackspaces = [&] {
+    for (; sent && deletesLeft_ > 0; --deletesLeft_) {
+      sent = device_.sendKey(KEY_BACKSPACE, true) &&
+             device_.sendKey(KEY_BACKSPACE, false);
+    }
+  };
+  const auto sendCarriers = [&] {
+    for (size_t slot = 0; sent && slot < burst.size(); ++slot) {
+      const uint32_t keycode = virtualKeyboardCarrierKeycode(slot);
+      sent = device_.sendKey(keycode, true) && device_.sendKey(keycode, false);
+    }
+  };
+  // Đợt marker: gõ marker rồi xoá. Đợt thường: Backspace còn lại đi trước mọi
+  // ký tự mới.
+  if (std::exchange(markerBurstPending_, false)) {
+    sendCarriers();
+    sendBackspaces();
+  } else {
+    sendBackspaces();
+    sendCarriers();
   }
   const uint64_t transactionId = transactionId_;
   sent = sent && device_.sync([this, transactionId](bool ok) {
@@ -181,6 +199,7 @@ void VirtualKeyboardBackspaceBackend::clearPending() {
   onDone_ = {};
   transactionId_ = 0;
   deletesLeft_ = 0;
+  markerBurstPending_ = false;
   bursts_.clear();
 }
 

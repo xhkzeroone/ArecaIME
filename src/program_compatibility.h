@@ -23,12 +23,7 @@ bool requiresShiftSelectBackend(const std::string &program);
 // Known Linux terminal applications, excluding KDE terminals.
 bool isTerminalProgram(const std::string &program);
 
-// Chromium-family browser applications.
-bool isChromiumBrowser(const std::string &program);
-
-// Browser-family application detection shared by input routing and browser
-// autocomplete handling.
+// Browser-family application detection for input routing.
 bool isBrowserLikeProgram(const std::string &program);
-bool isFirefoxFamilyProgram(const std::string &program);
 
 } // namespace areca

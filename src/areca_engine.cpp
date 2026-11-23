@@ -141,9 +141,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             }
             // TODO: Chromium đôi khi giữ getText()/SurroundingText cũ sau khi
             // người dùng Backspace sạch address bar. Tạm tắt restore tại đây
-            // cho đến khi có shadow snapshot đồng bộ được từng lần xóa. Chỉ
-            // tin CapabilityFlag::Url cho quyết định này; nhận diện Omnibox
-            // bằng AT-SPI có thể lẹm sang input khác khi focus chuyển nhanh.
+            // cho đến khi có shadow snapshot đồng bộ được từng lần xóa.
             if (inputContext.capabilityFlags().test(
                     fcitx::CapabilityFlag::Url)) {
               return false;
@@ -224,8 +222,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
   reloadConfig();
   focusTracker_ = std::make_unique<WindowFocusTracker>(debugEnabled());
   // Keep AT-SPI monitoring alive in the background. The worker reconnects
-  // when the accessibility bus appears, so fallback data is cached before a
-  // Chromium frontend without CapabilityFlag::Url needs it.
+  // when the accessibility bus appears, so the focused program and terminal
+  // state are cached before a frontend without a program name needs them.
   focusTracker_->start();
   inputTypeDetector_.setFocusTracker(focusTracker_.get());
 
@@ -553,8 +551,7 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     return;
   }
   if (!event.isRelease()) {
-    // Resolve program một lần để nhận diện address bar dùng cùng verdict trong
-    // toàn bộ lượt xử lý phím.
+    // Resolve program một lần để cả lượt xử lý phím dùng cùng tên ứng dụng.
     auto *state = inputContext->propertyFor(&rewriteStateFactory_);
     resolveProgram(*inputContext, state);
 

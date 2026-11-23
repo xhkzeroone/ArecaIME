@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace areca {
 
@@ -13,6 +14,11 @@ struct BambooResult {
   bool macroExpanded = false;
   bool spellcheckRestored = false;
 };
+
+// Commit trước mỗi lần xoá để ô nhập bỏ gợi ý tự hoàn thành hoặc vùng chọn
+// đang nằm sau con trỏ: không gợi ý nào bắt đầu bằng ký tự này, nên sau đó mọi
+// backend xoá như ở ô bình thường. Vì vậy lệnh xoá luôn xoá thêm một ký tự.
+inline constexpr std::string_view kRewriteMarker = "\u00b7";
 
 struct RewritePlan {
   uint64_t transactionId = 0;
@@ -51,6 +57,9 @@ struct RewritePlan {
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
   bool probeSurrounding = false;
+  // Backend phải tự gõ marker trước khi xoá vì scheduler không commit được
+  // marker trên cùng kênh với nó.
+  bool typeMarker = false;
 };
 
 template <typename Timing>

@@ -119,42 +119,17 @@ int main() {
   assert(!isTerminalProgram("firefox"));
   assert(!isTerminalProgram(""));
 
-  using areca::isChromiumBrowser;
-  assert(isChromiumBrowser("google-chrome"));
-  assert(isChromiumBrowser("google-chrome.desktop"));
-  assert(isChromiumBrowser("/usr/bin/google-chrome-stable"));
-  assert(isChromiumBrowser("chromium"));
-  assert(isChromiumBrowser("chromium-browser"));
-  assert(isChromiumBrowser("brave"));
-  assert(isChromiumBrowser("brave-browser"));
-  assert(isChromiumBrowser("microsoft-edge"));
-  assert(isChromiumBrowser("microsoft-edge-dev"));
-  assert(isChromiumBrowser("edge"));
-  assert(isChromiumBrowser("vivaldi"));
-  assert(isChromiumBrowser("opera"));
-  assert(isChromiumBrowser("coccoc"));
-  assert(isChromiumBrowser("coccoc-browser"));
-  assert(isChromiumBrowser("yandex"));
-  assert(isChromiumBrowser("thorium"));
-  assert(!isChromiumBrowser("firefox"));
-  assert(!isChromiumBrowser("firefox-esr"));
-  assert(!isChromiumBrowser("librewolf"));
-  assert(!isChromiumBrowser("code"));
-  assert(!isChromiumBrowser("vscode"));
-  assert(!isChromiumBrowser("slack"));
-  assert(!isChromiumBrowser("ghostty"));
-  assert(!isChromiumBrowser(""));
-
   using areca::isBrowserLikeProgram;
-  using areca::isFirefoxFamilyProgram;
+  assert(isBrowserLikeProgram("google-chrome"));
   assert(isBrowserLikeProgram("google-chrome.desktop"));
   assert(isBrowserLikeProgram("/usr/bin/firefox"));
+  assert(isBrowserLikeProgram("/usr/bin/firefox.desktop"));
+  assert(isBrowserLikeProgram("thorium"));
+  assert(isBrowserLikeProgram("ladybird"));
+  assert(isBrowserLikeProgram("min"));
+  assert(isBrowserLikeProgram("luakit"));
   assert(isBrowserLikeProgram(""));
   assert(!isBrowserLikeProgram("org.kde.kate"));
-  assert(isFirefoxFamilyProgram("Firefox.desktop"));
-  assert(isFirefoxFamilyProgram("org.mozilla.firefoxdeveloperedition"));
-  assert(isFirefoxFamilyProgram("librewolf"));
-  assert(!isFirefoxFamilyProgram("chromium"));
 
   using areca::resolveAfterBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;

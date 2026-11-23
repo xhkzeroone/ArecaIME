@@ -149,34 +149,6 @@ bool queryParent(DBusConnection *bus, const char *sender, const char *path,
   return found;
 }
 
-std::string queryFocusClass(DBusConnection *bus, const char *sender,
-                            const char *path) {
-  DbusMessagePtr reply = callMethod(
-      bus, sender, path, "org.a11y.atspi.Accessible", "GetAttributes");
-  std::string className;
-  const bool valid = reply && dbus_message_has_signature(reply.get(), "a{ss}");
-  if (valid) {
-    DBusMessageIter iter, entries;
-    dbus_message_iter_init(reply.get(), &iter);
-    dbus_message_iter_recurse(&iter, &entries);
-    while (dbus_message_iter_get_arg_type(&entries) == DBUS_TYPE_DICT_ENTRY) {
-      DBusMessageIter entry;
-      dbus_message_iter_recurse(&entries, &entry);
-      const char *key = nullptr;
-      const char *value = nullptr;
-      dbus_message_iter_get_basic(&entry, &key);
-      dbus_message_iter_next(&entry);
-      dbus_message_iter_get_basic(&entry, &value);
-      if (strcmp(key, "class") == 0) {
-        className = value;
-        break;
-      }
-      dbus_message_iter_next(&entries);
-    }
-  }
-  return className;
-}
-
 std::string programForPid(int processId) {
   if (processId <= 0)
     return {};
@@ -345,12 +317,6 @@ AtspiFocusInfo AtspiAccessible::inspectFocus(const char *sender,
     return info;
   }
 
-  if (isChromiumBrowser(info.program)) {
-    info.className = queryFocusClass(bus_, sender, path);
-  }
-  if (info.className.find("Omnibox") != std::string::npos)
-    return info;
-
   info.role = queryRole(bus_, sender, path);
   info.terminal = isTerminalNode(bus_, sender, path, info.role);
   // Dò cây cha tốn tới hai lời gọi mỗi tầng, nên chỉ làm khi cần nó để tìm tiến
@@ -360,9 +326,6 @@ AtspiFocusInfo AtspiAccessible::inspectFocus(const char *sender,
   if (info.documentWeb) {
     info.processId = queryProcessId(bus_, sender, path);
     info.program = programForPid(info.processId);
-    if (isChromiumBrowser(info.program)) {
-      info.className = queryFocusClass(bus_, sender, path);
-    }
   }
   return info;
 }

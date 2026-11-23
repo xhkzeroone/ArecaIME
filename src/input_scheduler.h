@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include <fcitx-utils/event.h>
 
@@ -44,13 +45,40 @@ struct SchedulerTiming {
   uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
   uint32_t dbusAfterXTestBackspaceWaitMs = 10;
   uint32_t ibusAfterXTestBackspaceWaitMs = 10;
+  // Chờ marker tới ứng dụng trước khi backend kênh phím bắt đầu xoá.
+  uint32_t afterMarkerCommitWaitMs = 10;
+  uint32_t waylandAfterMarkerCommitWaitMs = 10;
+  uint32_t ximAfterMarkerCommitWaitMs = 10;
+  uint32_t fcitx4AfterMarkerCommitWaitMs = 10;
+  uint32_t dbusAfterMarkerCommitWaitMs = 10;
+  uint32_t ibusAfterMarkerCommitWaitMs = 10;
   uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
 };
 
+inline uint32_t resolveAfterMarkerCommitWaitMs(const char *frontendName,
+                                               const SchedulerTiming &timing) {
+  const std::string_view fe(frontendName ? frontendName : "");
+  if (fe.starts_with("wayland")) {
+    return timing.waylandAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("xim")) {
+    return timing.ximAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("fcitx4")) {
+    return timing.fcitx4AfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("dbus")) {
+    return timing.dbusAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("ibus")) {
+    return timing.ibusAfterMarkerCommitWaitMs;
+  }
+  return timing.afterMarkerCommitWaitMs;
+}
+
 struct RewriteBackendSelection {
   RewriteBackend *backend = nullptr;
-  uint32_t additionalBackspaces = 0;
   bool probeSurrounding = false;
   // 0 giữ timing chung. Probe tự động đặt 150 ms cho lần đầu và 80 ms cho lần
   // retry ở từ kế tiếp.
@@ -113,6 +141,10 @@ private:
   void finishKey();
   void finishKeyAfterDelay();
   void finishKeyAfterCommit();
+  void commitMarkerThenApply(fcitx::InputContext &inputContext,
+                             RewriteBackend &backend, RewritePlan plan);
+  void startRewrite(fcitx::InputContext &inputContext, RewriteBackend &backend,
+                    const RewritePlan &plan);
   void rewriteDone(uint64_t transactionId, RewriteOutcome outcome);
   void notifyPendingCommit();
 
@@ -129,6 +161,7 @@ private:
   std::string pendingCommitText_;
   KeyQueue queue_;
   std::unique_ptr<fcitx::EventSourceTime> postCommitTimer_;
+  std::unique_ptr<fcitx::EventSourceTime> markerTimer_;
   SchedulerTiming activeTiming_;
   uint64_t nextSequence_ = 1;
   uint64_t nextTransactionId_ = 1;

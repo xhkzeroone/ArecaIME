@@ -58,19 +58,6 @@ inline bool isMacroBypassSpace(const fcitx::Key &key,
   return false;
 }
 
-inline bool
-shouldForceBackspaceForUrl(bool enabled,
-                           const fcitx::CapabilityFlags &capabilities,
-                           bool inAddressBar = false) {
-  return enabled &&
-         (capabilities.test(fcitx::CapabilityFlag::Url) || inAddressBar);
-}
-
-inline bool shouldUseShiftSelectForUrl(bool isUrl, bool hasSurrounding,
-                                       bool isBrowser) {
-  return isUrl && !hasSurrounding && isBrowser;
-}
-
 struct StringListAnnotation : public fcitx::EnumAnnotation {
   void setList(std::vector<std::string> list) { list_ = std::move(list); }
 
@@ -195,6 +182,31 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> ibusAfterBackspaceWaitMs{
         this, "IBusAfterBackspaceWaitMs",
         N_("Chờ sau Backspace cuối IBus (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    // Chờ marker "·" tới ứng dụng trước khi backend phát phím xoá.
+    fcitx::Option<int, fcitx::IntConstrain> afterMarkerCommitWaitMs{
+        this, "AfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> waylandAfterMarkerCommitWaitMs{
+        this, "WaylandAfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá Wayland (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> ximAfterMarkerCommitWaitMs{
+        this, "XimAfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá XIM (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> fcitx4AfterMarkerCommitWaitMs{
+        this, "Fcitx4AfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá Fcitx4 (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> dbusAfterMarkerCommitWaitMs{
+        this, "DbusAfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá DBus (ms)"), 10,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::Option<int, fcitx::IntConstrain> ibusAfterMarkerCommitWaitMs{
+        this, "IBusAfterMarkerCommitWaitMs",
+        N_("Chờ sau marker trước khi xoá IBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> uinputShiftSelectDelayMs{
         this, "UinputShiftSelectDelayMs",
@@ -389,14 +401,6 @@ FCITX_CONFIGURATION(
         N_("Khôi phục lỗi chính tả khi nhấn Backspace"), true};
     fcitx::Option<bool> restoreSurroundingText{
         this, "RestoreSurroundingText", N_("Cho phép sửa từ đã commit"), false};
-    fcitx::Option<bool> shiftSelectFallbackForBrowser{
-        this, "ShiftSelectFallbackForBrowser",
-        N_("Dùng Shift+Left làm fallback khi trình duyệt không hỗ trợ "
-           "surrounding text"),
-        false};
-    fcitx::Option<bool> useBackspaceForUrl{
-        this, "UseBackspaceForUrl", N_("Xử lý riêng ô URL và thanh địa chỉ"),
-        true};
     fcitx::Option<bool> disableVietnameseInTerminal{
         this, "DisableVietnameseInTerminal",
         N_("Tắt tiếng Việt trong terminal"), false};

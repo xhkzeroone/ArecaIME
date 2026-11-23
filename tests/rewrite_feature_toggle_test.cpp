@@ -757,24 +757,7 @@ int main() {
   assert(advancedConfig.fcitx4AfterXTestBackspaceWaitMs.value() == 26);
 
   areca::ArecaConfig mainConfig;
-  assert(!mainConfig.shiftSelectFallbackForBrowser.value());
-  assert(mainConfig.useBackspaceForUrl.value());
   assert(!mainConfig.disableVietnameseInTerminal.value());
-  assert(areca::shouldForceBackspaceForUrl(
-      mainConfig.useBackspaceForUrl.value(),
-      fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));
-  assert(areca::shouldForceBackspaceForUrl(
-      true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url)));
-  assert(!areca::shouldForceBackspaceForUrl(
-      true, fcitx::CapabilityFlags(fcitx::CapabilityFlag::SurroundingText)));
-  assert(
-      areca::shouldForceBackspaceForUrl(true, fcitx::CapabilityFlags{}, true));
-  assert(!areca::shouldForceBackspaceForUrl(
-      false, fcitx::CapabilityFlags(fcitx::CapabilityFlag::Url), true));
-  assert(areca::shouldUseShiftSelectForUrl(true, false, true));
-  assert(!areca::shouldUseShiftSelectForUrl(true, false, false));
-  assert(!areca::shouldUseShiftSelectForUrl(true, true, true));
-  assert(!areca::shouldUseShiftSelectForUrl(false, false, true));
   assert(mainConfig.macroBypassModifier.value() ==
          areca::MacroBypassModifier::Shift);
   assert(areca::isMacroBypassSpace(

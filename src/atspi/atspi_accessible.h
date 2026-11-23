@@ -13,7 +13,6 @@ struct AtspiFocusInfo {
   bool documentWeb = false;
   bool ignoredWindowManager = false;
   std::string program;
-  std::string className;
 };
 
 class AtspiAccessible {

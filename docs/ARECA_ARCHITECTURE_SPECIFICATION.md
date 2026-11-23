@@ -77,25 +77,15 @@ sequenceDiagram
     participant IC as InputContext
 
     S->>E: selectRewriteBackend(inputContext, result)
-    E->>D: isTerminal, canForwardBackspaces, inChromiumAddressBar
+    E->>D: isTerminal, canForwardBackspaces
     E->>IC: capabilityFlags, surroundingText
     E->>E: evaluateReliability
 
     alt Terminal
         E-->>S: Backspace, ưu tiên phím phần cứng
-    else Autocomplete trình duyệt hoặc đang có vùng chọn
-        alt Ô URL
-            E-->>S: Shift select
-        else Ô khác
-            E-->>S: Backspace, có thể thêm 1 phím
-        end
-    else Ô URL trình duyệt không có surrounding
-        E-->>S: Shift select
-    else UseBackspaceForUrl và ô URL
-        E-->>S: Shift select, không có thì Backspace
     else Cấu hình theo ứng dụng
         alt Surrounding
-            E-->>S: Surrounding nếu verdict cho phép, không thì Shift select hoặc Backspace
+            E-->>S: Surrounding nếu verdict cho phép, không thì Backspace
         else Shift select
             E-->>S: Shift select, không có thì Backspace
         else Backspace
@@ -103,8 +93,6 @@ sequenceDiagram
         end
     else Verdict cho phép surrounding
         E-->>S: Surrounding V1 hoặc V2, kèm probe nếu chưa xác nhận
-    else Trình duyệt và ShiftSelectFallbackForBrowser
-        E-->>S: Shift select
     else Còn lại
         E-->>S: Backspace
     end
@@ -123,9 +111,11 @@ false: ứng dụng SDL, frontend DBus thiếu `KeyEventOrderFix` và `Surroundi
 frontend Fcitx4 thiếu `FormattedPreedit` và `SurroundingText`, hoặc frontend lạ.
 
 > [!IMPORTANT]
-> **Bảo vệ vùng chọn**: khi ô đang có vùng chọn hoặc gợi ý autocomplete, ô không
-> phải URL dùng Backspace với 1 phím thêm để xoá vùng chọn trước. Ô URL dùng
-> Shift select để chọn lại đúng phần cần thay.
+> **Marker trước khi xoá**: trước mỗi lần xoá N ký tự, scheduler commit `·`
+> (U+00B7) rồi backend xoá N+1. Gợi ý tự hoàn thành và vùng chọn sau con trỏ bị
+> marker thay trước khi xoá, nên ô URL, thanh địa chỉ và ô có gợi ý không cần
+> nhánh riêng. Backend kênh phím chờ `AfterMarkerCommitWaitMs` sau marker; phím ảo
+> tự gõ marker.
 
 ## 5. Sequence diagram các backend
 
@@ -374,8 +364,6 @@ Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 | `UseUinputInsteadOfForwardKey` | advanced | `True` | Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng |
 | `EnableMouseTracking` | advanced | `True` | Chạy helper chuột để reset khi click |
 | `ForwardFirstCharacter` | advanced | `True` | Bật nhánh phím đầu cho trình duyệt |
-| `ShiftSelectFallbackForBrowser` | areca | `False` | Trình duyệt không dùng được surrounding thì dùng Shift select |
-| `UseBackspaceForUrl` | areca | `True` | Xử lý riêng ô URL bằng Shift select |
 | `RestoreSurroundingText` | areca | `False` | Sửa từ đã commit |
 | `DisableVietnameseInTerminal` | areca | `False` | Forward nguyên phím trong terminal |
 | `SelectBackendKey` | areca | phím dấu huyền | Mở menu chọn mode, backend cho ứng dụng |

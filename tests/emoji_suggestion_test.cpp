@@ -123,6 +123,9 @@ private:
 class RecordingBackend final : public areca::RewriteBackend {
 public:
   const char *name() const override { return "recording"; }
+  areca::MarkerDelivery markerDelivery() const override {
+    return areca::MarkerDelivery::InputMethod;
+  }
   areca::ApplyStatus apply(fcitx::InputContext &inputContext,
                            const areca::RewritePlan &plan,
                            areca::RewriteDone) override {
@@ -159,8 +162,9 @@ void testSchedulerReplacement() {
   scheduler.enqueueReplacement(context, "😀", [](fcitx::InputContext &) {
     return std::string(":cười");
   });
-  assert((backend.backspaces == std::vector<uint32_t>{5}));
-  assert((context.commits == std::vector<std::string>{"😀"}));
+  // Thêm một ký tự cho marker commit trước lượt xoá.
+  assert((backend.backspaces == std::vector<uint32_t>{6}));
+  assert((context.commits == std::vector<std::string>{"\u00b7", "😀"}));
   assert(replacedSeen == ":cười");
   assert(engine.resetCount == 1);
   assert(engine.currentText().empty());
@@ -169,7 +173,7 @@ void testSchedulerReplacement() {
   scheduler.enqueueReplacement(
       context, "😀", [](fcitx::InputContext &) { return std::string(); });
   assert(backend.backspaces.size() == 1);
-  assert(context.commits.size() == 1);
+  assert(context.commits.size() == 2);
 }
 
 } // namespace

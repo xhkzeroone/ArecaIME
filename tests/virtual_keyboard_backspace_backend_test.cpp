@@ -85,6 +85,9 @@ void testKeymapHelpers() {
   assert(areca::utf8Codepoints("\xff").empty());
   assert((areca::virtualKeyboardEchoSequence(2, "ơc") ==
           std::vector<uint32_t>{0, 0, 0x1a1, 'c'}));
+  // Marker gõ trước các Backspace.
+  assert((areca::virtualKeyboardEchoSequence(2, "ơ", areca::kRewriteMarker) ==
+          std::vector<uint32_t>{0xb7, 0, 0, 0x1a1}));
 
   const std::string keymap = areca::buildVirtualKeyboardKeymap({0xf5, 'c'});
   assert(keymap.find("<BKSP> = 22;") != std::string::npos);
@@ -160,6 +163,42 @@ void testDeletesThenTypesWithoutCommit() {
   assert(outcome == areca::RewriteOutcome::Succeeded);
   assert(!backend.hasPending());
   assert(context.commits.empty());
+}
+
+void testTypedMarkerGoesFirst() {
+  fcitx::EventLoop loop;
+  fcitx::InputContextManager manager;
+  TestInputContext context(manager);
+  FakeVirtualKeyboardDevice device(loop, true);
+  areca::VirtualKeyboardBackspaceBackend backend(loop, device,
+                                                 [] { return false; });
+
+  auto plan = makePlan(4, 2, "ê");
+  plan.typeMarker = true;
+  bool done = false;
+  assert(backend.apply(context, plan, [&](uint64_t, areca::RewriteOutcome) {
+    done = true;
+  }) == areca::ApplyStatus::Pending);
+  // Đợt đầu chỉ có marker: gõ marker rồi xoá cả marker lẫn ký tự cũ.
+  assert(device.keymaps.size() == 1);
+  assert(device.keymaps.front().find("0x10000b7") != std::string::npos);
+  assert((device.pressed ==
+          std::vector<uint32_t>{areca::virtualKeyboardCarrierKeycode(0),
+                                KEY_BACKSPACE, KEY_BACKSPACE}));
+  device.finish(true);
+  assert(!done);
+  // Đợt sau gõ chữ mới, không còn Backspace.
+  assert(device.keymaps.size() == 2);
+  assert(device.pressed.back() == areca::virtualKeyboardCarrierKeycode(0));
+  assert(device.pressed.size() == 4);
+  device.finish(true);
+  assert(done);
+  assert(context.commits.empty());
+
+  // Marker gõ lại từ phím ảo được nhận như phím của chính Areca.
+  fcitx::KeyEvent markerEcho(&context,
+                             fcitx::Key(fcitx::Key::keySymFromUnicode(0xb7)));
+  assert(backend.handleKeyEvent(markerEcho));
 }
 
 void testLongTextUsesSeveralBursts() {
@@ -252,6 +291,7 @@ int main() {
   testKeymapHelpers();
   testUnavailableDevice();
   testDeletesThenTypesWithoutCommit();
+  testTypedMarkerGoesFirst();
   testLongTextUsesSeveralBursts();
   testSyncFailureFailsTransaction();
   testEchoKeysPassThrough();

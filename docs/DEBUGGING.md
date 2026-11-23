@@ -77,10 +77,7 @@ areca: reliability cached known= reliable= force_forward=
 areca: auto selected surrounding backend=
 areca: app-override selected ... backend=
 areca: terminal selected backend=
-areca: url selected shift-select backend=
-areca: url without surrounding selected shift-select backend=
-areca: autocomplete selected shift-select backend=
-areca: browser autocomplete or address bar strategy=
+areca: rewrite marker tx= backend= wait_ms=
 areca: rewrite select backend= tx= bamboo_delete= plan_backspaces=
 areca: surrounding-text start tx=
 areca: surrounding probe succeeded via SurroundingTextUpdated event

@@ -9,6 +9,31 @@
 
 namespace areca {
 
+namespace {
+
+// Commit thay vùng chọn đang có, như khi gõ một phím lúc đang chọn chữ.
+void insertReplacingSelection(fcitx::SurroundingText &st,
+                              const std::string &committedText) {
+  const auto &text = st.text();
+  const unsigned int start = std::min(st.cursor(), st.anchor());
+  const unsigned int end = std::max(st.cursor(), st.anchor());
+
+  const size_t startBytes = fcitx::utf8::ncharByteLength(text.begin(), start);
+  const size_t endBytes = fcitx::utf8::ncharByteLength(text.begin(), end);
+  std::string newText;
+  newText.reserve(text.size() + committedText.size());
+  newText.append(text, 0, startBytes);
+  newText.append(committedText);
+  newText.append(text, endBytes);
+
+  const unsigned int committedChars =
+      static_cast<unsigned int>(fcitx::utf8::length(committedText));
+  const unsigned int newCursor = start + committedChars;
+  st.setText(newText, newCursor, newCursor);
+}
+
+} // namespace
+
 void updateSurroundingCacheAfterDelete(fcitx::InputContext &inputContext,
                                        int offset, uint32_t count) {
   if (!inputContext.capabilityFlags().test(
@@ -33,20 +58,7 @@ void updateSurroundingCacheAfterCommit(fcitx::InputContext &inputContext,
     return;
   }
 
-  const auto &text = st.text();
-  const unsigned int cursor = st.cursor();
-
-  const size_t cursorBytes = fcitx::utf8::ncharByteLength(text.begin(), cursor);
-  std::string newText;
-  newText.reserve(text.size() + committedText.size());
-  newText.append(text, 0, cursorBytes);
-  newText.append(committedText);
-  newText.append(text, cursorBytes);
-
-  const unsigned int committedChars =
-      static_cast<unsigned int>(fcitx::utf8::length(committedText));
-  const unsigned int newCursor = cursor + committedChars;
-  st.setText(newText, newCursor, newCursor);
+  insertReplacingSelection(st, committedText);
 }
 
 void updateSurroundingCacheAfterDeleteV2(fcitx::InputContext &inputContext,
@@ -61,20 +73,7 @@ void updateSurroundingCacheAfterCommitV2(fcitx::InputContext &inputContext,
   }
   auto &st = inputContext.surroundingText();
 
-  const auto &text = st.text();
-  const unsigned int cursor = st.cursor();
-
-  const size_t cursorBytes = fcitx::utf8::ncharByteLength(text.begin(), cursor);
-  std::string newText;
-  newText.reserve(text.size() + committedText.size());
-  newText.append(text, 0, cursorBytes);
-  newText.append(committedText);
-  newText.append(text, cursorBytes);
-
-  const unsigned int committedChars =
-      static_cast<unsigned int>(fcitx::utf8::length(committedText));
-  const unsigned int newCursor = cursor + committedChars;
-  st.setText(newText, newCursor, newCursor);
+  insertReplacingSelection(st, committedText);
 }
 
 std::size_t commonPrefixBytesUTF8Boundary(const std::string &s1,

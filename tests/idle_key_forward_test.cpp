@@ -66,6 +66,10 @@ private:
 class PendingBackend final : public areca::RewriteBackend {
 public:
   const char *name() const override { return "pending-test"; }
+  // Marker đi cùng kênh nên scheduler gọi apply ngay, không chờ timer.
+  areca::MarkerDelivery markerDelivery() const override {
+    return areca::MarkerDelivery::InputMethod;
+  }
 
   areca::ApplyStatus apply(fcitx::InputContext &,
                            const areca::RewritePlan &plan,
@@ -160,7 +164,9 @@ int main() {
   // Rewrite bất đồng bộ chỉ được báo khi backend xác nhận xong.
   assert(observed.size() > observedBeforeRewrite);
   assert(observed[observedBeforeRewrite] == "1:r");
-  assert(inputContext.events == std::vector<std::string>{"commit:a"});
+  // Marker vào trước lượt xoá nhưng không được báo cho observer.
+  assert((inputContext.events ==
+          std::vector<std::string>{"commit:\u00b7", "commit:a"}));
 
   // Một phím được forward trực tiếp vẫn phải giữ single-flight barrier. Phím
   // kế tiếp đến sớm nằm trong queue và chỉ được commit sau đủ 20 ms.

@@ -29,16 +29,6 @@ public:
 
   bool isValid() const { return valid_.load(std::memory_order_relaxed); }
 
-  struct BrowserFocus {
-    std::string program;
-    std::string className;
-  };
-
-  BrowserFocus browserFocus() const {
-    std::lock_guard<std::mutex> lock(focusProgramMutex_);
-    return {focusProgram_, focusClass_};
-  }
-
   bool isTerminalFocused() const {
     return focusInTerminal_.load(std::memory_order_relaxed);
   }
@@ -93,7 +83,6 @@ private:
 
   mutable std::mutex focusProgramMutex_;
   std::string focusProgram_;
-  std::string focusClass_;
 };
 
 } // namespace areca

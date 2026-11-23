@@ -53,7 +53,9 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
 - Phím ảo Wayland (`zwp_virtual_keyboard_v1`) xoá và gõ lại chữ trên cùng một
   kênh, không dùng commitString. Chỉ có trên compositor hỗ trợ giao thức này
   (wlroots, Hyprland, sway); chọn cho từng ứng dụng.
-- Xử lý riêng ô URL, thanh địa chỉ và gợi ý tự hoàn thành của trình duyệt.
+- Trước mỗi lần sửa chữ, Areca chèn tạm ký tự `·` rồi xoá cả nó, để trình duyệt
+  bỏ gợi ý tự hoàn thành và vùng chọn. Ô URL, thanh địa chỉ và ô có gợi ý vì vậy
+  được sửa như ô thường.
 - Tự nhận ra ứng dụng đang focus qua AT-SPI. Có thể ghi đè chế độ và backend
   cho từng ứng dụng, hoặc bấm phím tắt để chọn ngay trên ứng dụng đang dùng.
 - Tự tăng thời gian chờ khi máy bận để tránh mất hoặc lặp chữ.

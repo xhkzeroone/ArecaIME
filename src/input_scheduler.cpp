@@ -303,7 +303,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     return;
   }
   auto &backend = *selection.backend;
-  plan.backspaceCount = result.deleteCount + selection.additionalBackspaces;
+  // Thêm một ký tự cho marker commit ngay trước lệnh xoá.
+  plan.backspaceCount = result.deleteCount + 1;
   plan.probeSurrounding = selection.probeSurrounding;
   if (selection.surroundingProbeTimeoutMs > 0) {
     plan.surroundingProbeTimeoutMs = selection.surroundingProbeTimeoutMs;
@@ -312,15 +313,78 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     FCITX_INFO() << "areca: rewrite select backend=" << backend.name()
                  << " tx=" << plan.transactionId
                  << " bamboo_delete=" << result.deleteCount
-                 << " additional_backspaces=" << selection.additionalBackspaces
                  << " probe_timeout_ms=" << plan.surroundingProbeTimeoutMs
                  << " plan_backspaces=" << plan.backspaceCount;
   }
 
   activeTransactionId_ = plan.transactionId;
   pendingCommitContext_ = inputContext.watch();
+  // Marker vào rồi bị xoá ngay trong cùng lượt nên với người quan sát, ô chỉ
+  // bị xoá đúng phần Bamboo yêu cầu.
   pendingCommitDeleteCount_ = result.deleteCount;
   pendingCommitText_ = result.commitText;
+  commitMarkerThenApply(inputContext, backend, std::move(plan));
+}
+
+void InputScheduler::commitMarkerThenApply(fcitx::InputContext &inputContext,
+                                           RewriteBackend &backend,
+                                           RewritePlan plan) {
+  const auto delivery = backend.markerDelivery();
+  if (delivery == MarkerDelivery::Typed) {
+    plan.typeMarker = true;
+    startRewrite(inputContext, backend, plan);
+    return;
+  }
+
+  const std::string marker(kRewriteMarker);
+  inputContext.commitString(marker);
+  // Frontend đổi số ký tự cần xoá ra byte theo snapshot đang giữ, nên snapshot
+  // phải có marker trước khi backend surrounding xoá.
+  updateSurroundingCacheAfterCommit(inputContext, marker);
+
+  const uint32_t waitMs = delivery == MarkerDelivery::Keys
+                              ? resolveAfterMarkerCommitWaitMs(
+                                    inputContext.frontend(), activeTiming_)
+                              : 0;
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: rewrite marker tx=" << plan.transactionId
+                 << " backend=" << backend.name() << " wait_ms=" << waitMs;
+  }
+  if (waitMs == 0) {
+    startRewrite(inputContext, backend, plan);
+    return;
+  }
+
+  // Phím xoá đi kênh khác commit: phát ngay có thể tới ứng dụng trước marker
+  // và xoá nhầm một ký tự thật.
+  const uint64_t deadline =
+      fcitx::now(CLOCK_MONOTONIC) + static_cast<uint64_t>(waitMs) * 1000;
+  markerTimer_ = eventLoop_.addTimeEvent(
+      CLOCK_MONOTONIC, deadline, activeTiming_.timerAccuracyUsec,
+      [this, watch = inputContext.watch(), &backend,
+       plan](fcitx::EventSourceTime *, uint64_t) {
+        auto firedTimer = std::move(markerTimer_);
+        if (auto *ic = watch.get()) {
+          startRewrite(*ic, backend, plan);
+        } else {
+          // Ô nhập đã mất: không còn gì để xoá hay commit.
+          activeTransactionId_ = 0;
+          pendingCommitContext_.unwatch();
+          pendingCommitText_.clear();
+          finishKey();
+        }
+        return false;
+      });
+  if (!markerTimer_) {
+    startRewrite(inputContext, backend, plan);
+    return;
+  }
+  markerTimer_->setOneShot();
+}
+
+void InputScheduler::startRewrite(fcitx::InputContext &inputContext,
+                                  RewriteBackend &backend,
+                                  const RewritePlan &plan) {
   const auto status =
       backend.apply(inputContext, plan,
                     [this](uint64_t transactionId, RewriteOutcome outcome) {
