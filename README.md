@@ -63,6 +63,9 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
 - Khôi phục lỗi chính tả khi nhấn Backspace.
 - Sửa lại từ đã gõ xong khi đưa con trỏ về sau từ đó.
 - Tự viết hoa sau dấu kết câu.
+- Gợi ý emoji khi gõ `:từ`, ví dụ `:cười`, `:tim`, `:mèo`: danh sách dọc hiện
+  emoji kèm tên, chọn bằng ↑ ↓ rồi Enter hoặc Tab, Esc để ẩn. Có sẵn shortcode kiểu chat như `:like`, `:haha`, `:love`, `:+1`, và
+  dùng thêm từ điển emoji tiếng Việt của Fcitx5. Mặc định tắt.
 - Macro gõ tắt, tự đổi hoa thường theo từ viết tắt, hoàn tác bằng Backspace và
   giữ một phím bổ trợ khi nhấn Space để tạm bỏ qua macro.
 - Tự reset sau khi click chuột sang vị trí khác.

@@ -365,6 +365,8 @@ FCITX_CONFIGURATION(
     fcitx::Option<bool> autoCapitalizeAfterPunctuation{
         this, "AutoCapitalizeAfterPunctuation",
         N_("Tự viết hoa sau dấu kết câu (. ! ?)"), false};
+    fcitx::Option<bool> emojiSuggestion{this, "EmojiSuggestion",
+                                        N_("Gợi ý emoji khi gõ :từ"), false};
     fcitx::Option<bool> enableMacro{this, "EnableMacro", N_("Bật macro"), true};
     fcitx::Option<bool> capitalizeMacro{
         this, "CapitalizeMacro", N_("Tự đổi hoa/thường cho nội dung macro"),

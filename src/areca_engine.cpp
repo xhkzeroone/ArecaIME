@@ -102,6 +102,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                        virtualKeyboardDevice_,
                                        [this]() { return debugEnabled(); }),
       backendSelectionPost_(instance_->eventLoop()),
+      emojiSelectionPost_(instance_->eventLoop()),
       scheduler_(
           instance_->eventLoop(),
           [this](fcitx::InputContext &inputContext) -> VietnameseEngine * {
@@ -190,6 +191,7 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                       uint32_t deleteCount,
                                       const std::string &text) {
     rewriteHandler_.noteCommitted(inputContext, deleteCount, text);
+    refreshEmojiSuggestions(inputContext);
   });
   surroundingTextWatcher_ = instance_->watchEvent(
       fcitx::EventType::InputContextSurroundingTextUpdated,
@@ -495,6 +497,7 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
       inputContext->updateUserInterface(
           fcitx::UserInterfaceComponent::InputPanel, true);
     }
+    hideEmojiSuggestions(*inputContext);
     handlerFor(*inputContext).handleKeyEvent(event);
     return;
   }
@@ -509,6 +512,7 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
       inputContext->updateUserInterface(
           fcitx::UserInterfaceComponent::InputPanel, true);
     }
+    hideEmojiSuggestions(*inputContext);
     if (!event.isRelease()) {
       handlerFor(*inputContext).resetContext(*inputContext);
     }
@@ -540,6 +544,12 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   }
   // Phím ảo vừa gõ quay lại fcitx5: chuyển thẳng cho ứng dụng.
   if (virtualKeyboardBackspaceBackend_.handleKeyEvent(event)) {
+    return;
+  }
+  // Danh sách emoji chỉ giữ mũi tên, Enter, Tab và Esc; phím khác vẫn gõ tiếp.
+  if (isEmojiSuggesting(*inputContext) &&
+      handleEmojiSuggestionKey(*inputContext, event)) {
+    event.filterAndAccept();
     return;
   }
   if (!event.isRelease()) {
@@ -619,6 +629,12 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     }
   }
   handlerFor(*inputContext).handleKeyEvent(event);
+  // Phím không qua commit (Backspace chuyển tiếp, phím mũi tên) cũng có thể
+  // làm ":từ" trước con trỏ thay đổi hoặc mất.
+  if (!event.isRelease() &&
+      (config_.emojiSuggestion.value() || isEmojiSuggesting(*inputContext))) {
+    refreshEmojiSuggestions(*inputContext);
+  }
 }
 
 void ArecaEngine::deactivate(const fcitx::InputMethodEntry &,
@@ -628,6 +644,8 @@ void ArecaEngine::deactivate(const fcitx::InputMethodEntry &,
     return;
   }
   backendSelectionPost_.cancel();
+  emojiSelectionPost_.cancel();
+  hideEmojiSuggestions(*inputContext);
   if (isBackendSelecting(*inputContext)) {
     inputContext->inputPanel().reset();
     inputContext->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel,

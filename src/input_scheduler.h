@@ -84,6 +84,12 @@ public:
   bool handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
                      const std::string &utf8Text);
   void enqueueBackspace(fcitx::InputContext &inputContext);
+  using ReplacedTextResolver =
+      std::function<std::string(fcitx::InputContext &)>;
+  // Xoá đoạn text `replaced` trả về lúc tới lượt rồi chèn `text`, qua cùng
+  // rewrite backend như phím thường. Trả về rỗng thì bỏ qua.
+  void enqueueReplacement(fcitx::InputContext &inputContext, std::string text,
+                          ReplacedTextResolver replaced);
   void resetContext(fcitx::InputContext &inputContext);
   void setCommitObserver(CommitObserver observer) {
     commitObserver_ = std::move(observer);

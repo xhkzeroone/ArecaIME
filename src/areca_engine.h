@@ -133,6 +133,14 @@ private:
   bool handleBackendSelectionKey(fcitx::InputContext &inputContext,
                                  fcitx::KeyEvent &event);
 
+  // Gợi ý emoji khi gõ ":từ" ở chế độ Rewrite.
+  void refreshEmojiSuggestions(fcitx::InputContext &inputContext);
+  bool isEmojiSuggesting(fcitx::InputContext &inputContext) const;
+  void hideEmojiSuggestions(fcitx::InputContext &inputContext);
+  bool handleEmojiSuggestionKey(fcitx::InputContext &inputContext,
+                                fcitx::KeyEvent &event);
+  void selectEmoji(fcitx::InputContext &inputContext, std::string emoji);
+
   void initActions();
   void updateUI(fcitx::InputContext *ic);
   void updateInputMethodAction(fcitx::InputContext *ic);
@@ -182,6 +190,7 @@ private:
   VirtualKeyboardBackspaceBackend virtualKeyboardBackspaceBackend_;
   std::unique_ptr<fcitx::EventSourceTime> deviceWarmupTimer_;
   EventLoopPostTask backendSelectionPost_;
+  EventLoopPostTask emojiSelectionPost_;
   InputScheduler scheduler_;
   RewriteModeHandler rewriteHandler_;
   PreeditModeHandler preeditHandler_;

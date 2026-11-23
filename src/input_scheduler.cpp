@@ -108,6 +108,23 @@ void InputScheduler::enqueueBackspace(fcitx::InputContext &inputContext) {
   scheduleNext();
 }
 
+void InputScheduler::enqueueReplacement(fcitx::InputContext &inputContext,
+                                        std::string text,
+                                        ReplacedTextResolver replaced) {
+  QueuedKey key;
+  key.sequence = nextSequence_++;
+  key.utf8Text = std::move(text);
+  key.replacedText = std::move(replaced);
+  key.inputContext = inputContext.watch();
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: queue push kind=replace seq=" << key.sequence
+                 << " text=" << key.utf8Text
+                 << " depth_before=" << queue_.size();
+  }
+  queue_.push(std::move(key));
+  scheduleNext();
+}
+
 bool InputScheduler::shouldRejectReset() const {
   if (processing_ || rewritePending()) {
     return true;
@@ -167,12 +184,29 @@ void InputScheduler::processNext() {
 
   processing_ = true;
   if (debugProvider_()) {
-    FCITX_INFO() << "areca: scheduler process seq=" << key.sequence
-                 << " kind=" << (key.isBackspace ? "backspace" : "text")
+    FCITX_INFO() << "areca: scheduler process seq=" << key.sequence << " kind="
+                 << (key.replacedText  ? "replace"
+                     : key.isBackspace ? "backspace"
+                                       : "text")
                  << " depth_after=" << queue_.size();
   }
   try {
-    if (key.isBackspace) {
+    if (key.replacedText) {
+      const std::string replaced = key.replacedText(*inputContext);
+      const auto length = fcitx::utf8::lengthValidated(replaced);
+      if (replaced.empty() || length == fcitx::utf8::INVALID_LENGTH) {
+        finishKey();
+        return;
+      }
+      // Từ đang ghép là một phần đoạn bị thay; reset để phím sau bắt đầu từ
+      // mới thay vì sửa tiếp chữ đã mất.
+      engine->reset();
+      BambooResult result;
+      result.currentText = replaced;
+      result.deleteCount = static_cast<uint32_t>(length);
+      result.commitText = key.utf8Text;
+      applyResult(*inputContext, *engine, result, key.utf8Text);
+    } else if (key.isBackspace) {
       applyResult(*inputContext, *engine, engine->processBackspace(), "");
     } else {
       const auto result =

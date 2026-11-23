@@ -68,6 +68,7 @@ MAIN_DEFAULTS = {
     "SpellcheckMode": SPELLCHECK[2],
     "ModernStyle": True,
     "AutoCapitalizeAfterPunctuation": False,
+    "EmojiSuggestion": False,
     "EnableMacro": True,
     "CapitalizeMacro": True,
     "RevertMacroOnBackspace": True,
@@ -876,6 +877,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
         for title, key, description in [
             ("Đặt dấu kiểu mới (oà, uý)", "ModernStyle", "Tắt để dùng kiểu dấu cũ (òa, úy)."),
             ("Tự viết hoa sau dấu kết câu", "AutoCapitalizeAfterPunctuation", ". ! ?"),
+            ("Gợi ý emoji khi gõ :từ", "EmojiSuggestion", "Gõ :cười, :like, :haha... rồi chọn bằng ↑ ↓ và Enter hoặc Tab."),
             ("Bật khôi phục chính tả khi nhấn Backspace", "BackspaceRecovery", "Khôi phục từ vừa sửa khi xoá ngược."),
             ("Cho phép sửa từ đã commit", "RestoreSurroundingText", "Sửa từ vừa gõ dựa trên văn bản xung quanh con trỏ."),
             ("Shift+Left fallback cho trình duyệt", "ShiftSelectFallbackForBrowser", "Dùng khi trình duyệt không hỗ trợ surrounding text."),

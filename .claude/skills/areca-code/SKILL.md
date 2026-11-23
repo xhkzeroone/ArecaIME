@@ -27,6 +27,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 - `areca_engine.cpp`: constructor, `activate`/`keyEvent`/`deactivate`/`reset`, chọn mode, warmup thiết bị, addon factory
 - `areca_engine_backend.cpp`: chọn rewrite backend, đánh giá độ tin cậy, cache verdict, probe surrounding
 - `areca_engine_backend_menu.cpp`: menu chọn backend theo app (phím `SelectBackendKey`)
+- `areca_engine_emoji.cpp`: gợi ý emoji khi gõ `:từ` (shortcode có sẵn + addon emoji của fcitx5, chọn bằng ↑ ↓ và Enter/Tab)
 - `areca_engine_config.cpp`: đọc/ghi config, `timing()`, `applyConfig()`
 - `areca_engine_actions.cpp`: action trên status area và cập nhật UI
 

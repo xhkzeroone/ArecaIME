@@ -58,6 +58,7 @@ add_library(areca MODULE
     src/areca_engine_backend.cpp
     src/areca_engine_backend_menu.cpp
     src/areca_engine_config.cpp
+    src/areca_engine_emoji.cpp
     src/bamboo_engine_adapter.cpp
     src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp
@@ -556,4 +557,15 @@ if(BUILD_TESTING)
     target_link_libraries(areca-rewrite-feature-toggle-test PRIVATE
         areca-bamboo Fcitx5::Core Fcitx5::Utils pthread dl m)
     add_test(NAME rewrite-feature-toggle COMMAND areca-rewrite-feature-toggle-test)
+
+    add_executable(areca-emoji-suggestion-test
+        tests/emoji_suggestion_test.cpp src/input_scheduler.cpp
+        src/surrounding_text_cache.cpp)
+    target_compile_features(areca-emoji-suggestion-test PRIVATE cxx_std_20)
+    target_compile_options(areca-emoji-suggestion-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-emoji-suggestion-test PRIVATE src)
+    target_link_libraries(areca-emoji-suggestion-test PRIVATE
+        Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME emoji-suggestion COMMAND areca-emoji-suggestion-test)
 endif()
