@@ -183,28 +183,30 @@ FCITX_CONFIGURATION(
         this, "IBusAfterBackspaceWaitMs",
         N_("Chờ sau Backspace cuối IBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    // Chờ marker "·" tới ứng dụng trước khi backend phát phím xoá.
-    fcitx::Option<int, fcitx::IntConstrain> afterMarkerCommitWaitMs{
+    // Chờ marker "·" tới ứng dụng trước khi backend phát phím xoá. Ẩn khỏi
+    // giao diện cài đặt; vẫn sửa được bằng tay trong areca-advanced.conf.
+    fcitx::HiddenOption<int, fcitx::IntConstrain> afterMarkerCommitWaitMs{
         this, "AfterMarkerCommitWaitMs",
         N_("Chờ sau marker trước khi xoá (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> waylandAfterMarkerCommitWaitMs{
-        this, "WaylandAfterMarkerCommitWaitMs",
-        N_("Chờ sau marker trước khi xoá Wayland (ms)"), 10,
-        fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> ximAfterMarkerCommitWaitMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain>
+        waylandAfterMarkerCommitWaitMs{
+            this, "WaylandAfterMarkerCommitWaitMs",
+            N_("Chờ sau marker trước khi xoá Wayland (ms)"), 10,
+            fcitx::IntConstrain(0, 5000)};
+    fcitx::HiddenOption<int, fcitx::IntConstrain> ximAfterMarkerCommitWaitMs{
         this, "XimAfterMarkerCommitWaitMs",
         N_("Chờ sau marker trước khi xoá XIM (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> fcitx4AfterMarkerCommitWaitMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> fcitx4AfterMarkerCommitWaitMs{
         this, "Fcitx4AfterMarkerCommitWaitMs",
         N_("Chờ sau marker trước khi xoá Fcitx4 (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> dbusAfterMarkerCommitWaitMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> dbusAfterMarkerCommitWaitMs{
         this, "DbusAfterMarkerCommitWaitMs",
         N_("Chờ sau marker trước khi xoá DBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> ibusAfterMarkerCommitWaitMs{
+    fcitx::HiddenOption<int, fcitx::IntConstrain> ibusAfterMarkerCommitWaitMs{
         this, "IBusAfterMarkerCommitWaitMs",
         N_("Chờ sau marker trước khi xoá IBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};

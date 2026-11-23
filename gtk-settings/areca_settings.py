@@ -89,12 +89,6 @@ ADVANCED_DEFAULTS = {
     "Fcitx4AfterBackspaceWaitMs": 10,
     "DbusAfterBackspaceWaitMs": 10,
     "IBusAfterBackspaceWaitMs": 10,
-    "AfterMarkerCommitWaitMs": 10,
-    "WaylandAfterMarkerCommitWaitMs": 10,
-    "XimAfterMarkerCommitWaitMs": 10,
-    "Fcitx4AfterMarkerCommitWaitMs": 10,
-    "DbusAfterMarkerCommitWaitMs": 10,
-    "IBusAfterMarkerCommitWaitMs": 10,
     "UinputShiftSelectDelayMs": 1,
     "UinputShiftSelectAckTimeoutMs": 150,
     "AfterUinputShiftSelectWaitMs": 10,
@@ -1193,7 +1187,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
         page, content = self._page("Nâng cao", "Các giá trị timing và tương thích. Chỉ đổi khi ứng dụng gặp lỗi nhập liệu.")
         groups = [
             ("Backspace", [("Delay giữa Backspace (ms)", "BackspaceDelayMs", 1000), ("Chờ sau Backspace (ms)", "AfterBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterBackspaceWaitMs", 5000), ("XIM", "XimAfterBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterBackspaceWaitMs", 5000), ("DBus", "DbusAfterBackspaceWaitMs", 5000), ("IBus", "IBusAfterBackspaceWaitMs", 5000)]),
-            ("Marker trước khi xoá", [("Chờ sau marker (ms)", "AfterMarkerCommitWaitMs", 5000), ("Wayland", "WaylandAfterMarkerCommitWaitMs", 5000), ("XIM", "XimAfterMarkerCommitWaitMs", 5000), ("Fcitx4", "Fcitx4AfterMarkerCommitWaitMs", 5000), ("DBus", "DbusAfterMarkerCommitWaitMs", 5000), ("IBus", "IBusAfterMarkerCommitWaitMs", 5000)]),
             ("Shift+Left", [("Delay giữa các phím (ms)", "UinputShiftSelectDelayMs", 1000), ("Chờ sau khi thả Shift (ms)", "AfterUinputShiftSelectWaitMs", 5000), ("Wayland", "WaylandAfterUinputShiftSelectWaitMs", 5000), ("XIM", "XimAfterUinputShiftSelectWaitMs", 5000), ("Fcitx4", "Fcitx4AfterUinputShiftSelectWaitMs", 5000), ("DBus", "DbusAfterUinputShiftSelectWaitMs", 5000), ("IBus", "IBusAfterUinputShiftSelectWaitMs", 5000)]),
             ("Surrounding text", [("Chờ sau xóa surrounding (ms)", "SurroundingWaitMs", 5000), ("Delay xóa surrounding v2 (ms)", "SurroundingDeleteDelayMs", 1000), ("Delay xóa v2 trên Wayland (ms)", "WaylandSurroundingDeleteDelayMs", 1000), ("Chờ sau lệnh xóa cuối (ms)", "AfterSurroundingDeleteWaitMs", 5000)]),
             ("Native Backspace", [("Delay giữa Backspace Native (ms)", "XTestBackspaceDelayMs", 1000), ("Chờ sau Backspace Native (ms)", "AfterXTestBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterXTestBackspaceWaitMs", 5000), ("XIM", "XimAfterXTestBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterXTestBackspaceWaitMs", 5000), ("DBus", "DbusAfterXTestBackspaceWaitMs", 5000), ("IBus", "IBusAfterXTestBackspaceWaitMs", 5000)]),

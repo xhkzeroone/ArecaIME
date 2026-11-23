@@ -481,12 +481,6 @@ namespace areca::settings {
         inputInt("Chờ sau Backspace Fcitx4 (ms)", config.advanced.fcitx4AfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace DBus (ms)", config.advanced.dbusAfterBackspaceWaitMs);
         inputInt("Chờ sau Backspace IBus (ms)", config.advanced.ibusAfterBackspaceWaitMs);
-        inputInt("Chờ sau marker trước khi xoá (ms)", config.advanced.afterMarkerCommitWaitMs);
-        inputInt("Chờ sau marker Wayland (ms)", config.advanced.waylandAfterMarkerCommitWaitMs);
-        inputInt("Chờ sau marker XIM (ms)", config.advanced.ximAfterMarkerCommitWaitMs);
-        inputInt("Chờ sau marker Fcitx4 (ms)", config.advanced.fcitx4AfterMarkerCommitWaitMs);
-        inputInt("Chờ sau marker DBus (ms)", config.advanced.dbusAfterMarkerCommitWaitMs);
-        inputInt("Chờ sau marker IBus (ms)", config.advanced.ibusAfterMarkerCommitWaitMs);
         endSettingsCard();
 
         beginSettingsCard(
