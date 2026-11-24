@@ -282,14 +282,15 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
       timing.ibusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
   plan.surroundingProbeTimeoutMs = timing.surroundingProbeTimeoutMs;
-  plan.xtestBackspaceDelayMs = timing.xtestBackspaceDelayMs;
-  plan.afterXTestBackspaceWaitMs = timing.afterXTestBackspaceWaitMs;
-  plan.waylandAfterXTestBackspaceWaitMs =
-      timing.waylandAfterXTestBackspaceWaitMs;
-  plan.ximAfterXTestBackspaceWaitMs = timing.ximAfterXTestBackspaceWaitMs;
-  plan.fcitx4AfterXTestBackspaceWaitMs = timing.fcitx4AfterXTestBackspaceWaitMs;
-  plan.dbusAfterXTestBackspaceWaitMs = timing.dbusAfterXTestBackspaceWaitMs;
-  plan.ibusAfterXTestBackspaceWaitMs = timing.ibusAfterXTestBackspaceWaitMs;
+  plan.nativeBackspaceDelayMs = timing.nativeBackspaceDelayMs;
+  plan.afterNativeBackspaceWaitMs = timing.afterNativeBackspaceWaitMs;
+  plan.waylandAfterNativeBackspaceWaitMs =
+      timing.waylandAfterNativeBackspaceWaitMs;
+  plan.ximAfterNativeBackspaceWaitMs = timing.ximAfterNativeBackspaceWaitMs;
+  plan.fcitx4AfterNativeBackspaceWaitMs =
+      timing.fcitx4AfterNativeBackspaceWaitMs;
+  plan.dbusAfterNativeBackspaceWaitMs = timing.dbusAfterNativeBackspaceWaitMs;
+  plan.ibusAfterNativeBackspaceWaitMs = timing.ibusAfterNativeBackspaceWaitMs;
   plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;
 

@@ -30,9 +30,9 @@ ApplyStatus NativeBackspaceBackend::apply(fcitx::InputContext &inputContext,
   onDone_ = std::move(onDone);
   remainingBackspaces_ = plan.backspaceCount;
   sentBackspaces_ = 0;
-  backspaceDelayMs_ = plan.xtestBackspaceDelayMs;
+  backspaceDelayMs_ = plan.nativeBackspaceDelayMs;
   const char *frontend = inputContext.frontend();
-  afterBackspaceWaitMs_ = resolveAfterXTestBackspaceWaitMs(frontend, plan);
+  afterBackspaceWaitMs_ = resolveAfterNativeBackspaceWaitMs(frontend, plan);
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
   commitText_ = plan.commitText;
 

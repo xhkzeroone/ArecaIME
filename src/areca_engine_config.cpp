@@ -79,14 +79,6 @@ void ArecaEngine::setSubConfig(const std::string &path,
 
 void ArecaEngine::reloadConfig() {
   fcitx::readAsIni(config_, kPkgConfigPath, "conf/areca.conf");
-  // Seed the advanced panel from legacy timing fields before loading its own
-  // file. Once the advanced file exists, its values take precedence.
-  advancedConfig_.backspaceDelayMs.setValue(
-      config_.legacyBackspaceDelayMs.value());
-  advancedConfig_.afterBackspaceWaitMs.setValue(
-      config_.legacyAfterBackspaceWaitMs.value());
-  advancedConfig_.postCommitDelayMs.setValue(
-      config_.legacyPostCommitDelayMs.value());
   fcitx::readAsIni(advancedConfig_, kPkgConfigPath, kAdvancedConfigPath);
   fcitx::readAsIni(macroTable_, kPkgConfigPath, kMacroConfigPath);
   fcitx::readAsIni(appProfiles_, kPkgConfigPath, kAppsConfigPath);
@@ -145,18 +137,18 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
           advancedConfig_.ibusAfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingProbeTimeoutMs.value()),
-      static_cast<uint32_t>(advancedConfig_.xtestBackspaceDelayMs.value()),
-      static_cast<uint32_t>(advancedConfig_.afterXTestBackspaceWaitMs.value()),
+      static_cast<uint32_t>(advancedConfig_.nativeBackspaceDelayMs.value()),
+      static_cast<uint32_t>(advancedConfig_.afterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(
-          advancedConfig_.waylandAfterXTestBackspaceWaitMs.value()),
+          advancedConfig_.waylandAfterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(
-          advancedConfig_.ximAfterXTestBackspaceWaitMs.value()),
+          advancedConfig_.ximAfterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(
-          advancedConfig_.fcitx4AfterXTestBackspaceWaitMs.value()),
+          advancedConfig_.fcitx4AfterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(
-          advancedConfig_.dbusAfterXTestBackspaceWaitMs.value()),
+          advancedConfig_.dbusAfterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(
-          advancedConfig_.ibusAfterXTestBackspaceWaitMs.value()),
+          advancedConfig_.ibusAfterNativeBackspaceWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.afterMarkerCommitWaitMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.waylandAfterMarkerCommitWaitMs.value()),

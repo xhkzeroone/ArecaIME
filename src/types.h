@@ -43,13 +43,13 @@ struct RewritePlan {
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingProbeTimeoutMs = 80;
-  uint32_t xtestBackspaceDelayMs = 1;
-  uint32_t afterXTestBackspaceWaitMs = 10;
-  uint32_t waylandAfterXTestBackspaceWaitMs = 10;
-  uint32_t ximAfterXTestBackspaceWaitMs = 10;
-  uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
-  uint32_t dbusAfterXTestBackspaceWaitMs = 10;
-  uint32_t ibusAfterXTestBackspaceWaitMs = 10;
+  uint32_t nativeBackspaceDelayMs = 1;
+  uint32_t afterNativeBackspaceWaitMs = 10;
+  uint32_t waylandAfterNativeBackspaceWaitMs = 10;
+  uint32_t ximAfterNativeBackspaceWaitMs = 10;
+  uint32_t fcitx4AfterNativeBackspaceWaitMs = 10;
+  uint32_t dbusAfterNativeBackspaceWaitMs = 10;
+  uint32_t ibusAfterNativeBackspaceWaitMs = 10;
 
   uint64_t timerAccuracyUsec = 1;
   std::string commitText;
@@ -60,28 +60,28 @@ struct RewritePlan {
 };
 
 template <typename Timing>
-inline uint32_t resolveAfterXTestBackspaceWaitMs(const char *frontendName,
-                                                 const Timing &plan) {
+inline uint32_t resolveAfterNativeBackspaceWaitMs(const char *frontendName,
+                                                  const Timing &plan) {
   if (!frontendName) {
-    return plan.afterXTestBackspaceWaitMs;
+    return plan.afterNativeBackspaceWaitMs;
   }
   const std::string_view fe(frontendName);
   if (fe.starts_with("wayland")) {
-    return plan.waylandAfterXTestBackspaceWaitMs;
+    return plan.waylandAfterNativeBackspaceWaitMs;
   }
   if (fe.starts_with("xim")) {
-    return plan.ximAfterXTestBackspaceWaitMs;
+    return plan.ximAfterNativeBackspaceWaitMs;
   }
   if (fe.starts_with("fcitx4")) {
-    return plan.fcitx4AfterXTestBackspaceWaitMs;
+    return plan.fcitx4AfterNativeBackspaceWaitMs;
   }
   if (fe.starts_with("dbus")) {
-    return plan.dbusAfterXTestBackspaceWaitMs;
+    return plan.dbusAfterNativeBackspaceWaitMs;
   }
   if (fe.starts_with("ibus")) {
-    return plan.ibusAfterXTestBackspaceWaitMs;
+    return plan.ibusAfterNativeBackspaceWaitMs;
   }
-  return plan.afterXTestBackspaceWaitMs;
+  return plan.afterNativeBackspaceWaitMs;
 }
 
 template <typename Timing>

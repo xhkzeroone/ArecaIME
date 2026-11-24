@@ -490,14 +490,14 @@ namespace areca::settings {
         inputInt("Chờ sau xóa surrounding text (ms)", config.advanced.surroundingWaitMs);
         endSettingsCard();
 
-        beginSettingsCard("XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei.");
-        inputInt("Delay giữa Backspace Native (ms)", config.advanced.xtestBackspaceDelayMs);
-        inputInt("Chờ sau Backspace Native (ms)", config.advanced.afterXTestBackspaceWaitMs);
-        inputInt("Chờ sau Backspace Native Wayland (ms)", config.advanced.waylandAfterXTestBackspaceWaitMs);
-        inputInt("Chờ sau Backspace Native XIM (ms)", config.advanced.ximAfterXTestBackspaceWaitMs);
-        inputInt("Chờ sau Backspace Native Fcitx4 (ms)", config.advanced.fcitx4AfterXTestBackspaceWaitMs);
-        inputInt("Chờ sau Backspace Native DBus (ms)", config.advanced.dbusAfterXTestBackspaceWaitMs);
-        inputInt("Chờ sau Backspace Native IBus (ms)", config.advanced.ibusAfterXTestBackspaceWaitMs);
+        beginSettingsCard("NativeTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei.");
+        inputInt("Delay giữa Backspace Native (ms)", config.advanced.nativeBackspaceDelayMs);
+        inputInt("Chờ sau Backspace Native (ms)", config.advanced.afterNativeBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native Wayland (ms)", config.advanced.waylandAfterNativeBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native XIM (ms)", config.advanced.ximAfterNativeBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native Fcitx4 (ms)", config.advanced.fcitx4AfterNativeBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native DBus (ms)", config.advanced.dbusAfterNativeBackspaceWaitMs);
+        inputInt("Chờ sau Backspace Native IBus (ms)", config.advanced.ibusAfterNativeBackspaceWaitMs);
         endSettingsCard();
 
         beginSettingsCard("GeneralTimingCard", "Timing chung");

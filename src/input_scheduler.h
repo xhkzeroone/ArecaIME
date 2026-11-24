@@ -35,13 +35,13 @@ struct SchedulerTiming {
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingProbeTimeoutMs = 80;
-  uint32_t xtestBackspaceDelayMs = 1;
-  uint32_t afterXTestBackspaceWaitMs = 10;
-  uint32_t waylandAfterXTestBackspaceWaitMs = 10;
-  uint32_t ximAfterXTestBackspaceWaitMs = 10;
-  uint32_t fcitx4AfterXTestBackspaceWaitMs = 10;
-  uint32_t dbusAfterXTestBackspaceWaitMs = 10;
-  uint32_t ibusAfterXTestBackspaceWaitMs = 10;
+  uint32_t nativeBackspaceDelayMs = 1;
+  uint32_t afterNativeBackspaceWaitMs = 10;
+  uint32_t waylandAfterNativeBackspaceWaitMs = 10;
+  uint32_t ximAfterNativeBackspaceWaitMs = 10;
+  uint32_t fcitx4AfterNativeBackspaceWaitMs = 10;
+  uint32_t dbusAfterNativeBackspaceWaitMs = 10;
+  uint32_t ibusAfterNativeBackspaceWaitMs = 10;
   // Chờ marker tới ứng dụng trước khi backend kênh phím bắt đầu xoá.
   uint32_t afterMarkerCommitWaitMs = 10;
   uint32_t waylandAfterMarkerCommitWaitMs = 10;

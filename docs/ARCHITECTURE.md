@@ -40,9 +40,6 @@ Xem thêm:
 | `conf/areca-apps.conf` | Mode hoặc backend ghi đè theo ứng dụng. |
 | `conf/areca-macro-table.conf` | Bảng macro. |
 
-Các khoá timing cũ trong `areca.conf` vẫn được đọc ẩn để migrate. File nâng cao
-được load sau và luôn được ưu tiên.
-
 Timer của backend và post-commit luôn chạy với accuracy `1 µs`, không cho event
 loop gộp timer.
 

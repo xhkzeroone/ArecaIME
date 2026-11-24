@@ -251,18 +251,18 @@ bool ArecaEngine::eraseFinalizedPreeditWord(
   plan.fcitx4AfterBackspaceWaitMs = schedulerTiming.fcitx4AfterBackspaceWaitMs;
   plan.dbusAfterBackspaceWaitMs = schedulerTiming.dbusAfterBackspaceWaitMs;
   plan.ibusAfterBackspaceWaitMs = schedulerTiming.ibusAfterBackspaceWaitMs;
-  plan.xtestBackspaceDelayMs = schedulerTiming.xtestBackspaceDelayMs;
-  plan.afterXTestBackspaceWaitMs = schedulerTiming.afterXTestBackspaceWaitMs;
-  plan.waylandAfterXTestBackspaceWaitMs =
-      schedulerTiming.waylandAfterXTestBackspaceWaitMs;
-  plan.ximAfterXTestBackspaceWaitMs =
-      schedulerTiming.ximAfterXTestBackspaceWaitMs;
-  plan.fcitx4AfterXTestBackspaceWaitMs =
-      schedulerTiming.fcitx4AfterXTestBackspaceWaitMs;
-  plan.dbusAfterXTestBackspaceWaitMs =
-      schedulerTiming.dbusAfterXTestBackspaceWaitMs;
-  plan.ibusAfterXTestBackspaceWaitMs =
-      schedulerTiming.ibusAfterXTestBackspaceWaitMs;
+  plan.nativeBackspaceDelayMs = schedulerTiming.nativeBackspaceDelayMs;
+  plan.afterNativeBackspaceWaitMs = schedulerTiming.afterNativeBackspaceWaitMs;
+  plan.waylandAfterNativeBackspaceWaitMs =
+      schedulerTiming.waylandAfterNativeBackspaceWaitMs;
+  plan.ximAfterNativeBackspaceWaitMs =
+      schedulerTiming.ximAfterNativeBackspaceWaitMs;
+  plan.fcitx4AfterNativeBackspaceWaitMs =
+      schedulerTiming.fcitx4AfterNativeBackspaceWaitMs;
+  plan.dbusAfterNativeBackspaceWaitMs =
+      schedulerTiming.dbusAfterNativeBackspaceWaitMs;
+  plan.ibusAfterNativeBackspaceWaitMs =
+      schedulerTiming.ibusAfterNativeBackspaceWaitMs;
   plan.timerAccuracyUsec = schedulerTiming.timerAccuracyUsec;
 
   const auto status = backend->apply(

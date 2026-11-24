@@ -132,16 +132,16 @@ int main() {
   assert(!isBrowserLikeProgram("org.kde.kate"));
 
   using areca::resolveAfterBackspaceWaitMs;
+  using areca::resolveAfterNativeBackspaceWaitMs;
   using areca::resolveAfterUinputShiftSelectWaitMs;
-  using areca::resolveAfterXTestBackspaceWaitMs;
   areca::RewritePlan plan;
-  assert(plan.xtestBackspaceDelayMs == 1);
-  assert(plan.afterXTestBackspaceWaitMs == 10);
-  assert(plan.waylandAfterXTestBackspaceWaitMs == 10);
-  assert(plan.ximAfterXTestBackspaceWaitMs == 10);
-  assert(plan.fcitx4AfterXTestBackspaceWaitMs == 10);
-  assert(plan.dbusAfterXTestBackspaceWaitMs == 10);
-  assert(plan.ibusAfterXTestBackspaceWaitMs == 10);
+  assert(plan.nativeBackspaceDelayMs == 1);
+  assert(plan.afterNativeBackspaceWaitMs == 10);
+  assert(plan.waylandAfterNativeBackspaceWaitMs == 10);
+  assert(plan.ximAfterNativeBackspaceWaitMs == 10);
+  assert(plan.fcitx4AfterNativeBackspaceWaitMs == 10);
+  assert(plan.dbusAfterNativeBackspaceWaitMs == 10);
+  assert(plan.ibusAfterNativeBackspaceWaitMs == 10);
   assert(plan.surroundingWaitMs == 3);
   assert(plan.dbusAfterBackspaceWaitMs == 10);
   assert(plan.ibusAfterBackspaceWaitMs == 10);
@@ -190,21 +190,21 @@ int main() {
   assert(resolveAfterUinputShiftSelectWaitMs("unknown", plan) == 20);
   assert(resolveAfterUinputShiftSelectWaitMs(nullptr, plan) == 20);
 
-  plan.afterXTestBackspaceWaitMs = 12;
-  plan.waylandAfterXTestBackspaceWaitMs = 4;
-  plan.ximAfterXTestBackspaceWaitMs = 14;
-  plan.fcitx4AfterXTestBackspaceWaitMs = 11;
-  plan.dbusAfterXTestBackspaceWaitMs = 6;
-  plan.ibusAfterXTestBackspaceWaitMs = 9;
+  plan.afterNativeBackspaceWaitMs = 12;
+  plan.waylandAfterNativeBackspaceWaitMs = 4;
+  plan.ximAfterNativeBackspaceWaitMs = 14;
+  plan.fcitx4AfterNativeBackspaceWaitMs = 11;
+  plan.dbusAfterNativeBackspaceWaitMs = 6;
+  plan.ibusAfterNativeBackspaceWaitMs = 9;
 
-  assert(resolveAfterXTestBackspaceWaitMs("wayland", plan) == 4);
-  assert(resolveAfterXTestBackspaceWaitMs("wayland_v2", plan) == 4);
-  assert(resolveAfterXTestBackspaceWaitMs("waylandim", plan) == 4);
-  assert(resolveAfterXTestBackspaceWaitMs("xim", plan) == 14);
-  assert(resolveAfterXTestBackspaceWaitMs("fcitx4", plan) == 11);
-  assert(resolveAfterXTestBackspaceWaitMs("dbus", plan) == 6);
-  assert(resolveAfterXTestBackspaceWaitMs("ibus", plan) == 9);
-  assert(resolveAfterXTestBackspaceWaitMs("ibusfrontend", plan) == 9);
-  assert(resolveAfterXTestBackspaceWaitMs("unknown", plan) == 12);
-  assert(resolveAfterXTestBackspaceWaitMs(nullptr, plan) == 12);
+  assert(resolveAfterNativeBackspaceWaitMs("wayland", plan) == 4);
+  assert(resolveAfterNativeBackspaceWaitMs("wayland_v2", plan) == 4);
+  assert(resolveAfterNativeBackspaceWaitMs("waylandim", plan) == 4);
+  assert(resolveAfterNativeBackspaceWaitMs("xim", plan) == 14);
+  assert(resolveAfterNativeBackspaceWaitMs("fcitx4", plan) == 11);
+  assert(resolveAfterNativeBackspaceWaitMs("dbus", plan) == 6);
+  assert(resolveAfterNativeBackspaceWaitMs("ibus", plan) == 9);
+  assert(resolveAfterNativeBackspaceWaitMs("ibusfrontend", plan) == 9);
+  assert(resolveAfterNativeBackspaceWaitMs("unknown", plan) == 12);
+  assert(resolveAfterNativeBackspaceWaitMs(nullptr, plan) == 12);
 }

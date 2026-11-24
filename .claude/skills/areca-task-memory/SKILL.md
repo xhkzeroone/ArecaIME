@@ -77,7 +77,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 ## 4. Quy tắc đọc
 
 - **Tìm trước, đọc sau:** `grep -n` tên hàm hoặc chuỗi log, rồi đọc đúng khoảng bằng `sed -n 'a,bp'` hoặc `Read` với `offset`/`limit`.
-- **Không đọc cả các file lớn:** `docs/ARCHITECTURE.html`, `website/*.html` (hơn 4000 dòng mỗi file, chỉ là bản dựng từ markdown), `bamboo/` (submodule), `build*/`.
+- **Không đọc cả các file lớn:** `website/*.html` (hơn 4000 dòng mỗi file, chỉ là bản dựng từ markdown), `bamboo/` (submodule), `build*/`.
 - **Đã đọc hoặc vừa sửa thì không đọc lại để kiểm tra:** Edit thất bại sẽ tự báo lỗi.
 - **Diff:** xem `git diff --stat` trước, chỉ mở diff đầy đủ của file cần xem.
 - **Câu hỏi rộng** ("chỗ nào dùng X", "có code nào làm Y"): giao cho subagent Explore và chỉ nhận kết luận, không kéo hàng chục file vào context.
@@ -99,7 +99,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 - Main checkout bị hook chặn sửa trực tiếp. Sửa trong worktree, commit, rồi `git -C <main> cherry-pick <sha>`. Worktree lệch thì `git reset --hard main`.
 - Không tự push. Chỉ tag và push khi người dùng bảo, theo skill `areca-release`. Commit không có dòng attribution.
 - Trước commit: `clang-format -i` các file đã sửa, `git clang-format --diff main` phải sạch, build không warning, `ctest` qua hết.
-- Sửa `docs/ARCHITECTURE.md` thì cập nhật luôn `docs/ARCHITECTURE.html`. Script dựng HTML nằm trong scratchpad và có thể đã mất; khi đó sửa tay đúng đoạn HTML tương ứng.
+- Tài liệu kiến trúc chỉ còn bản markdown trong `docs/`. Sửa đặc tả hay kiến trúc mà `website/architecture.html` có đoạn tương ứng thì sửa tay đúng đoạn HTML đó.
 - Scratchpad bị dọn khi qua ngày: đừng để thứ cần giữ ở đó.
 
 ## 7. Khi phiên dài hoặc sắp bị tóm tắt

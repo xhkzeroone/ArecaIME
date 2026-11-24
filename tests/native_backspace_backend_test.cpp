@@ -67,12 +67,12 @@ areca::RewritePlan makePlan(uint64_t transactionId, uint32_t backspaceCount,
   areca::RewritePlan plan;
   plan.transactionId = transactionId;
   plan.backspaceCount = backspaceCount;
-  plan.xtestBackspaceDelayMs = 0;
-  plan.afterXTestBackspaceWaitMs = 0;
-  plan.waylandAfterXTestBackspaceWaitMs = 0;
-  plan.ximAfterXTestBackspaceWaitMs = 0;
-  plan.fcitx4AfterXTestBackspaceWaitMs = 0;
-  plan.dbusAfterXTestBackspaceWaitMs = 0;
+  plan.nativeBackspaceDelayMs = 0;
+  plan.afterNativeBackspaceWaitMs = 0;
+  plan.waylandAfterNativeBackspaceWaitMs = 0;
+  plan.ximAfterNativeBackspaceWaitMs = 0;
+  plan.fcitx4AfterNativeBackspaceWaitMs = 0;
+  plan.dbusAfterNativeBackspaceWaitMs = 0;
   plan.commitText = std::move(commitText);
   return plan;
 }

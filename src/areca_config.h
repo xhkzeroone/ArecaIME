@@ -77,11 +77,6 @@ enum class AppBackendMode {
   SurroundingText = 1,
   ShiftSelect = 2,
   Backspace = 3,
-  UinputShiftSelect = 2,
-  NativeShiftSelect = 2,
-  NativeXTest = 3,
-  UinputBackspace = 3,
-  ForwardKey = 3,
   Preedit = 4,
   Redirect = 5,
   // Xoá và gõ lại bằng phím ảo Wayland (zwp_virtual_keyboard_v1).
@@ -249,31 +244,33 @@ FCITX_CONFIGURATION(
         this, "SurroundingProbeTimeoutMs",
         N_("Timeout kiểm tra surrounding text (ms)"), 80,
         fcitx::IntConstrain(1, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> xtestBackspaceDelayMs{
+    // Khoá ini giữ tên từ thời còn XTest để không mất cấu hình đã lưu; các
+    // option này giờ là thời gian của Native (libei).
+    fcitx::Option<int, fcitx::IntConstrain> nativeBackspaceDelayMs{
         this, "XTestBackspaceDelayMs",
         N_("Delay giữa các Backspace Native (ms)"), 1,
         fcitx::IntConstrain(0, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> afterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> afterNativeBackspaceWaitMs{
         this, "AfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> waylandAfterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> waylandAfterNativeBackspaceWaitMs{
         this, "WaylandAfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native Wayland (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> ximAfterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> ximAfterNativeBackspaceWaitMs{
         this, "XimAfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native XIM (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> fcitx4AfterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> fcitx4AfterNativeBackspaceWaitMs{
         this, "Fcitx4AfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native Fcitx4 (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> dbusAfterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> dbusAfterNativeBackspaceWaitMs{
         this, "DbusAfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native DBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> ibusAfterXTestBackspaceWaitMs{
+    fcitx::Option<int, fcitx::IntConstrain> ibusAfterNativeBackspaceWaitMs{
         this, "IBusAfterXTestBackspaceWaitMs",
         N_("Chờ sau Backspace cuối Native IBus (ms)"), 10,
         fcitx::IntConstrain(0, 5000)};
@@ -314,16 +311,6 @@ FCITX_CONFIGURATION(
         N_("Phím tắt chọn chế độ / backend cho ứng dụng"),
         {fcitx::Key("grave")},
         fcitx::KeyListConstrain(fcitx::KeyConstrainFlag::AllowModifierLess)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain> legacyBackspaceDelayMs{
-        this, "BackspaceDelayMs", N_("Delay giữa các Backspace (ms)"), 1,
-        fcitx::IntConstrain(0, 1000)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain> legacyAfterBackspaceWaitMs{
-        this, "AfterBackspaceWaitMs",
-        N_("Thời gian chờ sau Backspace cuối (ms)"), 10,
-        fcitx::IntConstrain(0, 5000)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain> legacyPostCommitDelayMs{
-        this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
-        fcitx::IntConstrain(0, 5000)};
     fcitx::HiddenOption<std::string> trayIcon{this, "TrayIcon",
                                               N_("Biểu tượng khay hệ thống"),
                                               "org.fcitx.Fcitx5.fcitx-areca"};
