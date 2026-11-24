@@ -1,6 +1,6 @@
 # Areca GTK Settings
 
-The GTK4/PyGObject settings application is installed as the default Areca Settings app in release packages and replaces the legacy ImGui launcher. The C++/ImGui app remains available as an optional developer build with `-DARECA_BUILD_LEGACY_SETTINGS=ON`.
+The GTK4/PyGObject settings application is the Areca Settings app installed in release packages.
 
 ## Run
 

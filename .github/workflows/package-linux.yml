@@ -58,26 +58,19 @@ jobs:
             runner: ubuntu-24.04
             package_suffix: ubuntu24
             artifact_name: fcitx5-areca-ubuntu24-deb
-            # Ubuntu 24.04 (Noble) has no libsdl3-dev in its repos yet
-            # (SDL3 only landed from 24.10 onward), so we build it from
-            # source and bundle the resulting .so with the package.
-            bundle_sdl3: true
           - name: Ubuntu 26.04
             version: "26.04"
             runner: ubuntu-26.04
             package_suffix: ubuntu26
             artifact_name: fcitx5-areca-ubuntu26-deb
-            bundle_sdl3: false
           - name: Linux Mint 22
             version: "24.04"
             runner: ubuntu-24.04
             package_suffix: mint22
             artifact_name: fcitx5-areca-mint22-deb
-            bundle_sdl3: true
     env:
       VERSION: ${{ needs.version.outputs.value }}
       DEBIAN_FRONTEND: noninteractive
-      SDL3_PREFIX: /opt/sdl3-local
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,67 +101,17 @@ jobs:
             libfcitx5core-dev \
             libfcitx5config-dev \
             libfcitx5utils-dev \
-            libfontconfig-dev \
             libwayland-dev \
-            libwayland-bin \
-            patchelf
+            libwayland-bin
           sudo gem install --no-document fpm
-
-      - name: Install libsdl3-dev from repos (Ubuntu 26.04+)
-        if: ${{ matrix.bundle_sdl3 == false }}
-        run: |
-          set -euo pipefail
-          sudo apt-get install -y libsdl3-dev
-
-      - name: Install X11/Wayland dev libraries for building SDL3
-        if: ${{ matrix.bundle_sdl3 == true }}
-        run: |
-          set -euo pipefail
-          sudo apt-get install -y \
-            libxext-dev \
-            libxrandr-dev \
-            libxcursor-dev \
-            libxfixes-dev \
-            libxi-dev \
-            libxss-dev \
-            libxkbcommon-dev \
-            libwayland-dev \
-            wayland-protocols \
-            libdecor-0-dev \
-            libdrm-dev \
-            libgbm-dev \
-            libgl1-mesa-dev \
-            libegl1-mesa-dev \
-            libibus-1.0-dev \
-            libpulse-dev \
-            libasound2-dev
-
-      - name: Build SDL3 from source (Ubuntu 24.04, no repo package)
-        if: ${{ matrix.bundle_sdl3 == true }}
-        run: |
-          set -euo pipefail
-          git clone --depth 1 --branch release-3.2.x \
-            https://github.com/libsdl-org/SDL.git /tmp/sdl3-src
-          cmake -S /tmp/sdl3-src -B /tmp/sdl3-build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
-            -DSDL_SHARED=ON \
-            -DSDL_STATIC=OFF
-          cmake --build /tmp/sdl3-build --parallel
-          sudo cmake --install /tmp/sdl3-build
 
       - name: Build and test
         run: |
           set -euo pipefail
-          extra_prefix_path=""
-          if [[ "${{ matrix.bundle_sdl3 }}" == "true" ]]; then
-            extra_prefix_path="-DCMAKE_PREFIX_PATH=$SDL3_PREFIX"
-          fi
           cmake -S . -B build-pkg -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
-            -DBUILD_TESTING=ON \
-            $extra_prefix_path
+            -DBUILD_TESTING=ON
           cmake --build build-pkg --parallel
           ctest --test-dir build-pkg --output-on-failure
 
@@ -177,25 +120,6 @@ jobs:
           set -euo pipefail
           mkdir -p pkgroot dist
           DESTDIR="$PWD/pkgroot" cmake --install build-pkg --strip
-
-          sdl3_depend_args=()
-          if [[ "${{ matrix.bundle_sdl3 }}" == "true" ]]; then
-            # Bundle the self-built libSDL3 alongside the app instead of
-            # depending on a system package that doesn't exist on 24.04.
-            bundle_dir="pkgroot/usr/lib/fcitx5-areca"
-            mkdir -p "$bundle_dir"
-            cp -a "$SDL3_PREFIX"/lib/libSDL3.so* "$bundle_dir/"
-
-            # Point every ELF binary/library we installed at the bundled dir.
-            while IFS= read -r -d '' f; do
-              if patchelf --print-rpath "$f" >/dev/null 2>&1; then
-                patchelf --set-rpath '$ORIGIN/../lib/fcitx5-areca' "$f" || true
-              fi
-            done < <(find pkgroot/usr/bin pkgroot/usr/lib \
-                       -maxdepth 2 -type f -print0 2>/dev/null)
-          else
-            sdl3_depend_args+=(--depends libsdl3-0)
-          fi
 
           fpm -s dir -t deb \
             -n fcitx5-areca \
@@ -212,13 +136,11 @@ jobs:
             --depends gir1.2-gtk-4.0 \
             --depends gir1.2-gdkpixbuf-2.0 \
             --depends libdbus-1-3 \
-            --depends libfontconfig1 \
             --depends libei1 \
             --depends libinput10 \
             --depends libportal1 \
             --depends libudev1 \
             --depends libwayland-client0 \
-            "${sdl3_depend_args[@]}" \
             -C pkgroot \
             -p "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb" \
             .
@@ -283,10 +205,8 @@ jobs:
                 libfcitx5core-dev \
                 libfcitx5config-dev \
                 libfcitx5utils-dev \
-                libfontconfig-dev \
                 libwayland-dev \
-                libwayland-bin \
-                libsdl3-dev
+                libwayland-bin
               gem install --no-document fpm
 
               cmake -S . -B build-pkg-ubuntu25 -G Ninja \
@@ -314,13 +234,11 @@ jobs:
                 --depends gir1.2-gtk-4.0 \
                 --depends gir1.2-gdkpixbuf-2.0 \
                 --depends libdbus-1-3 \
-                --depends libfontconfig1 \
                 --depends libei1 \
                 --depends libinput10 \
                 --depends libportal1 \
                 --depends libudev1 \
             --depends libwayland-client0 \
-                --depends libsdl3-0 \
                 -C pkgroot-ubuntu25 \
                 -p "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb" \
                 .
@@ -381,11 +299,9 @@ jobs:
                 libportal \
                 ninja \
                 pkgconf \
-                fontconfig \
                 wayland \
                 systemd-libs \
-                dbus \
-                sdl3
+                dbus
               useradd --create-home builder
               chown -R builder:builder arch-pkg
               su builder -c \
@@ -447,10 +363,6 @@ jobs:
                 dbus-devel \
                 libinput-devel \
                 systemd-devel \
-                SDL3 \
-                SDL3-devel \
-                fontconfig \
-                fontconfig-devel \
                 fcitx5 \
                 fcitx5-devel \
                 fcitx5-configtool \
@@ -484,8 +396,6 @@ jobs:
                 --depends dbus-libs \
                 --depends libinput \
                 --depends systemd-libs \
-                --depends SDL3 \
-                --depends fontconfig \
                 --depends libei \
                 --depends libportal \
                 --depends libwayland-client \
@@ -546,8 +456,6 @@ jobs:
                 dbus-1-devel \
                 libinput-devel \
                 systemd-devel \
-                SDL3-devel \
-                fontconfig-devel \
                 libei-devel \
                 libportal-devel \
                 wayland-devel \
@@ -587,8 +495,6 @@ jobs:
                 --depends typelib-1_0-GdkPixbuf-2_0 \
                 --depends libdbus-1-3 \
                 --depends libinput10 \
-                --depends SDL3 \
-                --depends fontconfig \
                 --depends libei1 \
                 --depends libportal1 \
                 --depends libwayland-client0 \

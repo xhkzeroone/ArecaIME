@@ -12,8 +12,6 @@ pkgbase = fcitx5-areca
 	makedepends = ninja
 	makedepends = pkgconf
 	makedepends = dbus
-	makedepends = sdl3
-	makedepends = fontconfig
 	makedepends = wayland
 	depends = fcitx5
 	depends = gtk4
@@ -24,8 +22,6 @@ pkgbase = fcitx5-areca
 	depends = libei
 	depends = libportal
 	depends = systemd-libs
-	depends = sdl3
-	depends = fontconfig
 	depends = wayland
 	optdepends = fcitx5-configtool: graphical configuration tool
 	source = fcitx5-areca::git+https://github.com/xhkzeroone/ArecaIME.git#tag=v8.3.21

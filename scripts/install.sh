@@ -83,7 +83,7 @@ install_deps_debian() {
   sudo apt-get update
   local common=(build-essential cmake ninja-build pkg-config extra-cmake-modules
                 golang-go libinput-dev libudev-dev libdbus-1-dev
-                libfontconfig-dev python3-gi gir1.2-gtk-4.0
+                python3-gi gir1.2-gtk-4.0
                 gir1.2-gdkpixbuf-2.0 libwayland-dev libwayland-bin)
   local fcitx=(fcitx5 fcitx5-config-qt libfcitx5core-dev
                libfcitx5config-dev libfcitx5utils-dev)
@@ -97,43 +97,13 @@ install_deps_debian() {
   if ! sudo apt-get install -y libei-dev libportal-dev; then
     echo "[areca] libei-dev/libportal-dev unavailable; Native backend will be disabled"
   fi
-
-  # SDL3 is not available in the repositories of several supported Ubuntu
-  # bases (including Linux Mint 21 and 22). Build it when the distro package is absent.
-  if ! sudo apt-get install -y libsdl3-dev; then
-    echo "[areca] libsdl3-dev is unavailable; building SDL3 from source"
-    sudo apt-get install -y git libxext-dev libxrandr-dev libxcursor-dev \
-      libxfixes-dev libxi-dev libxss-dev libxkbcommon-dev libwayland-dev \
-      wayland-protocols libdecor-0-dev libdrm-dev libgbm-dev \
-      libgl1-mesa-dev libegl1-mesa-dev libibus-1.0-dev libpulse-dev \
-      libasound2-dev || true
-    local sdl_src sdl_build
-    sdl_src="$(mktemp -d)"
-    sdl_build="$(mktemp -d)"
-    if git clone --depth 1 --branch release-3.2.x \
-      https://github.com/libsdl-org/SDL.git "$sdl_src"; then
-      local sdl_gen=()
-      if command -v ninja >/dev/null 2>&1; then
-        sdl_gen=(-G Ninja)
-      fi
-      cmake -S "$sdl_src" -B "$sdl_build" "${sdl_gen[@]}" \
-        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DSDL_SHARED=ON -DSDL_STATIC=OFF
-      cmake --build "$sdl_build" --parallel
-      sudo cmake --install "$sdl_build"
-      sudo ldconfig
-    else
-      echo "[areca] Warning: git clone SDL3 failed; CMake will attempt FetchContent during build" >&2
-    fi
-    rm -rf -- "$sdl_src" "$sdl_build"
-  fi
 }
 
 install_deps_arch() {
   local packages=(base-devel cmake ninja pkgconf extra-cmake-modules go
                   gtk4 python python-gobject gdk-pixbuf2
                   libinput systemd-libs dbus fcitx5
-                  fcitx5-configtool sdl3 fontconfig wayland libei libportal)
+                  fcitx5-configtool wayland libei libportal)
   if [[ "$ARECA_UPDATE_SYSTEM" == 1 ]]; then
     echo "[areca] Updating Arch system and installing build dependencies"
     sudo pacman -Syu --needed --noconfirm "${packages[@]}"
@@ -158,7 +128,7 @@ install_deps_fedora() {
   sudo dnf install -y \
     gcc-c++ cmake ninja-build pkgconf-pkg-config extra-cmake-modules go \
     python3-gobject gtk4 gdk-pixbuf2 \
-    libinput-devel systemd-devel dbus-devel SDL3-devel fontconfig-devel \
+    libinput-devel systemd-devel dbus-devel \
     fcitx5 fcitx5-devel fcitx5-configtool \
     wayland-devel libei-devel libportal-devel
 }
@@ -169,8 +139,8 @@ install_deps_opensuse() {
     gcc-c++ cmake ninja pkg-config extra-cmake-modules go \
     python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-4_0 \
     libgtk-4-1 typelib-1_0-GdkPixbuf-2_0 \
-    libinput-devel systemd-devel fcitx5 fcitx5-devel SDL3-devel \
-    fontconfig-devel dbus-1-devel libudev-devel \
+    libinput-devel systemd-devel fcitx5 fcitx5-devel \
+    dbus-1-devel libudev-devel \
     wayland-devel libei-devel libportal-devel
 }
 

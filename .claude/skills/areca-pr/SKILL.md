@@ -38,7 +38,7 @@ Quy tắc gốc nằm ở mục "Quy tắc bắt buộc cho Pull Request" trong 
 - Hành vi mặc định của tính năng cũ không đổi, hoặc lý do đổi được ghi trong mô tả PR.
 
 ## 5. Cấu hình, log, comment
-- Option mới có trong `src/areca_config.h`, mặc định giữ hành vi cũ, và có mặt ở `gtk-settings/areca_settings.py` lẫn `settings/ui_views.cpp` nếu người dùng thấy được.
+- Option mới có trong `src/areca_config.h`, mặc định giữ hành vi cũ, và có mặt ở `gtk-settings/areca_settings.py` nếu người dùng thấy được.
 - Log debug nằm trong điều kiện `debugProvider_()` hoặc `debugEnabled()`, bắt đầu bằng `areca: `, dạng `key=value`, không log dữ liệu nhạy cảm.
 - Comment tiếng Việt, ngắn, giải thích lý do, không ngoặc đơn giải thích thừa, không nêu tên dự án hay người được tham khảo.
 

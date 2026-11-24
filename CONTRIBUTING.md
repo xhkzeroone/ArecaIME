@@ -88,7 +88,7 @@ Bot Claude tự review PR mở từ nhánh trong repo, dựa trên các quy tắ
 
 ### Cấu hình
 - Option mới khai báo trong `src/areca_config.h`, mặc định giữ nguyên hành vi cũ.
-- Option người dùng thấy được phải có mặt đủ ở `gtk-settings/areca_settings.py` và `settings/ui_views.cpp`.
+- Option người dùng thấy được phải có mặt ở `gtk-settings/areca_settings.py`.
 
 ### Log
 - Log debug chỉ in khi bật Debug, kiểm tra bằng `debugProvider_()` hoặc `debugEnabled()`.

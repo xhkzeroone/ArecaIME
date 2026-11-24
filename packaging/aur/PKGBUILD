@@ -15,8 +15,6 @@ depends=(
   'libei'
   'libportal'
   'systemd-libs'
-  'sdl3'
-  'fontconfig'
   'wayland'
 )
 makedepends=(
@@ -27,8 +25,6 @@ makedepends=(
   'ninja'
   'pkgconf'
   'dbus'
-  'sdl3'
-  'fontconfig'
   'wayland'
 )
 optdepends=('fcitx5-configtool: graphical configuration tool')

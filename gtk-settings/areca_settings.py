@@ -30,7 +30,7 @@ MACRO_FILE = "areca-macro-table.conf"
 APPS_FILE = "areca-apps.conf"
 ADVANCED_FILE = "areca-advanced.conf"
 
-# Colors mirror settings/ui_theme.cpp: background, sidebar, surface, text, accent.
+# Colors: background, sidebar, surface, text, accent.
 THEMES = {
     "System": ("Theo hệ thống", None),
     "Light": ("Light", ('#f7f5ed', '#eceadd', '#fffef8', '#10211c', '#0b5f3a')),

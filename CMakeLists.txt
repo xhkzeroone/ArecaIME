@@ -26,8 +26,6 @@ target_link_libraries(areca-mouse-monitor PRIVATE PkgConfig::LIBINPUT PkgConfig:
 install(TARGETS areca-mouse-monitor DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}")
 install(FILES data/70-areca-pointer.rules DESTINATION "lib/udev/rules.d")
 
-option(ARECA_BUILD_LEGACY_SETTINGS "Build the legacy ImGui Areca settings application" OFF)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BAMBOO_BRIDGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bamboo-bridge")
 set(BAMBOO_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/libareca-bamboo.a")
@@ -140,80 +138,6 @@ target_link_libraries(areca PRIVATE
     Fcitx5::Utils
     ${DBUS_LIBRARIES}
     pthread dl m)
-
-if(ARECA_BUILD_LEGACY_SETTINGS)
-    find_package(SDL3 QUIET CONFIG)
-    if(NOT SDL3_FOUND)
-        pkg_check_modules(SDL3 QUIET IMPORTED_TARGET sdl3)
-        if(TARGET PkgConfig::SDL3)
-            add_library(SDL3::SDL3 ALIAS PkgConfig::SDL3)
-            set(SDL3_FOUND TRUE)
-        endif()
-    endif()
-
-    if(NOT SDL3_FOUND)
-        message(STATUS "SDL3 not found on system; downloading and building SDL3 via FetchContent...")
-        include(FetchContent)
-        FetchContent_Declare(
-            SDL3
-            GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-            GIT_TAG release-3.2.8
-            GIT_SHALLOW TRUE
-        )
-        set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-        set(SDL_STATIC ON CACHE BOOL "" FORCE)
-        set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
-        set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
-        FetchContent_MakeAvailable(SDL3)
-        if(NOT TARGET SDL3::SDL3)
-            if(TARGET SDL3-static)
-                add_library(SDL3::SDL3 ALIAS SDL3-static)
-            elseif(TARGET SDL3-shared)
-                add_library(SDL3::SDL3 ALIAS SDL3-shared)
-            endif()
-        endif()
-    endif()
-
-    pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
-
-    set(ARECA_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/settings/imgui")
-    if(NOT EXISTS "${ARECA_IMGUI_DIR}/imgui.h")
-        message(FATAL_ERROR "Dear ImGui source was not found at settings/imgui.")
-    endif()
-
-    add_executable(areca-settings-legacy
-        settings/main.cpp
-        settings/app_config.cpp
-        settings/config_store.cpp
-        settings/font_loader.cpp
-        settings/fcitx_dbus.cpp
-        settings/key_mapper.cpp
-        settings/ui_theme.cpp
-        settings/ui_views.cpp
-        src/bamboo_engine_adapter.cpp
-        "${ARECA_IMGUI_DIR}/imgui.cpp"
-        "${ARECA_IMGUI_DIR}/imgui_draw.cpp"
-        "${ARECA_IMGUI_DIR}/imgui_tables.cpp"
-        "${ARECA_IMGUI_DIR}/imgui_widgets.cpp"
-        "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdl3.cpp"
-        "${ARECA_IMGUI_DIR}/backends/imgui_impl_sdlrenderer3.cpp")
-    target_compile_features(areca-settings-legacy PRIVATE cxx_std_20)
-    target_compile_options(areca-settings-legacy PRIVATE -Wall -Wextra -Wpedantic)
-    target_include_directories(areca-settings-legacy PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
-        "${ARECA_IMGUI_DIR}"
-        "${ARECA_IMGUI_DIR}/backends"
-        ${DBUS_INCLUDE_DIRS})
-    target_link_libraries(areca-settings-legacy PRIVATE
-        areca-bamboo
-        Fcitx5::Config
-        Fcitx5::Utils
-        SDL3::SDL3
-        ${DBUS_LIBRARIES}
-        ${FONTCONFIG_LIBRARIES}
-        pthread dl m)
-    target_include_directories(areca-settings-legacy PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
-endif()
 
 configure_file(data/areca-addon.conf.in areca-addon.conf @ONLY)
 configure_file(data/areca.conf.in areca-inputmethod.conf @ONLY)

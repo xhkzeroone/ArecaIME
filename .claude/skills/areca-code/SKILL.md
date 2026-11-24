@@ -20,7 +20,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 | Lag thích nghi | `adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm |
 | Nhận diện app | `window_focus_tracker.*`, `atspi/`, `input_type_detector.*`, `program_compatibility.*` | AT-SPI chạy thread riêng, phần còn lại là hàm thuần |
 | Surrounding text | `surrounding_text_*`, `surrounding_probe_match.h`, `surrounding_reliability.h` | Cache, probe, restore từ đã commit |
-| Cấu hình | `src/areca_config.h` | `FCITX_CONFIGURATION`, có thêm UI ở `gtk-settings/` và `settings/` |
+| Cấu hình | `src/areca_config.h` | `FCITX_CONFIGURATION`, có thêm UI ở `gtk-settings/` |
 
 `ArecaEngine` được chia theo nhóm hàm, cùng một class. Thêm hàm mới vào đúng file:
 
@@ -78,7 +78,7 @@ Callback bất đồng bộ giữ `inputContext.watch()` và kiểm tra `.get()`
 - Nhãn hiển thị tiếng Việt bọc trong `N_()`.
 - Key ini dạng PascalCase, tên biến camelCase cùng nghĩa.
 - Option thời gian có hậu tố `Ms`. Option theo frontend có tiền tố `wayland`, `xim`, `fcitx4`, `dbus`, `ibus`.
-- Option người dùng thấy được phải thêm ở `gtk-settings/areca_settings.py` và `settings/ui_views.cpp`.
+- Option người dùng thấy được phải thêm ở `gtk-settings/areca_settings.py`.
 
 ### Log
 - Chỉ log khi `debugProvider_()` hoặc `debugEnabled()` trả true. Lỗi thật dùng `FCITX_ERROR()` không cần điều kiện.

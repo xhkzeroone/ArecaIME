@@ -15,8 +15,6 @@ depends=(
   'libei'
   'libportal'
   'systemd-libs'
-  'sdl3'
-  'fontconfig'
   'wayland'
 )
 makedepends=(
@@ -26,8 +24,6 @@ makedepends=(
   'ninja'
   'pkgconf'
   'dbus'
-  'sdl3'
-  'fontconfig'
   'wayland'
 )
 source=("${pkgname}-${pkgver}.tar.gz")
