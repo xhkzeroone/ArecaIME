@@ -25,6 +25,12 @@ PRESETS = {
     "flower": ("Hoa má hồng", ASSETS / "mascots/flower.svg"),
     "orange": ("Cam cười", ASSETS / "mascots/orange.svg"),
     "star": ("Sao lí lắc", ASSETS / "mascots/star.svg"),
+    "cau": ("Trái cau", ASSETS / "mascots/cau.svg"),
+    "flag": ("Cờ đỏ sao vàng", ASSETS / "mascots/flag.svg"),
+    "nonla": ("Nón lá", ASSETS / "mascots/nonla.svg"),
+    "banhmi": ("Bánh mì", ASSETS / "mascots/banhmi.svg"),
+    "banhchung": ("Bánh chưng", ASSETS / "mascots/banhchung.svg"),
+    "coffee": ("Cà phê sữa đá", ASSETS / "mascots/coffee.svg"),
 }
 
 
