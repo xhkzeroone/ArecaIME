@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <fcitx-utils/event.h>
 #include <functional>
 #include <memory>
@@ -29,6 +30,7 @@ public:
 
 private:
   void drain();
+  void noteFailure();
   bool debugEnabled() const { return debug_ && debug_(); }
   fcitx::EventLoop &loop_;
   std::function<bool()> debug_;
@@ -37,6 +39,9 @@ private:
   int fd_ = -1;
   bool ready_ = false;
   bool pending_ = false;
+  uint64_t startedAtUsec_ = 0;
+  uint64_t retryAfterUsec_ = 0;
+  uint32_t failures_ = 0;
 };
 
 } // namespace areca

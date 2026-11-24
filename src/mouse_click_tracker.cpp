@@ -1,10 +1,12 @@
 #include "mouse_click_tracker.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <csignal>
 #include <cstring>
 #include <fcitx-utils/log.h>
 #include <fcntl.h>
+#include <memory>
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -13,12 +15,62 @@ extern char **environ;
 
 namespace areca {
 
+namespace {
+
+constexpr uint64_t kReapRetryUsec = 20 * 1000;
+constexpr uint64_t kFirstRetryDelayUsec = 1000 * 1000;
+constexpr uint64_t kMaxRetryDelayUsec = 5 * 60 * 1000 * 1000ULL;
+constexpr uint64_t kStableUptimeUsec = 60 * 1000 * 1000ULL;
+
+bool reaped(pid_t pid) {
+  int result;
+  do {
+    result = waitpid(pid, nullptr, WNOHANG);
+  } while (result < 0 && errno == EINTR);
+  return result != 0;
+}
+
+// waitpid chặn trên event loop sẽ treo Fcitx nếu helper kẹt trong syscall
+// không ngắt được. Timer tự giữ mình vì tracker có thể bị huỷ ngay sau đó.
+void reapLater(fcitx::EventLoop &loop, pid_t pid) {
+  if (reaped(pid))
+    return;
+  auto holder = std::make_shared<std::unique_ptr<fcitx::EventSourceTime>>();
+  try {
+    // Accuracy 0 của sd-event là trễ mặc định 250 ms, quá lâu cho việc này.
+    *holder = loop.addTimeEvent(
+        CLOCK_MONOTONIC, fcitx::now(CLOCK_MONOTONIC) + kReapRetryUsec, 1000,
+        [holder, pid](fcitx::EventSourceTime *source, uint64_t) {
+          if (!reaped(pid)) {
+            source->setNextInterval(kReapRetryUsec);
+            source->setOneShot();
+            return true;
+          }
+          auto timer = std::move(*holder);
+          return true;
+        });
+  } catch (const std::exception &error) {
+    // Loop đã dừng khi Fcitx thoát: tiến trình cha sắp kết thúc nên zombie tự
+    // được thu hồi; không để exception thoát khỏi destructor của tracker.
+    FCITX_WARN() << "areca: mouse helper reap deferred pid=" << pid
+                 << " error=" << error.what();
+    return;
+  }
+  if (*holder)
+    (*holder)->setOneShot();
+}
+
+} // namespace
+
 MouseClickTracker::~MouseClickTracker() { stop(); }
 
 bool MouseClickTracker::start() {
   // activate có thể gọi nhiều lần; chỉ tạo lại helper khi pipe cũ đã đóng.
   if (fd_ >= 0)
     return true;
+  // Helper chết ngay khi không mở được seat; không spawn lại mỗi lần đổi focus.
+  if (fcitx::now(CLOCK_MONOTONIC) < retryAfterUsec_)
+    return false;
   stop();
   // Pipe riêng cho cặp cha/con, không cần địa chỉ socket hay xác thực peer.
   // NONBLOCK tránh treo event loop; CLOEXEC tránh truyền fd thừa sang helper.
@@ -26,6 +78,7 @@ bool MouseClickTracker::start() {
   if (pipe2(pipefd, O_CLOEXEC | O_NONBLOCK) < 0) {
     FCITX_WARN() << "areca: mouse tracker pipe failed: "
                  << std::strerror(errno);
+    noteFailure();
     return false;
   }
   posix_spawn_file_actions_t actions;
@@ -35,6 +88,7 @@ bool MouseClickTracker::start() {
                  << std::strerror(initError);
     close(pipefd[0]);
     close(pipefd[1]);
+    noteFailure();
     return false;
   }
   // Chỉ stdout mang protocol R/C; stderr giữ riêng để log không lẫn vào dữ
@@ -53,9 +107,11 @@ bool MouseClickTracker::start() {
                  << " error=" << std::strerror(error);
     close(pipefd[0]);
     child_ = -1;
+    noteFailure();
     return false;
   }
   fd_ = pipefd[0];
+  startedAtUsec_ = fcitx::now(CLOCK_MONOTONIC);
   // Nhận click trên cùng luồng xử lý phím để không sửa trạng thái engine từ
   // thread khác. Callback chỉ đánh dấu, chưa reset khi rewrite còn dang dở.
   source_ = loop_.addIOEvent(
@@ -67,6 +123,7 @@ bool MouseClickTracker::start() {
   if (!source_) {
     FCITX_WARN() << "areca: mouse tracker cannot watch pipe";
     stop();
+    noteFailure();
     return false;
   }
   if (debugEnabled())
@@ -84,11 +141,10 @@ void MouseClickTracker::stop() {
   if (child_ > 0) {
     if (debugEnabled())
       FCITX_INFO() << "areca: mouse helper cleanup pid=" << child_;
-    // Helper không có dữ liệu cần lưu; kết thúc dứt điểm và waitpid để không
+    // Helper không có dữ liệu cần lưu; kết thúc dứt điểm và thu hồi để không
     // để lại zombie khi addon bị hủy hoặc khởi động lại helper.
     kill(child_, SIGKILL);
-    while (waitpid(child_, nullptr, 0) < 0 && errno == EINTR) {
-    }
+    reapLater(loop_, child_);
   }
   child_ = -1;
   ready_ = pending_ = false;
@@ -121,7 +177,7 @@ void MouseClickTracker::drain() {
       if (count == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
         if (count == 0) {
           FCITX_WARN() << "areca: mouse helper disconnected pid=" << child_
-                       << "; retry on next activation";
+                       << "; retry after backoff";
         } else {
           FCITX_WARN() << "areca: mouse tracker read failed: "
                        << std::strerror(errno);
@@ -133,10 +189,32 @@ void MouseClickTracker::drain() {
         close(fd_);
         fd_ = -1;
         ready_ = false;
+        if (child_ > 0) {
+          kill(child_, SIGKILL);
+          reapLater(loop_, child_);
+          child_ = -1;
+        }
+        noteFailure();
       }
       return;
     }
   }
+}
+
+void MouseClickTracker::noteFailure() {
+  const uint64_t now = fcitx::now(CLOCK_MONOTONIC);
+  // Helper đã chạy ổn lâu rồi mới chết thì coi như lỗi mới, thử lại sớm.
+  if (startedAtUsec_ && now - startedAtUsec_ >= kStableUptimeUsec)
+    failures_ = 0;
+  startedAtUsec_ = 0;
+  const uint64_t delay =
+      std::min(kFirstRetryDelayUsec << std::min<uint32_t>(failures_, 16),
+               kMaxRetryDelayUsec);
+  ++failures_;
+  retryAfterUsec_ = now + delay;
+  if (debugEnabled())
+    FCITX_INFO() << "areca: mouse helper retry delay_ms=" << delay / 1000
+                 << " failures=" << failures_;
 }
 
 bool MouseClickTracker::hasPendingClick() {

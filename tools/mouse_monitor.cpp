@@ -3,15 +3,32 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <poll.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace {
+// Người dùng trong nhóm input đọc được cả bàn phím; mở chúng làm helper thức
+// dậy mỗi lần gõ và giữ fd đọc được phím. Chỉ cần thiết bị có nút chuột.
+bool isPointerDevice(udev *devices, const char *path) {
+  struct stat info {};
+  if (stat(path, &info) != 0 || !S_ISCHR(info.st_mode)) return false;
+  std::unique_ptr<udev_device, decltype(&udev_device_unref)> device(
+      udev_device_new_from_devnum(devices, 'c', info.st_rdev), udev_device_unref);
+  if (!device) return false;
+  for (const char *property : {"ID_INPUT_MOUSE", "ID_INPUT_TOUCHPAD", "ID_INPUT_POINTINGSTICK"}) {
+    const char *value = udev_device_get_property_value(device.get(), property);
+    if (value && std::strcmp(value, "1") == 0) return true;
+  }
+  return false;
+}
 // Mở thiết bị bằng quyền user/ACL udev hiện có; helper không tự nâng quyền.
 // libinput cần mã lỗi âm, giữ errno trước khi ghi log vì log có thể đổi errno.
-int openDevice(const char *path, int flags, void *) {
+int openDevice(const char *path, int flags, void *data) {
+  if (!isPointerDevice(static_cast<udev *>(data), path)) return -ENODEV;
   const int fd = open(path, flags | O_CLOEXEC);
   if (fd < 0) {
     const int error = errno;
@@ -35,7 +52,7 @@ int main() {
   std::unique_ptr<udev, decltype(&udev_unref)> devices(udev_new(), udev_unref);
   if (!devices) return 1;
   std::unique_ptr<libinput, decltype(&libinput_unref)> input(
-      libinput_udev_create_context(&interface, nullptr, devices.get()), libinput_unref);
+      libinput_udev_create_context(&interface, devices.get(), devices.get()), libinput_unref);
   // Theo seat của phiên desktop; udev giúp libinput theo dõi cả thiết bị cắm
   // thêm về sau, không phải tự quét hoặc hard-code /dev/input/eventN.
   const char *seat = std::getenv("XDG_SEAT");
