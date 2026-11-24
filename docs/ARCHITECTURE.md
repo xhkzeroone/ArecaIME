@@ -41,11 +41,10 @@ Xem thêm:
 | `conf/areca-macro-table.conf` | Bảng macro. |
 
 Các khoá timing cũ trong `areca.conf` vẫn được đọc ẩn để migrate. File nâng cao
-được load sau và luôn được ưu tiên. Ứng dụng cài đặt ImGui cũ có nút preset
-hiệu năng, đặt các thời gian chờ chính về 1, 3 hoặc 5 ms.
+được load sau và luôn được ưu tiên.
 
-`PreciseTiming=True` đặt accuracy của timer backend và post-commit thành `1 µs`.
-Khi tắt, accuracy bằng `0` và event loop được phép gộp timer.
+Timer của backend và post-commit luôn chạy với accuracy `1 µs`, không cho event
+loop gộp timer.
 
 ## Chọn mode
 

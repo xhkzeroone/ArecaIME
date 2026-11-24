@@ -192,7 +192,7 @@ dụ source nâng `WaylandAfterBackspaceWaitMs` từ 3 lên 10 ms không sửa d
 `WaylandAfterBackspaceWaitMs=3` đã có. Kiểm tra trực tiếp:
 
 ```bash
-grep -E '^(BackspaceDelayMs|AfterBackspaceWaitMs|WaylandAfterBackspaceWaitMs|PostCommitDelayMs|PreciseTiming)=' \
+grep -E '^(BackspaceDelayMs|AfterBackspaceWaitMs|WaylandAfterBackspaceWaitMs|PostCommitDelayMs)=' \
   ~/.config/fcitx5/conf/areca-advanced.conf
 ```
 

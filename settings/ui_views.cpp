@@ -461,17 +461,6 @@ namespace areca::settings {
             "Thiết lập nâng cao", "Chỉ thay đổi các giá trị này khi một ứng dụng hoặc frontend cụ thể gặp lỗi timing."
         );
 
-        beginSettingsCard(
-            "BestPerformanceCard", "Preset hiệu năng",
-            "Đặt timing Wayland của Backspace/Shift+Left về 3 ms, DBus và IBus về 5 ms, timing xóa "
-            "surrounding về 1 ms; giữ nguyên timing chung, delay phát phím, XIM và Fcitx4."
-        );
-        pushPrimaryButtonColors();
-        if (ImGui::Button("Best performance")) {
-            applyBestPerformancePreset(config.advanced);
-        }
-        ImGui::PopStyleColor(4);
-        endSettingsCard();
 
         beginSettingsCard("BackspaceTimingCard", "uinput Backspace", "Độ trễ khi mô phỏng thao tác xoá ký tự.");
         inputInt("Delay giữa Backspace (ms)", config.advanced.backspaceDelayMs);
@@ -519,7 +508,6 @@ namespace areca::settings {
             "CompatibilityCard", "Tương thích", "Các cơ chế fallback dành cho ứng dụng có hành vi nhập liệu đặc biệt."
         );
         checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
-        checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
         checkbox("Dùng Native (libei) thay thế uinput", config.advanced.useNativeInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);

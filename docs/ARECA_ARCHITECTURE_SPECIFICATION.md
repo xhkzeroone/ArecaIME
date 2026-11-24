@@ -303,24 +303,17 @@ theo tên frontend bắt đầu bằng `wayland`, `xim`, `fcitx4`, `dbus`, `ibus
 | `Wayland`, `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterBackspaceWaitMs` | Như trên theo frontend | 10 ms |
 | `UinputShiftSelectDelayMs` | Giữa các Left, dùng cho cả Native | 1 ms |
 | `UinputShiftSelectAckTimeoutMs` | Timeout ACK Shift up, ẩn | 150 ms |
-| `AfterUinputShiftSelectWaitMs` | Chờ sau khi thả Shift, frontend khác | 10 ms |
+| `AfterUinputShiftSelectWaitMs` | Chờ sau khi thả Shift, frontend khác | 5 ms |
 | `WaylandAfterUinputShiftSelectWaitMs` | Như trên, Wayland | 5 ms |
-| `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterUinputShiftSelectWaitMs` | Như trên theo frontend | 10 ms |
+| `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterUinputShiftSelectWaitMs` | Như trên theo frontend | 5 ms |
 | `SurroundingWaitMs` | Chờ sau lệnh xoá surrounding | 3 ms |
 | `SurroundingProbeTimeoutMs` | Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms | 80 ms |
 | `XTestBackspaceDelayMs` | Giữa các Backspace Native | 1 ms |
 | `AfterXTestBackspaceWaitMs` | Chờ sau Backspace Native cuối, frontend khác | 10 ms |
 | `Wayland`, `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterXTestBackspaceWaitMs` | Như trên theo frontend | 10 ms |
 | `PostCommitDelayMs` | Barrier sau mỗi phím | 20 ms |
-| `PreciseTiming` | Timer accuracy 1 µs thay vì 0 | `True` |
 
-Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
-
-| Nhóm khoá | Giá trị |
-| --- | --- |
-| Chờ sau Backspace, Shift select, Native trên Wayland | 3 ms |
-| Chờ sau Backspace, Shift select, Native trên DBus và IBus | 5 ms |
-| `SurroundingWaitMs` | 1 ms |
+Timer của backend và post-commit luôn chạy với accuracy `1 µs`.
 
 ## 7. Tuỳ chọn hành vi liên quan
 

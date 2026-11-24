@@ -4116,10 +4116,9 @@ chọn backend, sequence diagram từng backend và bảng timing.</li><li><a hr
 </tbody>
 </table>
 <p>Các khoá timing cũ trong <code>areca.conf</code> vẫn được đọc ẩn để migrate. File nâng cao
-được load sau và luôn được ưu tiên. Ứng dụng cài đặt ImGui cũ có nút preset
-hiệu năng, đặt các thời gian chờ chính về 1, 3 hoặc 5 ms.</p>
-<p><code>PreciseTiming=True</code> đặt accuracy của timer backend và post-commit thành <code>1 µs</code>.
-Khi tắt, accuracy bằng <code>0</code> và event loop được phép gộp timer.</p>
+được load sau và luôn được ưu tiên.</p>
+<p>Timer của backend và post-commit luôn chạy với accuracy <code>1 µs</code>, không cho event
+loop gộp timer.</p>
 <h2 id="ch%E1%BB%8Dn-mode" tabindex="-1">Chọn mode</h2>
 <p><code>PresentationMode</code> toàn cục mặc định là Rewrite và không còn hiện trong giao
 diện. Phím tắt đổi mode toàn cục <code>SwitchModeKey</code> đã bị tắt trong code.</p>

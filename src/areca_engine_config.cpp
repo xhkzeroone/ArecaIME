@@ -168,7 +168,9 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
       static_cast<uint32_t>(
           advancedConfig_.ibusAfterMarkerCommitWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.postCommitDelayMs.value()),
-      advancedConfig_.preciseTiming.value() ? 1U : 0U};
+      // Timer luôn chạy độ chính xác 1 µs: độ trễ vài ms là đáng kể với
+      // thứ tự xoá rồi chèn chữ.
+      1U};
 }
 
 void ArecaEngine::rebuildAppBackendOverridesMap() {

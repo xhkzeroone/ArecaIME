@@ -220,7 +220,7 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(1, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> afterUinputShiftSelectWaitMs{
         this, "AfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> waylandAfterUinputShiftSelectWaitMs{
         this, "WaylandAfterUinputShiftSelectWaitMs",
@@ -228,19 +228,19 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> ximAfterUinputShiftSelectWaitMs{
         this, "XimAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput XIM (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput XIM (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> fcitx4AfterUinputShiftSelectWaitMs{
         this, "Fcitx4AfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput Fcitx4 (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput Fcitx4 (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> dbusAfterUinputShiftSelectWaitMs{
         this, "DbusAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput DBus (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> ibusAfterUinputShiftSelectWaitMs{
         this, "IBusAfterUinputShiftSelectWaitMs",
-        N_("Chờ sau khi thả Shift uinput IBus (ms)"), 10,
+        N_("Chờ sau khi thả Shift uinput IBus (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
         this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
@@ -280,8 +280,6 @@ FCITX_CONFIGURATION(
     fcitx::Option<int, fcitx::IntConstrain> postCommitDelayMs{
         this, "PostCommitDelayMs", N_("Delay sau mỗi commit (ms)"), 20,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
-                                      N_("Dùng timer độ chính xác cao"), true};
     fcitx::Option<bool> useUinputInsteadOfForwardKey{
         this, "UseUinputInsteadOfForwardKey",
         N_("Dùng uinput thay cho ForwardKey"), true};
@@ -296,26 +294,6 @@ FCITX_CONFIGURATION(
     // areca-advanced.conf nếu một ứng dụng gặp lỗi.
     fcitx::HiddenOption<bool> forwardFirstCharacter{
         this, "ForwardFirstCharacter", N_("Chuyển tiếp phím đầu"), true};);
-
-inline void applyBestPerformancePreset(AdvancedConfig &config) {
-  constexpr int rewriteWaitMs = 5;
-  constexpr int waylandWaitMs = 3;
-  constexpr int surroundingWaitMs = 1;
-
-  config.waylandAfterBackspaceWaitMs.setValue(waylandWaitMs);
-  config.dbusAfterBackspaceWaitMs.setValue(rewriteWaitMs);
-  config.ibusAfterBackspaceWaitMs.setValue(rewriteWaitMs);
-
-  config.waylandAfterUinputShiftSelectWaitMs.setValue(waylandWaitMs);
-  config.dbusAfterUinputShiftSelectWaitMs.setValue(rewriteWaitMs);
-  config.ibusAfterUinputShiftSelectWaitMs.setValue(rewriteWaitMs);
-
-  config.surroundingWaitMs.setValue(surroundingWaitMs);
-
-  config.waylandAfterXTestBackspaceWaitMs.setValue(waylandWaitMs);
-  config.dbusAfterXTestBackspaceWaitMs.setValue(rewriteWaitMs);
-  config.ibusAfterXTestBackspaceWaitMs.setValue(rewriteWaitMs);
-}
 
 FCITX_CONFIGURATION(
     ArecaConfig,

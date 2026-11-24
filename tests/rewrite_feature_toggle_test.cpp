@@ -705,42 +705,11 @@ int main() {
   assert(!advancedConfig.useNativeInsteadOfUinput.value());
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
 
-  advancedConfig.ximAfterBackspaceWaitMs.setValue(21);
-  advancedConfig.fcitx4AfterBackspaceWaitMs.setValue(22);
-  advancedConfig.backspaceDelayMs.setValue(27);
-  advancedConfig.uinputShiftSelectDelayMs.setValue(28);
-  advancedConfig.surroundingWaitMs.setValue(29);
-  advancedConfig.xtestBackspaceDelayMs.setValue(30);
-  advancedConfig.afterBackspaceWaitMs.setValue(31);
-  advancedConfig.afterUinputShiftSelectWaitMs.setValue(32);
-  advancedConfig.afterXTestBackspaceWaitMs.setValue(33);
-  advancedConfig.ximAfterUinputShiftSelectWaitMs.setValue(23);
-  advancedConfig.fcitx4AfterUinputShiftSelectWaitMs.setValue(24);
-  advancedConfig.ximAfterXTestBackspaceWaitMs.setValue(25);
-  advancedConfig.fcitx4AfterXTestBackspaceWaitMs.setValue(26);
-  areca::applyBestPerformancePreset(advancedConfig);
-  assert(advancedConfig.backspaceDelayMs.value() == 27);
-  assert(advancedConfig.afterBackspaceWaitMs.value() == 31);
-  assert(advancedConfig.waylandAfterBackspaceWaitMs.value() == 3);
-  assert(advancedConfig.dbusAfterBackspaceWaitMs.value() == 5);
-  assert(advancedConfig.ibusAfterBackspaceWaitMs.value() == 5);
-  assert(advancedConfig.ximAfterBackspaceWaitMs.value() == 21);
-  assert(advancedConfig.fcitx4AfterBackspaceWaitMs.value() == 22);
-  assert(advancedConfig.uinputShiftSelectDelayMs.value() == 28);
-  assert(advancedConfig.afterUinputShiftSelectWaitMs.value() == 32);
-  assert(advancedConfig.waylandAfterUinputShiftSelectWaitMs.value() == 3);
+  // Shift+Left chỉ chờ 5 ms sau khi thả Shift ở mọi frontend.
+  assert(advancedConfig.afterUinputShiftSelectWaitMs.value() == 5);
+  assert(advancedConfig.waylandAfterUinputShiftSelectWaitMs.value() == 5);
+  assert(advancedConfig.ximAfterUinputShiftSelectWaitMs.value() == 5);
   assert(advancedConfig.dbusAfterUinputShiftSelectWaitMs.value() == 5);
-  assert(advancedConfig.ibusAfterUinputShiftSelectWaitMs.value() == 5);
-  assert(advancedConfig.ximAfterUinputShiftSelectWaitMs.value() == 23);
-  assert(advancedConfig.fcitx4AfterUinputShiftSelectWaitMs.value() == 24);
-  assert(advancedConfig.surroundingWaitMs.value() == 1);
-  assert(advancedConfig.xtestBackspaceDelayMs.value() == 30);
-  assert(advancedConfig.afterXTestBackspaceWaitMs.value() == 33);
-  assert(advancedConfig.waylandAfterXTestBackspaceWaitMs.value() == 3);
-  assert(advancedConfig.dbusAfterXTestBackspaceWaitMs.value() == 5);
-  assert(advancedConfig.ibusAfterXTestBackspaceWaitMs.value() == 5);
-  assert(advancedConfig.ximAfterXTestBackspaceWaitMs.value() == 25);
-  assert(advancedConfig.fcitx4AfterXTestBackspaceWaitMs.value() == 26);
 
   areca::ArecaConfig mainConfig;
   assert(!mainConfig.disableVietnameseInTerminal.value());

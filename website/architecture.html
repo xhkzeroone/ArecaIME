@@ -4343,20 +4343,9 @@ theo tên frontend bắt đầu bằng <code>wayland</code>, <code>xim</code>, <
 <tr><td><code>AfterXTestBackspaceWaitMs</code></td><td>Chờ sau Backspace Native cuối, frontend khác</td><td>10 ms</td></tr>
 <tr><td><code>Wayland</code>, <code>Xim</code>, <code>Fcitx4</code>, <code>Dbus</code>, <code>IBus</code> + <code>AfterXTestBackspaceWaitMs</code></td><td>Như trên theo frontend</td><td>10 ms</td></tr>
 <tr><td><code>PostCommitDelayMs</code></td><td>Barrier sau mỗi phím</td><td>20 ms</td></tr>
-<tr><td><code>PreciseTiming</code></td><td>Timer accuracy 1 µs thay vì 0</td><td><code>True</code></td></tr>
 </tbody>
 </table>
-<p>Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:</p>
-<table>
-<thead>
-<tr><th>Nhóm khoá</th><th>Giá trị</th></tr>
-</thead>
-<tbody>
-<tr><td>Chờ sau Backspace, Shift select, Native trên Wayland</td><td>3 ms</td></tr>
-<tr><td>Chờ sau Backspace, Shift select, Native trên DBus và IBus</td><td>5 ms</td></tr>
-<tr><td><code>SurroundingWaitMs</code></td><td>1 ms</td></tr>
-</tbody>
-</table>
+<p>Timer của backend và post-commit luôn chạy với accuracy <code>1 µs</code>.</p>
 <h2 id="7-tu%E1%BB%B3-ch%E1%BB%8Dn-h%C3%A0nh-vi-li%C3%AAn-quan" tabindex="-1">7. Tuỳ chọn hành vi liên quan</h2>
 <table>
 <thead>
