@@ -152,6 +152,8 @@ jobs:
                "dist/fcitx5-areca_${VERSION}_popos24_amd64.deb"
             cp "dist/fcitx5-areca_${VERSION}_ubuntu24_amd64.deb" \
                "dist/fcitx5-areca_${VERSION}_zorin17_amd64.deb"
+            cp "dist/fcitx5-areca_${VERSION}_ubuntu24_amd64.deb" \
+               "dist/fcitx5-areca_${VERSION}_zorin18_amd64.deb"
           fi
 
       - uses: actions/upload-artifact@v4
@@ -160,10 +162,18 @@ jobs:
           path: dist/*.deb
           if-no-files-found: error
 
-  ubuntu25:
-    name: Ubuntu 25.10
+  ubuntu-interim:
+    name: Ubuntu ${{ matrix.version }}
     runs-on: ubuntu-24.04
     needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: "25.10"
+            package_suffix: ubuntu25
+          - version: "26.10"
+            package_suffix: ubuntu2610
     env:
       VERSION: ${{ needs.version.outputs.value }}
     steps:
@@ -171,7 +181,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build, test and package in Ubuntu 25.10
+      - name: Build, test and package in Ubuntu ${{ matrix.version }}
         run: |
           set -euo pipefail
           mkdir -p dist
@@ -180,7 +190,7 @@ jobs:
             -e DEBIAN_FRONTEND=noninteractive \
             -v "$PWD:/work" \
             -w /work \
-            ubuntu:25.10 \
+            ubuntu:${{ matrix.version }} \
             bash -lc '
               set -euo pipefail
               apt-get update
@@ -209,16 +219,16 @@ jobs:
                 libwayland-bin
               gem install --no-document fpm
 
-              cmake -S . -B build-pkg-ubuntu25 -G Ninja \
+              cmake -S . -B build-pkg-ubuntu-container -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INSTALL_PREFIX=/usr \
                 -DBUILD_TESTING=ON
-              cmake --build build-pkg-ubuntu25 --parallel
-              ctest --test-dir build-pkg-ubuntu25 --output-on-failure
+              cmake --build build-pkg-ubuntu-container --parallel
+              ctest --test-dir build-pkg-ubuntu-container --output-on-failure
 
-              mkdir -p pkgroot-ubuntu25
-              DESTDIR="$PWD/pkgroot-ubuntu25" \
-                cmake --install build-pkg-ubuntu25 --strip
+              mkdir -p pkgroot-ubuntu-container
+              DESTDIR="$PWD/pkgroot-ubuntu-container" \
+                cmake --install build-pkg-ubuntu-container --strip
               fpm -s dir -t deb \
                 -n fcitx5-areca \
                 -v "$VERSION" \
@@ -239,16 +249,16 @@ jobs:
                 --depends libportal1 \
                 --depends libudev1 \
             --depends libwayland-client0 \
-                -C pkgroot-ubuntu25 \
-                -p "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb" \
+                -C pkgroot-ubuntu-container \
+                -p "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb" \
                 .
               dpkg-deb -c \
-                "dist/fcitx5-areca_${VERSION}_ubuntu25_amd64.deb"
+                "dist/fcitx5-areca_${VERSION}_${{ matrix.package_suffix }}_amd64.deb"
             '
 
       - uses: actions/upload-artifact@v4
         with:
-          name: fcitx5-areca-ubuntu25-deb
+          name: fcitx5-areca-${{ matrix.package_suffix }}-deb
           path: dist/*.deb
           if-no-files-found: error
 
@@ -330,7 +340,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["44", "43", "42"]
+        version: ["45", "44", "43", "42"]
     env:
       VERSION: ${{ needs.version.outputs.value }}
     steps:
@@ -516,7 +526,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - ubuntu
-      - ubuntu25
+      - ubuntu-interim
       - arch
       - fedora
       - opensuse

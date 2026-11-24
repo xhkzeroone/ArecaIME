@@ -285,6 +285,7 @@ select_platform() {
         24.04) ARECA_ASSET_MARKER=_ubuntu24_amd64.deb ;;
         25.10) ARECA_ASSET_MARKER=_ubuntu25_amd64.deb ;;
         26.04) ARECA_ASSET_MARKER=_ubuntu26_amd64.deb ;;
+        26.10) ARECA_ASSET_MARKER=_ubuntu2610_amd64.deb ;;
         *) die "Ubuntu ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;;
       esac ;;
     linuxmint)
@@ -295,12 +296,12 @@ select_platform() {
       case "${VERSION_ID:-}" in 24.04) ARECA_ASSET_MARKER=_popos24_amd64.deb ;; *) die "Pop!_OS ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;; esac ;;
     zorin)
       ARECA_PACKAGE_TYPE=deb
-      case "${VERSION_ID:-}" in 17|17.*) ARECA_ASSET_MARKER=_zorin17_amd64.deb ;; *) die "Zorin OS ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;; esac ;;
+      case "${VERSION_ID:-}" in 17|17.*) ARECA_ASSET_MARKER=_zorin17_amd64.deb ;; 18|18.*) ARECA_ASSET_MARKER=_zorin18_amd64.deb ;; *) die "Zorin OS ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;; esac ;;
     arch) ARECA_PACKAGE_TYPE=pacman; ARECA_ASSET_MARKER=-x86_64.pkg.tar.zst ;;
     cachyos|manjaro|endeavouros|garuda) ARECA_PACKAGE_TYPE=pacman; ARECA_ASSET_MARKER="-x86_64.${ID}.pkg.tar.zst" ;;
     fedora)
       ARECA_PACKAGE_TYPE=rpm
-      case "${VERSION_ID:-}" in 42|43|44) ARECA_ASSET_MARKER=".fedora${VERSION_ID}.x86_64.rpm" ;; *) die "Fedora ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;; esac ;;
+      case "${VERSION_ID:-}" in 42|43|44|45) ARECA_ASSET_MARKER=".fedora${VERSION_ID}.x86_64.rpm" ;; *) die "Fedora ${VERSION_ID:-không rõ} chưa có trong danh sách release." ;; esac ;;
     nobara|bazzite) ARECA_PACKAGE_TYPE=rpm; ARECA_ASSET_MARKER=".${ID}.x86_64.rpm" ;;
     opensuse-tumbleweed) ARECA_PACKAGE_TYPE=rpm; ARECA_ASSET_MARKER=.opensuse-tumbleweed.x86_64.rpm ;;
     *) die "${ARECA_OS_NAME} chưa có trong danh sách release được hỗ trợ." ;;
