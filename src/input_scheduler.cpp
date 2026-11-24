@@ -259,39 +259,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
 
   const auto &timing = activeTiming_;
   RewritePlan plan;
+  static_cast<RewriteTiming &>(plan) = timing;
   plan.transactionId = nextTransactionId_++;
-  plan.backspaceDelayMs = timing.backspaceDelayMs;
-  plan.uinputBackspaceAckTimeoutMs = timing.uinputBackspaceAckTimeoutMs;
-  plan.afterBackspaceWaitMs = timing.afterBackspaceWaitMs;
-  plan.waylandAfterBackspaceWaitMs = timing.waylandAfterBackspaceWaitMs;
-  plan.ximAfterBackspaceWaitMs = timing.ximAfterBackspaceWaitMs;
-  plan.fcitx4AfterBackspaceWaitMs = timing.fcitx4AfterBackspaceWaitMs;
-  plan.dbusAfterBackspaceWaitMs = timing.dbusAfterBackspaceWaitMs;
-  plan.ibusAfterBackspaceWaitMs = timing.ibusAfterBackspaceWaitMs;
-  plan.uinputShiftSelectDelayMs = timing.uinputShiftSelectDelayMs;
-  plan.uinputShiftSelectAckTimeoutMs = timing.uinputShiftSelectAckTimeoutMs;
-  plan.afterUinputShiftSelectWaitMs = timing.afterUinputShiftSelectWaitMs;
-  plan.waylandAfterUinputShiftSelectWaitMs =
-      timing.waylandAfterUinputShiftSelectWaitMs;
-  plan.ximAfterUinputShiftSelectWaitMs = timing.ximAfterUinputShiftSelectWaitMs;
-  plan.fcitx4AfterUinputShiftSelectWaitMs =
-      timing.fcitx4AfterUinputShiftSelectWaitMs;
-  plan.dbusAfterUinputShiftSelectWaitMs =
-      timing.dbusAfterUinputShiftSelectWaitMs;
-  plan.ibusAfterUinputShiftSelectWaitMs =
-      timing.ibusAfterUinputShiftSelectWaitMs;
-  plan.surroundingWaitMs = timing.surroundingWaitMs;
-  plan.surroundingProbeTimeoutMs = timing.surroundingProbeTimeoutMs;
-  plan.nativeBackspaceDelayMs = timing.nativeBackspaceDelayMs;
-  plan.afterNativeBackspaceWaitMs = timing.afterNativeBackspaceWaitMs;
-  plan.waylandAfterNativeBackspaceWaitMs =
-      timing.waylandAfterNativeBackspaceWaitMs;
-  plan.ximAfterNativeBackspaceWaitMs = timing.ximAfterNativeBackspaceWaitMs;
-  plan.fcitx4AfterNativeBackspaceWaitMs =
-      timing.fcitx4AfterNativeBackspaceWaitMs;
-  plan.dbusAfterNativeBackspaceWaitMs = timing.dbusAfterNativeBackspaceWaitMs;
-  plan.ibusAfterNativeBackspaceWaitMs = timing.ibusAfterNativeBackspaceWaitMs;
-  plan.timerAccuracyUsec = timing.timerAccuracyUsec;
   plan.commitText = result.commitText;
 
   const auto selection = rewriteBackendSelector_(inputContext, result);

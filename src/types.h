@@ -20,9 +20,8 @@ struct BambooResult {
 // backend xoá như ở ô bình thường. Vì vậy lệnh xoá luôn xoá thêm một ký tự.
 inline constexpr std::string_view kRewriteMarker = "\u00b7";
 
-struct RewritePlan {
-  uint64_t transactionId = 0;
-  uint32_t backspaceCount = 0;
+// Thời gian chờ của mọi backend, lấy từ cấu hình nâng cao mỗi lượt sửa.
+struct RewriteTiming {
   uint32_t backspaceDelayMs = 1;
   uint32_t uinputBackspaceAckTimeoutMs = 150;
   uint32_t afterBackspaceWaitMs = 10;
@@ -50,8 +49,41 @@ struct RewritePlan {
   uint32_t fcitx4AfterNativeBackspaceWaitMs = 10;
   uint32_t dbusAfterNativeBackspaceWaitMs = 10;
   uint32_t ibusAfterNativeBackspaceWaitMs = 10;
-
+  // Chờ marker tới ứng dụng trước khi backend kênh phím bắt đầu xoá.
+  uint32_t afterMarkerCommitWaitMs = 10;
+  uint32_t waylandAfterMarkerCommitWaitMs = 10;
+  uint32_t ximAfterMarkerCommitWaitMs = 10;
+  uint32_t fcitx4AfterMarkerCommitWaitMs = 10;
+  uint32_t dbusAfterMarkerCommitWaitMs = 10;
+  uint32_t ibusAfterMarkerCommitWaitMs = 10;
+  uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
+};
+
+inline uint32_t resolveAfterMarkerCommitWaitMs(const char *frontendName,
+                                               const RewriteTiming &timing) {
+  const std::string_view fe(frontendName ? frontendName : "");
+  if (fe.starts_with("wayland")) {
+    return timing.waylandAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("xim")) {
+    return timing.ximAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("fcitx4")) {
+    return timing.fcitx4AfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("dbus")) {
+    return timing.dbusAfterMarkerCommitWaitMs;
+  }
+  if (fe.starts_with("ibus")) {
+    return timing.ibusAfterMarkerCommitWaitMs;
+  }
+  return timing.afterMarkerCommitWaitMs;
+}
+
+struct RewritePlan : RewriteTiming {
+  uint64_t transactionId = 0;
+  uint32_t backspaceCount = 0;
   std::string commitText;
   bool probeSurrounding = false;
   // Backend phải tự gõ marker trước khi xoá vì scheduler không commit được
