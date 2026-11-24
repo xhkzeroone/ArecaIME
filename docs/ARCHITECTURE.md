@@ -26,7 +26,7 @@ Xem thêm:
 | Rewrite backend | `src/*_backend.*` | 7 backend implement `RewriteBackend`, xem [bảng backend](#rewrite-backend). |
 | `AdaptiveWait` | `src/adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm. |
 | `EventLoopPostTask` | `src/event_loop_post.h` | Đưa commit sang pha post của event loop. |
-| `InputTypeDetector` | `src/input_type_detector.*` | Nhận diện trình duyệt, terminal, khả năng forward Backspace. |
+| `InputTypeDetector` | `src/input_type_detector.*` | Nhận diện terminal, khả năng forward Backspace. |
 | `WindowFocusTracker` | `src/window_focus_tracker.*`, `src/atspi/` | Thread riêng đọc AT-SPI để biết chương trình và ô đang focus. |
 | `MouseClickTracker`, `areca-mouse-monitor` | `src/mouse_click_tracker.*` | Process con libinput báo click qua pipe để reset composition. |
 | `DynamicIslandAnnouncement` | `src/notification/` | Phát tín hiệu D-Bus khi chọn Areca, xem [tài liệu riêng](input-method-announcement.md). |

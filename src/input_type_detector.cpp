@@ -37,19 +37,6 @@ void InputTypeDetector::setFocusTracker(const WindowFocusTracker *tracker) {
   tracker_ = tracker;
 }
 
-bool InputTypeDetector::isBrowser(const std::string &program) const {
-  if (!program.empty()) {
-    return isBrowserLikeProgram(program);
-  }
-  if (tracker_ && tracker_->isValid()) {
-    const std::string tracked = tracker_->focusProgram();
-    if (!tracked.empty()) {
-      return isBrowserLikeProgram(tracked);
-    }
-  }
-  return true;
-}
-
 bool InputTypeDetector::isTerminal(const std::string &program,
                                    const char *frontend) const {
   if (isTerminalProgram(program)) {
