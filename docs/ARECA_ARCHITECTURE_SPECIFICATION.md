@@ -23,7 +23,7 @@ KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
                                                         │
       ┌──────────────────┬───────────────────┬──────────┴───────────┐
       ▼                  ▼                   ▼                      ▼
- Surrounding V1/V2   Shift select        Backspace             Backspace
+ Surrounding        Shift select        Backspace             Backspace
  deleteSurrounding   uinput / Native     uinput / Native       ForwardKey
                                                         │
                                                         ▼
@@ -92,7 +92,7 @@ sequenceDiagram
             E-->>S: Backspace
         end
     else Verdict cho phép surrounding
-        E-->>S: Surrounding V1 hoặc V2, kèm probe nếu chưa xác nhận
+        E-->>S: Surrounding, kèm probe nếu chưa xác nhận
     else Còn lại
         E-->>S: Backspace
     end
@@ -102,7 +102,7 @@ Thứ tự trong từng nhóm backend:
 
 | Nhóm | Thứ tự |
 | --- | --- |
-| Surrounding | V2 nếu `UseSurroundingV2InsteadOfSurroundingV1`, ngược lại V1 |
+| Surrounding | `SurroundingTextBackend` |
 | Shift select | uinput → Native |
 | Backspace | Nếu cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey`: uinput → Native. Cuối cùng ForwardKey |
 
@@ -187,38 +187,7 @@ sequenceDiagram
     B->>S: onDone(Succeeded)
 ```
 
-### 5.2. `SurroundingTextV2Backend`
-
-Dùng cho editor xử lý lệnh xoá gộp `-N` không ổn định. Xoá từng ký tự và xác
-nhận lần xoá cuối ở mọi rewrite, không chỉ lần đầu.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextV2Backend
-    participant IC as InputContext
-    participant EL as EventLoop
-
-    S->>B: apply(plan)
-    loop N - 1 lần
-        B->>IC: deleteSurroundingText(-1, 1)
-        B->>EL: Timer SurroundingDeleteDelayMs, Wayland dùng WaylandSurroundingDeleteDelayMs
-        EL-->>B: Timer
-    end
-    B->>EL: Timer deadline xác nhận
-    B->>IC: deleteSurroundingText(-1, 1) lần cuối
-    alt Update khớp
-        IC-->>B: SurroundingTextUpdated
-        B->>EL: Chờ AfterSurroundingDeleteWaitMs + extra, pha post
-        B->>IC: commitString(commitText)
-        B->>S: onDone(Succeeded)
-    else Hết deadline
-        B->>B: Chuyển sang backend fallback như V1
-    end
-```
-
-### 5.3. `UinputShiftSelectBackend`
+### 5.2. `UinputShiftSelectBackend`
 
 ```mermaid
 sequenceDiagram
@@ -254,12 +223,12 @@ sequenceDiagram
 Mọi Left và Shift quay về đều được forward tới ứng dụng. Shift up là ACK duy nhất.
 `commitText` rỗng thì backend phát một Backspace để xoá vùng chọn.
 
-### 5.4. `NativeShiftSelectBackend`
+### 5.3. `NativeShiftSelectBackend`
 
 Giống 5.3 nhưng phát Shift, Left qua libei, khoảng cách giữa các Left
 cộng thêm adaptive, và không chờ ACK: thả Shift xong là bắt đầu chờ commit.
 
-### 5.5. `UinputBackspaceBackend`
+### 5.4. `UinputBackspaceBackend`
 
 ```mermaid
 sequenceDiagram
@@ -294,13 +263,13 @@ sequenceDiagram
 Mọi Backspace quay về đều được forward. `seen` chỉ là mốc để bắt đầu chờ, không
 dùng để lọc phím. Commit không bao giờ xảy ra trước khi phát hết N phím.
 
-### 5.6. `NativeBackspaceBackend`
+### 5.5. `NativeBackspaceBackend`
 
 Phát Backspace × N qua libei với `XTestBackspaceDelayMs` cộng adaptive,
 rồi chờ `AfterXTestBackspaceWaitMs` theo frontend cộng extra và commit ở pha post.
 Không có ACK.
 
-### 5.7. `ForwardBackspaceBackend`
+### 5.6. `ForwardBackspaceBackend`
 
 ```mermaid
 sequenceDiagram
@@ -337,11 +306,8 @@ theo tên frontend bắt đầu bằng `wayland`, `xim`, `fcitx4`, `dbus`, `ibus
 | `AfterUinputShiftSelectWaitMs` | Chờ sau khi thả Shift, frontend khác | 10 ms |
 | `WaylandAfterUinputShiftSelectWaitMs` | Như trên, Wayland | 5 ms |
 | `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterUinputShiftSelectWaitMs` | Như trên theo frontend | 10 ms |
-| `SurroundingWaitMs` | Chờ sau lệnh xoá surrounding V1 | 3 ms |
+| `SurroundingWaitMs` | Chờ sau lệnh xoá surrounding | 3 ms |
 | `SurroundingProbeTimeoutMs` | Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms | 80 ms |
-| `SurroundingDeleteDelayMs` | Giữa các lệnh xoá V2 | 10 ms |
-| `WaylandSurroundingDeleteDelayMs` | Như trên, Wayland | 0 ms |
-| `AfterSurroundingDeleteWaitMs` | Chờ sau lệnh xoá V2 cuối | 1 ms |
 | `XTestBackspaceDelayMs` | Giữa các Backspace Native | 1 ms |
 | `AfterXTestBackspaceWaitMs` | Chờ sau Backspace Native cuối, frontend khác | 10 ms |
 | `Wayland`, `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterXTestBackspaceWaitMs` | Như trên theo frontend | 10 ms |
@@ -354,13 +320,12 @@ Preset hiệu năng trong ứng dụng cài đặt ImGui cũ đặt:
 | --- | --- |
 | Chờ sau Backspace, Shift select, Native trên Wayland | 3 ms |
 | Chờ sau Backspace, Shift select, Native trên DBus và IBus | 5 ms |
-| `SurroundingWaitMs`, các delay và chờ của Surrounding V2 | 1 ms |
+| `SurroundingWaitMs` | 1 ms |
 
 ## 7. Tuỳ chọn hành vi liên quan
 
 | Khoá | File | Mặc định | Tác dụng |
 | --- | --- | --- | --- |
-| `UseSurroundingV2InsteadOfSurroundingV1` | advanced | `False` | Dùng V2 cho nhóm Surrounding |
 | `UseUinputInsteadOfForwardKey` | advanced | `True` | Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng |
 | `EnableMouseTracking` | advanced | `True` | Chạy helper chuột để reset khi click |
 | `ForwardFirstCharacter` | advanced (ẩn) | `True` | Bật nhánh phím đầu cho mọi ứng dụng |

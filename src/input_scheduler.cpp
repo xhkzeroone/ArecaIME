@@ -282,9 +282,6 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
       timing.ibusAfterUinputShiftSelectWaitMs;
   plan.surroundingWaitMs = timing.surroundingWaitMs;
   plan.surroundingProbeTimeoutMs = timing.surroundingProbeTimeoutMs;
-  plan.surroundingDeleteDelayMs = timing.surroundingDeleteDelayMs;
-  plan.waylandSurroundingDeleteDelayMs = timing.waylandSurroundingDeleteDelayMs;
-  plan.afterSurroundingDeleteWaitMs = timing.afterSurroundingDeleteWaitMs;
   plan.xtestBackspaceDelayMs = timing.xtestBackspaceDelayMs;
   plan.afterXTestBackspaceWaitMs = timing.afterXTestBackspaceWaitMs;
   plan.waylandAfterXTestBackspaceWaitMs =

@@ -61,21 +61,6 @@ void updateSurroundingCacheAfterCommit(fcitx::InputContext &inputContext,
   insertReplacingSelection(st, committedText);
 }
 
-void updateSurroundingCacheAfterDeleteV2(fcitx::InputContext &inputContext,
-                                         int offset, uint32_t count) {
-  inputContext.surroundingText().deleteText(offset, count);
-}
-
-void updateSurroundingCacheAfterCommitV2(fcitx::InputContext &inputContext,
-                                         const std::string &committedText) {
-  if (committedText.empty()) {
-    return;
-  }
-  auto &st = inputContext.surroundingText();
-
-  insertReplacingSelection(st, committedText);
-}
-
 std::size_t commonPrefixBytesUTF8Boundary(const std::string &s1,
                                           const std::string &s2) {
   std::size_t n = std::min(s1.size(), s2.size());

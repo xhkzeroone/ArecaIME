@@ -499,11 +499,6 @@ namespace areca::settings {
             "SurroundingTextCard", "Surrounding text", "Timing cho backend xử lý văn bản xung quanh con trỏ."
         );
         inputInt("Chờ sau xóa surrounding text (ms)", config.advanced.surroundingWaitMs);
-        inputInt("Delay giữa các lệnh xóa surrounding v2 (ms)", config.advanced.surroundingDeleteDelayMs);
-        inputInt(
-            "Delay giữa các lệnh xóa surrounding v2 Wayland (ms)", config.advanced.waylandSurroundingDeleteDelayMs
-        );
-        inputInt("Chờ sau lệnh xóa surrounding v2 cuối (ms)", config.advanced.afterSurroundingDeleteWaitMs);
         endSettingsCard();
 
         beginSettingsCard("XTestTimingCard", "Native Backspace", "Độ trễ khi mô phỏng Backspace qua libei.");
@@ -525,7 +520,6 @@ namespace areca::settings {
         );
         checkbox("Khôi phục chính tả khi nhấn Backspace", config.main.backspaceRecovery);
         checkbox("Dùng timer độ chính xác cao", config.advanced.preciseTiming);
-        checkbox("Dùng Surrounding v2 thay cho Surrounding v1", config.advanced.useSurroundingV2InsteadOfSurroundingV1);
         checkbox("Dùng uinput thay cho ForwardKey", config.advanced.useUinputInsteadOfForwardKey);
         checkbox("Dùng Native (libei) thay thế uinput", config.advanced.useNativeInsteadOfUinput);
         checkbox("Tự reset bộ gõ sau khi click chuột", config.advanced.enableMouseTracking);
@@ -586,9 +580,7 @@ namespace areca::settings {
                 ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0F);
                 ImGui::TableHeadersRow();
 
-                std::string surName = "Surrounding (";
-                surName += config.advanced.useSurroundingV2InsteadOfSurroundingV1.value() ? "V2" : "V1";
-                surName += ")";
+                std::string surName = "Surrounding";
 
                 std::string shiftName = "Shift select (";
                 shiftName += config.advanced.useNativeInsteadOfUinput.value() ? "Native" : "Uinput";

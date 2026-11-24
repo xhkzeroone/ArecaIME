@@ -146,7 +146,6 @@ thông tin về tình trạng chậm của hệ thống vẫn được giữ khi
 | Backend | Chờ trước commit | Giãn chuỗi phím/xóa | Đo timer cục bộ | Đo ACK |
 |---|:---:|:---:|:---:|:---:|
 | `SurroundingTextBackend` | Có | Không áp dụng | Có | Không |
-| `SurroundingTextV2Backend` | Có | Có, giữa các lần xóa | Có | Không |
 | `ForwardBackspaceBackend` | Có | Có | Có | Không |
 | `UinputBackspaceBackend` | Có | Có | Có | Có |
 | `UinputShiftSelectBackend` | Có | Không dùng adaptive giữa các phím Left | Không | Có |
@@ -220,7 +219,7 @@ Giả sử base wait sau Backspace là 3 ms và base delay giữa phím là 1 ms
 - Thuật toán và hằng số: `src/adaptive_wait.h`.
 - Khởi tạo trạng thái dùng chung: `src/areca_engine.h`, `src/areca_engine.cpp`.
 - Các backend: `src/*backspace_backend.cpp`, `src/*shift_select_backend.cpp`,
-  `src/surrounding_text_backend.cpp`, `src/surrounding_text_v2_backend.cpp`.
+  `src/surrounding_text_backend.cpp`.
 - Kiểm thử thuật toán: `tests/adaptive_wait_test.cpp`.
 - Kiểm thử tích hợp: các file test của từng backend tương ứng.
 

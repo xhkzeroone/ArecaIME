@@ -214,7 +214,7 @@ Mỗi backend khai báo `markerDelivery()`:
 
 | Kiểu | Backend | Cách đưa marker |
 | --- | --- | --- |
-| `InputMethod` | Surrounding v1, v2 | `commitString("·")`, cập nhật surrounding cache, đợi ứng dụng báo surrounding có `·` trước con trỏ (tối đa `SurroundingProbeTimeoutMs`) rồi xoá. Chromium bỏ qua lệnh xoá tới liền sau commit khi nó chưa báo lại trạng thái mới |
+| `InputMethod` | Surrounding | `commitString("·")`, cập nhật surrounding cache, đợi ứng dụng báo surrounding có `·` trước con trỏ (tối đa `SurroundingProbeTimeoutMs`) rồi xoá. Chromium bỏ qua lệnh xoá tới liền sau commit khi nó chưa báo lại trạng thái mới |
 | `Keys` | Backspace (uinput, libei, ForwardKey), Shift select | `commitString("·")` rồi chờ `AfterMarkerCommitWaitMs` (theo frontend, mặc định 10 ms) mới phát phím, vì phím đi kênh khác commit; ứng dụng báo surrounding có `·` sớm hơn thì phát ngay |
 | `Typed` | Virtual keyboard | Backend tự gõ `·` bằng phím ảo trước các Backspace, cùng một kết nối Wayland |
 
@@ -226,7 +226,6 @@ Chế độ Preedit không dùng marker.
 | Backend | Tên trong log | Cách xoá | Xác nhận |
 | --- | --- | --- | --- |
 | `SurroundingTextBackend` | `surrounding-text` | `deleteSurroundingText(-N, N)` một lần | Probe bằng `SurroundingTextUpdated` ở lần đầu |
-| `SurroundingTextV2Backend` | `surrounding-text-v2` | `deleteSurroundingText(-1, 1)` N lần | Xác nhận lần xoá cuối ở mọi rewrite |
 | `UinputShiftSelectBackend` | `uinput-shift-select` | Shift giữ + Left × N qua `/dev/uinput`, commit đè vùng chọn | ACK bằng Shift up quay về Fcitx |
 | `NativeShiftSelectBackend` | `native-shift-select` | Như trên qua libei | Không ACK |
 | `UinputBackspaceBackend` | `uinput-backspace` | Backspace × N qua `/dev/uinput` | ACK bằng số Backspace quay về Fcitx |
@@ -257,7 +256,7 @@ từng backend nằm trong [đặc tả](ARECA_ARCHITECTURE_SPECIFICATION.md#5-s
 
 Backend được chọn qua ba bộ chọn có thứ tự ưu tiên:
 
-- **Surrounding**: V2 nếu `UseSurroundingV2InsteadOfSurroundingV1=True`, ngược lại V1.
+- **Surrounding**: `SurroundingTextBackend`.
 - **Shift select**: Native nếu bật `UseXTestInsteadOfUinput`, rồi uinput, rồi Native.
 - **Backspace**: khi cần phím phần cứng hoặc `UseUinputInsteadOfForwardKey=True`,
   thử Native nếu bật `UseXTestInsteadOfUinput`, rồi uinput, rồi Native; cuối cùng

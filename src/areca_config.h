@@ -249,18 +249,6 @@ FCITX_CONFIGURATION(
         this, "SurroundingProbeTimeoutMs",
         N_("Timeout kiểm tra surrounding text (ms)"), 80,
         fcitx::IntConstrain(1, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> surroundingDeleteDelayMs{
-        this, "SurroundingDeleteDelayMs",
-        N_("Delay giữa các lệnh xóa surrounding v2 (ms)"), 10,
-        fcitx::IntConstrain(0, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> waylandSurroundingDeleteDelayMs{
-        this, "WaylandSurroundingDeleteDelayMs",
-        N_("Delay giữa các lệnh xóa surrounding v2 Wayland (ms)"), 0,
-        fcitx::IntConstrain(0, 1000)};
-    fcitx::Option<int, fcitx::IntConstrain> afterSurroundingDeleteWaitMs{
-        this, "AfterSurroundingDeleteWaitMs",
-        N_("Chờ sau lệnh xóa surrounding v2 cuối (ms)"), 1,
-        fcitx::IntConstrain(0, 5000)};
     fcitx::Option<int, fcitx::IntConstrain> xtestBackspaceDelayMs{
         this, "XTestBackspaceDelayMs",
         N_("Delay giữa các Backspace Native (ms)"), 1,
@@ -294,9 +282,6 @@ FCITX_CONFIGURATION(
         fcitx::IntConstrain(0, 5000)};
     fcitx::Option<bool> preciseTiming{this, "PreciseTiming",
                                       N_("Dùng timer độ chính xác cao"), true};
-    fcitx::Option<bool> useSurroundingV2InsteadOfSurroundingV1{
-        this, "UseSurroundingV2InsteadOfSurroundingV1",
-        N_("Dùng Surrounding v2 thay cho Surrounding v1"), false};
     fcitx::Option<bool> useUinputInsteadOfForwardKey{
         this, "UseUinputInsteadOfForwardKey",
         N_("Dùng uinput thay cho ForwardKey"), true};
@@ -326,9 +311,6 @@ inline void applyBestPerformancePreset(AdvancedConfig &config) {
   config.ibusAfterUinputShiftSelectWaitMs.setValue(rewriteWaitMs);
 
   config.surroundingWaitMs.setValue(surroundingWaitMs);
-  config.surroundingDeleteDelayMs.setValue(surroundingWaitMs);
-  config.waylandSurroundingDeleteDelayMs.setValue(surroundingWaitMs);
-  config.afterSurroundingDeleteWaitMs.setValue(surroundingWaitMs);
 
   config.waylandAfterXTestBackspaceWaitMs.setValue(waylandWaitMs);
   config.dbusAfterXTestBackspaceWaitMs.setValue(rewriteWaitMs);

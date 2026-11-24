@@ -43,9 +43,6 @@ struct RewritePlan {
 
   uint32_t surroundingWaitMs = 3;
   uint32_t surroundingProbeTimeoutMs = 80;
-  uint32_t surroundingDeleteDelayMs = 10;
-  uint32_t waylandSurroundingDeleteDelayMs = 0;
-  uint32_t afterSurroundingDeleteWaitMs = 1;
   uint32_t xtestBackspaceDelayMs = 1;
   uint32_t afterXTestBackspaceWaitMs = 10;
   uint32_t waylandAfterXTestBackspaceWaitMs = 10;
@@ -135,19 +132,6 @@ inline uint32_t resolveAfterUinputShiftSelectWaitMs(const char *frontendName,
     return plan.ibusAfterUinputShiftSelectWaitMs;
   }
   return plan.afterUinputShiftSelectWaitMs;
-}
-
-template <typename Timing>
-inline uint32_t resolveSurroundingDeleteDelayMs(const char *frontendName,
-                                                const Timing &plan) {
-  if (!frontendName) {
-    return plan.surroundingDeleteDelayMs;
-  }
-  const std::string_view fe(frontendName);
-  if (fe.starts_with("wayland")) {
-    return plan.waylandSurroundingDeleteDelayMs;
-  }
-  return plan.surroundingDeleteDelayMs;
 }
 
 } // namespace areca

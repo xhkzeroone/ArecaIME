@@ -69,8 +69,7 @@ void ArecaEngine::noteRewriteBackendChoice(fcitx::InputContext &inputContext,
   if (program.empty()) {
     return;
   }
-  surroundingBackendByApp_[program] =
-      backend == &surroundingBackend_ || backend == &surroundingV2Backend_;
+  surroundingBackendByApp_[program] = backend == &surroundingBackend_;
 }
 
 bool ArecaEngine::backendVerdictProtected(
@@ -142,9 +141,6 @@ std::string ArecaEngine::resolveProgram(fcitx::InputContext &inputContext,
 }
 
 RewriteBackend *ArecaEngine::resolvePreferredSurroundingBackend() {
-  if (advancedConfig_.useSurroundingV2InsteadOfSurroundingV1.value()) {
-    return &surroundingV2Backend_;
-  }
   return &surroundingBackend_;
 }
 
@@ -250,13 +246,6 @@ std::string ArecaEngine::describeAutoBackend(const std::string &appName) {
     }
   }
   return "Tự động";
-}
-
-std::string ArecaEngine::describeSurroundingBackend() {
-  if (advancedConfig_.useSurroundingV2InsteadOfSurroundingV1.value()) {
-    return "V2";
-  }
-  return "V1";
 }
 
 // Tên backend cho menu đi theo thứ tự của bộ chọn nhưng chỉ hỏi

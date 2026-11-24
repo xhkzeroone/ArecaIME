@@ -50,7 +50,6 @@ Bamboo bridge cung cấp: `ArecaBambooCreate(method, modernStyle)`, `Destroy`, `
 | Backend | Cách xoá | Xác nhận |
 |---|---|---|
 | Surrounding V1 | `deleteSurroundingText(-N, N)` một lần | Probe lần đầu |
-| Surrounding V2 | `(-1, 1)` N lần | Xác nhận lần xoá cuối |
 | uinput Backspace | Backspace × N qua `/dev/uinput` | Đếm Backspace quay về engine (ACK) |
 | uinput Shift-select | Shift + Left × N rồi commit đè vùng chọn | Shift up quay về |
 | Native Backspace / Shift-select | Như trên qua libei hoặc XTest | Không ACK |

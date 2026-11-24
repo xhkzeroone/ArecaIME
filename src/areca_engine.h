@@ -28,7 +28,6 @@
 #include "rewrite_mode.h"
 #include "surrounding_reliability.h"
 #include "surrounding_text_backend.h"
-#include "surrounding_text_v2_backend.h"
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
@@ -97,7 +96,6 @@ private:
   // Mode đã lưu cho app; mode mà máy này không hỗ trợ được coi là Tự động.
   AppBackendMode effectiveAppBackendMode(AppBackendMode saved);
   std::string describeAutoBackend(const std::string &appName);
-  std::string describeSurroundingBackend();
   std::string describeShiftSelectBackend();
   std::string describeBackspaceBackend(bool preferHardware = false);
   ReliabilityDecision evaluateReliability(fcitx::InputContext &inputContext,
@@ -177,7 +175,6 @@ private:
   AdaptiveWait adaptiveWait_;
   // Probe toàn cục chỉ cung cấp tín hiệu cho adaptiveWait_.
   SurroundingTextBackend surroundingBackend_;
-  SurroundingTextV2Backend surroundingV2Backend_;
   ForwardBackspaceBackend forwardBackspaceBackend_;
   UinputDevice uinputDevice_;
   UinputBackspaceBackend uinputBackspaceBackend_;

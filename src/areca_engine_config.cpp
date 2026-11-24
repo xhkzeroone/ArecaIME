@@ -145,11 +145,6 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
           advancedConfig_.ibusAfterUinputShiftSelectWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.surroundingProbeTimeoutMs.value()),
-      static_cast<uint32_t>(advancedConfig_.surroundingDeleteDelayMs.value()),
-      static_cast<uint32_t>(
-          advancedConfig_.waylandSurroundingDeleteDelayMs.value()),
-      static_cast<uint32_t>(
-          advancedConfig_.afterSurroundingDeleteWaitMs.value()),
       static_cast<uint32_t>(advancedConfig_.xtestBackspaceDelayMs.value()),
       static_cast<uint32_t>(advancedConfig_.afterXTestBackspaceWaitMs.value()),
       static_cast<uint32_t>(

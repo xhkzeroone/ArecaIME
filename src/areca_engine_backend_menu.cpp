@@ -89,8 +89,7 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
           : "Mặc định (" +
                 std::string(presentationModeName(activePresentationMode_)) +
                 ")";
-  const std::string surroundingTitle =
-      "Surrounding (" + describeSurroundingBackend() + ")";
+  const std::string surroundingTitle = "Surrounding";
   const std::string shiftTitle =
       "Shift select (" + describeShiftSelectBackend() + ")";
   const std::string backspaceTitle =
@@ -203,7 +202,7 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
     modeDesc = describeAutoBackend(appName);
     break;
   case AppBackendMode::SurroundingText:
-    modeDesc = "Surrounding (" + describeSurroundingBackend() + ")";
+    modeDesc = "Surrounding";
     break;
   case AppBackendMode::ShiftSelect:
     modeDesc = "Shift select (" + describeShiftSelectBackend() + ")";

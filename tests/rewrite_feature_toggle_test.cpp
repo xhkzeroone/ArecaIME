@@ -701,7 +701,6 @@ int main() {
          areca::AppBackendMode::ShiftSelect);
 
   areca::AdvancedConfig advancedConfig;
-  assert(!advancedConfig.useSurroundingV2InsteadOfSurroundingV1.value());
   assert(advancedConfig.useUinputInsteadOfForwardKey.value());
   assert(!advancedConfig.useNativeInsteadOfUinput.value());
   assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
@@ -735,9 +734,6 @@ int main() {
   assert(advancedConfig.ximAfterUinputShiftSelectWaitMs.value() == 23);
   assert(advancedConfig.fcitx4AfterUinputShiftSelectWaitMs.value() == 24);
   assert(advancedConfig.surroundingWaitMs.value() == 1);
-  assert(advancedConfig.surroundingDeleteDelayMs.value() == 1);
-  assert(advancedConfig.waylandSurroundingDeleteDelayMs.value() == 1);
-  assert(advancedConfig.afterSurroundingDeleteWaitMs.value() == 1);
   assert(advancedConfig.xtestBackspaceDelayMs.value() == 30);
   assert(advancedConfig.afterXTestBackspaceWaitMs.value() == 33);
   assert(advancedConfig.waylandAfterXTestBackspaceWaitMs.value() == 3);

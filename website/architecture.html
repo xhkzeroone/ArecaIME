@@ -4093,7 +4093,7 @@ KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
                                                         │
       ┌──────────────────┬───────────────────┬──────────┴───────────┐
       ▼                  ▼                   ▼                      ▼
- Surrounding V1/V2   Shift select        Backspace             Backspace
+ Surrounding        Shift select        Backspace             Backspace
  deleteSurrounding   uinput / Native     uinput / Native       ForwardKey
                                                         │
                                                         ▼
@@ -4153,7 +4153,7 @@ trong 20 ms sau commit.</li></ol>
             E--&gt;&gt;S: Backspace
         end
     else Verdict cho phép surrounding
-        E--&gt;&gt;S: Surrounding V1 hoặc V2, kèm probe nếu chưa xác nhận
+        E--&gt;&gt;S: Surrounding, kèm probe nếu chưa xác nhận
     else Còn lại
         E--&gt;&gt;S: Backspace
     end</div></code></pre>
@@ -4163,7 +4163,7 @@ trong 20 ms sau commit.</li></ol>
 <tr><th>Nhóm</th><th>Thứ tự</th></tr>
 </thead>
 <tbody>
-<tr><td>Surrounding</td><td>V2 nếu <code>UseSurroundingV2InsteadOfSurroundingV1</code>, ngược lại V1</td></tr>
+<tr><td>Surrounding</td><td><code>SurroundingTextBackend</code></td></tr>
 <tr><td>Shift select</td><td>Native nếu <code>UseXTestInsteadOfUinput</code> → uinput → Native</td></tr>
 <tr><td>Backspace</td><td>Nếu cần phím phần cứng hoặc <code>UseUinputInsteadOfForwardKey</code>: Native nếu được ưu tiên → uinput → Native. Cuối cùng ForwardKey</td></tr>
 </tbody>
@@ -4235,33 +4235,7 @@ bại trước khi gửi lệnh xoá và restore bị tắt cho context đó.</p
     B-&gt;&gt;B: updateSurroundingCacheAfterCommit
     B-&gt;&gt;AW: completeTransaction
     B-&gt;&gt;S: onDone(Succeeded)</div></code></pre>
-<h3 id="52-surroundingtextv2backend" tabindex="-1">5.2. <code>SurroundingTextV2Backend</code></h3>
-<p>Dùng cho editor xử lý lệnh xoá gộp <code>-N</code> không ổn định. Xoá từng ký tự và xác
-nhận lần xoá cuối ở mọi rewrite, không chỉ lần đầu.</p>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextV2Backend
-    participant IC as InputContext
-    participant EL as EventLoop
-
-    S-&gt;&gt;B: apply(plan)
-    loop N - 1 lần
-        B-&gt;&gt;IC: deleteSurroundingText(-1, 1)
-        B-&gt;&gt;EL: Timer SurroundingDeleteDelayMs, Wayland dùng WaylandSurroundingDeleteDelayMs
-        EL--&gt;&gt;B: Timer
-    end
-    B-&gt;&gt;EL: Timer deadline xác nhận
-    B-&gt;&gt;IC: deleteSurroundingText(-1, 1) lần cuối
-    alt Update khớp
-        IC--&gt;&gt;B: SurroundingTextUpdated
-        B-&gt;&gt;EL: Chờ AfterSurroundingDeleteWaitMs + extra, pha post
-        B-&gt;&gt;IC: commitString(commitText)
-        B-&gt;&gt;S: onDone(Succeeded)
-    else Hết deadline
-        B-&gt;&gt;B: Chuyển sang backend fallback như V1
-    end</div></code></pre>
-<h3 id="53-uinputshiftselectbackend" tabindex="-1">5.3. <code>UinputShiftSelectBackend</code></h3>
+<h3 id="53-uinputshiftselectbackend" tabindex="-1">5.2. <code>UinputShiftSelectBackend</code></h3>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
@@ -4292,10 +4266,10 @@ nhận lần xoá cuối ở mọi rewrite, không chỉ lần đầu.</p>
     B-&gt;&gt;S: onDone(Succeeded)</div></code></pre>
 <p>Mọi Left và Shift quay về đều được forward tới ứng dụng. Shift up là ACK duy nhất.
 <code>commitText</code> rỗng thì backend phát một Backspace để xoá vùng chọn.</p>
-<h3 id="54-xtestshiftselectbackend" tabindex="-1">5.4. <code>XTestShiftSelectBackend</code></h3>
+<h3 id="54-xtestshiftselectbackend" tabindex="-1">5.3. <code>XTestShiftSelectBackend</code></h3>
 <p>Giống 5.3 nhưng phát Shift, Left qua libei hoặc XTest, khoảng cách giữa các Left
 cộng thêm adaptive, và không chờ ACK: thả Shift xong là bắt đầu chờ commit.</p>
-<h3 id="55-uinputbackspacebackend" tabindex="-1">5.5. <code>UinputBackspaceBackend</code></h3>
+<h3 id="55-uinputbackspacebackend" tabindex="-1">5.4. <code>UinputBackspaceBackend</code></h3>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
@@ -4325,11 +4299,11 @@ cộng thêm adaptive, và không chờ ACK: thả Shift xong là bắt đầu c
     B-&gt;&gt;S: onDone(Succeeded)</div></code></pre>
 <p>Mọi Backspace quay về đều được forward. <code>seen</code> chỉ là mốc để bắt đầu chờ, không
 dùng để lọc phím. Commit không bao giờ xảy ra trước khi phát hết N phím.</p>
-<h3 id="56-xtestbackspacebackend" tabindex="-1">5.6. <code>XTestBackspaceBackend</code></h3>
+<h3 id="56-xtestbackspacebackend" tabindex="-1">5.5. <code>XTestBackspaceBackend</code></h3>
 <p>Phát Backspace × N qua libei hoặc XTest với <code>XTestBackspaceDelayMs</code> cộng adaptive,
 rồi chờ <code>AfterXTestBackspaceWaitMs</code> theo frontend cộng extra và commit ở pha post.
 Không có ACK.</p>
-<h3 id="57-forwardbackspacebackend" tabindex="-1">5.7. <code>ForwardBackspaceBackend</code></h3>
+<h3 id="57-forwardbackspacebackend" tabindex="-1">5.6. <code>ForwardBackspaceBackend</code></h3>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
@@ -4365,9 +4339,6 @@ theo tên frontend bắt đầu bằng <code>wayland</code>, <code>xim</code>, <
 <tr><td><code>Xim</code>, <code>Fcitx4</code>, <code>Dbus</code>, <code>IBus</code> + <code>AfterUinputShiftSelectWaitMs</code></td><td>Như trên theo frontend</td><td>10 ms</td></tr>
 <tr><td><code>SurroundingWaitMs</code></td><td>Chờ sau lệnh xoá surrounding V1</td><td>3 ms</td></tr>
 <tr><td><code>SurroundingProbeTimeoutMs</code></td><td>Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms</td><td>80 ms</td></tr>
-<tr><td><code>SurroundingDeleteDelayMs</code></td><td>Giữa các lệnh xoá V2</td><td>10 ms</td></tr>
-<tr><td><code>WaylandSurroundingDeleteDelayMs</code></td><td>Như trên, Wayland</td><td>0 ms</td></tr>
-<tr><td><code>AfterSurroundingDeleteWaitMs</code></td><td>Chờ sau lệnh xoá V2 cuối</td><td>1 ms</td></tr>
 <tr><td><code>XTestBackspaceDelayMs</code></td><td>Giữa các Backspace Native</td><td>1 ms</td></tr>
 <tr><td><code>AfterXTestBackspaceWaitMs</code></td><td>Chờ sau Backspace Native cuối, frontend khác</td><td>10 ms</td></tr>
 <tr><td><code>Wayland</code>, <code>Xim</code>, <code>Fcitx4</code>, <code>Dbus</code>, <code>IBus</code> + <code>AfterXTestBackspaceWaitMs</code></td><td>Như trên theo frontend</td><td>10 ms</td></tr>
@@ -4383,7 +4354,7 @@ theo tên frontend bắt đầu bằng <code>wayland</code>, <code>xim</code>, <
 <tbody>
 <tr><td>Chờ sau Backspace, Shift select, Native trên Wayland</td><td>3 ms</td></tr>
 <tr><td>Chờ sau Backspace, Shift select, Native trên DBus và IBus</td><td>5 ms</td></tr>
-<tr><td><code>SurroundingWaitMs</code>, các delay và chờ của Surrounding V2</td><td>1 ms</td></tr>
+<tr><td><code>SurroundingWaitMs</code></td><td>1 ms</td></tr>
 </tbody>
 </table>
 <h2 id="7-tu%E1%BB%B3-ch%E1%BB%8Dn-h%C3%A0nh-vi-li%C3%AAn-quan" tabindex="-1">7. Tuỳ chọn hành vi liên quan</h2>
@@ -4392,7 +4363,6 @@ theo tên frontend bắt đầu bằng <code>wayland</code>, <code>xim</code>, <
 <tr><th>Khoá</th><th>File</th><th>Mặc định</th><th>Tác dụng</th></tr>
 </thead>
 <tbody>
-<tr><td><code>UseSurroundingV2InsteadOfSurroundingV1</code></td><td>advanced</td><td><code>False</code></td><td>Dùng V2 cho nhóm Surrounding</td></tr>
 <tr><td><code>UseUinputInsteadOfForwardKey</code></td><td>advanced</td><td><code>True</code></td><td>Nhóm Backspace ưu tiên phím phần cứng ở mọi ứng dụng</td></tr>
 <tr><td><code>UseXTestInsteadOfUinput</code></td><td>advanced</td><td><code>False</code></td><td>Ưu tiên Native trước uinput</td></tr>
 <tr><td><code>EnableMouseTracking</code></td><td>advanced</td><td><code>True</code></td><td>Chạy helper chuột để reset khi click</td></tr>

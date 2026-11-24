@@ -99,9 +99,6 @@ ADVANCED_DEFAULTS = {
     "IBusAfterUinputShiftSelectWaitMs": 10,
     "SurroundingWaitMs": 3,
     "SurroundingProbeTimeoutMs": 80,
-    "SurroundingDeleteDelayMs": 10,
-    "WaylandSurroundingDeleteDelayMs": 0,
-    "AfterSurroundingDeleteWaitMs": 1,
     "XTestBackspaceDelayMs": 1,
     "AfterXTestBackspaceWaitMs": 10,
     "WaylandAfterXTestBackspaceWaitMs": 10,
@@ -111,7 +108,6 @@ ADVANCED_DEFAULTS = {
     "IBusAfterXTestBackspaceWaitMs": 10,
     "PostCommitDelayMs": 20,
     "PreciseTiming": True,
-    "UseSurroundingV2InsteadOfSurroundingV1": False,
     "UseUinputInsteadOfForwardKey": True,
     "UseXTestInsteadOfUinput": False,
     "EnableMouseTracking": True,
@@ -1187,7 +1183,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
         groups = [
             ("Backspace", [("Delay giữa Backspace (ms)", "BackspaceDelayMs", 1000), ("Chờ sau Backspace (ms)", "AfterBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterBackspaceWaitMs", 5000), ("XIM", "XimAfterBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterBackspaceWaitMs", 5000), ("DBus", "DbusAfterBackspaceWaitMs", 5000), ("IBus", "IBusAfterBackspaceWaitMs", 5000)]),
             ("Shift+Left", [("Delay giữa các phím (ms)", "UinputShiftSelectDelayMs", 1000), ("Chờ sau khi thả Shift (ms)", "AfterUinputShiftSelectWaitMs", 5000), ("Wayland", "WaylandAfterUinputShiftSelectWaitMs", 5000), ("XIM", "XimAfterUinputShiftSelectWaitMs", 5000), ("Fcitx4", "Fcitx4AfterUinputShiftSelectWaitMs", 5000), ("DBus", "DbusAfterUinputShiftSelectWaitMs", 5000), ("IBus", "IBusAfterUinputShiftSelectWaitMs", 5000)]),
-            ("Surrounding text", [("Chờ sau xóa surrounding (ms)", "SurroundingWaitMs", 5000), ("Delay xóa surrounding v2 (ms)", "SurroundingDeleteDelayMs", 1000), ("Delay xóa v2 trên Wayland (ms)", "WaylandSurroundingDeleteDelayMs", 1000), ("Chờ sau lệnh xóa cuối (ms)", "AfterSurroundingDeleteWaitMs", 5000)]),
+            ("Surrounding text", [("Chờ sau xóa surrounding (ms)", "SurroundingWaitMs", 5000)]),
             ("Native Backspace", [("Delay giữa Backspace Native (ms)", "XTestBackspaceDelayMs", 1000), ("Chờ sau Backspace Native (ms)", "AfterXTestBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterXTestBackspaceWaitMs", 5000), ("XIM", "XimAfterXTestBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterXTestBackspaceWaitMs", 5000), ("DBus", "DbusAfterXTestBackspaceWaitMs", 5000), ("IBus", "IBusAfterXTestBackspaceWaitMs", 5000)]),
         ]
         for title, values in groups:
@@ -1199,7 +1195,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
         compat = self._section(content, "Tương thích")
         for title, key in [
             ("Dùng timer độ chính xác cao", "PreciseTiming"),
-            ("Dùng Surrounding v2 thay v1", "UseSurroundingV2InsteadOfSurroundingV1"),
             ("Dùng uinput thay ForwardKey", "UseUinputInsteadOfForwardKey"),
             ("Dùng Native (libei) thay uinput", "UseXTestInsteadOfUinput"),
             ("Reset bộ gõ sau khi click chuột", "EnableMouseTracking"),
@@ -1232,9 +1227,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
             "DbusAfterUinputShiftSelectWaitMs": 5,
             "IBusAfterUinputShiftSelectWaitMs": 5,
             "SurroundingWaitMs": 1,
-            "SurroundingDeleteDelayMs": 1,
-            "WaylandSurroundingDeleteDelayMs": 1,
-            "AfterSurroundingDeleteWaitMs": 1,
             "WaylandAfterXTestBackspaceWaitMs": 3,
             "DbusAfterXTestBackspaceWaitMs": 5,
             "IBusAfterXTestBackspaceWaitMs": 5,
