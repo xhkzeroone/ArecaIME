@@ -49,7 +49,7 @@ void ArecaEngine::initActions() {
   charsetMenu_ = std::make_unique<fcitx::Menu>();
   charsetAction_->setMenu(charsetMenu_.get());
 
-  charsetNames_ = BambooEngineAdapter::charsetNames();
+  charsetNames_ = BambooEngineAdapter::offeredCharsetNames();
   charsetSubActions_.reserve(charsetNames_.size());
   for (size_t i = 0; i < charsetNames_.size(); ++i) {
     const auto &csName = charsetNames_[i];

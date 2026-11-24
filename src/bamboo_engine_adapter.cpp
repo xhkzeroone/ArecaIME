@@ -1,7 +1,10 @@
 #include "bamboo_engine_adapter.h"
 
+#include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -328,6 +331,25 @@ std::vector<std::string> BambooEngineAdapter::inputMethodNames() {
 
 std::vector<std::string> BambooEngineAdapter::charsetNames() {
   return splitLines(ArecaBambooCharsetNames());
+}
+
+std::vector<std::string> BambooEngineAdapter::offeredCharsetNames() {
+  // Unicode tổ hợp tách dấu thanh thành ký tự rời, mà mỗi ứng dụng xoá dấu rời
+  // khi nhấn Backspace một kiểu nên chế độ Rewrite không sửa chữ đúng được ở
+  // mọi nơi. Các bảng mã ít gặp khác cũng ẩn cho gọn; cấu hình cũ vẫn dùng
+  // được.
+  static constexpr std::array<std::string_view, 4> kOffered = {
+      "Unicode", "TCVN3 (ABC)", "VNI Windows", "VIQR"};
+  // Bamboo trả tên theo thứ tự map nên đi theo thứ tự cố định ở trên.
+  const auto available = charsetNames();
+  std::vector<std::string> offered;
+  for (const auto name : kOffered) {
+    if (std::find(available.begin(), available.end(), name) !=
+        available.end()) {
+      offered.emplace_back(name);
+    }
+  }
+  return offered;
 }
 
 std::string BambooEngineAdapter::encode(const std::string &text) const {

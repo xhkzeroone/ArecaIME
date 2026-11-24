@@ -233,6 +233,9 @@ int main() {
   assert(!charsets.empty() && charsets.front() == "Unicode");
   assert(std::find(charsets.begin(), charsets.end(), "Unicode tổ hợp") !=
          charsets.end());
+  const auto offered = areca::BambooEngineAdapter::offeredCharsetNames();
+  assert((offered == std::vector<std::string>{"Unicode", "TCVN3 (ABC)",
+                                              "VNI Windows", "VIQR"}));
   for (const auto &charset : charsets) {
     areca::BambooEngineAdapter encodedEngine("Telex 2", true, true, true,
                                              charset);

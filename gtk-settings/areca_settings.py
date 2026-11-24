@@ -49,11 +49,9 @@ METHODS = [
     "Telex", "Telex 2", "VNI", "VIQR", "Telex + VNI", "Telex + VNI + VIQR",
     "Microsoft layout", "VNI Bàn phím tiếng Pháp",
 ]
-CHARSETS = [
-    "Unicode", "TCVN3 (ABC)", "VNI Windows", "Unicode tổ hợp", "Windows 1258 codepage",
-    "VIQR", "VISCII", "VPS", "BKHCM 2", "BKHCM 1", "Vietware X", "Vietware Full",
-    "UTF-8", "NCR Decimal", "NCR Hex", "Unicode C string Hex", "Unicode C string Decimal",
-]
+# Giữ cùng danh sách với BambooEngineAdapter::offeredCharsetNames(); bảng mã
+# đang dùng mà nằm ngoài danh sách vẫn hiện trong ô chọn.
+CHARSETS = ["Unicode", "TCVN3 (ABC)", "VNI Windows", "VIQR"]
 SPELLCHECK = [
     "Không kiểm tra (Tắt)",
     "Khôi phục từ sau khi gõ xong",

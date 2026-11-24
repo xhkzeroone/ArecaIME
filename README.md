@@ -35,8 +35,7 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
 **Kiểu gõ và bảng mã**
 - Telex, Telex 2, Telex W, VNI, VIQR, Microsoft layout, VNI bàn phím tiếng Pháp
   và các kiểu kết hợp Telex + VNI, Telex + VNI + VIQR.
-- Xuất Unicode dựng sẵn, Unicode tổ hợp hoặc bảng mã cũ như TCVN3 (ABC), VNI
-  Windows, VISCII, VPS, Windows 1258.
+- Xuất Unicode dựng sẵn hoặc bảng mã cũ TCVN3 (ABC), VNI Windows, VIQR.
 - Đặt dấu kiểu mới như `oà`, `uý` hoặc kiểu cũ như `òa`, `úy`.
 
 **Chế độ hiển thị**

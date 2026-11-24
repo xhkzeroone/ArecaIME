@@ -61,7 +61,7 @@ int main() {
     areca::settings::ConfigStore config;
     config.load();
     const auto inputMethods = areca::BambooEngineAdapter::inputMethodNames();
-    const auto charsets = areca::BambooEngineAdapter::charsetNames();
+    const auto charsets = areca::BambooEngineAdapter::offeredCharsetNames();
     bool listeningShortcut = false;
     bool listeningBackendShortcut = false;
     std::string status;
