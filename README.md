@@ -48,8 +48,8 @@ trình duyệt, Electron, terminal và ứng dụng XWayland.
 
 **Tự chọn backend sửa chữ theo ứng dụng**
 - Surrounding text khi ứng dụng hỗ trợ xoá qua giao thức input method.
-- Backspace hoặc Shift+Left phát qua uinput, libei hoặc ForwardKey khi
-  ứng dụng không hỗ trợ surrounding text.
+- Backspace phát qua uinput, libei hoặc ForwardKey khi ứng dụng không hỗ trợ
+  surrounding text. Shift+Left dùng khi chọn riêng cho ứng dụng.
 - Phím ảo Wayland (`zwp_virtual_keyboard_v1`) xoá và gõ lại chữ trên cùng một
   kênh, không dùng commitString. Chỉ có trên compositor hỗ trợ giao thức này
   (wlroots, Hyprland, sway); chọn cho từng ứng dụng.

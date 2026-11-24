@@ -16,7 +16,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 | Hàng đợi phím | `src/input_scheduler.*`, `key_queue.h` | FIFO single-flight: một phím xử lý xong mới tới phím sau, có post-commit barrier |
 | Bamboo | `src/bamboo_engine_adapter.*`, `bamboo-bridge/main.go` | `VietnameseEngine` trả `BambooResult` gồm `deleteCount` và `commitText` |
 | Rewrite backend | `src/rewrite_backend.h` và `*_backend.*` | Xoá chữ cũ rồi commit chữ mới theo `RewritePlan` |
-| Thiết bị phát phím | `uinput_device.*`, `xtest_device.*`, `native_device.*` | Interface có hàm virtual để test thay bằng fake |
+| Thiết bị phát phím | `uinput_device.*`, `native_device.*`, `virtual_keyboard_device.*` | Interface có hàm virtual để test thay bằng fake |
 | Lag thích nghi | `adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm |
 | Nhận diện app | `window_focus_tracker.*`, `atspi/`, `input_type_detector.*`, `program_compatibility.*` | AT-SPI chạy thread riêng, phần còn lại là hàm thuần |
 | Surrounding text | `surrounding_text_*`, `surrounding_probe_match.h`, `surrounding_reliability.h` | Cache, probe, restore từ đã commit |

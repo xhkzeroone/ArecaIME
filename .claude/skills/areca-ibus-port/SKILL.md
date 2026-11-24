@@ -19,7 +19,7 @@ Areca là bộ gõ tiếng Việt chạy dạng addon fcitx5, C++20, dùng `bamb
 | Logic preedit | `src/preedit_logic.*` | |
 | Thời gian chờ thích nghi | `src/adaptive_wait.h` | Logic thuần, chỉ học từ số đo của backend trong lúc sửa chữ; không có monitor nền |
 | Nhận diện ứng dụng | `src/program_compatibility.*` | Danh sách terminal, IDE, office, trình duyệt, họ VS Code, Discord/Signal |
-| Thiết bị phát phím | `src/uinput_device.*`, `src/xtest_device.*`, `src/native_device.*` | uinput không phụ thuộc IM framework; Native dùng libei qua RemoteDesktop portal hoặc XTest |
+| Thiết bị phát phím | `src/uinput_device.*`, `src/native_device.*` | uinput không phụ thuộc IM framework; Native dùng libei qua RemoteDesktop portal hoặc XTest |
 | AT-SPI | `src/window_focus_tracker.*`, `src/atspi/` | Thread riêng, xem bài học bên dưới |
 | Click chuột | `src/mouse_click_tracker.*`, `areca-mouse-monitor` | Process con libinput, báo qua pipe |
 
@@ -49,10 +49,10 @@ Bamboo bridge cung cấp: `ArecaBambooCreate(method, modernStyle)`, `Destroy`, `
 
 | Backend | Cách xoá | Xác nhận |
 |---|---|---|
-| Surrounding V1 | `deleteSurroundingText(-N, N)` một lần | Probe lần đầu |
+| Surrounding | `deleteSurroundingText(-N, N)` một lần | Probe lần đầu |
 | uinput Backspace | Backspace × N qua `/dev/uinput` | Đếm Backspace quay về engine (ACK) |
 | uinput Shift-select | Shift + Left × N rồi commit đè vùng chọn | Shift up quay về |
-| Native Backspace / Shift-select | Như trên qua libei hoặc XTest | Không ACK |
+| Native Backspace / Shift-select | Như trên qua libei | Không ACK |
 | ForwardKey Backspace | `forwardKey(Backspace)` × N | Không ACK |
 
 Thứ tự chọn khi `deleteCount > 0` (`selectRewriteBackend`, `src/areca_engine_backend.cpp`):
