@@ -56,6 +56,11 @@ public:
     pendingSync = std::move(callback);
     return true;
   }
+  void setLockedModifiers(uint32_t mask) override { locked.push_back(mask); }
+  bool sendHeldModifiers(uint32_t mask) override {
+    held.push_back(mask);
+    return true;
+  }
 
   void finish(bool ok) {
     auto done = std::move(pendingSync);
@@ -65,6 +70,8 @@ public:
 
   std::vector<std::string> keymaps;
   std::vector<uint32_t> pressed;
+  std::vector<uint32_t> locked;
+  std::vector<uint32_t> held;
   SyncCallback pendingSync;
 
 private:
@@ -94,9 +101,20 @@ void testKeymapHelpers() {
   assert(keymap.find("key <BKSP> { [ BackSpace ] };") != std::string::npos);
   // Ký tự đầu nằm trên phím A: evdev 30, XKB 38.
   assert(keymap.find("<C00> = 38;") != std::string::npos);
-  assert(keymap.find("key <C00> { [ 0x10000f5 ] };") != std::string::npos);
-  assert(keymap.find("key <C01> { [ 0x1000063 ] };") != std::string::npos);
+  assert(
+      keymap.find("key <C00> { type = \"ARECA_CARRIER\", [ 0x10000f5 ] };") !=
+      std::string::npos);
+  assert(
+      keymap.find("key <C01> { type = \"ARECA_CARRIER\", [ 0x1000063 ] };") !=
+      std::string::npos);
+  // Phím chở chữ dùng bit Lock để CapsLock đi kèm không đổi chữ hoa.
+  assert(keymap.find("type \"ARECA_CARRIER\" {") != std::string::npos);
   assert(keymap.find("<C02>") == std::string::npos);
+  // Đủ phím bổ trợ và tên đèn để bit khoá, phím đang giữ có nghĩa.
+  assert(keymap.find("modifier_map Mod2 { <NMLK> };") != std::string::npos);
+  assert(keymap.find("modifier_map Shift { <LFSH> };") != std::string::npos);
+  assert(keymap.find("modifier_map Mod1 { <LALT> };") != std::string::npos);
+  assert(keymap.find("indicator 2 = \"Num Lock\";") != std::string::npos);
 
   // Phím chở ký tự không bao giờ là Backspace, Tab, Enter hay phím bổ trợ.
   for (size_t slot = 0; slot < areca::kVirtualKeyboardCarrierKeys; ++slot) {
@@ -201,6 +219,48 @@ void testTypedMarkerGoesFirst() {
   assert(backend.handleKeyEvent(markerEcho));
 }
 
+void testKeepsLockAndHeldModifiers() {
+  fcitx::EventLoop loop;
+  fcitx::InputContextManager manager;
+  TestInputContext context(manager);
+  FakeVirtualKeyboardDevice device(loop, true);
+  uint32_t state = static_cast<uint32_t>(
+      fcitx::KeyStates{fcitx::KeyState::NumLock, fcitx::KeyState::Shift});
+  areca::VirtualKeyboardBackspaceBackend backend(
+      loop, device, [] { return false; }, [&state] { return state; });
+
+  auto plan = makePlan(6, 2, "ê");
+  plan.typeMarker = true;
+  bool done = false;
+  assert(backend.apply(context, plan, [&](uint64_t, areca::RewriteOutcome) {
+    done = true;
+  }) == areca::ApplyStatus::Pending);
+  // Chỉ bit khoá đi kèm keymap; Shift đang giữ không được kèm phím xoá, gõ.
+  assert((device.locked == std::vector<uint32_t>{static_cast<uint32_t>(
+                               fcitx::KeyState::NumLock)}));
+  // Đợt marker chưa phải đợt cuối nên chưa trả phím bổ trợ.
+  assert(device.held.empty());
+  // Người dùng nhả Shift trong lúc phím ảo đang gõ.
+  state = static_cast<uint32_t>(fcitx::KeyState::NumLock);
+  device.finish(true);
+  assert((device.held == std::vector<uint32_t>{0}));
+  device.finish(true);
+  assert(done);
+
+  // Còn giữ Shift khi gõ xong thì trả lại đúng Shift.
+  state = static_cast<uint32_t>(
+      fcitx::KeyStates{fcitx::KeyState::NumLock, fcitx::KeyState::Shift});
+  device.held.clear();
+  done = false;
+  assert(backend.apply(context, makePlan(7, 1, "a"),
+                       [&](uint64_t, areca::RewriteOutcome) { done = true; }) ==
+         areca::ApplyStatus::Pending);
+  assert((device.held == std::vector<uint32_t>{
+                             static_cast<uint32_t>(fcitx::KeyState::Shift)}));
+  device.finish(true);
+  assert(done);
+}
+
 void testLongTextUsesSeveralBursts() {
   fcitx::EventLoop loop;
   fcitx::InputContextManager manager;
@@ -292,6 +352,7 @@ int main() {
   testUnavailableDevice();
   testDeletesThenTypesWithoutCommit();
   testTypedMarkerGoesFirst();
+  testKeepsLockAndHeldModifiers();
   testLongTextUsesSeveralBursts();
   testSyncFailureFailsTransaction();
   testEchoKeysPassThrough();

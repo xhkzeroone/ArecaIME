@@ -79,12 +79,32 @@ std::string buildVirtualKeyboardKeymap(const std::vector<uint32_t> &burst) {
   std::ostringstream symbols;
   keycodes << "    <BKSP> = " << xkbKeycode(KEY_BACKSPACE) << ";\n";
   symbols << "    key <BKSP> { [ BackSpace ] };\n";
+  // Phím ảo gửi kèm trạng thái khoá và phím bổ trợ đang giữ của bàn phím thật.
+  // Các bit đó chỉ có nghĩa khi keymap gắn đủ phím bổ trợ và tên đèn; thiếu
+  // thì compositor tắt đèn NumLock và ứng dụng tưởng Shift, Alt đã nhả.
+  keycodes << "    <NMLK> = " << xkbKeycode(KEY_NUMLOCK) << ";\n"
+           << "    <LFSH> = " << xkbKeycode(KEY_LEFTSHIFT) << ";\n"
+           << "    <LCTL> = " << xkbKeycode(KEY_LEFTCTRL) << ";\n"
+           << "    <LALT> = " << xkbKeycode(KEY_LEFTALT) << ";\n"
+           << "    <LWIN> = " << xkbKeycode(KEY_LEFTMETA) << ";\n"
+           << "    indicator 1 = \"Caps Lock\";\n"
+           << "    indicator 2 = \"Num Lock\";\n";
+  symbols << "    key <NMLK> { [ Num_Lock ] };\n"
+          << "    key <LFSH> { [ Shift_L ] };\n"
+          << "    key <LCTL> { [ Control_L ] };\n"
+          << "    key <LALT> { [ Alt_L ] };\n"
+          << "    key <LWIN> { [ Super_L ] };\n"
+          << "    modifier_map Mod2 { <NMLK> };\n"
+          << "    modifier_map Shift { <LFSH> };\n"
+          << "    modifier_map Control { <LCTL> };\n"
+          << "    modifier_map Mod1 { <LALT> };\n"
+          << "    modifier_map Mod4 { <LWIN> };\n";
   for (std::size_t slot = 0; slot < slots; ++slot) {
     std::ostringstream name;
     name << "C" << std::setw(2) << std::setfill('0') << slot;
     keycodes << "    <" << name.str()
              << "> = " << xkbKeycode(kCarrierKeys[slot]) << ";\n";
-    symbols << "    key <" << name.str() << "> { [ "
+    symbols << "    key <" << name.str() << "> { type = \"ARECA_CARRIER\", [ "
             << unicodeKeysym(burst[slot]) << " ] };\n";
   }
 
@@ -93,8 +113,18 @@ std::string buildVirtualKeyboardKeymap(const std::vector<uint32_t> &burst) {
          << "  xkb_keycodes \"areca\" {\n"
          << "    minimum = 8;\n"
          << "    maximum = 255;\n"
-         << keycodes.str() << "  };\n"
-         << "  xkb_types \"areca\" { include \"complete\" };\n"
+         << keycodes.str()
+         << "  };\n"
+         // Kiểu phím dùng luôn bit Lock: nếu không, CapsLock đi kèm làm XKB tự
+         // đổi ký tự sang chữ hoa (ế thành Ế) dù người dùng đang giữ Shift.
+         << "  xkb_types \"areca\" {\n"
+         << "    include \"complete\"\n"
+         << "    type \"ARECA_CARRIER\" {\n"
+         << "      modifiers = Lock;\n"
+         << "      map[Lock] = Level1;\n"
+         << "      level_name[Level1] = \"Any\";\n"
+         << "    };\n"
+         << "  };\n"
          << "  xkb_compatibility \"areca\" { include \"complete\" };\n"
          << "  xkb_symbols \"areca\" {\n"
          << symbols.str() << "  };\n"

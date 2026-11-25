@@ -59,6 +59,7 @@ struct VirtualKeyboardDevice::Impl {
   std::unique_ptr<fcitx::EventSourceIO> displaySource;
   std::unique_ptr<fcitx::EventSource> teardownSource;
   uint32_t lastKeyTimeMs = 0;
+  uint32_t lockedModifiers = 0;
 
   static void handleGlobal(void *data, wl_registry *registry, uint32_t name,
                            const char *interface, uint32_t /*version*/) {
@@ -248,7 +249,7 @@ struct VirtualKeyboardDevice::Impl {
       munmap(data, size);
       zwp_virtual_keyboard_v1_keymap(keyboard, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                                      fd, static_cast<uint32_t>(size));
-      zwp_virtual_keyboard_v1_modifiers(keyboard, 0, 0, 0, 0);
+      zwp_virtual_keyboard_v1_modifiers(keyboard, 0, 0, lockedModifiers, 0);
     }
     close(fd);
     return mapped;
@@ -295,6 +296,28 @@ bool VirtualKeyboardDevice::setKeymap(const std::string &keymap) {
   return impl_->state == Impl::State::Ready && impl_->setKeymap(keymap);
 #else
   (void)keymap;
+  return false;
+#endif
+}
+
+void VirtualKeyboardDevice::setLockedModifiers(uint32_t mask) {
+#ifdef ARECA_HAVE_WAYLAND_VK
+  impl_->lockedModifiers = mask;
+#else
+  (void)mask;
+#endif
+}
+
+bool VirtualKeyboardDevice::sendHeldModifiers(uint32_t mask) {
+#ifdef ARECA_HAVE_WAYLAND_VK
+  if (impl_->state != Impl::State::Ready) {
+    return false;
+  }
+  zwp_virtual_keyboard_v1_modifiers(impl_->keyboard, mask, 0,
+                                    impl_->lockedModifiers, 0);
+  return true;
+#else
+  (void)mask;
   return false;
 #endif
 }

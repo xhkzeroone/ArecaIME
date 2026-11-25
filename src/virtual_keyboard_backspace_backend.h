@@ -25,10 +25,14 @@ namespace areca {
 class VirtualKeyboardBackspaceBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
+  // Trạng thái phím bổ trợ của bàn phím thật, theo bit fcitx::KeyState (trùng
+  // bit modifier thật của XKB).
+  using ModifierStateProvider = std::function<uint32_t()>;
 
-  VirtualKeyboardBackspaceBackend(fcitx::EventLoop &eventLoop,
-                                  VirtualKeyboardDevice &device,
-                                  DebugProvider debugProvider);
+  VirtualKeyboardBackspaceBackend(
+      fcitx::EventLoop &eventLoop, VirtualKeyboardDevice &device,
+      DebugProvider debugProvider,
+      ModifierStateProvider modifierStateProvider = {});
   ~VirtualKeyboardBackspaceBackend() override;
 
   VirtualKeyboardBackspaceBackend(const VirtualKeyboardBackspaceBackend &) =
@@ -56,6 +60,7 @@ public:
 
 private:
   bool sendNextBurst();
+  uint32_t modifierState() const;
   void onBurstSynced(uint64_t transactionId, bool ok);
   void armSyncTimeout();
   void complete(RewriteOutcome outcome);
@@ -66,6 +71,7 @@ private:
   fcitx::EventLoop &eventLoop_;
   VirtualKeyboardDevice &device_;
   DebugProvider debugProvider_;
+  ModifierStateProvider modifierStateProvider_;
 
   std::unique_ptr<fcitx::EventSourceTime> syncTimeout_;
   fcitx::TrackableObjectReference<fcitx::InputContext> inputContext_;

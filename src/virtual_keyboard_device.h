@@ -29,6 +29,12 @@ public:
   virtual bool isAvailable();
   // Keymap XKB áp cho các phím gửi sau đó.
   virtual bool setKeymap(const std::string &keymap);
+  // Trạng thái khoá (bit CapsLock, NumLock) gửi kèm mỗi keymap. Gửi 0 làm
+  // compositor tắt đèn NumLock của bàn phím thật mỗi lần phím ảo gõ.
+  virtual void setLockedModifiers(uint32_t mask);
+  // Gửi các phím bổ trợ đang giữ (Shift, Ctrl, Alt, Super) sau khi gõ xong,
+  // để ứng dụng không tưởng chúng đã nhả.
+  virtual bool sendHeldModifiers(uint32_t mask);
   virtual bool sendKey(uint32_t evdevKeycode, bool press);
   // Gọi callback trên event loop khi compositor đã nhận hết các request trước.
   virtual bool sync(SyncCallback callback);

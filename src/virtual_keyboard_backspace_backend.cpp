@@ -11,9 +11,24 @@ namespace areca {
 
 VirtualKeyboardBackspaceBackend::VirtualKeyboardBackspaceBackend(
     fcitx::EventLoop &eventLoop, VirtualKeyboardDevice &device,
-    DebugProvider debugProvider)
+    DebugProvider debugProvider, ModifierStateProvider modifierStateProvider)
     : eventLoop_(eventLoop), device_(device),
-      debugProvider_(std::move(debugProvider)) {}
+      debugProvider_(std::move(debugProvider)),
+      modifierStateProvider_(std::move(modifierStateProvider)) {}
+
+namespace {
+
+constexpr uint32_t kLockedMask = static_cast<uint32_t>(
+    fcitx::KeyStates{fcitx::KeyState::CapsLock, fcitx::KeyState::NumLock});
+constexpr uint32_t kHeldMask = static_cast<uint32_t>(
+    fcitx::KeyStates{fcitx::KeyState::Shift, fcitx::KeyState::Ctrl,
+                     fcitx::KeyState::Alt, fcitx::KeyState::Super});
+
+} // namespace
+
+uint32_t VirtualKeyboardBackspaceBackend::modifierState() const {
+  return modifierStateProvider_ ? modifierStateProvider_() : 0;
+}
 
 VirtualKeyboardBackspaceBackend::~VirtualKeyboardBackspaceBackend() {
   clearPending();
@@ -40,6 +55,7 @@ VirtualKeyboardBackspaceBackend::apply(fcitx::InputContext &inputContext,
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
   deletesLeft_ = plan.backspaceCount;
+  device_.setLockedModifiers(modifierState() & kLockedMask);
   const auto bursts = splitVirtualKeyboardBursts(codepoints);
   bursts_.assign(bursts.begin(), bursts.end());
   const std::string_view marker = plan.typeMarker ? kRewriteMarker : "";
@@ -101,6 +117,11 @@ bool VirtualKeyboardBackspaceBackend::sendNextBurst() {
   } else {
     sendBackspaces();
     sendCarriers();
+  }
+  // Trong lúc gõ, phím bổ trợ được nhả để Backspace không thành Alt+Backspace
+  // hay Ctrl+Backspace. Gõ xong thì trả lại đúng phím người dùng đang giữ.
+  if (sent && bursts_.empty()) {
+    sent = device_.sendHeldModifiers(modifierState() & kHeldMask);
   }
   const uint64_t transactionId = transactionId_;
   sent = sent && device_.sync([this, transactionId](bool ok) {

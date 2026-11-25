@@ -194,6 +194,8 @@ private:
   std::unique_ptr<WindowFocusTracker> focusTracker_;
   InputTypeDetector inputTypeDetector_;
   std::unique_ptr<MouseClickTracker> mouseTracker_;
+  // Trạng thái phím bổ trợ (fcitx::KeyState) theo phím thật gần nhất.
+  uint32_t modifierState_ = 0;
   std::unique_ptr<fcitx::HandlerTableEntry<fcitx::EventHandler>>
       surroundingTextWatcher_;
   std::unique_ptr<InputMethodAnnouncement> inputMethodAnnouncement_;

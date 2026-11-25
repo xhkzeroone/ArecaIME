@@ -86,9 +86,10 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
                                 [this]() { return debugEnabled(); }),
       virtualKeyboardDevice_(instance_->eventLoop(),
                              [this]() { return debugEnabled(); }),
-      virtualKeyboardBackspaceBackend_(instance_->eventLoop(),
-                                       virtualKeyboardDevice_,
-                                       [this]() { return debugEnabled(); }),
+      virtualKeyboardBackspaceBackend_(
+          instance_->eventLoop(), virtualKeyboardDevice_,
+          [this]() { return debugEnabled(); },
+          [this]() { return modifierState_; }),
       backendSelectionPost_(instance_->eventLoop()),
       emojiSelectionPost_(instance_->eventLoop()),
       scheduler_(
@@ -473,6 +474,23 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   auto *inputContext = event.inputContext();
   if (!inputContext) {
     return;
+  }
+  // Phím ảo gửi kèm trạng thái này để không tắt đèn NumLock hay làm ứng dụng
+  // tưởng Shift, Alt đang giữ đã nhả. Cờ của chính phím Shift, Ctrl, Alt, Super
+  // là trạng thái trước khi nhấn/nhả nên phải cộng hoặc trừ bit của nó; phím
+  // khoá thì đảo trạng thái, cờ ở lần nhả đã đúng nên giữ nguyên.
+  {
+    auto states = event.rawKey().states();
+    const auto own =
+        fcitx::Key::keySymToStates(event.rawKey().sym()) &
+        fcitx::KeyStates{fcitx::KeyState::Shift, fcitx::KeyState::Ctrl,
+                         fcitx::KeyState::Alt, fcitx::KeyState::Super};
+    if (event.isRelease()) {
+      states &= ~own;
+    } else {
+      states |= own;
+    }
+    modifierState_ = static_cast<uint32_t>(states);
   }
   if (inputContext->capabilityFlags().test(fcitx::CapabilityFlag::Password)) {
     if (isBackendSelecting(*inputContext)) {
