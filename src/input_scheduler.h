@@ -50,7 +50,10 @@ public:
   // lần nữa.
   bool handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
                      const std::string &utf8Text);
-  void enqueueBackspace(fcitx::InputContext &inputContext);
+  // `forwardIfNoComposition`: tới lượt mà từ đang gõ đã trống thì chuyển
+  // Backspace cho ứng dụng (sau lần sửa trước nên đúng thứ tự).
+  void enqueueBackspace(fcitx::InputContext &inputContext,
+                        bool forwardIfNoComposition = false);
   using ReplacedTextResolver =
       std::function<std::string(fcitx::InputContext &)>;
   // Xoá đoạn text `replaced` trả về lúc tới lượt rồi chèn `text`, qua cùng

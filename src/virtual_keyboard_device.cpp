@@ -58,7 +58,6 @@ struct VirtualKeyboardDevice::Impl {
   std::deque<PendingSync> syncs;
   std::unique_ptr<fcitx::EventSourceIO> displaySource;
   std::unique_ptr<fcitx::EventSource> teardownSource;
-  uint32_t lastKeyTimeMs = 0;
   uint32_t lockedModifiers = 0;
 
   static void handleGlobal(void *data, wl_registry *registry, uint32_t name,
@@ -255,14 +254,6 @@ struct VirtualKeyboardDevice::Impl {
     return mapped;
   }
 
-  // Thời điểm phím theo đồng hồ monotonic, tăng ngặt để hai phím liền nhau
-  // không bị coi là cùng một lúc.
-  uint32_t nextKeyTimeMs() {
-    const auto nowMs =
-        static_cast<uint32_t>(fcitx::now(CLOCK_MONOTONIC) / 1000);
-    lastKeyTimeMs = nowMs > lastKeyTimeMs ? nowMs : lastKeyTimeMs + 1;
-    return lastKeyTimeMs;
-  }
 #endif
 };
 
@@ -322,18 +313,20 @@ bool VirtualKeyboardDevice::sendHeldModifiers(uint32_t mask) {
 #endif
 }
 
-bool VirtualKeyboardDevice::sendKey(uint32_t evdevKeycode, bool press) {
+bool VirtualKeyboardDevice::sendKey(uint32_t evdevKeycode, bool press,
+                                    uint32_t timeMs) {
 #ifdef ARECA_HAVE_WAYLAND_VK
   if (impl_->state != Impl::State::Ready) {
     return false;
   }
-  zwp_virtual_keyboard_v1_key(
-      impl_->keyboard, impl_->nextKeyTimeMs(), evdevKeycode,
-      press ? WL_KEYBOARD_KEY_STATE_PRESSED : WL_KEYBOARD_KEY_STATE_RELEASED);
+  zwp_virtual_keyboard_v1_key(impl_->keyboard, timeMs, evdevKeycode,
+                              press ? WL_KEYBOARD_KEY_STATE_PRESSED
+                                    : WL_KEYBOARD_KEY_STATE_RELEASED);
   return true;
 #else
   (void)evdevKeycode;
   (void)press;
+  (void)timeMs;
   return false;
 #endif
 }

@@ -1,5 +1,6 @@
 #include "virtual_keyboard_backspace_backend.h"
 
+#include <algorithm>
 #include <utility>
 
 #include <fcitx-utils/key.h>
@@ -67,14 +68,6 @@ VirtualKeyboardBackspaceBackend::apply(fcitx::InputContext &inputContext,
 
   clearEcho();
   echoContext_ = inputContext.watch();
-  const auto echo =
-      virtualKeyboardEchoSequence(plan.backspaceCount, plan.commitText, marker);
-  pendingEcho_.assign(echo.begin(), echo.end());
-  for (const auto value : echo) {
-    if (value != 0) {
-      injectedCodepoints_.insert(value);
-    }
-  }
   echoDeadlineUsec_ = fcitx::now(CLOCK_MONOTONIC) +
                       uint64_t{SyncTimeoutMs} * 1000 + EchoGraceUsec;
 
@@ -99,14 +92,13 @@ bool VirtualKeyboardBackspaceBackend::sendNextBurst() {
   bool sent = device_.setKeymap(buildVirtualKeyboardKeymap(burst));
   const auto sendBackspaces = [&] {
     for (; sent && deletesLeft_ > 0; --deletesLeft_) {
-      sent = device_.sendKey(KEY_BACKSPACE, true) &&
-             device_.sendKey(KEY_BACKSPACE, false);
+      sent = tapKey(KEY_BACKSPACE);
     }
   };
   const auto sendCarriers = [&] {
     for (size_t slot = 0; sent && slot < burst.size(); ++slot) {
       const uint32_t keycode = virtualKeyboardCarrierKeycode(slot);
-      sent = device_.sendKey(keycode, true) && device_.sendKey(keycode, false);
+      sent = tapKey(keycode);
     }
   };
   // Đợt marker: gõ marker rồi xoá. Đợt thường: Backspace còn lại đi trước mọi
@@ -131,6 +123,18 @@ bool VirtualKeyboardBackspaceBackend::sendNextBurst() {
     armSyncTimeout();
   }
   return sent;
+}
+
+bool VirtualKeyboardBackspaceBackend::tapKey(uint32_t evdevKeycode) {
+  // Keycode XKB = mã evdev + 8, đúng mã fcitx5 nhận lại.
+  for (const bool press : {true, false}) {
+    const uint32_t timeMs = nextKeyTimeMs_++;
+    if (!device_.sendKey(evdevKeycode, press, timeMs)) {
+      return false;
+    }
+    pendingEcho_.emplace_back(evdevKeycode + 8, timeMs);
+  }
+  return true;
 }
 
 void VirtualKeyboardBackspaceBackend::onBurstSynced(uint64_t transactionId,
@@ -226,7 +230,6 @@ void VirtualKeyboardBackspaceBackend::clearPending() {
 
 void VirtualKeyboardBackspaceBackend::clearEcho() {
   pendingEcho_.clear();
-  injectedCodepoints_.clear();
   echoContext_.unwatch();
   echoDeadlineUsec_ = 0;
 }
@@ -242,29 +245,14 @@ bool VirtualKeyboardBackspaceBackend::handleKeyEvent(fcitx::KeyEvent &event) {
   if (event.inputContext() != echoContext_.get()) {
     return false;
   }
-  const auto sym = event.rawKey().sym();
-  const bool backspace = sym == FcitxKey_BackSpace;
-  const uint32_t codepoint = fcitx::Key::keySymToUnicode(sym);
-
-  if (event.isRelease()) {
-    // Nhả phím không làm đổi trạng thái; chỉ cần không để Bamboo thấy.
-    if (backspace || (codepoint != 0 && injectedCodepoints_.count(codepoint))) {
-      event.forward();
-      return true;
-    }
+  const auto echo =
+      std::find(pendingEcho_.begin(), pendingEcho_.end(),
+                std::make_pair(static_cast<uint32_t>(event.rawKey().code()),
+                               static_cast<uint32_t>(event.time())));
+  if (echo == pendingEcho_.end()) {
     return false;
   }
-
-  if (pendingEcho_.empty()) {
-    return false;
-  }
-  const uint32_t expected = pendingEcho_.front();
-  const bool matches =
-      expected == 0 ? backspace : (codepoint != 0 && codepoint == expected);
-  if (!matches) {
-    return false;
-  }
-  pendingEcho_.pop_front();
+  pendingEcho_.erase(echo);
   event.forward();
   if (pendingEcho_.empty() && !hasPending()) {
     clearEcho();

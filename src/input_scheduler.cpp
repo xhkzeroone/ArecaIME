@@ -4,6 +4,8 @@
 #include <utility>
 
 #include <fcitx-utils/capabilityflags.h>
+#include <fcitx-utils/key.h>
+#include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
 
@@ -97,10 +99,12 @@ bool InputScheduler::handleIdleKey(fcitx::KeyEvent &event, uint32_t codepoint,
   return true;
 }
 
-void InputScheduler::enqueueBackspace(fcitx::InputContext &inputContext) {
+void InputScheduler::enqueueBackspace(fcitx::InputContext &inputContext,
+                                      bool forwardIfNoComposition) {
   QueuedKey key;
   key.sequence = nextSequence_++;
   key.isBackspace = true;
+  key.forwardIfNoComposition = forwardIfNoComposition;
   key.inputContext = inputContext.watch();
   if (debugProvider_()) {
     FCITX_INFO() << "areca: queue push kind=backspace seq=" << key.sequence
@@ -208,6 +212,17 @@ void InputScheduler::processNext() {
       result.deleteCount = static_cast<uint32_t>(length);
       result.commitText = key.utf8Text;
       applyResult(*inputContext, *engine, result, key.utf8Text);
+    } else if (key.isBackspace && key.forwardIfNoComposition &&
+               engine->currentText().empty()) {
+      // Không còn chữ đang ghép để khôi phục: xoá như Backspace thường.
+      engine->backspace();
+      inputContext->forwardKey(fcitx::Key(FcitxKey_BackSpace), false);
+      inputContext->forwardKey(fcitx::Key(FcitxKey_BackSpace), true);
+      if (debugProvider_()) {
+        FCITX_INFO()
+            << "areca: queued backspace forwarded reason=no-composition";
+      }
+      finishKeyAfterCommit();
     } else if (key.isBackspace) {
       applyResult(*inputContext, *engine, engine->processBackspace(), "");
     } else {

@@ -46,10 +46,11 @@ public:
     keymaps.push_back(keymap);
     return true;
   }
-  bool sendKey(uint32_t evdevKeycode, bool press) override {
+  bool sendKey(uint32_t evdevKeycode, bool press, uint32_t timeMs) override {
     if (press) {
       pressed.push_back(evdevKeycode);
     }
+    sent.push_back({evdevKeycode, press, timeMs});
     return true;
   }
   bool sync(SyncCallback callback) override {
@@ -68,8 +69,14 @@ public:
     done(ok);
   }
 
+  struct SentKey {
+    uint32_t evdev;
+    bool press;
+    uint32_t timeMs;
+  };
   std::vector<std::string> keymaps;
   std::vector<uint32_t> pressed;
+  std::vector<SentKey> sent;
   std::vector<uint32_t> locked;
   std::vector<uint32_t> held;
   SyncCallback pendingSync;
@@ -77,6 +84,15 @@ public:
 private:
   bool available_;
 };
+
+// Phím ảo quay lại fcitx5 với đúng keycode XKB và thời điểm thiết bị đã gửi.
+fcitx::KeyEvent echoOf(fcitx::InputContext &context,
+                       const FakeVirtualKeyboardDevice::SentKey &key,
+                       FcitxKeySym sym) {
+  return fcitx::KeyEvent(&context,
+                         fcitx::Key(sym, fcitx::KeyStates(), key.evdev + 8),
+                         !key.press, static_cast<int>(key.timeMs));
+}
 
 areca::RewritePlan makePlan(uint64_t id, uint32_t backspaces,
                             std::string text) {
@@ -90,11 +106,6 @@ areca::RewritePlan makePlan(uint64_t id, uint32_t backspaces,
 void testKeymapHelpers() {
   assert((areca::utf8Codepoints("gõ") == std::vector<uint32_t>{'g', 0xf5}));
   assert(areca::utf8Codepoints("\xff").empty());
-  assert((areca::virtualKeyboardEchoSequence(2, "ơc") ==
-          std::vector<uint32_t>{0, 0, 0x1a1, 'c'}));
-  // Marker gõ trước các Backspace.
-  assert((areca::virtualKeyboardEchoSequence(2, "ơ", areca::kRewriteMarker) ==
-          std::vector<uint32_t>{0xb7, 0, 0, 0x1a1}));
 
   const std::string keymap = areca::buildVirtualKeyboardKeymap({0xf5, 'c'});
   assert(keymap.find("<BKSP> = 22;") != std::string::npos);
@@ -214,8 +225,8 @@ void testTypedMarkerGoesFirst() {
   assert(context.commits.empty());
 
   // Marker gõ lại từ phím ảo được nhận như phím của chính Areca.
-  fcitx::KeyEvent markerEcho(&context,
-                             fcitx::Key(fcitx::Key::keySymFromUnicode(0xb7)));
+  auto markerEcho =
+      echoOf(context, device.sent.front(), fcitx::Key::keySymFromUnicode(0xb7));
   assert(backend.handleKeyEvent(markerEcho));
 }
 
@@ -324,27 +335,45 @@ void testEchoKeysPassThrough() {
                        [](uint64_t, areca::RewriteOutcome) {}) ==
          areca::ApplyStatus::Pending);
 
+  // Thiết bị đã gửi: Backspace nhấn/nhả rồi õ nhấn/nhả.
+  assert(device.sent.size() == 4);
+  const auto bsDown = device.sent[0];
+  const auto bsUp = device.sent[1];
+  const auto textDown = device.sent[2];
+
   // Phím của ô khác không bị nhận.
-  fcitx::KeyEvent foreign(&other, fcitx::Key(FcitxKey_BackSpace));
+  auto foreign = echoOf(other, bsDown, FcitxKey_BackSpace);
   assert(!backend.handleKeyEvent(foreign));
 
-  // Phím người dùng không đúng thứ tự dội về: để Bamboo xử lý.
-  fcitx::KeyEvent userKey(&context, fcitx::Key(FcitxKey_a));
+  // Backspace thật người dùng gõ giữa chừng: cùng phím nhưng khác thời điểm,
+  // không được nuốt như phím dội về.
+  fcitx::KeyEvent userBackspace(
+      &context,
+      fcitx::Key(FcitxKey_BackSpace, fcitx::KeyStates(), bsDown.evdev + 8),
+      false, 123456789);
+  assert(!backend.handleKeyEvent(userBackspace));
+  fcitx::KeyEvent userKey(&context, fcitx::Key(FcitxKey_a), false, 123456790);
   assert(!backend.handleKeyEvent(userKey));
 
-  fcitx::KeyEvent backspace(&context, fcitx::Key(FcitxKey_BackSpace));
+  auto backspace = echoOf(context, bsDown, FcitxKey_BackSpace);
   assert(backend.handleKeyEvent(backspace));
-  fcitx::KeyEvent backspaceUp(&context, fcitx::Key(FcitxKey_BackSpace), true);
+  auto backspaceUp = echoOf(context, bsUp, FcitxKey_BackSpace);
   assert(backend.handleKeyEvent(backspaceUp));
+  // Đã nhận rồi thì không nhận lại lần nữa.
+  auto duplicate = echoOf(context, bsDown, FcitxKey_BackSpace);
+  assert(!backend.handleKeyEvent(duplicate));
 
-  // Phím dội về sau khi đã báo xong vẫn được nhận.
+  // Phím dội về sau khi đã báo xong vẫn được nhận, không cần đúng thứ tự.
   device.finish(true);
-  fcitx::KeyEvent text(&context,
-                       fcitx::Key(fcitx::Key::keySymFromUnicode(0xf5)));
+  auto textUp =
+      echoOf(context, device.sent[3], fcitx::Key::keySymFromUnicode(0xf5));
+  assert(backend.handleKeyEvent(textUp));
+  auto text = echoOf(context, textDown, fcitx::Key::keySymFromUnicode(0xf5));
   assert(backend.handleKeyEvent(text));
+  assert(!backend.expectsEcho());
 
   // Đã nhận đủ: phím sau đó là của người dùng.
-  fcitx::KeyEvent again(&context, fcitx::Key(FcitxKey_BackSpace));
+  auto again = echoOf(context, bsDown, FcitxKey_BackSpace);
   assert(!backend.handleKeyEvent(again));
 }
 

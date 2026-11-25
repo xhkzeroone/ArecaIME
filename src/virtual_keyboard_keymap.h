@@ -11,13 +11,6 @@ namespace areca {
 // Mã Unicode của từng ký tự trong chuỗi UTF-8; chuỗi lỗi trả về rỗng.
 std::vector<uint32_t> utf8Codepoints(std::string_view text);
 
-// Phím ảo đi vào ứng dụng qua đường bàn phím nên quay lại fcitx5 như phím người
-// dùng gõ. Danh sách này theo đúng thứ tự phát: 0 là Backspace, còn lại là mã
-// Unicode của từng ký tự.
-std::vector<uint32_t> virtualKeyboardEchoSequence(uint32_t deleteCount,
-                                                  std::string_view text,
-                                                  std::string_view marker = {});
-
 // Mỗi keymap chỉ chở được chừng này ký tự (26 chữ cái + 10 chữ số); chuỗi dài
 // hơn được chia thành nhiều đợt, mỗi đợt một keymap.
 inline constexpr std::size_t kVirtualKeyboardCarrierKeys = 36;

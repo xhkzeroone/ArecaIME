@@ -357,6 +357,21 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   if (rawKey.isModifier()) {
     return;
   }
+  if (isBackspace && virtualKeyboardBusyProvider_ &&
+      virtualKeyboardBusyProvider_() &&
+      !inputContext->capabilityFlags().test(fcitx::CapabilityFlag::Password)) {
+    // Phím ảo dội về đã được nhận ra theo thời điểm, nên Backspace tới đây là
+    // phím thật. Chuyển thẳng thì nó đi kênh khác phím ảo, có thể tới ứng dụng
+    // giữa lần sửa và lệch trạng thái Bamboo; xếp hàng để giữ đúng thứ tự.
+    if (debugProvider_()) {
+      FCITX_INFO()
+          << "areca: backspace route=queue reason=virtual-keyboard-busy"
+          << " queue=" << scheduler_.queuedKeyCount();
+    }
+    scheduler_.enqueueBackspace(*inputContext, true);
+    event.filterAndAccept();
+    return;
+  }
   if (isBackspace && scheduler_.rewritePending()) {
     if (debugProvider_()) {
       FCITX_INFO() << "areca: forward pending Backspace without mutating state";

@@ -15,6 +15,9 @@ struct QueuedKey {
   uint32_t codepoint = 0;
   std::string utf8Text;
   bool isBackspace = false;
+  // Backspace thật xếp hàng sau lần sửa bằng phím ảo: tới lượt mà từ đang gõ
+  // đã trống thì chuyển thẳng cho ứng dụng thay vì bỏ mất.
+  bool forwardIfNoComposition = false;
   bool suppressMacro = false;
   // Có giá trị nghĩa là thay đoạn text nó trả về (ngay trước con trỏ) bằng
   // utf8Text, như khi chọn emoji. Đoạn cần thay chỉ biết chắc lúc tới lượt xử

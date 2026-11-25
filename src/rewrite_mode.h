@@ -88,6 +88,10 @@ public:
   void resetContext(fcitx::InputContext &inputContext) override;
   // Frontend báo text hoặc con trỏ vừa đổi.
   void onSurroundingTextUpdated(fcitx::InputContext &inputContext);
+  // Phím ảo đang sửa chữ hoặc còn chờ phím dội về.
+  void setVirtualKeyboardBusyProvider(BoolProvider provider) {
+    virtualKeyboardBusyProvider_ = std::move(provider);
+  }
   // Scheduler báo text trong ứng dụng vừa đổi do Areca.
   void noteCommitted(fcitx::InputContext &inputContext, uint32_t deleteCount,
                      const std::string &text);
@@ -115,6 +119,7 @@ private:
   ContextBoolProvider forwardFirstCharacterProvider_;
   ContextBoolProvider restoreSurroundingTextProvider_;
   MacroBypassMatcher macroBypassMatcher_;
+  BoolProvider virtualKeyboardBusyProvider_;
 };
 
 } // namespace areca

@@ -4,7 +4,6 @@
 #include <deque>
 #include <functional>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -62,6 +61,7 @@ public:
 
 private:
   bool sendNextBurst();
+  bool tapKey(uint32_t evdevKeycode);
   uint32_t modifierState() const;
   void onBurstSynced(uint64_t transactionId, bool ok);
   void armSyncTimeout();
@@ -84,9 +84,11 @@ private:
   std::deque<std::vector<uint32_t>> bursts_;
 
   fcitx::TrackableObjectReference<fcitx::InputContext> echoContext_;
-  // 0 là Backspace, còn lại là mã Unicode, theo đúng thứ tự đã phát.
-  std::deque<uint32_t> pendingEcho_;
-  std::set<uint32_t> injectedCodepoints_;
+  // Phím đã phát chờ dội về, nhận ra bằng cặp (keycode XKB, thời điểm). Thời
+  // điểm do Areca tự đánh số từ nhỏ nên không trùng phím thật: phím người dùng
+  // gõ giữa chừng không bị nuốt nhầm như khi chỉ so ký tự.
+  std::deque<std::pair<uint32_t, uint32_t>> pendingEcho_;
+  uint32_t nextKeyTimeMs_ = 1;
   uint64_t echoDeadlineUsec_ = 0;
 };
 

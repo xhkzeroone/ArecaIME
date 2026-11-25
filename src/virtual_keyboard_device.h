@@ -35,7 +35,9 @@ public:
   // Gửi các phím bổ trợ đang giữ (Shift, Ctrl, Alt, Super) sau khi gõ xong,
   // để ứng dụng không tưởng chúng đã nhả.
   virtual bool sendHeldModifiers(uint32_t mask);
-  virtual bool sendKey(uint32_t evdevKeycode, bool press);
+  // `timeMs` là thời điểm gắn vào phím; ứng dụng và fcitx5 nhận lại đúng số
+  // này nên dùng nó để nhận ra phím của chính Areca.
+  virtual bool sendKey(uint32_t evdevKeycode, bool press, uint32_t timeMs);
   // Gọi callback trên event loop khi compositor đã nhận hết các request trước.
   virtual bool sync(SyncCallback callback);
 

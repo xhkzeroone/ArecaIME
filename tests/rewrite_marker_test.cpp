@@ -27,7 +27,10 @@ public:
     events.push_back("commit:" + text);
   }
   void deleteSurroundingTextImpl(int, unsigned int) override {}
-  void forwardKeyImpl(const fcitx::ForwardKeyEvent &) override {}
+  void forwardKeyImpl(const fcitx::ForwardKeyEvent &event) override {
+    events.push_back(std::string("forward:") + event.rawKey().toString() +
+                     (event.isRelease() ? ":up" : ""));
+  }
   void updatePreeditImpl() override {}
 
   std::vector<std::string> events;
@@ -199,6 +202,16 @@ void testInputMethodDeletesWhenEchoNeverComes() {
        std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
 }
 
+void testQueuedBackspaceForwardsWithoutComposition() {
+  Harness h(areca::MarkerDelivery::InputMethod);
+  // Từ đang gõ đã trống: Backspace thật xếp hàng sau phím ảo vẫn tới ứng dụng.
+  h.scheduler.enqueueBackspace(h.context, true);
+  h.runFor(60 * 1000);
+  assert(
+      (h.context.events ==
+       std::vector<std::string>{"forward:BackSpace", "forward:BackSpace:up"}));
+}
+
 void testCacheCommitReplacesSelection() {
   fcitx::InputContextManager manager;
   TestInputContext context(manager);
@@ -220,6 +233,7 @@ int main() {
   testTypedDeliveryLeavesMarkerToBackend();
   testInputMethodWaitsForMarkerEcho();
   testInputMethodDeletesWhenEchoNeverComes();
+  testQueuedBackspaceForwardsWithoutComposition();
   testCacheCommitReplacesSelection();
   std::cout << "Rewrite marker test passed successfully\n";
   return 0;

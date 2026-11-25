@@ -164,6 +164,8 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
             return eraseFinalizedPreeditWord(inputContext, backspaceCount,
                                              std::move(onDone));
           }) {
+  rewriteHandler_.setVirtualKeyboardBusyProvider(
+      [this]() { return virtualKeyboardBackspaceBackend_.expectsEcho(); });
   instance_->inputContextManager().registerProperty("arecaRewriteState",
                                                     &rewriteStateFactory_);
   instance_->inputContextManager().registerProperty("arecaPreeditState",
