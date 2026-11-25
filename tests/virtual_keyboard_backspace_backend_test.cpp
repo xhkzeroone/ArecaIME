@@ -232,9 +232,12 @@ void testKeepsLockAndHeldModifiers() {
   auto plan = makePlan(6, 2, "ê");
   plan.typeMarker = true;
   bool done = false;
+  assert(!backend.expectsEcho());
   assert(backend.apply(context, plan, [&](uint64_t, areca::RewriteOutcome) {
     done = true;
   }) == areca::ApplyStatus::Pending);
+  // Engine bỏ qua cờ phím bổ trợ của phím dội về trong khoảng này.
+  assert(backend.expectsEcho());
   // Chỉ bit khoá đi kèm keymap; Shift đang giữ không được kèm phím xoá, gõ.
   assert((device.locked == std::vector<uint32_t>{static_cast<uint32_t>(
                                fcitx::KeyState::NumLock)}));

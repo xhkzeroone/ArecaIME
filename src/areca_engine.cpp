@@ -480,11 +480,16 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
   // là trạng thái trước khi nhấn/nhả nên phải cộng hoặc trừ bit của nó; phím
   // khoá thì đảo trạng thái, cờ ở lần nhả đã đúng nên giữ nguyên.
   {
-    auto states = event.rawKey().states();
     const auto own =
         fcitx::Key::keySymToStates(event.rawKey().sym()) &
         fcitx::KeyStates{fcitx::KeyState::Shift, fcitx::KeyState::Ctrl,
                          fcitx::KeyState::Alt, fcitx::KeyState::Super};
+    // Phím ảo dội về mang cờ của chính phím ảo, lúc đó Shift, Alt đang để
+    // nhả; chỉ tin nhấn/nhả của chính phím bổ trợ, kẻo tưởng người dùng đã nhả.
+    auto states =
+        virtualKeyboardBackspaceBackend_.expectsEcho()
+            ? fcitx::KeyStates(static_cast<fcitx::KeyState>(modifierState_))
+            : event.rawKey().states();
     if (event.isRelease()) {
       states &= ~own;
     } else {

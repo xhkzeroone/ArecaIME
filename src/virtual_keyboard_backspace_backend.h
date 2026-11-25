@@ -49,6 +49,8 @@ public:
 
   bool isAvailable();
   bool hasPending() const { return transactionId_ != 0; }
+  // Đang gõ hoặc còn chờ phím ảo dội về fcitx5.
+  bool expectsEcho() const { return hasPending() || echoDeadlineUsec_ != 0; }
   // Phím ảo đi vào ứng dụng rồi quay lại fcitx5; chuyển thẳng cho ứng dụng
   // thay vì để Bamboo xử lý lại.
   bool handleKeyEvent(fcitx::KeyEvent &event);
