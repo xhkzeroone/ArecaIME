@@ -221,7 +221,13 @@ class ConfigDocument:
                 self.lines.append("")
             self.lines.extend([f"[{section}]", assignment])
         else:
-            self.lines.append(assignment)
+            # Option cấp trên cùng phải đứng trước section đầu tiên: thêm vào cuối
+            # file thì nó rơi vào section cuối (vd. [SelectBackendKey]) và không
+            # còn được đọc như option thường.
+            index = section_end
+            while index > 0 and not self.lines[index - 1].strip():
+                index -= 1
+            self.lines.insert(index, assignment)
 
     def replace_indexed(self, prefix: str, entries: list[dict[str, str]]) -> None:
         updated = []
@@ -1731,6 +1737,16 @@ def self_test() -> None:
         assert "# preserved" in path.read_text(encoding="utf-8")
         restored.replace_list_values("SelectBackendKey", ["grave", "Ctrl+space"])
         assert restored.list_values("SelectBackendKey") == ["grave", "Ctrl+space"]
+
+        # fcitx5 chỉ ghi giá trị mặc định dưới dạng chú thích; option mới bật
+        # phải nằm trước section, không lọt vào [SelectBackendKey].
+        path.write_text("# EmojiSuggestion=False\n\n[SelectBackendKey]\n0=grave\n", encoding="utf-8")
+        document = ConfigDocument(path)
+        document.set("", "EmojiSuggestion", "True")
+        document.save()
+        reread = ConfigDocument(path)
+        assert reread.get("", "EmojiSuggestion") == "True"
+        assert reread.list_values("SelectBackendKey") == ["grave"]
     print("GTK settings config tests passed")
 
 
