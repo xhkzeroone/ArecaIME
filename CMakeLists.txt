@@ -58,6 +58,7 @@ add_library(areca MODULE
     src/areca_engine_config.cpp
     src/areca_engine_emoji.cpp
     src/bamboo_engine_adapter.cpp
+    src/browser_autocomplete.cpp
     src/forward_backspace_backend.cpp
     src/notification/dynamic_island_announcement.cpp
     src/notification/input_method_announcement.cpp
@@ -238,6 +239,18 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(areca-word-segment-test PRIVATE Fcitx5::Utils)
     add_test(NAME word-segment COMMAND areca-word-segment-test)
+
+    add_executable(areca-browser-autocomplete-test
+        tests/browser_autocomplete_test.cpp
+        src/browser_autocomplete.cpp
+        src/program_compatibility.cpp)
+    target_compile_features(areca-browser-autocomplete-test PRIVATE cxx_std_20)
+    target_compile_options(areca-browser-autocomplete-test PRIVATE
+        -Wall -Wextra -Wpedantic -UNDEBUG)
+    target_include_directories(areca-browser-autocomplete-test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(areca-browser-autocomplete-test PRIVATE Fcitx5::Utils)
+    add_test(NAME browser-autocomplete COMMAND areca-browser-autocomplete-test)
 
 
     add_executable(areca-sentence-capitalizer-test

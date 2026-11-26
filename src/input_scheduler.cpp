@@ -287,8 +287,10 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     return;
   }
   auto &backend = *selection.backend;
-  // Thêm một ký tự cho marker commit ngay trước lệnh xoá.
-  plan.backspaceCount = result.deleteCount + 1;
+  // Thêm một ký tự cho marker commit ngay trước lệnh xoá, trừ backend không
+  // dùng marker.
+  const bool useMarker = backend.markerDelivery() != MarkerDelivery::None;
+  plan.backspaceCount = result.deleteCount + (useMarker ? 1 : 0);
   plan.probeSurrounding = selection.probeSurrounding;
   if (selection.surroundingProbeTimeoutMs > 0) {
     plan.surroundingProbeTimeoutMs = selection.surroundingProbeTimeoutMs;
@@ -298,6 +300,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
                  << " tx=" << plan.transactionId
                  << " bamboo_delete=" << result.deleteCount
                  << " probe_timeout_ms=" << plan.surroundingProbeTimeoutMs
+                 << " use_marker=" << useMarker
                  << " plan_backspaces=" << plan.backspaceCount;
   }
 
@@ -307,6 +310,10 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   // bị xoá đúng phần Bamboo yêu cầu.
   pendingCommitDeleteCount_ = result.deleteCount;
   pendingCommitText_ = result.commitText;
+  if (!useMarker) {
+    startRewrite(inputContext, backend, plan);
+    return;
+  }
   commitMarkerThenApply(inputContext, backend, std::move(plan));
 }
 
@@ -326,22 +333,12 @@ void InputScheduler::commitMarkerThenApply(fcitx::InputContext &inputContext,
                            fcitx::CapabilityFlag::SurroundingText) &&
                        inputContext.surroundingText().isValid();
   inputContext.commitString(marker);
-  // Frontend đổi số ký tự cần xoá ra byte theo snapshot đang giữ, nên snapshot
-  // phải có marker trước khi backend surrounding xoá.
-  updateSurroundingCacheAfterCommit(inputContext, marker);
 
-  // Chromium bỏ qua lệnh xoá tới liền sau commit, khi nó chưa kịp báo lại trạng
-  // thái mới: marker còn nguyên và probe hết giờ. Vì vậy đợi ứng dụng báo
-  // surrounding có marker rồi mới xoá; ứng dụng không báo thì xoá khi hết giờ.
-  // Phím xoá đi kênh khác commit cũng phải đợi, kẻo tới trước marker và xoá
-  // nhầm một ký tự thật.
-  uint32_t waitMs = 0;
-  if (delivery == MarkerDelivery::Keys) {
-    waitMs =
-        resolveAfterMarkerCommitWaitMs(inputContext.frontend(), activeTiming_);
-  } else if (canEcho) {
-    waitMs = activeTiming_.surroundingProbeTimeoutMs;
-  }
+  // Phím xoá đi kênh khác commit nên phải đợi marker tới ứng dụng, kẻo tới
+  // trước marker và xoá nhầm một ký tự thật. Ứng dụng báo surrounding có marker
+  // sớm hơn thì phát phím ngay.
+  const uint32_t waitMs =
+      resolveAfterMarkerCommitWaitMs(inputContext.frontend(), activeTiming_);
   if (debugProvider_()) {
     FCITX_INFO() << "areca: rewrite marker tx=" << plan.transactionId
                  << " backend=" << backend.name() << " wait_ms=" << waitMs

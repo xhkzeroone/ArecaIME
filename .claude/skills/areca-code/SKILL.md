@@ -35,7 +35,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 1. `ArecaEngine::keyEvent` lọc ô mật khẩu, terminal, menu chọn backend, phím phát lại từ uinput.
 2. `RewriteModeHandler::handleKeyEvent` quyết định forward, reset, restore surrounding hoặc đưa vào `InputScheduler`.
 3. `InputScheduler::processNext` gọi Bamboo, nhận `BambooResult`.
-4. `deleteCount == 0` thì `commitString` ngay. Ngược lại tạo `RewritePlan` với `backspaceCount = N + 1`, commit marker `·` (theo `RewriteBackend::markerDelivery()`: surrounding đợi ứng dụng báo surrounding có marker rồi mới xoá, backend kênh phím chờ `AfterMarkerCommitWaitMs` hoặc tới khi ứng dụng báo marker, phím ảo tự gõ) rồi gọi `RewriteBackend::apply`. Marker làm ô bỏ gợi ý tự hoàn thành và vùng chọn; không thêm nhánh riêng cho autocomplete, ô URL hay thanh địa chỉ.
+4. `deleteCount == 0` thì `commitString` ngay. Ngược lại tạo `RewritePlan` với `backspaceCount = N + 1`, commit marker `·` (theo `RewriteBackend::markerDelivery()`: surrounding không dùng marker và xoá đúng N, backend kênh phím chờ `AfterMarkerCommitWaitMs` hoặc tới khi ứng dụng báo marker, phím ảo tự gõ) rồi gọi `RewriteBackend::apply`. Marker làm ô bỏ gợi ý tự hoàn thành và vùng chọn. Bộ chọn backend vẫn có nhánh riêng: thấy gợi ý tự hoàn thành hay vùng chọn (`browser_autocomplete.*`) hoặc ô có `CapabilityFlag::Url` thì dùng Backspace có marker, vì surrounding không dùng marker.
 5. Backend trả `Completed`, `Pending` hoặc `Failed`. `Pending` phải gọi `RewriteDone` đúng một lần với đúng `transactionId`.
 6. Scheduler chờ post-commit barrier rồi mới lấy phím kế tiếp. Backend `Failed` làm scheduler `stalled` để không phá thứ tự phím.
 

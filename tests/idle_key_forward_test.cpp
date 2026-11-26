@@ -66,9 +66,9 @@ private:
 class PendingBackend final : public areca::RewriteBackend {
 public:
   const char *name() const override { return "pending-test"; }
-  // Marker đi cùng kênh nên scheduler gọi apply ngay, không chờ timer.
+  // Thời gian chờ marker đặt 0 nên scheduler gọi apply ngay, không chờ timer.
   areca::MarkerDelivery markerDelivery() const override {
-    return areca::MarkerDelivery::InputMethod;
+    return areca::MarkerDelivery::Keys;
   }
 
   areca::ApplyStatus apply(fcitx::InputContext &,
@@ -113,6 +113,7 @@ int main() {
       [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 0;
+        timing.waylandAfterMarkerCommitWaitMs = 0;
         return timing;
       },
       [] { return false; },
@@ -182,6 +183,7 @@ int main() {
       [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 20;
+        timing.waylandAfterMarkerCommitWaitMs = 0;
         timing.timerAccuracyUsec = 1;
         return timing;
       },
@@ -220,7 +222,11 @@ int main() {
       [&](fcitx::InputContext &) -> areca::VietnameseEngine * {
         return &failureEngine;
       },
-      [](fcitx::InputContext &) { return areca::SchedulerTiming{}; },
+      [](fcitx::InputContext &) {
+        areca::SchedulerTiming timing;
+        timing.waylandAfterMarkerCommitWaitMs = 0;
+        return timing;
+      },
       [] { return false; },
       [&](fcitx::InputContext &, const areca::BambooResult &result) {
         return areca::RewriteBackendSelection{

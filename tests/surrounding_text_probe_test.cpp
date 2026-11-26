@@ -464,19 +464,6 @@ void testProbeAcceptsNormalizedLineEndingSentinel() {
 // Probe tính expected là rỗng; update trễ "go" không được coi là xác nhận xoá.
 void testLaggingUpdateDoesNotConfirmEmptyExpectation() {
   assert(!areca::surroundingProbeMatches(true, "g", 1, "", 0, "go", 2, 2));
-  // Marker "·" commit trước lệnh xoá: snapshot gốc là "aaa·", xoá "a·" còn
-  // "aa". Update trễ "aaa" từ trước khi marker vào ô không được tính là đã xoá
-  // xong.
-  assert(!areca::surroundingProbeMatches(true, "aaa\u00b7", 4, "aa", 2, "aaa",
-                                         3, 3));
-  // Chỉ marker đã vào, chưa xoá: vẫn là snapshot cũ.
-  assert(!areca::surroundingProbeMatches(true, "aaa\u00b7", 4, "aa", 2,
-                                         "aaa\u00b7", 4, 4));
-  // Đã xoá cả marker lẫn ký tự cũ.
-  assert(areca::surroundingProbeMatches(true, "aaa\u00b7", 4, "aa", 2, "aa", 2,
-                                        2));
-  assert(areca::surroundingProbeMatches(true, "vie\u00b7", 4, "vi", 2, "vi", 2,
-                                        2));
   assert(!areca::surroundingProbeMatches(true, "g", 1, "", 0, "o", 1, 1));
   // Xác nhận thật: trước cursor không còn gì.
   assert(areca::surroundingProbeMatches(true, "g", 1, "", 0, "", 0, 0));

@@ -119,6 +119,12 @@ int main() {
   assert(!isTerminalProgram("firefox"));
   assert(!isTerminalProgram(""));
 
+  using areca::isFirefoxFamilyProgram;
+  assert(isFirefoxFamilyProgram("Firefox.desktop"));
+  assert(isFirefoxFamilyProgram("org.mozilla.firefoxdeveloperedition"));
+  assert(isFirefoxFamilyProgram("librewolf"));
+  assert(!isFirefoxFamilyProgram("chromium"));
+
   using areca::isBrowserLikeProgram;
   assert(isBrowserLikeProgram("google-chrome"));
   assert(isBrowserLikeProgram("google-chrome.desktop"));

@@ -32,7 +32,7 @@ public:
 
   const char *name() const override { return "surrounding-text"; }
   MarkerDelivery markerDelivery() const override {
-    return MarkerDelivery::InputMethod;
+    return MarkerDelivery::None;
   }
   ApplyStatus apply(fcitx::InputContext &inputContext, const RewritePlan &plan,
                     RewriteDone onDone) override;

@@ -73,13 +73,15 @@ areca: queue push kind=text seq=
 areca: scheduler process seq=
 areca: bamboo result current= new= delete= commit=
 areca: reliability first-probe text= cursor= anchor= reliable=
-areca: reliability cached known= reliable= force_forward=
+areca: reliability cached known= reliable= force_forward= browser_autocomplete=
+areca: browser autocomplete strategy= is_url= collapsed_autocomplete= active_selection=
+areca: url selected backend=
 areca: auto selected surrounding backend=
 areca: app-override selected ... backend=
 areca: terminal selected backend=
 areca: rewrite marker tx= backend= wait_ms= wait_echo=
 areca: rewrite marker settled tx= reason=echo|timeout
-areca: rewrite select backend= tx= bamboo_delete= plan_backspaces=
+areca: rewrite select backend= tx= bamboo_delete= use_marker= plan_backspaces=
 areca: surrounding-text start tx=
 areca: surrounding probe succeeded via SurroundingTextUpdated event
 areca: surrounding delete unconfirmed after

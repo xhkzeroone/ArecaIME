@@ -113,9 +113,10 @@ frontend Fcitx4 thiếu `FormattedPreedit` và `SurroundingText`, hoặc fronten
 > [!IMPORTANT]
 > **Marker trước khi xoá**: trước mỗi lần xoá N ký tự, scheduler commit `·`
 > (U+00B7) rồi backend xoá N+1. Gợi ý tự hoàn thành và vùng chọn sau con trỏ bị
-> marker thay trước khi xoá, nên ô URL, thanh địa chỉ và ô có gợi ý không cần
-> nhánh riêng. Backend kênh phím chờ `AfterMarkerCommitWaitMs` sau marker; phím ảo
-> tự gõ marker.
+> marker thay trước khi xoá. Backend kênh phím chờ `AfterMarkerCommitWaitMs` sau marker; phím ảo
+> tự gõ marker. Backend surrounding không dùng marker, xoá đúng N như trước; vì
+> vậy ô có gợi ý tự hoàn thành, vùng chọn hay ô URL được bộ chọn backend chuyển
+> sang Backspace có marker.
 
 ## 5. Sequence diagram các backend
 

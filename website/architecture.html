@@ -4173,9 +4173,10 @@ false: ứng dụng SDL, frontend DBus thiếu <code>KeyEventOrderFix</code> và
 frontend Fcitx4 thiếu <code>FormattedPreedit</code> và <code>SurroundingText</code>, hoặc frontend lạ.</p>
 <blockquote><p><strong>Marker trước khi xoá</strong>: trước mỗi lần xoá N ký tự, scheduler commit <code>·</code>
 (U+00B7) rồi backend xoá N+1. Gợi ý tự hoàn thành và vùng chọn sau con trỏ bị
-marker thay trước khi xoá, nên ô URL, thanh địa chỉ và ô có gợi ý không cần
-nhánh riêng. Backend kênh phím chờ <code>AfterMarkerCommitWaitMs</code> sau marker; phím ảo
-tự gõ marker.</p></blockquote>
+marker thay trước khi xoá. Backend kênh phím chờ <code>AfterMarkerCommitWaitMs</code> sau marker; phím ảo
+tự gõ marker. Backend surrounding không dùng marker, xoá đúng N như trước; vì
+vậy ô có gợi ý tự hoàn thành, vùng chọn hay ô URL được bộ chọn backend chuyển
+sang Backspace có marker.</p></blockquote>
 <h2 id="5-sequence-diagram-c%C3%A1c-backend" tabindex="-1">5. Sequence diagram các backend</h2>
 <h3 id="51-surroundingtextbackend" tabindex="-1">5.1. <code>SurroundingTextBackend</code></h3>
 <h4 id="a-probe-b%E1%BA%B1ng-surroundingtextupdated" tabindex="-1">A. Probe bằng <code>SurroundingTextUpdated</code></h4>

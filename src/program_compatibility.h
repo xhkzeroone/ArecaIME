@@ -26,4 +26,7 @@ bool isTerminalProgram(const std::string &program);
 // Browser-family application detection for input routing.
 bool isBrowserLikeProgram(const std::string &program);
 
+// Trình duyệt họ Firefox, cho nhận diện autocomplete thu gọn của Firefox.
+bool isFirefoxFamilyProgram(const std::string &program);
+
 } // namespace areca

@@ -304,6 +304,17 @@ bool requiresShiftSelectBackend(const std::string &rawProgram) {
   return std::find(programs.begin(), programs.end(), program) != programs.end();
 }
 
+bool isFirefoxFamilyProgram(const std::string &rawProgram) {
+  const std::string program = normalizedProgramName(rawProgram);
+  static constexpr auto patterns = std::to_array<std::string_view>(
+      {"firefox", "librewolf", "waterfox", "floorp", "zen", "tor-browser",
+       "torbrowser", "mullvad", "icecat", "seamonkey", "palemoon", "basilisk"});
+  return std::any_of(patterns.begin(), patterns.end(),
+                     [&program](std::string_view pattern) {
+                       return program.find(pattern) != std::string::npos;
+                     });
+}
+
 bool isBrowserLikeProgram(const std::string &rawProgram) {
   const std::string program = normalizedProgramName(rawProgram);
   if (program.empty()) {

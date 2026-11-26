@@ -60,7 +60,7 @@ Thứ tự chọn khi `deleteCount > 0` (`selectRewriteBackend`, `src/areca_engi
 2. Ghi đè theo ứng dụng (Shift-select chỉ khi người dùng chọn).
 3. Tự động: surrounding nếu verdict cho phép; còn lại Backspace.
 
-Trước mỗi lần xoá N ký tự, scheduler commit marker `·` (U+00B7) rồi backend xoá N+1 (`RewriteBackend::markerDelivery()`: surrounding xoá ngay, backend kênh phím chờ `AfterMarkerCommitWaitMs`, phím ảo tự gõ marker). Marker làm trình duyệt bỏ gợi ý tự hoàn thành và vùng chọn, nên không có nhánh riêng cho autocomplete, ô URL hay thanh địa chỉ.
+Trước mỗi lần xoá N ký tự bằng backend phím, scheduler commit marker `·` (U+00B7) rồi backend xoá N+1 (`RewriteBackend::markerDelivery()`: backend kênh phím chờ `AfterMarkerCommitWaitMs`, phím ảo tự gõ marker). Surrounding không dùng marker (`MarkerDelivery::None`), xoá đúng N như trước khi có marker. Marker làm trình duyệt bỏ gợi ý tự hoàn thành và vùng chọn, nên bộ chọn backend chuyển ô có gợi ý tự hoàn thành, vùng chọn (`browser_autocomplete.*`) hay ô có `CapabilityFlag::Url` sang Backspace có marker.
 
 **Verdict surrounding** (theo input context, xoá khi focus, reset hay click trừ khi đang được bảo vệ 1 s sau Backspace, Ctrl+A, di chuyển):
 - Snapshot có text, cursor và anchor đều lớn hơn 0 thì được tin và vào probe.

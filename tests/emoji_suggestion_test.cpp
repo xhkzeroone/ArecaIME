@@ -124,7 +124,7 @@ class RecordingBackend final : public areca::RewriteBackend {
 public:
   const char *name() const override { return "recording"; }
   areca::MarkerDelivery markerDelivery() const override {
-    return areca::MarkerDelivery::InputMethod;
+    return areca::MarkerDelivery::Keys;
   }
   areca::ApplyStatus apply(fcitx::InputContext &inputContext,
                            const areca::RewritePlan &plan,
@@ -149,6 +149,7 @@ void testSchedulerReplacement() {
       [](fcitx::InputContext &) {
         areca::SchedulerTiming timing;
         timing.postCommitDelayMs = 0;
+        timing.waylandAfterMarkerCommitWaitMs = 0;
         return timing;
       },
       [] { return false; },

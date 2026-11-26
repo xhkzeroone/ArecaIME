@@ -24,8 +24,8 @@ using RewriteDone =
 
 // Đường marker tới ứng dụng trước khi backend xoá.
 enum class MarkerDelivery {
-  // Xoá cũng đi qua giao thức bộ gõ nên giữ thứ tự với commit marker.
-  InputMethod,
+  // Không dùng marker: backend xoá đúng phần Bamboo yêu cầu (surrounding).
+  None,
   // Xoá đi qua kênh phím khác commit: phải chờ marker tới ứng dụng.
   Keys,
   // Backend tự gõ marker trên kênh của nó.

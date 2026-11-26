@@ -85,6 +85,18 @@ int main() {
     assert(detector.isTerminal("", "dbus"));
     assert(detector.isTerminal("", "dbusfrontend"));
     assert(!detector.isTerminal("firefox", "dbus"));
+
+    // Browser checks with null tracker
+    assert(detector.isBrowser("google-chrome"));
+    assert(detector.isBrowser("firefox"));
+    assert(detector.isBrowser("thorium"));
+    assert(detector.isBrowser("ladybird"));
+    assert(!detector.isBrowser("code"));
+    assert(!detector.isBrowser("kate"));
+    assert(!detector.isBrowser("postman"));
+    assert(!detector.isBrowser("redisinsight"));
+    assert(!detector.isBrowser("slack"));
+    assert(detector.isBrowser(""));
   }
 
   // Case 2: Inactive/invalid tracker (SPI disabled)
@@ -92,6 +104,13 @@ int main() {
     WindowFocusTracker tracker;
     assert(!tracker.isValid());
     InputTypeDetector detector(&tracker);
+
+    // Browser checks with inactive tracker
+    assert(detector.isBrowser("google-chrome"));
+    assert(detector.isBrowser("firefox"));
+    assert(!detector.isBrowser("code"));
+    assert(!detector.isBrowser("postman"));
+    assert(detector.isBrowser(""));
 
     // Terminal checks with inactive tracker
     assert(!detector.isTerminal("firefox", nullptr));

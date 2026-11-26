@@ -10,7 +10,6 @@
 #include <fcitx/inputcontextmanager.h>
 
 #include "input_scheduler.h"
-#include "surrounding_text_cache.h"
 
 namespace {
 
@@ -119,17 +118,6 @@ struct Harness {
   std::vector<std::string> observed;
 };
 
-void testInputMethodDeliveryAppliesRightAfterMarker() {
-  Harness h(areca::MarkerDelivery::InputMethod);
-  h.scheduler.enqueue(h.context, 'r', "r");
-  // Marker vào trước, rồi xoá thêm một ký tự cho chính marker.
-  assert(
-      (h.context.events ==
-       std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
-  // Observer chỉ thấy phần Bamboo yêu cầu, không thấy marker.
-  assert((h.observed == std::vector<std::string>{"1:ê"}));
-}
-
 void testKeysDeliveryWaitsForMarker() {
   Harness h(areca::MarkerDelivery::Keys, 10);
   const uint64_t startUsec = fcitx::now(CLOCK_MONOTONIC);
@@ -167,8 +155,8 @@ void testTypedDeliveryLeavesMarkerToBackend() {
           std::vector<std::string>{"delete:2:typed", "commit:ê"}));
 }
 
-void testInputMethodWaitsForMarkerEcho() {
-  Harness h(areca::MarkerDelivery::InputMethod);
+void testKeysDeliveryStartsOnMarkerEcho() {
+  Harness h(areca::MarkerDelivery::Keys, 80);
   h.context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
   h.context.surroundingText().setText("go", 2, 2);
   h.scheduler.enqueue(h.context, 'r', "r");
@@ -189,21 +177,8 @@ void testInputMethodWaitsForMarkerEcho() {
   assert((h.observed == std::vector<std::string>{"1:ê"}));
 }
 
-void testInputMethodDeletesWhenEchoNeverComes() {
-  Harness h(areca::MarkerDelivery::InputMethod);
-  h.context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  h.context.surroundingText().setText("go", 2, 2);
-  h.scheduler.enqueue(h.context, 'r', "r");
-  assert(h.context.events.size() == 1);
-  // Mặc định đợi tối đa bằng thời gian probe surrounding (80 ms).
-  h.runFor(200 * 1000);
-  assert(
-      (h.context.events ==
-       std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
-}
-
 void testQueuedBackspaceForwardsWithoutComposition() {
-  Harness h(areca::MarkerDelivery::InputMethod);
+  Harness h(areca::MarkerDelivery::Keys);
   // Từ đang gõ đã trống: Backspace thật xếp hàng sau phím ảo vẫn tới ứng dụng.
   h.scheduler.enqueueBackspace(h.context, true);
   h.runFor(60 * 1000);
@@ -212,29 +187,26 @@ void testQueuedBackspaceForwardsWithoutComposition() {
        std::vector<std::string>{"forward:BackSpace", "forward:BackSpace:up"}));
 }
 
-void testCacheCommitReplacesSelection() {
-  fcitx::InputContextManager manager;
-  TestInputContext context(manager);
-  context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  // Ô có "vie" và gợi ý "tnam" đang được chọn sau con trỏ.
-  context.surroundingText().setText("vietnam", 3, 7);
-  areca::updateSurroundingCacheAfterCommit(context, kMarker);
-  assert(context.surroundingText().text() == "vie" + kMarker);
-  assert(context.surroundingText().cursor() == 4);
-  assert(context.surroundingText().anchor() == 4);
+void testNoMarkerDeletesExactly() {
+  Harness h(areca::MarkerDelivery::None);
+  h.context.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
+  h.context.surroundingText().setText("go", 2, 2);
+  h.scheduler.enqueue(h.context, 'r', "r");
+  // Surrounding xoá như trước khi có marker: không commit "·", xoá đúng N.
+  assert(
+      (h.context.events == std::vector<std::string>{"delete:1", "commit:ê"}));
+  assert((h.observed == std::vector<std::string>{"1:ê"}));
 }
 
 } // namespace
 
 int main() {
-  testInputMethodDeliveryAppliesRightAfterMarker();
   testKeysDeliveryWaitsForMarker();
   testKeysDeliveryWithoutWaitAppliesImmediately();
   testTypedDeliveryLeavesMarkerToBackend();
-  testInputMethodWaitsForMarkerEcho();
-  testInputMethodDeletesWhenEchoNeverComes();
+  testKeysDeliveryStartsOnMarkerEcho();
   testQueuedBackspaceForwardsWithoutComposition();
-  testCacheCommitReplacesSelection();
+  testNoMarkerDeletesExactly();
   std::cout << "Rewrite marker test passed successfully\n";
   return 0;
 }

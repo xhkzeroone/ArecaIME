@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#include "browser_autocomplete.h"
 #include "program_compatibility.h"
 #include "surrounding_probe_match.h"
 #include <fcitx-utils/log.h>
@@ -321,10 +322,53 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
     return {backend};
   }
 
-  // Marker "·" commit trước mỗi lần xoá đã làm ô bỏ gợi ý tự hoàn thành và
-  // vùng chọn, nên ô URL, thanh địa chỉ hay ô có gợi ý xoá như ô thường.
+  const auto &surrounding = inputContext.surroundingText();
+  // Chỉ tin CapabilityFlag::Url, không đoán thanh địa chỉ qua trợ năng.
+  const bool isUrl =
+      inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Url);
   const auto decision =
       evaluateReliability(inputContext, result.currentText, program);
+  const bool hasActiveSelection =
+      surrounding.isValid() && surrounding.cursor() != surrounding.anchor();
+  const bool collapsedFirefoxAutocomplete =
+      surrounding.isValid() &&
+      isCollapsedFirefoxAutocomplete(program, surrounding.text(),
+                                     surrounding.cursor(), surrounding.anchor(),
+                                     result.currentText);
+
+  // Gợi ý tự hoàn thành hay vùng chọn sau con trỏ: Backspace có marker, "·"
+  // thay phần đang được chọn rồi bị xoá cùng từ cũ. Chỉ xử lý khi frontend
+  // cung cấp surrounding text đủ để quan sát selection, không đoán gợi ý khi
+  // surrounding không khả dụng.
+  if (decision.browserAutocomplete || collapsedFirefoxAutocomplete ||
+      hasActiveSelection) {
+    RewriteBackend *backend = resolvePreferredBackspaceBackend(preferHardware);
+    if (!program.empty()) {
+      lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
+    }
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: browser autocomplete strategy=" << backend->name()
+                   << " is_url=" << isUrl
+                   << " collapsed_autocomplete=" << collapsedFirefoxAutocomplete
+                   << " active_selection=" << hasActiveSelection
+                   << " bamboo_delete=" << result.deleteCount;
+    }
+    return {backend};
+  }
+
+  // Ô URL luôn xoá bằng Backspace. Marker vẫn được commit để cắt gợi ý mà
+  // surrounding text không cho thấy.
+  if (isUrl) {
+    RewriteBackend *backend = resolvePreferredBackspaceBackend(preferHardware);
+    if (!program.empty()) {
+      lastAutoBackendByApp_[program] = AppBackendMode::Backspace;
+    }
+    if (debugEnabled()) {
+      FCITX_INFO() << "areca: url selected backend=" << backend->name()
+                   << " program=" << program;
+    }
+    return {backend};
+  }
 
   if (!program.empty()) {
     auto it = appBackendOverridesMap_.find(program);
@@ -436,17 +480,22 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
   const std::string &programName =
       !program.empty() ? program : inputContext.program();
 
+  const bool browserAutocomplete =
+      inputTypeDetector_.isBrowser(programName) &&
+      isBrowserAutocomplete(surrounding.text(), surrounding.cursor(),
+                            surrounding.anchor(), shownText);
+
   // Bắt đầu: Probe lại đúng một lần khi bước sang từ kế tiếp
   auto *state = inputContext.propertyFor(&rewriteStateFactory_);
-  if (state && backendVerdict_.retryForWord(state->wordSerial) &&
-      debugEnabled()) {
+  if (!browserAutocomplete && state &&
+      backendVerdict_.retryForWord(state->wordSerial) && debugEnabled()) {
     FCITX_INFO() << "areca: surrounding probe retry armed"
                  << " attempt=" << (backendVerdict_.probeAttempts + 1)
                  << " word=" << state->wordSerial << " program=" << programName;
   }
   // Kết thúc: Probe lại đúng một lần khi bước sang từ kế tiếp
 
-  if (!backendVerdict_.known) {
+  if (!backendVerdict_.known && !browserAutocomplete) {
     backendVerdict_.reliable = !isInvalidSurrounding(surrounding);
     backendVerdict_.probePending = backendVerdict_.reliable;
     if (debugEnabled()) {
@@ -484,7 +533,8 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
   // nhầm update cũ là xác nhận xoá. Khi đó coi probe thất bại: dùng
   // Backspace và thử lại ở từ kế tiếp.
   const bool staleDuringProbe =
-      backendVerdict_.probePending && backendVerdict_.reliable &&
+      !browserAutocomplete && backendVerdict_.probePending &&
+      backendVerdict_.reliable &&
       surrounding.cursor() == surrounding.anchor() &&
       !surroundingSnapshotEndsWith(surrounding.isValid(), surrounding.text(),
                                    surrounding.cursor(), surrounding.anchor(),
@@ -508,12 +558,15 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
     FCITX_INFO() << "areca: reliability cached known=" << backendVerdict_.known
                  << " reliable=" << backendVerdict_.reliable
                  << " force_forward=" << backendVerdict_.forceForwardBackspace
+                 << " browser_autocomplete=" << browserAutocomplete
                  << " program=" << programName;
   }
 
   ReliabilityDecision decision;
+  decision.browserAutocomplete = browserAutocomplete;
   decision.useSurrounding = backendVerdict_.known && backendVerdict_.reliable &&
-                            !backendVerdict_.forceForwardBackspace;
+                            !backendVerdict_.forceForwardBackspace &&
+                            !browserAutocomplete;
   return decision;
 }
 
