@@ -213,6 +213,18 @@ ArecaEngine::resolvePreferredBackspaceBackend(bool preferHardware) {
   return &forwardBackspaceBackend_;
 }
 
+RewriteBackend *
+ArecaEngine::resolveUnmarkedBackspaceBackend(bool preferHardware) {
+  RewriteBackend *backend = resolvePreferredBackspaceBackend(preferHardware);
+  if (backend == &uinputBackspaceBackend_) {
+    return &unmarkedUinputBackspaceBackend_;
+  }
+  if (backend == &nativeBackspaceBackend_) {
+    return &unmarkedNativeBackspaceBackend_;
+  }
+  return &unmarkedForwardBackspaceBackend_;
+}
+
 bool ArecaEngine::isBackendModeOffered(AppBackendMode mode) {
   switch (mode) {
   case AppBackendMode::VirtualKeyboard:
@@ -409,6 +421,14 @@ ArecaEngine::selectRewriteBackend(fcitx::InputContext &inputContext,
         return {resolvePreferredBackspaceBackend(preferHardware)};
       case AppBackendMode::Backspace: {
         auto *bsBackend = resolvePreferredBackspaceBackend(preferHardware);
+        if (debugEnabled()) {
+          FCITX_INFO() << "areca: app-override selected backspace backend="
+                       << bsBackend->name() << " program=" << program;
+        }
+        return {bsBackend};
+      }
+      case AppBackendMode::BackspaceUnmarked: {
+        auto *bsBackend = resolveUnmarkedBackspaceBackend(preferHardware);
         if (debugEnabled()) {
           FCITX_INFO() << "areca: app-override selected backspace backend="
                        << bsBackend->name() << " program=" << program;

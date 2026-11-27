@@ -31,6 +31,7 @@
 #include "uinput_backspace_backend.h"
 #include "uinput_device.h"
 #include "uinput_shift_select_backend.h"
+#include "unmarked_rewrite_backend.h"
 #include "virtual_keyboard_backspace_backend.h"
 #include "virtual_keyboard_device.h"
 
@@ -91,6 +92,7 @@ private:
   resolveSurroundingFallbackBackend(fcitx::InputContext &inputContext);
   RewriteBackend *resolvePreferredShiftSelectBackend();
   RewriteBackend *resolvePreferredBackspaceBackend(bool preferHardware = false);
+  RewriteBackend *resolveUnmarkedBackspaceBackend(bool preferHardware);
   // Virtual keyboard chỉ có khi compositor cấp phím ảo; Native không còn
   // trong menu.
   bool isBackendModeOffered(AppBackendMode mode);
@@ -185,6 +187,12 @@ private:
   NativeShiftSelectBackend nativeShiftSelectBackend_;
   VirtualKeyboardDevice virtualKeyboardDevice_;
   VirtualKeyboardBackspaceBackend virtualKeyboardBackspaceBackend_;
+  // Cùng backend Backspace nhưng không marker, cho mục "Backspace không
+  // marker". Bọc đúng instance gốc để Backspace uinput quay lại vẫn khớp
+  // transaction.
+  UnmarkedRewriteBackend unmarkedForwardBackspaceBackend_;
+  UnmarkedRewriteBackend unmarkedUinputBackspaceBackend_;
+  UnmarkedRewriteBackend unmarkedNativeBackspaceBackend_;
   std::unique_ptr<fcitx::EventSourceTime> deviceWarmupTimer_;
   EventLoopPostTask backendSelectionPost_;
   EventLoopPostTask emojiSelectionPost_;

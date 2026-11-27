@@ -94,6 +94,8 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       "Shift select (" + describeShiftSelectBackend() + ")";
   const std::string backspaceTitle =
       "Backspace (" + describeBackspaceBackend(preferHardware) + ")";
+  const std::string backspaceUnmarkedTitle =
+      "Backspace unmarked (" + describeBackspaceBackend(preferHardware) + ")";
 
   struct BackendOption {
     AppBackendMode mode;
@@ -104,6 +106,7 @@ void ArecaEngine::showBackendSelectionMenu(fcitx::InputContext &inputContext) {
       {AppBackendMode::SurroundingText, surroundingTitle},
       {AppBackendMode::ShiftSelect, shiftTitle},
       {AppBackendMode::Backspace, backspaceTitle},
+      {AppBackendMode::BackspaceUnmarked, backspaceUnmarkedTitle},
   };
   // Mục chỉ có trên một số máy được ẩn khi máy không hỗ trợ.
   if (isBackendModeOffered(AppBackendMode::VirtualKeyboard)) {
@@ -209,6 +212,10 @@ void ArecaEngine::selectBackendForApp(fcitx::InputContext &inputContext,
     break;
   case AppBackendMode::Backspace:
     modeDesc = "Backspace (" + describeBackspaceBackend(preferHardware) + ")";
+    break;
+  case AppBackendMode::BackspaceUnmarked:
+    modeDesc =
+        "Backspace unmarked (" + describeBackspaceBackend(preferHardware) + ")";
     break;
   case AppBackendMode::Preedit:
     modeDesc = "Preedit";

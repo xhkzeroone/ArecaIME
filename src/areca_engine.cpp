@@ -90,6 +90,12 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           instance_->eventLoop(), virtualKeyboardDevice_,
           [this]() { return debugEnabled(); },
           [this]() { return modifierState_; }),
+      unmarkedForwardBackspaceBackend_(forwardBackspaceBackend_,
+                                       "forward-backspace-unmarked"),
+      unmarkedUinputBackspaceBackend_(uinputBackspaceBackend_,
+                                      "uinput-backspace-unmarked"),
+      unmarkedNativeBackspaceBackend_(nativeBackspaceBackend_,
+                                      "native-backspace-unmarked"),
       backendSelectionPost_(instance_->eventLoop()),
       emojiSelectionPost_(instance_->eventLoop()),
       scheduler_(

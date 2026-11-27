@@ -58,7 +58,7 @@ SPELLCHECK = [
     "Khôi phục từ ngay trong lúc gõ",
 ]
 MACRO_BYPASS = ["Tắt", "Shift", "Ctrl", "Alt", "Super"]
-APP_MODES = ["Tự động", "Surrounding", "Shift select", "Backspace", "Preedit", "Redirect (EN)", "Virtual keyboard"]
+APP_MODES = ["Tự động", "Surrounding", "Shift select", "Backspace", "Preedit", "Redirect (EN)", "Virtual keyboard", "Backspace unmarked"]
 
 MAIN_DEFAULTS = {
     "BambooInputMethod": "Telex 2",

@@ -10,6 +10,7 @@
 #include <fcitx/inputcontextmanager.h>
 
 #include "input_scheduler.h"
+#include "unmarked_rewrite_backend.h"
 
 namespace {
 
@@ -91,7 +92,8 @@ struct Harness {
             },
             [] { return false; },
             [this](fcitx::InputContext &, const areca::BambooResult &) {
-              return areca::RewriteBackendSelection{&backend};
+              return areca::RewriteBackendSelection{selected ? selected
+                                                             : &backend};
             }) {
     scheduler.setCommitObserver(
         [this](fcitx::InputContext &, uint32_t count, const std::string &text) {
@@ -114,6 +116,7 @@ struct Harness {
   TestInputContext context;
   TestEngine engine;
   RecordingBackend backend;
+  areca::RewriteBackend *selected = nullptr;
   areca::InputScheduler scheduler;
   std::vector<std::string> observed;
 };
@@ -198,6 +201,19 @@ void testNoMarkerDeletesExactly() {
   assert((h.observed == std::vector<std::string>{"1:ê"}));
 }
 
+void testUnmarkedWrapperSkipsMarker() {
+  Harness h(areca::MarkerDelivery::Keys, 80);
+  areca::UnmarkedRewriteBackend unmarked(h.backend, "recording-unmarked");
+  h.selected = &unmarked;
+  h.scheduler.enqueue(h.context, 'r', "r");
+  // Backend kênh phím bọc lại chạy như trước khi có marker: không "·", không
+  // chờ, xoá đúng N.
+  assert(
+      (h.context.events == std::vector<std::string>{"delete:1", "commit:ê"}));
+  assert(!h.scheduler.rewritePending());
+  assert((h.observed == std::vector<std::string>{"1:ê"}));
+}
+
 } // namespace
 
 int main() {
@@ -207,6 +223,7 @@ int main() {
   testKeysDeliveryStartsOnMarkerEcho();
   testQueuedBackspaceForwardsWithoutComposition();
   testNoMarkerDeletesExactly();
+  testUnmarkedWrapperSkipsMarker();
   std::cout << "Rewrite marker test passed successfully\n";
   return 0;
 }

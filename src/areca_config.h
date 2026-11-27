@@ -83,13 +83,15 @@ enum class AppBackendMode {
   VirtualKeyboard = 6,
   // Không còn trong menu; giữ để cấu hình cũ vẫn đọc được và được coi là
   // Tự động. Native giờ là tuỳ chọn nâng cao thay uinput.
-  Native = 7
+  Native = 7,
+  // Backspace như trước khi có marker: xoá đúng N, không commit "·".
+  BackspaceUnmarked = 8
 };
 FCITX_CONFIG_ENUM_NAME_WITH_I18N(AppBackendMode, N_("Tự động"),
                                  N_("Surrounding"), N_("Shift select"),
                                  N_("Backspace"), N_("Preedit"),
                                  N_("Redirect (EN)"), N_("Virtual keyboard"),
-                                 N_("Native"));
+                                 N_("Native"), N_("Backspace unmarked"));
 
 inline PresentationMode
 presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
@@ -103,6 +105,7 @@ presentationModeForAppSetting(AppBackendMode mode, PresentationMode fallback) {
   case AppBackendMode::Backspace:
   case AppBackendMode::VirtualKeyboard:
   case AppBackendMode::Native:
+  case AppBackendMode::BackspaceUnmarked:
     return PresentationMode::Rewrite;
   case AppBackendMode::Auto:
     return fallback;
