@@ -22,7 +22,7 @@ Xem thêm:
 | `RewriteInputState`, `PreeditInputState` | `src/rewrite_mode.h`, `src/preedit_mode.h` | State theo input context: Bamboo engine, tự viết hoa, khoảng bảo vệ reset; Rewrite có thêm cờ restore. |
 | `InputScheduler`, `KeyQueue` | `src/input_scheduler.*`, `src/key_queue.h` | FIFO single-flight, transaction rewrite và post-commit barrier. |
 | `BambooEngineAdapter` | `src/bamboo_engine_adapter.*`, `bamboo-bridge/main.go` | Gọi `bamboo-core` qua cgo, trả `BambooResult`. |
-| `BackendVerdict` | `src/surrounding_reliability.h` | Kết quả probe surrounding text của context hiện tại, số lần probe và retry. |
+| `BackendVerdict` | `src/surrounding_reliability.h` | Context hiện tại có dùng được surrounding text không. |
 | Rewrite backend | `src/*_backend.*` | 7 backend implement `RewriteBackend`, xem [bảng backend](#rewrite-backend). |
 | `AdaptiveWait` | `src/adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm. |
 | `EventLoopPostTask` | `src/event_loop_post.h` | Đưa commit sang pha post của event loop. |
@@ -224,7 +224,7 @@ tự hoàn thành đi qua nhánh autocomplete của bộ chọn backend.
 
 | Backend | Tên trong log | Cách xoá | Xác nhận |
 | --- | --- | --- | --- |
-| `SurroundingTextBackend` | `surrounding-text` | Poll tới khi snapshot có từ đang gõ, rồi `deleteSurroundingText(-N, N)` một lần | Probe bằng `SurroundingTextUpdated` ở lần đầu; quá `SurroundingCheckWaitMs` thì lượt đó dùng Backspace |
+| `SurroundingTextBackend` | `surrounding-text` | Poll tới khi snapshot có từ đang gõ, rồi `deleteSurroundingText(-N, N)` một lần | Quá `SurroundingCheckWaitMs` thì trả `NeedsFallback`, scheduler chạy lại lượt bằng Backspace có marker. Lượt đầu của context poll thêm tới khi snapshot thấy chữ đã mất |
 | `UinputShiftSelectBackend` | `uinput-shift-select` | Shift giữ + Left × N qua `/dev/uinput`, commit đè vùng chọn | ACK bằng Shift up quay về Fcitx |
 | `NativeShiftSelectBackend` | `native-shift-select` | Như trên qua libei | Không ACK |
 | `UinputBackspaceBackend` | `uinput-backspace` | Backspace × N qua `/dev/uinput` | ACK bằng số Backspace quay về Fcitx |
@@ -281,7 +281,7 @@ Khi `deleteCount > 0`, `selectRewriteBackend()` quyết định theo thứ tự:
    - `Virtual keyboard`: `VirtualKeyboardBackspaceBackend`. Compositor không có phím
      ảo thì coi như Tự động.
 5. **Tự động**:
-   - Verdict cho phép surrounding: bộ chọn Surrounding, kèm probe nếu chưa xác nhận.
+   - Verdict cho phép surrounding: bộ chọn Surrounding, fallback Backspace khi snapshot không theo kịp.
    - Còn lại: bộ chọn Backspace. Cần phím phần cứng khi là terminal hoặc
      `canForwardBackspaces()` trả false, ví dụ ứng dụng SDL hay frontend DBus,
      Fcitx4 thiếu capability phù hợp.
@@ -293,17 +293,21 @@ menu chọn backend.
 
 Verdict được đánh giá ở rewrite đầu tiên cần xoá trong một input context:
 
-- Snapshot có text, cursor và anchor đều lớn hơn 0 thì được đánh dấu tin cậy và
-  chờ probe.
-- Snapshot gợi ý autocomplete không được dùng để probe.
+- Snapshot có text, cursor và anchor đều lớn hơn 0 thì được đánh dấu tin cậy.
+- Snapshot gợi ý autocomplete không được dùng để đánh giá.
 - Chương trình lập trình, terminal, office luôn bị buộc dùng Backspace.
 - Họ VS Code với capability mask `0x72` cũng bị buộc dùng Backspace.
 
-Probe gửi lệnh xoá rồi chờ `SurroundingTextUpdated` khớp ngữ nghĩa theo
-`surroundingProbeMatches`: con trỏ trùng anchor, text trước con trỏ đúng như kỳ
-vọng sau khi xoá, không còn text cũ, và không nhận nhầm trạng thái trung gian.
-Lần probe đầu chờ 150 ms, lần retry chờ 80 ms. Hết hạn thì verdict thành không tin
-cậy, transaction chuyển sang backend fallback, và chỉ retry một lần ở từ kế tiếp.
+Mỗi lượt surrounding tự kiểm tra snapshot trước khi xoá; snapshot không theo kịp
+thì lượt đó trả `NeedsFallback` và scheduler chạy lại bằng Backspace có marker.
+Verdict không đổi vì lượt đó.
+
+Có ứng dụng báo surrounding đúng nhưng lờ `deleteSurroundingText`. Vì vậy lượt
+xoá surrounding đầu tiên của mỗi context xoá xong còn poll tiếp tới khi snapshot
+cho thấy chữ đã mất (`surroundingDeleteMatches`: không nhận snapshot cũ hay trạng
+thái con trỏ dời trước khi ký tự bị bỏ), tối đa `SurroundingDeleteCheckWaitMs`.
+Thấy thì commit và verdict ghi `deleteConfirmed`, các lượt sau bỏ bước này. Không
+thấy thì verdict thành không tin cậy và lượt đó trả `NeedsFallback`.
 
 Verdict được cache theo UUID của context đang dùng. Lifecycle như activate,
 deactivate, reset, click chuột xoá verdict để đánh giá lại, trừ khi verdict đang
@@ -317,7 +321,7 @@ commit, ở cả Rewrite lẫn Preedit. Snapshot chỉ đổi khi ứng dụng b
 lần xoá, `SurroundingTextBackend` đọc lại snapshot mỗi `SurroundingPollMs` cho tới
 khi text trước con trỏ kết thúc bằng từ Bamboo đang giữ, tối đa
 `SurroundingCheckWaitMs`. Khớp thì xoá rồi commit liền; quá giờ thì chưa có gì bị
-xoá nên lượt đó chuyển sang Backspace, verdict giữ nguyên.
+xoá nên lượt đó chạy lại bằng Backspace có marker, verdict giữ nguyên.
 
 ## Sửa từ đã commit
 

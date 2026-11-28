@@ -50,10 +50,6 @@ struct RewriteInputState final : public fcitx::InputContextProperty {
   // commit liên tiếp không có phím nào ứng dụng tự xử lý xen giữa. Rỗng nghĩa
   // là không biết.
   std::string knownTextBeforeCursor;
-  // Tăng khi ký tự đầu tiên của một từ mới tới sau boundary. Backend dùng số
-  // này để chỉ retry surrounding probe ở từ kế tiếp, không retry mỗi ký tự.
-  uint32_t wordSerial = 0;
-  bool wordBoundaryPending = false;
   std::string resolvedProgram;
   // Một số frontend X11 gửi reset ngay sau Backspace đã được forward. Giữ
   // snapshot Bamboo vừa đồng bộ để phím kế tiếp còn sửa được từ trước đó.

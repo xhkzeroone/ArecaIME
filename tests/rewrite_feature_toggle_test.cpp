@@ -673,17 +673,11 @@ int main() {
       [](const fcitx::Key &) { return false; });
   boundaryHandler.activate(boundaryContext);
   auto *boundaryState = boundaryContext.propertyFor(&boundaryFactory);
-  assert(boundaryState->wordSerial == 0);
-  assert(!boundaryState->wordBoundaryPending);
   fcitx::KeyEvent trailingSpace(&boundaryContext, fcitx::Key(FcitxKey_space));
   boundaryHandler.handleKeyEvent(trailingSpace);
   assert(!boundaryState->surroundingRestoreArmed);
-  assert(boundaryState->wordSerial == 0);
-  assert(boundaryState->wordBoundaryPending);
   fcitx::KeyEvent nextLetter(&boundaryContext, fcitx::Key(FcitxKey_a));
   boundaryHandler.handleKeyEvent(nextLetter);
-  assert(boundaryState->wordSerial == 1);
-  assert(!boundaryState->wordBoundaryPending);
   assert((boundaryContext.events ==
           std::vector<std::string>{"commit: ", "commit:a"}));
   assert(boundaryContext.propertyFor(&boundaryFactory)->engine->currentText() ==
@@ -703,7 +697,8 @@ int main() {
   areca::AdvancedConfig advancedConfig;
   assert(advancedConfig.useUinputInsteadOfForwardKey.value());
   assert(!advancedConfig.useNativeInsteadOfUinput.value());
-  assert(advancedConfig.surroundingProbeTimeoutMs.value() == 80);
+  assert(advancedConfig.surroundingCheckWaitMs.value() == 50);
+  assert(advancedConfig.surroundingPollMs.value() == 1);
 
   // Shift+Left chỉ chờ 5 ms sau khi thả Shift ở mọi frontend.
   assert(advancedConfig.afterUinputShiftSelectWaitMs.value() == 5);

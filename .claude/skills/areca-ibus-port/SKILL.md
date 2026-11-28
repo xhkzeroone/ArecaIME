@@ -15,7 +15,7 @@ Areca là bộ gõ tiếng Việt chạy dạng addon fcitx5, C++20, dùng `bamb
 | Adapter và diff | `src/bamboo_engine_adapter.*`, `src/types.h` | Interface `VietnameseEngine`, kết quả `BambooResult` |
 | Tách từ, tự viết hoa | `src/word_segment.*`, `src/sentence_capitalizer.*` | Hàm thuần |
 | Khôi phục từ đã commit | `src/surrounding_text_restore.*` | Extractor từ trước con trỏ, tối đa 16 ký tự |
-| So khớp snapshot | `src/surrounding_probe_match.h` | `surroundingProbeMatches`, `surroundingSnapshotEndsWith` (NBSP coi như dấu cách), `updateKnownTextBeforeCursor` |
+| So khớp snapshot | `src/surrounding_snapshot.h` | `surroundingSnapshotEndsWith` (NBSP coi như dấu cách), `surroundingDeleteMatches` (xác nhận app đã làm theo lệnh xoá), `updateKnownTextBeforeCursor` |
 | Logic preedit | `src/preedit_logic.*` | |
 | Thời gian chờ thích nghi | `src/adaptive_wait.h` | Logic thuần, chỉ học từ số đo của backend trong lúc sửa chữ; không có monitor nền |
 | Nhận diện ứng dụng | `src/program_compatibility.*` | Danh sách terminal, IDE, office, trình duyệt, họ VS Code, Discord/Signal |
@@ -122,4 +122,4 @@ Lưu ý khi port scheduler: IBus đòi `process-key-event` trả về ngay. Như
 
 - Mang theo các test logic thuần trong `tests/` (adapter Bamboo, tách từ, so khớp snapshot, restore, scheduler, backend với `InputContext` giả). Thay `InputContext` giả bằng lớp giả của engine IBus.
 - Kịch bản tay bắt buộc trên mỗi đường frontend: gõ `gox ngon laf duwojc` (phải ra `gõ ngon là được`), thêm dấu liên tục trong một từ, Ctrl+A rồi Backspace rồi gõ tiếp, click vào giữa từ cũ rồi sửa dấu, thanh địa chỉ và ô có gợi ý của Chrome, Firefox, LibreOffice, terminal.
-- Bật log debug và đọc theo `docs/DEBUGGING.md`: `rewrite select backend`, `reliability first-probe`, `surrounding-text check … matched=`, `surrounding restore …`, `reset rejected`.
+- Bật log debug và đọc theo `docs/DEBUGGING.md`: `rewrite select backend`, `reliability first-check`, `surrounding-text check … matched=`, `surrounding restore …`, `reset rejected`.

@@ -148,7 +148,8 @@ int main() {
   assert(plan.fcitx4AfterNativeBackspaceWaitMs == 10);
   assert(plan.dbusAfterNativeBackspaceWaitMs == 10);
   assert(plan.ibusAfterNativeBackspaceWaitMs == 10);
-  assert(plan.surroundingWaitMs == 3);
+  assert(plan.surroundingCheckWaitMs == 50);
+  assert(plan.surroundingPollMs == 1);
   assert(plan.dbusAfterBackspaceWaitMs == 10);
   assert(plan.ibusAfterBackspaceWaitMs == 10);
   assert(plan.afterUinputShiftSelectWaitMs == 5);

@@ -4113,7 +4113,7 @@ KeyQueue (FIFO) ─► InputScheduler (single-flight) ─► BambooEngineAdapter
 <tr><td><code>RedirectModeHandler</code></td><td>Forward phím gốc.</td></tr>
 <tr><td><code>InputScheduler</code></td><td>FIFO single-flight, transaction rewrite, post-commit barrier, khoảng bảo vệ reset.</td></tr>
 <tr><td><code>BambooEngineAdapter</code></td><td>Gọi <code>bamboo-core</code> qua cgo, trả <code>BambooResult</code> gồm <code>deleteCount</code> và <code>commitText</code>.</td></tr>
-<tr><td><code>BackendVerdict</code></td><td>Kết quả probe surrounding, số lần probe, cờ retry ở từ kế tiếp.</td></tr>
+<tr><td><code>BackendVerdict</code></td><td>Context hiện tại có dùng được surrounding text không.</td></tr>
 <tr><td><code>RewriteBackend</code></td><td>Interface <code>apply(inputContext, plan, onDone)</code> trả <code>Completed</code>, <code>Pending</code> hoặc <code>Failed</code>.</td></tr>
 <tr><td><code>AdaptiveWait</code></td><td>Thời gian chờ cộng thêm dùng chung cho mọi backend.</td></tr>
 <tr><td><code>EventLoopPostTask</code></td><td>Chạy commit ở pha post của event loop.</td></tr>
@@ -4153,7 +4153,7 @@ trong 20 ms sau commit.</li></ol>
             E--&gt;&gt;S: Backspace
         end
     else Verdict cho phép surrounding
-        E--&gt;&gt;S: Surrounding, kèm probe nếu chưa xác nhận
+        E--&gt;&gt;S: Surrounding, fallback Backspace
     else Còn lại
         E--&gt;&gt;S: Backspace
     end</div></code></pre>
@@ -4179,7 +4179,16 @@ vậy ô có gợi ý tự hoàn thành, vùng chọn hay ô URL được bộ c
 sang Backspace có marker.</p></blockquote>
 <h2 id="5-sequence-diagram-c%C3%A1c-backend" tabindex="-1">5. Sequence diagram các backend</h2>
 <h3 id="51-surroundingtextbackend" tabindex="-1">5.1. <code>SurroundingTextBackend</code></h3>
-<h4 id="a-probe-b%E1%BA%B1ng-surroundingtextupdated" tabindex="-1">A. Probe bằng <code>SurroundingTextUpdated</code></h4>
+<p>Mọi lượt xoá bằng surrounding bắt đầu bằng bước kiểm tra: backend đọc lại
+snapshot mỗi <code>SurroundingPollMs</code> cho tới khi text trước con trỏ kết thúc bằng từ
+Bamboo đang giữ, tức ứng dụng đã xử lý xong các lượt trước. Quá
+<code>SurroundingCheckWaitMs</code> mà chưa khớp thì chưa có gì bị xoá, backend trả
+<code>NeedsFallback</code> và scheduler chạy lại lượt đó bằng backend fallback trong
+<code>RewriteBackendSelection</code> (Backspace, kèm marker); verdict của app giữ nguyên.
+Lượt đầu của mỗi context xoá xong còn poll tới khi snapshot cho thấy chữ đã mất,
+tối đa <code>SurroundingDeleteCheckWaitMs</code>, vì có ứng dụng báo surrounding đúng nhưng lờ
+lệnh xoá; không thấy thì verdict thành không tin cậy và lượt đó cũng trả
+<code>NeedsFallback</code>. Scheduler và backend không tự sửa snapshot sau khi commit hay xoá.</p>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
     participant S as InputScheduler
@@ -4189,53 +4198,30 @@ sang Backspace có marker.</p></blockquote>
     participant EL as EventLoop
     participant FB as Backend fallback
 
-    S-&gt;&gt;B: apply(plan probe=true)
-    B-&gt;&gt;B: Lưu snapshot gốc, tính snapshot kỳ vọng
-    B-&gt;&gt;IC: deleteSurroundingText(-N, N)
-    B-&gt;&gt;EL: Timer deadline 150 ms, retry 80 ms
-
-    alt Nhận update khớp trước deadline
-        IC--&gt;&gt;E: InputContextSurroundingTextUpdated
-        E-&gt;&gt;B: notifySurroundingTextUpdated
-        B-&gt;&gt;B: surroundingProbeMatches
-        B-&gt;&gt;EL: Huỷ deadline
-        B-&gt;&gt;E: onProbeSucceeded
-        B-&gt;&gt;EL: Chờ SurroundingWaitMs + AdaptiveWait
-        EL--&gt;&gt;B: Pha post
+    S-&gt;&gt;B: apply(plan)
+    loop Mỗi SurroundingPollMs, tối đa SurroundingCheckWaitMs
+        B-&gt;&gt;IC: Đọc surroundingText()
+    end
+    alt Text trước con trỏ khớp từ đang gõ
+        B-&gt;&gt;EL: Pha post
+        B-&gt;&gt;IC: deleteSurroundingText(-N, N)
+        opt Lượt đầu của context
+            loop Mỗi SurroundingPollMs, tối đa SurroundingDeleteCheckWaitMs
+                B-&gt;&gt;IC: Đọc surroundingText(), so surroundingDeleteMatches
+            end
+            alt Không thấy chữ mất
+                B-&gt;&gt;E: Verdict không tin cậy
+                B-&gt;&gt;S: onDone(NeedsFallback)
+            end
+            B-&gt;&gt;E: deleteConfirmed
+        end
         B-&gt;&gt;IC: commitString(commitText)
         B-&gt;&gt;S: onDone(Succeeded)
-    else Hết deadline
-        EL--&gt;&gt;B: Deadline
-        B-&gt;&gt;E: onProbeFailed, retry ở từ kế tiếp nếu còn lượt
-        B-&gt;&gt;FB: apply(plan probe=false)
-        Note over B,FB: Shift select nếu bật fallback trình duyệt, ngược lại Backspace
+    else Hết giờ
+        B-&gt;&gt;S: onDone(NeedsFallback)
+        S-&gt;&gt;IC: commitString(marker) nếu fallback dùng marker
+        S-&gt;&gt;FB: apply(plan), xoá N + marker
     end</div></code></pre>
-<p>Update không khớp bị bỏ qua và backend tiếp tục chờ. Ngoài ra, nếu ngay lúc
-chọn backend snapshot không chứa từ đang gõ trước con trỏ, probe bị tính là thất
-bại trước khi gửi lệnh xoá và restore bị tắt cho context đó.</p>
-<h4 id="b-rewrite-khi-%C4%91%C3%A3-x%C3%A1c-nh%E1%BA%ADn" tabindex="-1">B. Rewrite khi đã xác nhận</h4>
-<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
-    autonumber
-    participant S as InputScheduler
-    participant B as SurroundingTextBackend
-    participant IC as InputContext
-    participant AW as AdaptiveWait
-    participant EL as EventLoop
-
-    S-&gt;&gt;B: apply(plan probe=false)
-    B-&gt;&gt;AW: beginTransaction
-    B-&gt;&gt;IC: deleteSurroundingText(-N, N)
-    B-&gt;&gt;B: updateSurroundingCacheAfterDelete
-    B-&gt;&gt;EL: Timer SurroundingWaitMs + extra
-    EL--&gt;&gt;B: Timer, chuyển sang pha post
-    B-&gt;&gt;AW: observeTimer
-    alt Extra tăng trong lúc chờ
-        B-&gt;&gt;EL: Chờ thêm phần chênh lệch
-    end
-    B-&gt;&gt;IC: commitString(commitText)
-    B-&gt;&gt;B: updateSurroundingCacheAfterCommit
-    B-&gt;&gt;AW: completeTransaction
-    B-&gt;&gt;S: onDone(Succeeded)</div></code></pre>
 <h3 id="53-uinputshiftselectbackend" tabindex="-1">5.2. <code>UinputShiftSelectBackend</code></h3>
 <pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
     autonumber
@@ -4338,8 +4324,9 @@ theo tên frontend bắt đầu bằng <code>wayland</code>, <code>xim</code>, <
 <tr><td><code>AfterUinputShiftSelectWaitMs</code></td><td>Chờ sau khi thả Shift, frontend khác</td><td>10 ms</td></tr>
 <tr><td><code>WaylandAfterUinputShiftSelectWaitMs</code></td><td>Như trên, Wayland</td><td>5 ms</td></tr>
 <tr><td><code>Xim</code>, <code>Fcitx4</code>, <code>Dbus</code>, <code>IBus</code> + <code>AfterUinputShiftSelectWaitMs</code></td><td>Như trên theo frontend</td><td>10 ms</td></tr>
-<tr><td><code>SurroundingWaitMs</code></td><td>Chờ sau lệnh xoá surrounding V1</td><td>3 ms</td></tr>
-<tr><td><code>SurroundingProbeTimeoutMs</code></td><td>Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms</td><td>80 ms</td></tr>
+<tr><td><code>SurroundingCheckWaitMs</code></td><td>Chờ tối đa snapshot khớp từ đang gõ trước khi xoá, quá giờ dùng Backspace, ẩn</td><td>50 ms</td></tr>
+<tr><td><code>SurroundingPollMs</code></td><td>Nhịp đọc lại snapshot khi chờ, ẩn</td><td>1 ms</td></tr>
+<tr><td><code>SurroundingDeleteCheckWaitMs</code></td><td>Lượt đầu của context: chờ tối đa snapshot thấy chữ đã mất sau khi xoá, ẩn</td><td>150 ms</td></tr>
 <tr><td><code>XTestBackspaceDelayMs</code></td><td>Giữa các Backspace Native</td><td>1 ms</td></tr>
 <tr><td><code>AfterXTestBackspaceWaitMs</code></td><td>Chờ sau Backspace Native cuối, frontend khác</td><td>10 ms</td></tr>
 <tr><td><code>Wayland</code>, <code>Xim</code>, <code>Fcitx4</code>, <code>Dbus</code>, <code>IBus</code> + <code>AfterXTestBackspaceWaitMs</code></td><td>Như trên theo frontend</td><td>10 ms</td></tr>

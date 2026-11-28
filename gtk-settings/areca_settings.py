@@ -95,8 +95,6 @@ ADVANCED_DEFAULTS = {
     "Fcitx4AfterUinputShiftSelectWaitMs": 5,
     "DbusAfterUinputShiftSelectWaitMs": 5,
     "IBusAfterUinputShiftSelectWaitMs": 5,
-    "SurroundingWaitMs": 3,
-    "SurroundingProbeTimeoutMs": 80,
     "XTestBackspaceDelayMs": 1,
     "AfterXTestBackspaceWaitMs": 10,
     "WaylandAfterXTestBackspaceWaitMs": 10,
@@ -1185,7 +1183,6 @@ class SettingsWindow(Gtk.ApplicationWindow):
         groups = [
             ("Backspace", [("Delay giữa Backspace (ms)", "BackspaceDelayMs", 1000), ("Chờ sau Backspace (ms)", "AfterBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterBackspaceWaitMs", 5000), ("XIM", "XimAfterBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterBackspaceWaitMs", 5000), ("DBus", "DbusAfterBackspaceWaitMs", 5000), ("IBus", "IBusAfterBackspaceWaitMs", 5000)]),
             ("Shift+Left", [("Delay giữa các phím (ms)", "UinputShiftSelectDelayMs", 1000), ("Chờ sau khi thả Shift (ms)", "AfterUinputShiftSelectWaitMs", 5000), ("Wayland", "WaylandAfterUinputShiftSelectWaitMs", 5000), ("XIM", "XimAfterUinputShiftSelectWaitMs", 5000), ("Fcitx4", "Fcitx4AfterUinputShiftSelectWaitMs", 5000), ("DBus", "DbusAfterUinputShiftSelectWaitMs", 5000), ("IBus", "IBusAfterUinputShiftSelectWaitMs", 5000)]),
-            ("Surrounding text", [("Chờ sau xóa surrounding (ms)", "SurroundingWaitMs", 5000)]),
             ("Native Backspace", [("Delay giữa Backspace Native (ms)", "XTestBackspaceDelayMs", 1000), ("Chờ sau Backspace Native (ms)", "AfterXTestBackspaceWaitMs", 5000), ("Wayland", "WaylandAfterXTestBackspaceWaitMs", 5000), ("XIM", "XimAfterXTestBackspaceWaitMs", 5000), ("Fcitx4", "Fcitx4AfterXTestBackspaceWaitMs", 5000), ("DBus", "DbusAfterXTestBackspaceWaitMs", 5000), ("IBus", "IBusAfterXTestBackspaceWaitMs", 5000)]),
         ]
         for title, values in groups:

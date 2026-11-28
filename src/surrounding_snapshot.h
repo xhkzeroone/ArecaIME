@@ -25,11 +25,15 @@ inline bool textBeforeCursor(std::string_view text, uint32_t cursor,
   return true;
 }
 
+// Snapshot `actual` có cho thấy lệnh xoá đã được ứng dụng làm chưa, so với
+// snapshot `original` lúc xoá và `expected` tính trước. Có ứng dụng báo
+// surrounding đúng nhưng lờ deleteSurroundingText, nên phải chờ thấy chữ thật
+// sự mất mới tin.
 inline bool
-surroundingProbeMatches(bool actualValid, std::string_view originalText,
-                        uint32_t originalCursor, std::string_view expectedText,
-                        uint32_t expectedCursor, std::string_view actualText,
-                        uint32_t actualCursor, uint32_t actualAnchor) {
+surroundingDeleteMatches(bool actualValid, std::string_view originalText,
+                         uint32_t originalCursor, std::string_view expectedText,
+                         uint32_t expectedCursor, std::string_view actualText,
+                         uint32_t actualCursor, uint32_t actualAnchor) {
   if (actualCursor != actualAnchor) {
     return false;
   }
@@ -49,20 +53,18 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
     return false;
   }
 
-  // This matcher is called only for an actual SurroundingTextUpdated event.
-  // Some clients invalidate the snapshot when the field becomes empty.
+  // Vài ứng dụng bỏ snapshot khi ô trở thành rỗng.
   if (!actualValid) {
     return actualText.empty() && actualCursor == 0 && expectedBefore.empty();
   }
 
-  // Đáng lẽ không còn gì trước con trỏ: text khác rỗng là update trễ từ trước
-  // lệnh xoá. Thiếu điều kiện này, ends_with("") bên dưới nhận mọi update.
+  // Đáng lẽ không còn gì trước con trỏ: text khác rỗng là snapshot từ trước
+  // lệnh xoá. Thiếu điều kiện này, ends_with("") bên dưới nhận mọi snapshot.
   if (expectedBefore.empty() && !actualBefore.empty()) {
     return false;
   }
 
-  // The text that was supposed to be deleted is still immediately before the
-  // cursor, so this is the old snapshot.
+  // Phần cần xoá vẫn nằm ngay trước con trỏ: snapshot cũ.
   if (actualBefore.ends_with(originalBefore)) {
     return false;
   }
@@ -70,8 +72,8 @@ surroundingProbeMatches(bool actualValid, std::string_view originalText,
     return false;
   }
 
-  // Some clients move the cursor first and remove the character afterward.
-  // Do not mistake that intermediate state for a completed deletion.
+  // Có ứng dụng dời con trỏ trước rồi mới bỏ ký tự. Không nhận nhầm trạng thái
+  // trung gian đó là đã xoá xong.
   if (actualCursor < fcitx::utf8::length(actualText)) {
     const auto cursorByte =
         fcitx::utf8::ncharByteLength(actualText.begin(), actualCursor);

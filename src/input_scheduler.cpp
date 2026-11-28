@@ -9,7 +9,7 @@
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
 
-#include "surrounding_probe_match.h"
+#include "surrounding_snapshot.h"
 
 namespace areca {
 
@@ -293,15 +293,12 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   // dùng marker.
   const bool useMarker = backend.markerDelivery() != MarkerDelivery::None;
   plan.backspaceCount = result.deleteCount + (useMarker ? 1 : 0);
-  plan.probeSurrounding = selection.probeSurrounding;
-  if (selection.surroundingProbeTimeoutMs > 0) {
-    plan.surroundingProbeTimeoutMs = selection.surroundingProbeTimeoutMs;
-  }
+  plan.verifySurroundingDelete = selection.verifySurroundingDelete;
   if (debugProvider_()) {
     FCITX_INFO() << "areca: rewrite select backend=" << backend.name()
                  << " tx=" << plan.transactionId
-                 << " bamboo_delete=" << result.deleteCount
-                 << " probe_timeout_ms=" << plan.surroundingProbeTimeoutMs
+                 << " bamboo_delete=" << result.deleteCount << " fallback="
+                 << (selection.fallback ? selection.fallback->name() : "")
                  << " use_marker=" << useMarker
                  << " plan_backspaces=" << plan.backspaceCount;
   }
@@ -312,6 +309,8 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   // bị xoá đúng phần Bamboo yêu cầu.
   pendingCommitDeleteCount_ = result.deleteCount;
   pendingCommitText_ = result.commitText;
+  pendingPlan_ = plan;
+  pendingFallback_ = selection.fallback;
   if (!useMarker) {
     startRewrite(inputContext, backend, plan);
     return;
@@ -454,10 +453,49 @@ void InputScheduler::rewriteDone(uint64_t transactionId,
     stalled_ = true;
     return;
   }
+  if (outcome == RewriteOutcome::NeedsFallback) {
+    startFallback();
+    return;
+  }
   activeTransactionId_ = 0;
   notifyPendingCommit();
   // Start the settle delay from the backend's actual completion barrier.
   finishKeyAfterCommit();
+}
+
+void InputScheduler::startFallback() {
+  auto *fallback = std::exchange(pendingFallback_, nullptr);
+  auto *inputContext = pendingCommitContext_.get();
+  if (!inputContext) {
+    activeTransactionId_ = 0;
+    pendingCommitContext_.unwatch();
+    pendingCommitText_.clear();
+    finishKey();
+    return;
+  }
+  if (!fallback) {
+    FCITX_ERROR() << "areca: rewrite fallback missing tx="
+                  << pendingPlan_.transactionId;
+    stalled_ = true;
+    return;
+  }
+  // Chưa có gì bị xoá: chạy lại cả lượt bằng backend dự phòng, kể cả marker
+  // nếu backend đó dùng.
+  RewritePlan plan = pendingPlan_;
+  plan.verifySurroundingDelete = false;
+  const bool useMarker = fallback->markerDelivery() != MarkerDelivery::None;
+  plan.backspaceCount = pendingCommitDeleteCount_ + (useMarker ? 1 : 0);
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: rewrite fallback tx=" << plan.transactionId
+                 << " backend=" << fallback->name()
+                 << " use_marker=" << useMarker
+                 << " plan_backspaces=" << plan.backspaceCount;
+  }
+  if (!useMarker) {
+    startRewrite(*inputContext, *fallback, plan);
+    return;
+  }
+  commitMarkerThenApply(*inputContext, *fallback, std::move(plan));
 }
 
 void InputScheduler::notifyPendingCommit() {
@@ -469,6 +507,8 @@ void InputScheduler::notifyPendingCommit() {
   }
   pendingCommitDeleteCount_ = 0;
   pendingCommitText_.clear();
+  pendingPlan_ = {};
+  pendingFallback_ = nullptr;
 }
 
 void InputScheduler::finishKey() {

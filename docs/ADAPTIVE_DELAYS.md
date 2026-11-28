@@ -142,10 +142,11 @@ thái đã học từ các backend khác. `UinputShiftSelectBackend` còn cập 
 
 Một instance `AdaptiveWait` được `ArecaEngine` chia sẻ giữa các backend. Vì vậy,
 thông tin về tình trạng chậm của hệ thống vẫn được giữ khi chuyển backend.
+`SurroundingTextBackend` không dùng `AdaptiveWait`: nó chờ snapshot khớp từ đang
+gõ (`SurroundingCheckWaitMs`) thay vì chờ theo thời gian.
 
 | Backend | Chờ trước commit | Giãn chuỗi phím/xóa | Đo timer cục bộ | Đo ACK |
 |---|:---:|:---:|:---:|:---:|
-| `SurroundingTextBackend` | Có | Không áp dụng | Có | Không |
 | `ForwardBackspaceBackend` | Có | Có | Có | Không |
 | `UinputBackspaceBackend` | Có | Có | Có | Có |
 | `UinputShiftSelectBackend` | Có | Không dùng adaptive giữa các phím Left | Không | Có |
@@ -200,7 +201,7 @@ file hệ thống nào.
 
 Giới hạn 50 ms có thể không đủ nếu ứng dụng treo lâu. ACK chỉ có ở backend
 uinput. Adaptive Delays giảm xác suất race
-condition nhưng vẫn cần phối hợp với surrounding-text probe, ACK timeout và cơ
+condition nhưng vẫn cần phối hợp với bước kiểm tra snapshot của surrounding, ACK timeout và cơ
 chế fallback backend.
 
 ## Ví dụ hoạt động
@@ -218,8 +219,7 @@ Giả sử base wait sau Backspace là 3 ms và base delay giữa phím là 1 ms
 
 - Thuật toán và hằng số: `src/adaptive_wait.h`.
 - Khởi tạo trạng thái dùng chung: `src/areca_engine.h`, `src/areca_engine.cpp`.
-- Các backend: `src/*backspace_backend.cpp`, `src/*shift_select_backend.cpp`,
-  `src/surrounding_text_backend.cpp`.
+- Các backend: `src/*backspace_backend.cpp`, `src/*shift_select_backend.cpp`.
 - Kiểm thử thuật toán: `tests/adaptive_wait_test.cpp`.
 - Kiểm thử tích hợp: các file test của từng backend tương ứng.
 

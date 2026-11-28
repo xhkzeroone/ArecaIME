@@ -371,16 +371,16 @@ if(BUILD_TESTING)
         Fcitx5::Core Fcitx5::Utils)
     add_test(NAME native-shift-select COMMAND areca-native-shift-select-test)
 
-    add_executable(areca-surrounding-text-probe-test
-        tests/surrounding_text_probe_test.cpp
+    add_executable(areca-surrounding-text-backend-test
+        tests/surrounding_text_backend_test.cpp
         src/surrounding_text_backend.cpp)
-    target_compile_features(areca-surrounding-text-probe-test PRIVATE cxx_std_20)
-    target_compile_options(areca-surrounding-text-probe-test PRIVATE
+    target_compile_features(areca-surrounding-text-backend-test PRIVATE cxx_std_20)
+    target_compile_options(areca-surrounding-text-backend-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-surrounding-text-probe-test PRIVATE
+    target_include_directories(areca-surrounding-text-backend-test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    target_link_libraries(areca-surrounding-text-probe-test PRIVATE Fcitx5::Core Fcitx5::Utils)
-    add_test(NAME surrounding-text-probe COMMAND areca-surrounding-text-probe-test)
+    target_link_libraries(areca-surrounding-text-backend-test PRIVATE Fcitx5::Core Fcitx5::Utils)
+    add_test(NAME surrounding-text-backend COMMAND areca-surrounding-text-backend-test)
 
     add_executable(areca-surrounding-text-restore-test
         tests/surrounding_text_restore_test.cpp

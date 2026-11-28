@@ -10,7 +10,7 @@
 #include <fcitx-utils/log.h>
 #include <fcitx/surroundingtext.h>
 
-#include "surrounding_probe_match.h"
+#include "surrounding_snapshot.h"
 
 namespace areca {
 namespace {
@@ -529,14 +529,9 @@ void RewriteModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   // của VNI hoặc ký hiệu của VIQR/Telex 2 vẫn có thể sửa từ đã commit.
   const bool canProcessText = state->engine->canProcessKey(codepoint);
   if (canProcessText) {
-    if (state->wordBoundaryPending) {
-      ++state->wordSerial;
-      state->wordBoundaryPending = false;
-    }
     tryRestoreFromSurroundingText(*inputContext, *state);
   } else {
     state->surroundingRestoreArmed = false;
-    state->wordBoundaryPending = true;
   }
   // Thử cho phím đầu đi tiếp trước khi chặn event để editor web có thể mở chế
   // độ soạn thảo. Không chen vào Backspace đang chờ release; nếu tự viết hoa đã
@@ -591,8 +586,6 @@ void RewriteModeHandler::resetContext(fcitx::InputContext &inputContext) {
     // tạo trạng thái từ vị trí con trỏ mới nếu người dùng bật tính năng.
     state->surroundingRestoreArmed = true;
     state->knownTextBeforeCursor.clear();
-    state->wordSerial = 0;
-    state->wordBoundaryPending = false;
   }
 }
 

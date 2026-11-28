@@ -240,16 +240,9 @@ FCITX_CONFIGURATION(
         this, "IBusAfterUinputShiftSelectWaitMs",
         N_("Chờ sau khi thả Shift uinput IBus (ms)"), 5,
         fcitx::IntConstrain(0, 5000)};
-    fcitx::Option<int, fcitx::IntConstrain> surroundingWaitMs{
-        this, "SurroundingWaitMs", N_("Chờ sau xóa surrounding text (ms)"), 3,
-        fcitx::IntConstrain(0, 5000)};
-    fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingProbeTimeoutMs{
-        this, "SurroundingProbeTimeoutMs",
-        N_("Timeout kiểm tra surrounding text (ms)"), 80,
-        fcitx::IntConstrain(1, 1000)};
     // Surrounding đọc lại snapshot theo nhịp cho tới khi text trước con trỏ
     // khớp từ đang gõ. Quá SurroundingCheckWaitMs thì lượt đó xoá bằng
-    // Backspace.
+    // Backspace có marker.
     fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingCheckWaitMs{
         this, "SurroundingCheckWaitMs",
         N_("Chờ tối đa snapshot khớp trước khi xoá surrounding (ms)"), 50,
@@ -257,6 +250,12 @@ FCITX_CONFIGURATION(
     fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingPollMs{
         this, "SurroundingPollMs", N_("Nhịp đọc lại surrounding (ms)"), 1,
         fcitx::IntConstrain(1, 1000)};
+    // Lượt sửa đầu của mỗi ô: xoá xong chờ snapshot thấy chữ đã mất. Có ứng
+    // dụng báo surrounding đúng nhưng lờ lệnh xoá.
+    fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingDeleteCheckWaitMs{
+        this, "SurroundingDeleteCheckWaitMs",
+        N_("Chờ tối đa snapshot xác nhận đã xoá surrounding (ms)"), 150,
+        fcitx::IntConstrain(1, 5000)};
     // Khoá ini giữ tên từ thời còn XTest để không mất cấu hình đã lưu; các
     // option này giờ là thời gian của Native (libei).
     fcitx::Option<int, fcitx::IntConstrain> nativeBackspaceDelayMs{

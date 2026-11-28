@@ -17,6 +17,9 @@ enum class ApplyStatus {
 enum class RewriteOutcome {
   Succeeded,
   Failed,
+  // Backend chưa xoá hay commit gì: scheduler chạy lại lượt này bằng backend
+  // dự phòng trong RewriteBackendSelection.
+  NeedsFallback,
 };
 
 using RewriteDone =

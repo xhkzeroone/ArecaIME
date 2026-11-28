@@ -40,8 +40,6 @@ struct RewriteTiming {
   uint32_t dbusAfterUinputShiftSelectWaitMs = 5;
   uint32_t ibusAfterUinputShiftSelectWaitMs = 5;
 
-  uint32_t surroundingWaitMs = 3;
-  uint32_t surroundingProbeTimeoutMs = 80;
   uint32_t nativeBackspaceDelayMs = 1;
   uint32_t afterNativeBackspaceWaitMs = 10;
   uint32_t waylandAfterNativeBackspaceWaitMs = 10;
@@ -62,6 +60,9 @@ struct RewriteTiming {
   // con trỏ đúng như kỳ vọng, tối đa `surroundingCheckWaitMs` rồi đổi backend.
   uint32_t surroundingCheckWaitMs = 50;
   uint32_t surroundingPollMs = 1;
+  // Lượt đầu của ô: sau khi xoá, chờ tối đa chừng này để snapshot cho thấy chữ
+  // đã mất. Không thấy thì ô bị đánh dấu không dùng được surrounding.
+  uint32_t surroundingDeleteCheckWaitMs = 150;
 };
 
 inline uint32_t resolveAfterMarkerCommitWaitMs(const char *frontendName,
@@ -89,13 +90,15 @@ struct RewritePlan : RewriteTiming {
   uint64_t transactionId = 0;
   uint32_t backspaceCount = 0;
   std::string commitText;
-  bool probeSurrounding = false;
   // Backend phải tự gõ marker trước khi xoá vì scheduler không commit được
   // marker trên cùng kênh với nó.
   bool typeMarker = false;
   // Từ Bamboo đang giữ trước lượt này, tức phần ứng dụng phải đang có ngay
   // trước con trỏ nếu đã xử lý xong các lượt trước.
   std::string expectedTextBeforeCursor;
+  // Chưa biết ứng dụng có làm theo deleteSurroundingText không: xoá xong phải
+  // chờ snapshot xác nhận rồi mới commit.
+  bool verifySurroundingDelete = false;
 };
 
 template <typename Timing>

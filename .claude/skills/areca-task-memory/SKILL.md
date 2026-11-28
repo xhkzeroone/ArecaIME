@@ -68,7 +68,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 | Menu tray fcitx | `src/areca_engine_actions.cpp` |
 | Rewrite / Preedit | `src/rewrite_mode.*`, `src/preedit_mode.*` |
 | Scheduler, cửa sổ chặn reset | `src/input_scheduler.*` |
-| So khớp snapshot, text đã biết | `src/surrounding_probe_match.h` |
+| So khớp snapshot, text đã biết | `src/surrounding_snapshot.h` |
 | Danh sách app đặc biệt | `src/program_compatibility.cpp` |
 | AT-SPI | `src/window_focus_tracker.cpp`, `src/atspi/` |
 | App cài đặt GTK | `gtk-settings/areca_settings.py` |
@@ -86,7 +86,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 ## 5. Log và output lệnh
 
 - **Log fcitx5 người dùng dán:** chỉ lấy các dòng quyết định, đừng diễn giải từng dòng. Các mẫu cần tìm:
-  `rewrite select backend|reliability first-probe|surrounding-text check|probe succeeded|surrounding restore|reset rejected|app reset|bamboo result`.
+  `rewrite select backend|reliability first-check|surrounding-text check|rewrite fallback|surrounding restore|reset rejected|app reset|bamboo result`.
 - **Gợi ý cho người dùng lệnh lọc sẵn** thay vì xin cả log:
   `fcitx5 -rd 2>&1 | grep -E "<mẫu ở trên>"`.
 - **Build và test:** chỉ in phần cần, ví dụ

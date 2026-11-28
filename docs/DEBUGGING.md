@@ -72,7 +72,7 @@ Những dòng hữu ích, theo thứ tự xuất hiện trong một lần rewrit
 areca: queue push kind=text seq=
 areca: scheduler process seq=
 areca: bamboo result current= new= delete= commit=
-areca: reliability first-probe text= cursor= anchor= reliable=
+areca: reliability first-check text= cursor= anchor= reliable=
 areca: reliability cached known= reliable= force_forward= browser_autocomplete=
 areca: browser autocomplete strategy= is_url= collapsed_autocomplete= active_selection=
 areca: url selected backend=
@@ -82,10 +82,12 @@ areca: terminal selected backend=
 areca: rewrite marker tx= backend= wait_ms= wait_echo=
 areca: rewrite marker settled tx= reason=echo|timeout
 areca: rewrite select backend= tx= bamboo_delete= use_marker= plan_backspaces=
-areca: surrounding-text start tx=
-areca: surrounding probe succeeded via SurroundingTextUpdated event
-areca: surrounding delete unconfirmed after
-areca: fallback from unconfirmed surrounding delete to backend=
+areca: surrounding-text start tx= delete= expected_tail=
+areca: surrounding-text check tx= matched= polls= waited_us=
+areca: surrounding-text delete check tx= matched= polls= waited_us=
+areca: surrounding delete check confirmed= program=
+areca: surrounding-text needs fallback tx=
+areca: rewrite fallback tx= backend= use_marker= plan_backspaces=
 areca: uinput-backspace start tx=
 areca: virtual-keyboard-backspace start tx= backspaces= bursts= commit=
 areca: virtual-keyboard-backspace done tx= ok= echo_pending=
@@ -125,11 +127,14 @@ rewrite select backend=surrounding-text
 ```
 
 Areca đang dùng `deleteSurroundingText()`. Nếu xoá sai, xem dòng
-`reliability first-probe` và `surrounding probe ...`. Dòng
+`reliability first-check`. Dòng
 `surrounding-text check tx=... matched=0` nghĩa là quá `SurroundingCheckWaitMs`
-mà ứng dụng vẫn chưa báo đủ từ đang gõ; lượt đó xoá bằng Backspace
-(`surrounding-text fallback backend=...`). `waited_us` ở dòng `matched=1` cho
-biết ứng dụng cần bao lâu để theo kịp. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
+mà ứng dụng vẫn chưa báo đủ từ đang gõ; lượt đó chạy lại bằng Backspace có
+marker (`rewrite fallback tx=... backend=...`). `waited_us` ở dòng `matched=1` cho
+biết ứng dụng cần bao lâu để theo kịp. Dòng `surrounding-text delete check
+... matched=0` chỉ có ở lượt đầu của ô: ứng dụng báo surrounding nhưng không làm
+theo lệnh xoá trong `SurroundingDeleteCheckWaitMs`, nên ô đó chuyển hẳn sang
+Backspace. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
 restore bị bỏ qua vì snapshot chưa có text Areca vừa commit. Dòng
 `surrounding restore disabled reason=non-surrounding-backend` nghĩa là app
 đang xoá chữ bằng Backspace hoặc Shift select nên Rewrite không restore.

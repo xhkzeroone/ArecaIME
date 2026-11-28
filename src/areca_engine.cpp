@@ -52,16 +52,9 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
       }),
       surroundingBackend_(
           instance_->eventLoop(), [this]() { return debugEnabled(); },
-          [this](fcitx::InputContext &inputContext) {
-            handleSurroundingProbeSucceeded(inputContext);
-          },
-          [this](fcitx::InputContext &inputContext) {
-            handleSurroundingProbeFailed(inputContext);
-          },
-          [this](fcitx::InputContext &inputContext) -> RewriteBackend * {
-            return resolveSurroundingFallbackBackend(inputContext);
-          },
-          &adaptiveWait_),
+          [this](fcitx::InputContext &inputContext, bool confirmed) {
+            handleSurroundingDeleteChecked(inputContext, confirmed);
+          }),
       forwardBackspaceBackend_(instance_->eventLoop(), adaptiveWait_,
                                [this]() { return debugEnabled(); }),
       uinputDevice_([this]() { return debugEnabled(); },
@@ -188,11 +181,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         auto *inputContext = contextEvent.inputContext();
         if (!inputContext) {
           return;
-        }
-        // Nếu backend đang ở giai đoạn probe, thông báo để nó xác nhận thành
-        // công và hủy deadline timer probe.
-        if (surroundingBackend_.isProbing()) {
-          surroundingBackend_.notifySurroundingTextUpdated(*inputContext);
         }
         // Callback chỉ ghi nhận rằng frontend đã đổi text hoặc cursor. Việc đọc
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event

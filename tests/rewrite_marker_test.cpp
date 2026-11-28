@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -79,6 +80,38 @@ private:
   areca::MarkerDelivery delivery_;
 };
 
+// Như surrounding khi snapshot không theo kịp: không đụng tới ô, báo scheduler
+// chạy lại lượt bằng backend dự phòng.
+class NeedsFallbackBackend final : public areca::RewriteBackend {
+public:
+  explicit NeedsFallbackBackend(fcitx::EventLoop &loop) : loop_(loop) {}
+
+  const char *name() const override { return "needs-fallback"; }
+  areca::MarkerDelivery markerDelivery() const override {
+    return areca::MarkerDelivery::None;
+  }
+  areca::ApplyStatus apply(fcitx::InputContext &,
+                           const areca::RewritePlan &plan,
+                           areca::RewriteDone onDone) override {
+    backspaceCount = plan.backspaceCount;
+    timer_ = loop_.addTimeEvent(
+        CLOCK_MONOTONIC, fcitx::now(CLOCK_MONOTONIC) + 5000, 1,
+        [transactionId = plan.transactionId,
+         onDone = std::move(onDone)](fcitx::EventSourceTime *, uint64_t) {
+          onDone(transactionId, areca::RewriteOutcome::NeedsFallback);
+          return false;
+        });
+    timer_->setOneShot();
+    return areca::ApplyStatus::Pending;
+  }
+
+  uint32_t backspaceCount = 0;
+
+private:
+  fcitx::EventLoop &loop_;
+  std::unique_ptr<fcitx::EventSourceTime> timer_;
+};
+
 struct Harness {
   explicit Harness(areca::MarkerDelivery delivery, uint32_t markerWaitMs = 10)
       : context(manager), backend(delivery),
@@ -92,8 +125,8 @@ struct Harness {
             },
             [] { return false; },
             [this](fcitx::InputContext &, const areca::BambooResult &) {
-              return areca::RewriteBackendSelection{selected ? selected
-                                                             : &backend};
+              return areca::RewriteBackendSelection{
+                  selected ? selected : &backend, fallback};
             }) {
     scheduler.setCommitObserver(
         [this](fcitx::InputContext &, uint32_t count, const std::string &text) {
@@ -117,6 +150,7 @@ struct Harness {
   TestEngine engine;
   RecordingBackend backend;
   areca::RewriteBackend *selected = nullptr;
+  areca::RewriteBackend *fallback = nullptr;
   areca::InputScheduler scheduler;
   std::vector<std::string> observed;
 };
@@ -214,6 +248,24 @@ void testUnmarkedWrapperSkipsMarker() {
   assert((h.observed == std::vector<std::string>{"1:ê"}));
 }
 
+// Surrounding không xoá được ở lượt này: chạy lại bằng Backspace, kể cả commit
+// marker và xoá thêm một ký tự cho nó.
+void testNeedsFallbackRetriesWithMarker() {
+  Harness h(areca::MarkerDelivery::Keys, 10);
+  NeedsFallbackBackend primary(h.loop);
+  h.selected = &primary;
+  h.fallback = &h.backend;
+  h.scheduler.enqueue(h.context, 'r', "r");
+  assert(h.context.events.empty());
+  assert(primary.backspaceCount == 1);
+  h.runFor(80 * 1000);
+  assert(
+      (h.context.events ==
+       std::vector<std::string>{"commit:" + kMarker, "delete:2", "commit:ê"}));
+  assert(!h.scheduler.rewritePending());
+  assert((h.observed == std::vector<std::string>{"1:ê"}));
+}
+
 } // namespace
 
 int main() {
@@ -224,6 +276,7 @@ int main() {
   testQueuedBackspaceForwardsWithoutComposition();
   testNoMarkerDeletesExactly();
   testUnmarkedWrapperSkipsMarker();
+  testNeedsFallbackRetriesWithMarker();
   std::cout << "Rewrite marker test passed successfully\n";
   return 0;
 }
