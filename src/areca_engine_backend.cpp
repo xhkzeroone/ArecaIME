@@ -5,7 +5,6 @@
 
 #include "browser_autocomplete.h"
 #include "program_compatibility.h"
-#include "surrounding_probe_match.h"
 #include <fcitx-utils/log.h>
 #include <fcitx/inputcontext.h>
 #include <fcitx/surroundingtext.h>
@@ -548,31 +547,8 @@ ArecaEngine::evaluateReliability(fcitx::InputContext &inputContext,
     backendVerdict_.known = true;
   }
 
-  // Lúc thăm dò, snapshot phải chứa từ đang hiện trong ô. Frontend trễ một nhịp
-  // (báo "g" khi ô đã là "go") khiến probe tính sai kết quả mong đợi rồi nhận
-  // nhầm update cũ là xác nhận xoá. Khi đó coi probe thất bại: dùng
-  // Backspace và thử lại ở từ kế tiếp.
-  const bool staleDuringProbe =
-      !browserAutocomplete && backendVerdict_.probePending &&
-      backendVerdict_.reliable &&
-      surrounding.cursor() == surrounding.anchor() &&
-      !surroundingSnapshotEndsWith(surrounding.isValid(), surrounding.text(),
-                                   surrounding.cursor(), surrounding.anchor(),
-                                   shownText);
-  if (staleDuringProbe) {
-    // Tính là một lần probe để chỉ retry đúng một lần như probe timeout.
-    backendVerdict_.probeStarted();
-    backendVerdict_.probeFailed(state ? state->wordSerial : 0);
-    if (debugEnabled()) {
-      FCITX_INFO() << "areca: surrounding snapshot stale during probe text="
-                   << surrounding.text() << " cursor=" << surrounding.cursor()
-                   << " anchor=" << surrounding.anchor()
-                   << " word=" << shownText << " marked_unreliable=1"
-                   << " attempt=" << backendVerdict_.probeAttempts
-                   << " retry_next_word=" << backendVerdict_.retryOnNextWord
-                   << " program=" << programName;
-    }
-  }
+  // Snapshot trễ lúc thăm dò không còn làm hỏng probe: backend surrounding chờ
+  // snapshot có đủ từ đang gõ rồi mới xoá, quá giờ thì lượt đó dùng Backspace.
 
   if (debugEnabled()) {
     FCITX_INFO() << "areca: reliability cached known=" << backendVerdict_.known

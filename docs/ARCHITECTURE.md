@@ -19,7 +19,7 @@ Xem thêm:
 | `RewriteModeHandler` | `src/rewrite_mode.*` | Policy phím của Rewrite, restore surrounding, thử phím đầu khi rảnh rồi đưa phím vào `InputScheduler`. |
 | `PreeditModeHandler` | `src/preedit_mode.*` | Xử lý Bamboo đồng bộ và hiển thị preedit, không dùng scheduler hay rewrite backend. |
 | `RedirectModeHandler` | `src/redirect_mode.*` | Forward phím nguyên bản, không có Bamboo hay state. |
-| `RewriteInputState`, `PreeditInputState` | `src/rewrite_mode.h`, `src/preedit_mode.h` | State theo input context: Bamboo engine, tự viết hoa, cờ restore, khoảng bảo vệ reset. |
+| `RewriteInputState`, `PreeditInputState` | `src/rewrite_mode.h`, `src/preedit_mode.h` | State theo input context: Bamboo engine, tự viết hoa, khoảng bảo vệ reset; Rewrite có thêm cờ restore. |
 | `InputScheduler`, `KeyQueue` | `src/input_scheduler.*`, `src/key_queue.h` | FIFO single-flight, transaction rewrite và post-commit barrier. |
 | `BambooEngineAdapter` | `src/bamboo_engine_adapter.*`, `bamboo-bridge/main.go` | Gọi `bamboo-core` qua cgo, trả `BambooResult`. |
 | `BackendVerdict` | `src/surrounding_reliability.h` | Kết quả probe surrounding text của context hiện tại, số lần probe và retry. |
@@ -224,7 +224,7 @@ tự hoàn thành đi qua nhánh autocomplete của bộ chọn backend.
 
 | Backend | Tên trong log | Cách xoá | Xác nhận |
 | --- | --- | --- | --- |
-| `SurroundingTextBackend` | `surrounding-text` | `deleteSurroundingText(-N, N)` một lần | Probe bằng `SurroundingTextUpdated` ở lần đầu |
+| `SurroundingTextBackend` | `surrounding-text` | Poll tới khi snapshot có từ đang gõ, rồi `deleteSurroundingText(-N, N)` một lần | Probe bằng `SurroundingTextUpdated` ở lần đầu; quá `SurroundingCheckWaitMs` thì lượt đó dùng Backspace |
 | `UinputShiftSelectBackend` | `uinput-shift-select` | Shift giữ + Left × N qua `/dev/uinput`, commit đè vùng chọn | ACK bằng Shift up quay về Fcitx |
 | `NativeShiftSelectBackend` | `native-shift-select` | Như trên qua libei | Không ACK |
 | `UinputBackspaceBackend` | `uinput-backspace` | Backspace × N qua `/dev/uinput` | ACK bằng số Backspace quay về Fcitx |
@@ -298,9 +298,6 @@ Verdict được đánh giá ở rewrite đầu tiên cần xoá trong một inp
 - Snapshot gợi ý autocomplete không được dùng để probe.
 - Chương trình lập trình, terminal, office luôn bị buộc dùng Backspace.
 - Họ VS Code với capability mask `0x72` cũng bị buộc dùng Backspace.
-- Trong lúc chờ probe, snapshot không chứa từ đang gõ ngay trước con trỏ nghĩa
-  là frontend gửi surrounding trễ. Probe bị tính là thất bại và restore surrounding
-  bị tắt cho context đó.
 
 Probe gửi lệnh xoá rồi chờ `SurroundingTextUpdated` khớp ngữ nghĩa theo
 `surroundingProbeMatches`: con trỏ trùng anchor, text trước con trỏ đúng như kỳ
@@ -313,18 +310,21 @@ deactivate, reset, click chuột xoá verdict để đánh giá lại, trừ khi
 được bảo vệ: Backspace, Ctrl+A, phím di chuyển hoặc chọn text bảo vệ verdict
 trong 1 giây.
 
-## Surrounding cache
+## Snapshot surrounding
 
-Backend cập nhật object `surroundingText()` mà Fcitx đang giữ ngay sau khi xoá
-hoặc commit, để thao tác kế tiếp không đọc snapshot cũ. Frontend vẫn là nguồn dữ
-liệu chính và snapshot mới từ ứng dụng sẽ thay cache này.
+Areca không tự sửa object `surroundingText()` mà Fcitx đang giữ sau khi xoá hay
+commit, ở cả Rewrite lẫn Preedit. Snapshot chỉ đổi khi ứng dụng báo lại. Trước mỗi
+lần xoá, `SurroundingTextBackend` đọc lại snapshot mỗi `SurroundingPollMs` cho tới
+khi text trước con trỏ kết thúc bằng từ Bamboo đang giữ, tối đa
+`SurroundingCheckWaitMs`. Khớp thì xoá rồi commit liền; quá giờ thì chưa có gì bị
+xoá nên lượt đó chuyển sang Backspace, verdict giữ nguyên.
 
 ## Sửa từ đã commit
 
 `RestoreSurroundingText=True`, mặc định tắt, cho phép đặt con trỏ sau một từ đã
-gõ xong rồi tiếp tục sửa dấu cho từ đó. Chỉ áp dụng cho Rewrite: Preedit tắt hẳn
-restore từ surrounding vì nó phải xoá từ cũ khỏi ứng dụng theo snapshot, snapshot
-sai là xoá nhầm chữ.
+gõ xong rồi tiếp tục sửa dấu cho từ đó. Chỉ có ở Rewrite: Preedit không restore
+từ surrounding vì nó phải xoá từ cũ khỏi ứng dụng theo snapshot, snapshot sai là
+xoá nhầm chữ.
 
 **Khi nào được arm.** Cờ restore là one-shot theo input context, được bật khi:
 
@@ -335,7 +335,7 @@ sai là xoá nhầm chữ.
   con trỏ (xem dưới), vì update sau chính lần commit của Areca không có nghĩa là
   con trỏ đã đổi chỗ.
 
-**Text đã biết trước con trỏ.** Mỗi mode giữ `knownTextBeforeCursor`: phần text
+**Text đã biết trước con trỏ.** Rewrite giữ `knownTextBeforeCursor`: phần text
 Areca chắc chắn vừa đưa vào ứng dụng. Scheduler báo qua `CommitObserver` mỗi lần
 xoá N ký tự rồi chèn text, kể cả phím đầu từ được forward nguyên vẹn. Phần này bị
 xoá khi focus, reset, click hoặc khi ứng dụng tự xử lý một phím (event không bị
@@ -377,7 +377,7 @@ context có `PreeditInputState` và engine Bamboo riêng, xử lý phím đồng
   khi ứng dụng hỗ trợ surrounding và snapshot khớp chính xác.
 - Enter, Tab, Delete, phím di chuyển, Escape và shortcut commit composition trước
   khi forward.
-- Click chuột chỉ chuẩn bị restore khi composition đang trống.
+- Click chuột chỉ bỏ state Bamboo của caret cũ khi composition đang trống.
 
 Hai mode xử lý tiếng Việt chỉ dùng chung cấu hình và lớp adapter, không dùng
 chung engine instance hay state.

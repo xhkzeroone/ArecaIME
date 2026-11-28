@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -340,7 +341,8 @@ void testProbeSuccessViaEvent() {
   assert(!probeFailedCalled);
   assert(doneCalled);
   assert(inputContext.committedText == "nammoi");
-  assert(inputContext.surroundingText().text() == "vietnammoi");
+  // Không tự thêm chữ vừa commit vào snapshot, lượt sau đợi ứng dụng báo.
+  assert(inputContext.surroundingText().text() == "viet");
 }
 
 // Frontend may publish the confirmation reentrantly from deleteSurroundingText.
@@ -387,7 +389,7 @@ void testProbeSuccessViaSynchronousEvent() {
   assert(!probeFailedCalled);
   assert(doneCalled);
   assert(inputContext.committedText == "nam");
-  assert(inputContext.surroundingText().text() == "vietnam");
+  assert(inputContext.surroundingText().text() == "viet");
 }
 
 // Some single-line clients append a newline sentinel, then invalidate and
@@ -544,39 +546,147 @@ void testSnapshotEndsWith() {
   assert(fcitx::utf8::validate(known));
 }
 
-void testAdaptiveWaitIntegration() {
+areca::RewritePlan makeCheckedPlan(uint64_t transactionId,
+                                   uint32_t backspaceCount,
+                                   std::string expected, std::string commitText,
+                                   uint32_t checkWaitMs) {
+  auto plan =
+      makePlan(transactionId, backspaceCount, std::move(commitText), false);
+  plan.expectedTextBeforeCursor = std::move(expected);
+  plan.surroundingCheckWaitMs = checkWaitMs;
+  plan.surroundingPollMs = 1;
+  return plan;
+}
+
+std::unique_ptr<fcitx::EventSourceTime>
+addTimer(fcitx::EventLoop &eventLoop, uint32_t delayMs,
+         std::function<void()> callback) {
+  auto timer = eventLoop.addTimeEvent(
+      CLOCK_MONOTONIC, fcitx::now(CLOCK_MONOTONIC) + delayMs * 1000ULL, 1,
+      [callback = std::move(callback)](fcitx::EventSourceTime *, uint64_t) {
+        callback();
+        return false;
+      });
+  timer->setOneShot();
+  return timer;
+}
+
+// Snapshot đã có đúng từ đang gõ: xoá rồi commit liền, không tự sửa snapshot.
+void testCheckedSnapshotDeletesThenCommits() {
   fcitx::EventLoop eventLoop;
   fcitx::InputContextManager manager;
   std::vector<std::string> events;
   DummyInputContext inputContext(manager, events);
-  inputContext.surroundingText().setText("go", 2, 2);
+  inputContext.surroundingText().setText("xin go", 6, 6);
 
-  areca::AdaptiveWait adaptiveWait;
-  adaptiveWait.observeTimer(0, 20000);
-  assert(adaptiveWait.extraWaitMs() == 20);
-
-  bool doneCalled = false;
-  areca::SurroundingTextBackend backend(
-      eventLoop, []() { return false; }, nullptr, nullptr, nullptr,
-      &adaptiveWait);
-
+  areca::SurroundingTextBackend backend(eventLoop, []() { return false; });
+  bool done = false;
   const auto status =
-      backend.apply(inputContext, makePlan(201, 1, "õ", false),
+      backend.apply(inputContext, makeCheckedPlan(301, 1, "go", "õ", 200),
                     [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
-                      assert(transactionId == 201);
+                      assert(transactionId == 301);
                       assert(outcome == areca::RewriteOutcome::Succeeded);
-                      doneCalled = true;
+                      done = true;
                       eventLoop.exit();
                     });
-
   assert(status == areca::ApplyStatus::Pending);
+  assert(events.empty());
   eventLoop.exec();
 
-  assert(doneCalled);
-  assert(inputContext.committedText == "õ");
-  assert(events.size() == 2);
-  assert(events[0] == "deleteSurrounding:-1:1");
-  assert(events[1] == "commit:õ");
+  assert(done);
+  assert(!backend.hasPending());
+  assert((events ==
+          std::vector<std::string>{"deleteSurrounding:-1:1", "commit:õ"}));
+  assert(inputContext.surroundingText().text() == "xin go");
+}
+
+// Snapshot trễ một nhịp: chỉ xoá sau khi ứng dụng báo đủ từ đang gõ.
+void testStaleSnapshotWaitsForApp() {
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  DummyInputContext inputContext(manager, events);
+  inputContext.surroundingText().setText("g", 1, 1);
+
+  areca::SurroundingTextBackend backend(eventLoop, []() { return false; });
+  auto update = addTimer(eventLoop, 10, [&]() {
+    events.push_back("update");
+    inputContext.surroundingText().setText("go", 2, 2);
+  });
+  const uint64_t startUsec = fcitx::now(CLOCK_MONOTONIC);
+  uint64_t doneUsec = 0;
+  backend.apply(inputContext, makeCheckedPlan(302, 1, "go", "õ", 500),
+                [&](uint64_t, areca::RewriteOutcome) {
+                  doneUsec = fcitx::now(CLOCK_MONOTONIC);
+                  eventLoop.exit();
+                });
+  eventLoop.exec();
+
+  assert((events == std::vector<std::string>{"update", "deleteSurrounding:-1:1",
+                                             "commit:õ"}));
+  assert(doneUsec - startUsec >= 10 * 1000);
+  // Khớp là đi tiếp, không chờ tới hết giờ.
+  assert(doneUsec - startUsec < 400 * 1000);
+}
+
+// Ứng dụng không báo đúng trong thời gian chờ: chưa xoá gì bằng surrounding,
+// lượt đó chuyển sang Backspace với đúng số ký tự cần xoá.
+void testCheckTimeoutFallsBackToBackspace() {
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  DummyInputContext inputContext(manager, events);
+  inputContext.surroundingText().setText("g", 1, 1);
+
+  FakeBackspaceBackend fakeBackspace(events);
+  bool probeFailedCalled = false;
+  areca::SurroundingTextBackend backend(
+      eventLoop, []() { return false; }, nullptr,
+      [&](fcitx::InputContext &) { probeFailedCalled = true; },
+      [&](fcitx::InputContext &) -> areca::RewriteBackend * {
+        return &fakeBackspace;
+      });
+  const uint64_t startUsec = fcitx::now(CLOCK_MONOTONIC);
+  uint64_t doneUsec = 0;
+  backend.apply(inputContext, makeCheckedPlan(303, 1, "go", "õ", 20),
+                [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                  assert(transactionId == 303);
+                  assert(outcome == areca::RewriteOutcome::Succeeded);
+                  doneUsec = fcitx::now(CLOCK_MONOTONIC);
+                  eventLoop.exit();
+                });
+  eventLoop.exec();
+
+  assert((events == std::vector<std::string>{
+                        "backspaceApply:tx=303:bs=1:commit=õ", "commit:õ"}));
+  assert(doneUsec - startUsec >= 20 * 1000);
+  // Một lượt quá giờ không đánh giá lại backend của app.
+  assert(!probeFailedCalled);
+  assert(!backend.hasPending());
+}
+
+// Mất ô nhập lúc đang chờ: báo xong, không xoá hay commit.
+void testContextLostDuringCheck() {
+  fcitx::EventLoop eventLoop;
+  fcitx::InputContextManager manager;
+  std::vector<std::string> events;
+  auto inputContext = std::make_unique<DummyInputContext>(manager, events);
+  inputContext->surroundingText().setText("g", 1, 1);
+
+  areca::SurroundingTextBackend backend(eventLoop, []() { return false; });
+  auto drop = addTimer(eventLoop, 5, [&]() { inputContext.reset(); });
+  bool done = false;
+  backend.apply(*inputContext, makeCheckedPlan(304, 1, "go", "õ", 500),
+                [&](uint64_t transactionId, areca::RewriteOutcome outcome) {
+                  assert(transactionId == 304);
+                  assert(outcome == areca::RewriteOutcome::Succeeded);
+                  done = true;
+                  eventLoop.exit();
+                });
+  eventLoop.exec();
+
+  assert(done);
+  assert(events.empty());
 }
 
 } // namespace
@@ -592,7 +702,10 @@ int main() {
   testProbeAcceptsNormalizedLineEndingSentinel();
   testLaggingUpdateDoesNotConfirmEmptyExpectation();
   testSnapshotEndsWith();
-  testAdaptiveWaitIntegration();
+  testCheckedSnapshotDeletesThenCommits();
+  testStaleSnapshotWaitsForApp();
+  testCheckTimeoutFallsBackToBackspace();
+  testContextLostDuringCheck();
   std::cout << "All surrounding text probe tests passed\n";
   return 0;
 }

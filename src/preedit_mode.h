@@ -43,13 +43,6 @@ struct PreeditInputState final : public fcitx::InputContextProperty {
   std::unique_ptr<VietnameseEngine> engine;
   std::string composing;
   SentenceCapitalizationState sentenceCapitalization;
-  // Frontend vừa đổi text hoặc vị trí con trỏ. Phím text kế tiếp được phép thử
-  // chuyển từ đã commit trước con trỏ trở lại thành preedit đúng một lần.
-  bool surroundingRestoreArmed = false;
-  // Đoạn text Areca biết chắc đang nằm ngay trước con trỏ, gom từ các lần
-  // commit liên tiếp không có phím nào ứng dụng tự xử lý xen giữa. Rỗng nghĩa
-  // là không biết.
-  std::string knownTextBeforeCursor;
   FinalizedWordRecoveryState finalizedWordRecovery =
       FinalizedWordRecoveryState::Idle;
   uint64_t resetProtectedUntilUsec = 0;
@@ -61,7 +54,6 @@ public:
   using DebugProvider = std::function<bool()>;
   using AutoCapitalizeProvider = std::function<bool()>;
   using BackspaceRecoveryProvider = std::function<bool()>;
-  using RestoreSurroundingTextProvider = std::function<bool()>;
   using MacroBypassMatcher = std::function<bool(const fcitx::Key &)>;
   using FinalizedWordEraseDone = std::function<void(bool)>;
   using FinalizedWordEraser = std::function<bool(
@@ -71,7 +63,6 @@ public:
       StateFactory &stateFactory, DebugProvider debugProvider,
       AutoCapitalizeProvider autoCapitalizeProvider,
       BackspaceRecoveryProvider backspaceRecoveryProvider,
-      RestoreSurroundingTextProvider restoreSurroundingTextProvider,
       MacroBypassMatcher macroBypassMatcher,
       FinalizedWordEraser finalizedWordEraser);
   void activate(fcitx::InputContext &inputContext) override;
@@ -80,9 +71,10 @@ public:
   void requestProtectedReset(fcitx::InputContext &inputContext) override;
   void resetContext(fcitx::InputContext &inputContext) override;
 
-  // Chuẩn bị đọc lại từ quanh caret sau một click, nhưng không xóa preedit
-  // đang hiển thị nếu frontend chưa kết thúc composition cũ.
-  bool prepareSurroundingRestoreAfterClick(fcitx::InputContext &inputContext);
+  // Sau click, bỏ state Bamboo của caret cũ để Backspace không sửa nhầm từ ở
+  // chỗ khác. Không đụng preedit đang hiển thị nếu frontend chưa kết thúc
+  // composition cũ.
+  bool resetAfterClick(fcitx::InputContext &inputContext);
 
   PreeditInputState *stateFor(fcitx::InputContext &inputContext) const;
 
@@ -93,8 +85,6 @@ private:
                         PreeditInputState &state);
   void commitComposition(fcitx::InputContext &inputContext,
                          PreeditInputState &state);
-  bool tryRestoreFromSurroundingText(fcitx::InputContext &inputContext,
-                                     PreeditInputState &state);
   bool startFinalizedWordRecovery(fcitx::InputContext &inputContext,
                                   PreeditInputState &state);
 
@@ -102,7 +92,6 @@ private:
   DebugProvider debugProvider_;
   AutoCapitalizeProvider autoCapitalizeProvider_;
   BackspaceRecoveryProvider backspaceRecoveryProvider_;
-  RestoreSurroundingTextProvider restoreSurroundingTextProvider_;
   MacroBypassMatcher macroBypassMatcher_;
   FinalizedWordEraser finalizedWordEraser_;
 };

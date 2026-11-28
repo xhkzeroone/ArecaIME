@@ -19,7 +19,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 | Thiết bị phát phím | `uinput_device.*`, `native_device.*`, `virtual_keyboard_device.*` | Interface có hàm virtual để test thay bằng fake |
 | Lag thích nghi | `adaptive_wait.h` | Tăng thời gian chờ khi timer của backend trễ hoặc ACK uinput chậm |
 | Nhận diện app | `window_focus_tracker.*`, `atspi/`, `input_type_detector.*`, `program_compatibility.*` | AT-SPI chạy thread riêng, phần còn lại là hàm thuần |
-| Surrounding text | `surrounding_text_*`, `surrounding_probe_match.h`, `surrounding_reliability.h` | Cache, probe, restore từ đã commit |
+| Surrounding text | `surrounding_text_*`, `surrounding_probe_match.h`, `surrounding_reliability.h` | Kiểm tra snapshot trước khi xoá, probe, restore từ đã commit. Không tự sửa snapshot sau commit |
 | Cấu hình | `src/areca_config.h` | `FCITX_CONFIGURATION`, có thêm UI ở `gtk-settings/` |
 
 `ArecaEngine` được chia theo nhóm hàm, cùng một class. Thêm hàm mới vào đúng file:
@@ -35,7 +35,7 @@ ArecaIME là addon fcitx5 viết bằng C++20. Engine ghép dấu là Bamboo vi�
 1. `ArecaEngine::keyEvent` lọc ô mật khẩu, terminal, menu chọn backend, phím phát lại từ uinput.
 2. `RewriteModeHandler::handleKeyEvent` quyết định forward, reset, restore surrounding hoặc đưa vào `InputScheduler`.
 3. `InputScheduler::processNext` gọi Bamboo, nhận `BambooResult`.
-4. `deleteCount == 0` thì `commitString` ngay. Ngược lại tạo `RewritePlan` với `backspaceCount = N + 1`, commit marker `·` (theo `RewriteBackend::markerDelivery()`: surrounding không dùng marker và xoá đúng N, backend kênh phím chờ `AfterMarkerCommitWaitMs` hoặc tới khi ứng dụng báo marker, phím ảo tự gõ) rồi gọi `RewriteBackend::apply`. Marker làm ô bỏ gợi ý tự hoàn thành và vùng chọn. Bộ chọn backend vẫn có nhánh riêng: thấy gợi ý tự hoàn thành hay vùng chọn (`browser_autocomplete.*`) hoặc ô có `CapabilityFlag::Url` thì dùng Backspace có marker, vì surrounding không dùng marker.
+4. `deleteCount == 0` thì `commitString` ngay. Ngược lại tạo `RewritePlan` với `backspaceCount = N + 1`, commit marker `·` (theo `RewriteBackend::markerDelivery()`: surrounding không dùng marker, chờ snapshot có đủ từ đang gõ rồi xoá đúng N, quá giờ thì lượt đó dùng Backspace, backend kênh phím chờ `AfterMarkerCommitWaitMs` hoặc tới khi ứng dụng báo marker, phím ảo tự gõ) rồi gọi `RewriteBackend::apply`. Marker làm ô bỏ gợi ý tự hoàn thành và vùng chọn. Bộ chọn backend vẫn có nhánh riêng: thấy gợi ý tự hoàn thành hay vùng chọn (`browser_autocomplete.*`) hoặc ô có `CapabilityFlag::Url` thì dùng Backspace có marker, vì surrounding không dùng marker.
 5. Backend trả `Completed`, `Pending` hoặc `Failed`. `Pending` phải gọi `RewriteDone` đúng một lần với đúng `transactionId`.
 6. Scheduler chờ post-commit barrier rồi mới lấy phím kế tiếp. Backend `Failed` làm scheduler `stalled` để không phá thứ tự phím.
 

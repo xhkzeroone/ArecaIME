@@ -1,12 +1,12 @@
 #include "surrounding_text_backend.h"
 
+#include <algorithm>
 #include <utility>
 
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/log.h>
 
 #include "surrounding_probe_match.h"
-#include "surrounding_text_cache.h"
 
 namespace areca {
 
@@ -32,7 +32,6 @@ ApplyStatus SurroundingTextBackend::apply(fcitx::InputContext &inputContext,
   if (plan.backspaceCount == 0) {
     if (!plan.commitText.empty()) {
       inputContext.commitString(plan.commitText);
-      updateSurroundingCacheAfterCommit(inputContext, plan.commitText);
     }
     if (onDone) {
       onDone(plan.transactionId, RewriteOutcome::Succeeded);
@@ -40,61 +39,141 @@ ApplyStatus SurroundingTextBackend::apply(fcitx::InputContext &inputContext,
     return ApplyStatus::Completed;
   }
 
-  if (adaptiveWait_) {
-    adaptiveWait_->beginTransaction();
-  }
-
-  const bool isProbe = plan.probeSurrounding;
-  if (isProbe) {
-    const auto &original = inputContext.surroundingText();
-    originalProbeText_ = original.text();
-    originalProbeCursor_ = original.cursor();
-    auto expected = original;
-    expected.deleteText(-static_cast<int>(plan.backspaceCount),
-                        plan.backspaceCount);
-    expectedProbeText_ = expected.text();
-    expectedProbeCursor_ = expected.cursor();
-    expectedProbeAnchor_ = expected.anchor();
-  }
-
-  // Arm the transaction before asking the frontend to delete. Some frontends
-  // can publish SurroundingTextUpdated synchronously from this call.
+  // Lưu transaction trước mọi tác dụng phụ: frontend có thể gửi
+  // SurroundingTextUpdated đồng bộ ngay trong lệnh xoá.
   transactionId_ = plan.transactionId;
   inputContext_ = inputContext.watch();
   onDone_ = std::move(onDone);
   waitMs_ = plan.surroundingWaitMs;
   timerAccuracyUsec_ = plan.timerAccuracyUsec;
   commitText_ = plan.commitText;
-  isProbe_ = isProbe;
   savedPlan_ = plan;
-
-  if (!isProbe) {
-    inputContext.deleteSurroundingText(-static_cast<int>(plan.backspaceCount),
-                                       plan.backspaceCount);
-    updateSurroundingCacheAfterDelete(inputContext,
-                                      -static_cast<int>(plan.backspaceCount),
-                                      plan.backspaceCount);
-  } else {
-    inputContext.deleteSurroundingText(-static_cast<int>(plan.backspaceCount),
-                                       plan.backspaceCount);
-  }
+  expectedTail_ = plan.expectedTextBeforeCursor;
+  pollMs_ = std::max<uint32_t>(1, plan.surroundingPollMs);
+  checkStartUsec_ = fcitx::now(CLOCK_MONOTONIC);
+  checkDeadlineUsec_ =
+      checkStartUsec_ +
+      static_cast<uint64_t>(plan.surroundingCheckWaitMs) * 1000;
+  pollCount_ = 0;
 
   if (debugProvider_()) {
     const char *frontend = inputContext.frontend();
     FCITX_INFO() << "areca: surrounding-text start tx=" << transactionId_
-                 << " delete=" << plan.backspaceCount << " wait_ms=" << waitMs_
-                 << " probe=" << isProbe_
+                 << " delete=" << plan.backspaceCount
+                 << " probe=" << plan.probeSurrounding
+                 << " expected_tail=" << expectedTail_
+                 << " check_wait_ms=" << plan.surroundingCheckWaitMs
+                 << " poll_ms=" << pollMs_
                  << " frontend=" << (frontend ? frontend : "");
   }
 
-  // A synchronous update may already have confirmed the probe and scheduled
-  // the commit while deleteSurroundingText() was on the stack.
+  pollSnapshot();
+  return ApplyStatus::Pending;
+}
+
+void SurroundingTextBackend::pollSnapshot() {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
+  }
+  ++pollCount_;
+  const auto &surrounding = inputContext->surroundingText();
+  const bool matched = surroundingSnapshotEndsWith(
+      surrounding.isValid(), surrounding.text(), surrounding.cursor(),
+      surrounding.anchor(), expectedTail_);
+  const uint64_t nowUsec = fcitx::now(CLOCK_MONOTONIC);
+  if (matched || nowUsec >= checkDeadlineUsec_) {
+    if (debugProvider_()) {
+      FCITX_INFO() << "areca: surrounding-text check tx=" << transactionId_
+                   << " matched=" << matched << " polls=" << pollCount_
+                   << " waited_us=" << (nowUsec - checkStartUsec_)
+                   << " expected_tail=" << expectedTail_
+                   << " actual_text=" << surrounding.text()
+                   << " cursor=" << surrounding.cursor()
+                   << " anchor=" << surrounding.anchor();
+    }
+    if (matched) {
+      beginRewrite();
+    } else {
+      fallbackToOtherBackend();
+    }
+    return;
+  }
+  const uint64_t nextUsec = std::min(
+      checkDeadlineUsec_, nowUsec + static_cast<uint64_t>(pollMs_) * 1000);
+  timer_ =
+      eventLoop_.addTimeEvent(CLOCK_MONOTONIC, nextUsec, timerAccuracyUsec_,
+                              [this](fcitx::EventSourceTime *, uint64_t) {
+                                auto firedTimer = std::move(timer_);
+                                pollSnapshot();
+                                return false;
+                              });
+  if (!timer_) {
+    fallbackToOtherBackend();
+    return;
+  }
+  timer_->setOneShot();
+}
+
+void SurroundingTextBackend::beginRewrite() {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
+  }
+  if (!savedPlan_.probeSurrounding) {
+    commitPost_.schedule([this]() { deleteAndCommit(); });
+    return;
+  }
+
+  // Probe: xoá rồi chờ ứng dụng xác nhận đã xoá mới commit, không xác nhận thì
+  // đổi backend.
+  if (adaptiveWait_) {
+    adaptiveWait_->beginTransaction();
+  }
+  const auto &original = inputContext->surroundingText();
+  originalProbeText_ = original.text();
+  originalProbeCursor_ = original.cursor();
+  auto expected = original;
+  expected.deleteText(-static_cast<int>(savedPlan_.backspaceCount),
+                      savedPlan_.backspaceCount);
+  expectedProbeText_ = expected.text();
+  expectedProbeCursor_ = expected.cursor();
+  expectedProbeAnchor_ = expected.anchor();
+  isProbe_ = true;
+
+  inputContext->deleteSurroundingText(
+      -static_cast<int>(savedPlan_.backspaceCount), savedPlan_.backspaceCount);
+  // Update đồng bộ trong lệnh xoá có thể đã xác nhận probe và hẹn commit.
   if (isProbe_) {
     scheduleProbeDeadline();
-  } else if (!isProbe) {
-    scheduleCommit();
   }
-  return ApplyStatus::Pending;
+}
+
+void SurroundingTextBackend::deleteAndCommit() {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
+  }
+  // Snapshot vừa khớp nên frontend đổi số ký tự ra byte đúng. Không tự sửa
+  // snapshot: lượt sau phải đợi ứng dụng báo chữ mới.
+  inputContext->deleteSurroundingText(
+      -static_cast<int>(savedPlan_.backspaceCount), savedPlan_.backspaceCount);
+  if (!commitText_.empty()) {
+    inputContext->commitString(commitText_);
+  }
+  const uint64_t transactionId = transactionId_;
+  auto onDone = std::move(onDone_);
+  if (debugProvider_()) {
+    FCITX_INFO() << "areca: surrounding-text complete tx=" << transactionId
+                 << " commit=" << commitText_;
+  }
+  clearPending();
+  if (onDone) {
+    onDone(transactionId, RewriteOutcome::Succeeded);
+  }
 }
 
 void SurroundingTextBackend::notifySurroundingTextUpdated(
@@ -193,9 +272,9 @@ void SurroundingTextBackend::commitAndComplete() {
     return;
   }
 
+  // Không tự thêm chữ vào snapshot: lượt sau phải đợi ứng dụng báo chữ mới.
   if (!commitText_.empty()) {
     inputContext->commitString(commitText_);
-    updateSurroundingCacheAfterCommit(*inputContext, commitText_);
   }
 
   const uint64_t transactionId = transactionId_;
@@ -323,14 +402,23 @@ void SurroundingTextBackend::handleProbeFailure() {
   if (onProbeFailed_) {
     onProbeFailed_(*inputContext);
   }
+  fallbackToOtherBackend();
+}
+
+void SurroundingTextBackend::fallbackToOtherBackend() {
+  auto *inputContext = inputContext_.get();
+  if (!inputContext) {
+    completeWithoutCommit();
+    return;
+  }
 
   RewriteBackend *fallbackBackend =
       fallbackBackendProvider_ ? fallbackBackendProvider_(*inputContext)
                                : nullptr;
 
   RewritePlan plan = savedPlan_;
-  // Probe chỉ xác minh deleteSurroundingText. Backend phát phím fallback
-  // tiếp tục theo ACK và timing riêng của nó.
+  // Chưa có gì bị xoá bằng surrounding: backend phát phím fallback xoá đúng N
+  // theo ACK và timing riêng của nó.
   plan.probeSurrounding = false;
   auto onDone = std::move(onDone_);
   fcitx::TrackableObjectReference<fcitx::InputContext> icWatch =
@@ -348,9 +436,8 @@ void SurroundingTextBackend::handleProbeFailure() {
 
   if (fallbackBackend) {
     if (debugProvider_()) {
-      FCITX_INFO()
-          << "areca: fallback from unconfirmed surrounding delete to backend="
-          << fallbackBackend->name() << " tx=" << plan.transactionId;
+      FCITX_INFO() << "areca: surrounding-text fallback backend="
+                   << fallbackBackend->name() << " tx=" << plan.transactionId;
     }
     // Keep our callback until apply() confirms ownership. A backend returning
     // Failed is not required to retain or invoke the callback.
@@ -389,6 +476,11 @@ void SurroundingTextBackend::clearPending() {
   expectedProbeCursor_ = 0;
   expectedProbeAnchor_ = 0;
   probeUpdateCount_ = 0;
+  expectedTail_.clear();
+  pollMs_ = 1;
+  checkStartUsec_ = 0;
+  checkDeadlineUsec_ = 0;
+  pollCount_ = 0;
 }
 
 } // namespace areca

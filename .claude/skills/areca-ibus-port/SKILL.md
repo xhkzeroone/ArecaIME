@@ -49,7 +49,7 @@ Bamboo bridge cung cấp: `ArecaBambooCreate(method, modernStyle)`, `Destroy`, `
 
 | Backend | Cách xoá | Xác nhận |
 |---|---|---|
-| Surrounding | `deleteSurroundingText(-N, N)` một lần | Probe lần đầu |
+| Surrounding | Poll tới khi snapshot có từ đang gõ, rồi `deleteSurroundingText(-N, N)` một lần | Probe lần đầu; quá `SurroundingCheckWaitMs` thì lượt đó dùng Backspace |
 | uinput Backspace | Backspace × N qua `/dev/uinput` | Đếm Backspace quay về engine (ACK) |
 | uinput Shift-select | Shift + Left × N rồi commit đè vùng chọn | Shift up quay về |
 | Native Backspace / Shift-select | Như trên qua libei | Không ACK |
@@ -85,7 +85,7 @@ API IBus dưới đây là tên trong libibus 1.5. Kiểm tra lại với bản 
 |---|---|
 | `InputMethodEngine::keyEvent`, `filterAndAccept()` | Signal/vfunc `process-key-event(keyval, keycode, state)`, trả `TRUE` nghĩa là đã nhận. Phím nhả có `IBUS_RELEASE_MASK` |
 | Không filter để phím đi tiếp | Trả `FALSE` |
-| `forwardKey` | `ibus_engine_forward_key_event(keyval, keycode, state)` |
+| `forwardKey` | `ibus_eupdateSurroundingCacheAfterDeletengine_forward_key_event(keyval, keycode, state)` |
 | `commitString` | `ibus_engine_commit_text(IBusText*)`; gọi được bất cứ lúc nào, nên commit trễ sau timer vẫn được |
 | `deleteSurroundingText(offset, n)` | `ibus_engine_delete_surrounding_text(offset, nchars)` |
 | `surroundingText()` và `SurroundingTextUpdated` | `ibus_engine_get_surrounding_text(&text, &cursor, &anchor)` và signal `set-surrounding-text`. Client phải có `IBUS_CAP_SURROUNDING_TEXT`; IBus chỉ bắt đầu gửi snapshot sau khi engine gọi `get_surrounding_text` ít nhất một lần |
@@ -122,4 +122,4 @@ Lưu ý khi port scheduler: IBus đòi `process-key-event` trả về ngay. Như
 
 - Mang theo các test logic thuần trong `tests/` (adapter Bamboo, tách từ, so khớp snapshot, restore, scheduler, backend với `InputContext` giả). Thay `InputContext` giả bằng lớp giả của engine IBus.
 - Kịch bản tay bắt buộc trên mỗi đường frontend: gõ `gox ngon laf duwojc` (phải ra `gõ ngon là được`), thêm dấu liên tục trong một từ, Ctrl+A rồi Backspace rồi gõ tiếp, click vào giữa từ cũ rồi sửa dấu, thanh địa chỉ và ô có gợi ý của Chrome, Firefox, LibreOffice, terminal.
-- Bật log debug và đọc theo `docs/DEBUGGING.md`: `rewrite select backend`, `reliability first-probe`, `surrounding snapshot stale during probe`, `surrounding restore …`, `reset rejected`.
+- Bật log debug và đọc theo `docs/DEBUGGING.md`: `rewrite select backend`, `reliability first-probe`, `surrounding-text check … matched=`, `surrounding restore …`, `reset rejected`.

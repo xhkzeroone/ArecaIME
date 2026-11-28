@@ -126,9 +126,10 @@ rewrite select backend=surrounding-text
 
 Areca đang dùng `deleteSurroundingText()`. Nếu xoá sai, xem dòng
 `reliability first-probe` và `surrounding probe ...`. Dòng
-`surrounding snapshot stale during probe` nghĩa là ứng dụng gửi surrounding trễ
-lúc thăm dò; Areca chuyển sang Backspace hoặc Shift select và thử lại ở từ kế
-tiếp. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
+`surrounding-text check tx=... matched=0` nghĩa là quá `SurroundingCheckWaitMs`
+mà ứng dụng vẫn chưa báo đủ từ đang gõ; lượt đó xoá bằng Backspace
+(`surrounding-text fallback backend=...`). `waited_us` ở dòng `matched=1` cho
+biết ứng dụng cần bao lâu để theo kịp. Dòng `surrounding restore rejected reason=stale-snapshot` nghĩa là một lần
 restore bị bỏ qua vì snapshot chưa có text Areca vừa commit. Dòng
 `surrounding restore disabled reason=non-surrounding-backend` nghĩa là app
 đang xoá chữ bằng Backspace hoặc Shift select nên Rewrite không restore.

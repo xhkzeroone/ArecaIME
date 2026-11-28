@@ -86,7 +86,7 @@ Không chép nội dung code hay git log vào ghi chú; ghi đường dẫn và 
 ## 5. Log và output lệnh
 
 - **Log fcitx5 người dùng dán:** chỉ lấy các dòng quyết định, đừng diễn giải từng dòng. Các mẫu cần tìm:
-  `rewrite select backend|reliability first-probe|stale during probe|probe succeeded|surrounding restore|reset rejected|app reset|bamboo result`.
+  `rewrite select backend|reliability first-probe|surrounding-text check|probe succeeded|surrounding restore|reset rejected|app reset|bamboo result`.
 - **Gợi ý cho người dùng lệnh lọc sẵn** thay vì xin cả log:
   `fcitx5 -rd 2>&1 | grep -E "<mẫu ở trên>"`.
 - **Build và test:** chỉ in phần cần, ví dụ

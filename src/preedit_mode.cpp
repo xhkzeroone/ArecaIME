@@ -13,9 +13,6 @@
 #include <fcitx/surroundingtext.h>
 
 #include "preedit_logic.h"
-#include "surrounding_probe_match.h"
-#include "surrounding_text_cache.h"
-#include "surrounding_text_restore.h"
 
 namespace areca {
 namespace {
@@ -59,25 +56,6 @@ bool hasPreeditShortcutModifier(const fcitx::Key &key) {
          states.test(fcitx::KeyState::Hyper2);
 }
 
-// Phím không bị filter được ứng dụng tự xử lý (chèn, xoá, di chuyển) nên Areca
-// không còn biết chắc text trước con trỏ.
-class KnownTextGuard {
-public:
-  KnownTextGuard(fcitx::KeyEvent &event, PreeditInputState &state)
-      : event_(event), state_(state) {}
-  ~KnownTextGuard() {
-    if (!event_.filtered()) {
-      state_.knownTextBeforeCursor.clear();
-    }
-  }
-  KnownTextGuard(const KnownTextGuard &) = delete;
-  KnownTextGuard &operator=(const KnownTextGuard &) = delete;
-
-private:
-  fcitx::KeyEvent &event_;
-  PreeditInputState &state_;
-};
-
 } // namespace
 
 PreeditInputState::PreeditInputState(std::string inputMethod, bool spellCheck,
@@ -103,14 +81,11 @@ PreeditModeHandler::PreeditModeHandler(
     StateFactory &stateFactory, DebugProvider debugProvider,
     AutoCapitalizeProvider autoCapitalizeProvider,
     BackspaceRecoveryProvider backspaceRecoveryProvider,
-    RestoreSurroundingTextProvider restoreSurroundingTextProvider,
     MacroBypassMatcher macroBypassMatcher,
     FinalizedWordEraser finalizedWordEraser)
     : stateFactory_(stateFactory), debugProvider_(std::move(debugProvider)),
       autoCapitalizeProvider_(std::move(autoCapitalizeProvider)),
       backspaceRecoveryProvider_(std::move(backspaceRecoveryProvider)),
-      restoreSurroundingTextProvider_(
-          std::move(restoreSurroundingTextProvider)),
       macroBypassMatcher_(std::move(macroBypassMatcher)),
       finalizedWordEraser_(std::move(finalizedWordEraser)) {}
 
@@ -182,7 +157,6 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     }
     return;
   }
-  KnownTextGuard knownTextGuard(event, *state);
   if (rawKey.isModifier()) {
     return;
   }
@@ -240,7 +214,6 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
         commitComposition(*inputContext, *state);
       }
       state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
-      state->surroundingRestoreArmed = false;
       event.forward();
       return;
     }
@@ -251,15 +224,9 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
         if (surrounding.isValid() && result.deleteCount > 0) {
           inputContext->deleteSurroundingText(
               -static_cast<int>(result.deleteCount), result.deleteCount);
-          updateSurroundingCacheAfterDelete(
-              *inputContext, -static_cast<int>(result.deleteCount),
-              result.deleteCount);
           if (!result.commitText.empty()) {
             inputContext->commitString(result.commitText);
-            updateSurroundingCacheAfterCommit(*inputContext, result.commitText);
           }
-          updateKnownTextBeforeCursor(state->knownTextBeforeCursor,
-                                      result.deleteCount, result.commitText);
           event.filterAndAccept();
           return;
         }
@@ -351,14 +318,6 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
     return;
   }
 
-  // Dùng rule của input method thay vì tự phân loại chữ/dấu. Boundary kết thúc
-  // macro phải đi thẳng vào Bamboo; VNI/VIQR vẫn được restore bằng phím riêng.
-  bool restoredBeforeKey = false;
-  if (state->engine->canProcessKey(codepoint)) {
-    restoredBeforeKey = tryRestoreFromSurroundingText(*inputContext, *state);
-  } else {
-    state->surroundingRestoreArmed = false;
-  }
   try {
     if (suppressMacro && debugProvider_()) {
       FCITX_INFO() << "areca: preedit macro expansion bypassed";
@@ -390,8 +349,6 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
       state->resetProtectedUntilUsec =
           fcitx::now(CLOCK_MONOTONIC) + kPostCommitResetProtectionUsec;
       inputContext->commitString(committed);
-      updateSurroundingCacheAfterCommit(*inputContext, committed);
-      updateKnownTextBeforeCursor(state->knownTextBeforeCursor, 0, committed);
     }
     // Không reset ở boundary: adapter giữ snapshot của từ và số boundary đã
     // commit để Backspace có thể đi ngược nhiều Space giống mode Rewrite.
@@ -401,13 +358,7 @@ void PreeditModeHandler::handleKeyEvent(fcitx::KeyEvent &event) {
   } catch (const std::exception &error) {
     FCITX_ERROR() << "areca: preedit Bamboo processing failed: "
                   << error.what();
-    // Nếu từ cũ đã bị kéo khỏi ứng dụng vào preedit, commit nó trả lại trước
-    // khi forward phím lỗi để không làm mất nội dung của người dùng.
-    if (restoredBeforeKey) {
-      commitComposition(*inputContext, *state);
-    } else {
-      clearComposition(*inputContext, *state);
-    }
+    clearComposition(*inputContext, *state);
     event.forward();
   }
 }
@@ -428,7 +379,6 @@ bool PreeditModeHandler::startFinalizedWordRecovery(
     return false;
   }
   state.finalizedWordRecovery = FinalizedWordRecoveryState::Erasing;
-  state.knownTextBeforeCursor.clear();
   const auto watchedContext = inputContext.watch();
   const std::string recoveredWord = word;
   const bool started = finalizedWordEraser_(
@@ -477,68 +427,6 @@ bool PreeditModeHandler::startFinalizedWordRecovery(
   return started;
 }
 
-bool PreeditModeHandler::tryRestoreFromSurroundingText(
-    fcitx::InputContext &inputContext, PreeditInputState &state) {
-  if (!state.surroundingRestoreArmed) {
-    return false;
-  }
-  state.surroundingRestoreArmed = false;
-
-  const bool supported =
-      restoreSurroundingTextProvider_() && state.outputCharset == "Unicode" &&
-      state.engine && state.composing.empty() &&
-      state.engine->currentText().empty() &&
-      !inputContext.capabilityFlags().test(fcitx::CapabilityFlag::Password) &&
-      inputContext.capabilityFlags().test(
-          fcitx::CapabilityFlag::SurroundingText);
-  if (!supported) {
-    return false;
-  }
-
-  const auto &surrounding = inputContext.surroundingText();
-  if (!surrounding.isValid()) {
-    return false;
-  }
-  // Text Areca vừa commit phải nằm ngay trước con trỏ. Nếu không, frontend
-  // đang gửi snapshot trễ; restore lần này sẽ xoá nhầm ký tự nên bỏ qua.
-  if (!surroundingSnapshotEndsWith(true, surrounding.text(),
-                                   surrounding.cursor(), surrounding.anchor(),
-                                   state.knownTextBeforeCursor)) {
-    if (debugProvider_()) {
-      FCITX_INFO() << "areca: preedit surrounding restore rejected"
-                   << " reason=stale-snapshot text=" << surrounding.text()
-                   << " cursor=" << surrounding.cursor()
-                   << " known=" << state.knownTextBeforeCursor;
-    }
-    return false;
-  }
-  auto candidate = extractSurroundingRestoreCandidate(
-      surrounding.text(), surrounding.cursor(), surrounding.anchor());
-  while (candidate && !state.engine->restoreFromRenderedText(candidate->text)) {
-    candidate = shortenSurroundingRestoreCandidate(*candidate);
-  }
-  if (!candidate) {
-    return false;
-  }
-
-  // Preedit sẽ tự hiển thị và commit lại đoạn Bamboo dựng được sát caret. Xóa
-  // đúng đoạn đó khỏi ứng dụng; prefix/suffix còn lại của từ được giữ nguyên.
-  inputContext.deleteSurroundingText(
-      -static_cast<int>(candidate->characterCount), candidate->characterCount);
-  updateSurroundingCacheAfterDelete(
-      inputContext, -static_cast<int>(candidate->characterCount),
-      candidate->characterCount);
-  updateKnownTextBeforeCursor(state.knownTextBeforeCursor,
-                              candidate->characterCount, "");
-  state.composing = candidate->text;
-  if (debugProvider_()) {
-    FCITX_INFO() << "areca: preedit surrounding restore applied"
-                 << " text=" << candidate->text
-                 << " chars=" << candidate->characterCount;
-  }
-  return true;
-}
-
 void PreeditModeHandler::updatePreedit(fcitx::InputContext &inputContext,
                                        const PreeditInputState &state) {
   auto &panel = inputContext.inputPanel();
@@ -570,9 +458,6 @@ void PreeditModeHandler::commitComposition(fcitx::InputContext &inputContext,
                                            PreeditInputState &state) {
   if (!state.composing.empty()) {
     inputContext.commitString(state.composing);
-    updateSurroundingCacheAfterCommit(inputContext, state.composing);
-    updateKnownTextBeforeCursor(state.knownTextBeforeCursor, 0,
-                                state.composing);
   }
   state.engine->reset();
   state.composing.clear();
@@ -607,28 +492,21 @@ void PreeditModeHandler::resetContext(fcitx::InputContext &inputContext) {
     state->finalizedWordRecovery = FinalizedWordRecoveryState::Idle;
     state->resetProtectedUntilUsec = 0;
     clearComposition(inputContext, *state);
-    state->knownTextBeforeCursor.clear();
-    // Reset/focus/click có thể đặt con trỏ vào một từ đã commit. Cho phép phím
-    // text kế tiếp thử chuyển từ đó vào preedit nếu người dùng bật tính năng.
-    state->surroundingRestoreArmed = true;
   }
 }
 
-bool PreeditModeHandler::prepareSurroundingRestoreAfterClick(
-    fcitx::InputContext &inputContext) {
+bool PreeditModeHandler::resetAfterClick(fcitx::InputContext &inputContext) {
   auto *state = stateFor(inputContext);
   if (!state || !state->engine || !state->composing.empty() ||
       state->finalizedWordRecovery != FinalizedWordRecoveryState::Idle) {
     return false;
   }
 
-  // Preedit trống vẫn có thể giữ snapshot của từ vừa commit trong Bamboo.
-  // Bỏ snapshot đó để phím kế tiếp phục hồi phần từ nằm trước caret mới.
+  // Preedit trống vẫn có thể giữ snapshot của từ vừa commit trong Bamboo. Caret
+  // đã sang chỗ khác nên bỏ snapshot đó.
   state->engine->reset();
   state->sentenceCapitalization.reset();
   state->resetProtectedUntilUsec = 0;
-  state->knownTextBeforeCursor.clear();
-  state->surroundingRestoreArmed = true;
   return true;
 }
 

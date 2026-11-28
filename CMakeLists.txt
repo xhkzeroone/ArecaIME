@@ -72,7 +72,6 @@ add_library(areca MODULE
     src/sentence_capitalizer.cpp
     src/surrounding_text_backend.cpp
     src/surrounding_text_restore.cpp
-    src/surrounding_text_cache.cpp
     src/uinput_backspace_backend.cpp
     src/uinput_device.cpp
     src/uinput_shift_select_backend.cpp
@@ -374,8 +373,7 @@ if(BUILD_TESTING)
 
     add_executable(areca-surrounding-text-probe-test
         tests/surrounding_text_probe_test.cpp
-        src/surrounding_text_backend.cpp
-        src/surrounding_text_cache.cpp)
+        src/surrounding_text_backend.cpp)
     target_compile_features(areca-surrounding-text-probe-test PRIVATE cxx_std_20)
     target_compile_options(areca-surrounding-text-probe-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
@@ -431,8 +429,7 @@ endif()
 
 if(BUILD_TESTING)
     add_executable(areca-idle-key-forward-test
-        tests/idle_key_forward_test.cpp src/input_scheduler.cpp
-        src/surrounding_text_cache.cpp)
+        tests/idle_key_forward_test.cpp src/input_scheduler.cpp)
     target_compile_features(areca-idle-key-forward-test PRIVATE cxx_std_20)
     target_compile_options(areca-idle-key-forward-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
@@ -442,23 +439,21 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
-    add_executable(areca-preedit-surrounding-restore-test
-        tests/preedit_surrounding_restore_test.cpp src/preedit_mode.cpp
+    add_executable(areca-preedit-mode-test
+        tests/preedit_mode_test.cpp src/preedit_mode.cpp
         src/preedit_logic.cpp src/bamboo_engine_adapter.cpp
-        src/sentence_capitalizer.cpp src/surrounding_text_cache.cpp
-        src/surrounding_text_restore.cpp)
-    target_compile_features(areca-preedit-surrounding-restore-test PRIVATE cxx_std_20)
-    target_compile_options(areca-preedit-surrounding-restore-test PRIVATE
+        src/sentence_capitalizer.cpp)
+    target_compile_features(areca-preedit-mode-test PRIVATE cxx_std_20)
+    target_compile_options(areca-preedit-mode-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
-    target_include_directories(areca-preedit-surrounding-restore-test PRIVATE src)
-    target_link_libraries(areca-preedit-surrounding-restore-test PRIVATE
+    target_include_directories(areca-preedit-mode-test PRIVATE src)
+    target_link_libraries(areca-preedit-mode-test PRIVATE
         areca-bamboo Fcitx5::Core Fcitx5::Utils pthread dl m)
-    add_test(NAME preedit-surrounding-restore
-        COMMAND areca-preedit-surrounding-restore-test)
+    add_test(NAME preedit-mode COMMAND areca-preedit-mode-test)
 
     add_executable(areca-rewrite-feature-toggle-test
         tests/rewrite_feature_toggle_test.cpp src/rewrite_mode.cpp
-        src/input_scheduler.cpp src/surrounding_text_cache.cpp
+        src/input_scheduler.cpp
         src/bamboo_engine_adapter.cpp src/sentence_capitalizer.cpp
         src/surrounding_text_restore.cpp)
     target_compile_features(areca-rewrite-feature-toggle-test PRIVATE cxx_std_20)
@@ -470,8 +465,7 @@ if(BUILD_TESTING)
     add_test(NAME rewrite-feature-toggle COMMAND areca-rewrite-feature-toggle-test)
 
     add_executable(areca-emoji-suggestion-test
-        tests/emoji_suggestion_test.cpp src/input_scheduler.cpp
-        src/surrounding_text_cache.cpp)
+        tests/emoji_suggestion_test.cpp src/input_scheduler.cpp)
     target_compile_features(areca-emoji-suggestion-test PRIVATE cxx_std_20)
     target_compile_options(areca-emoji-suggestion-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)
@@ -481,8 +475,7 @@ if(BUILD_TESTING)
     add_test(NAME emoji-suggestion COMMAND areca-emoji-suggestion-test)
 
     add_executable(areca-rewrite-marker-test
-        tests/rewrite_marker_test.cpp src/input_scheduler.cpp
-        src/surrounding_text_cache.cpp)
+        tests/rewrite_marker_test.cpp src/input_scheduler.cpp)
     target_compile_features(areca-rewrite-marker-test PRIVATE cxx_std_20)
     target_compile_options(areca-rewrite-marker-test PRIVATE
         -Wall -Wextra -Wpedantic -UNDEBUG)

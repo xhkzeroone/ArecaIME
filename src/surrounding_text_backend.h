@@ -14,6 +14,11 @@
 
 namespace areca {
 
+// Trước mỗi lần xoá, đọc lại snapshot theo nhịp cho tới khi text trước con trỏ
+// đúng là từ Areca đã gõ ra, tức ứng dụng đã xử lý xong các lượt trước. Khớp
+// thì xoá rồi commit liền; hết giờ thì chưa xoá gì nên đổi sang backend
+// fallback cho chính lượt đó. Không tự sửa snapshot sau khi xoá hay commit, để
+// lượt sau chỉ tin snapshot ứng dụng gửi.
 class SurroundingTextBackend final : public RewriteBackend {
 public:
   using DebugProvider = std::function<bool()>;
@@ -46,6 +51,11 @@ public:
 
 private:
   enum class TimerDispatch { TimerCallback, PostEvent };
+
+  void pollSnapshot();
+  void beginRewrite();
+  void deleteAndCommit();
+  void fallbackToOtherBackend();
 
   void scheduleCommit();
   void commitAfterAdaptiveWait(uint32_t appliedExtraWaitMs);
@@ -82,6 +92,13 @@ private:
   unsigned int expectedProbeCursor_ = 0;
   unsigned int expectedProbeAnchor_ = 0;
   uint32_t probeUpdateCount_ = 0;
+
+  // Kiểm tra trước khi xoá: text trước con trỏ phải kết thúc bằng từ đang gõ.
+  std::string expectedTail_;
+  uint32_t pollMs_ = 1;
+  uint64_t checkStartUsec_ = 0;
+  uint64_t checkDeadlineUsec_ = 0;
+  uint32_t pollCount_ = 0;
 };
 
 } // namespace areca

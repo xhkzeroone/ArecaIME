@@ -10,7 +10,6 @@
 #include <fcitx-utils/utf8.h>
 
 #include "surrounding_probe_match.h"
-#include "surrounding_text_cache.h"
 
 namespace areca {
 
@@ -257,8 +256,10 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
     // result is applied through the input-method protocol. This also covers
     // output tables that transform a single key without replacing old text.
     if (!result.commitText.empty()) {
+      // Không tự thêm chữ vào snapshot: backend surrounding so snapshot với từ
+      // đang gõ để biết ứng dụng đã theo kịp, chỉ snapshot ứng dụng gửi mới
+      // đáng tin.
       inputContext.commitString(result.commitText);
-      updateSurroundingCacheAfterCommit(inputContext, result.commitText);
       if (commitObserver_) {
         commitObserver_(inputContext, 0, result.commitText);
       }
@@ -277,6 +278,7 @@ void InputScheduler::applyResult(fcitx::InputContext &inputContext,
   static_cast<RewriteTiming &>(plan) = timing;
   plan.transactionId = nextTransactionId_++;
   plan.commitText = result.commitText;
+  plan.expectedTextBeforeCursor = result.currentText;
 
   const auto selection = rewriteBackendSelector_(inputContext, result);
   if (!selection.backend) {

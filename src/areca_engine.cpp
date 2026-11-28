@@ -158,10 +158,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
           preeditStateFactory_, [this]() { return debugEnabled(); },
           [this]() { return config_.autoCapitalizeAfterPunctuation.value(); },
           [this]() { return backspaceRecoveryEnabled(); },
-          // Preedit không restore từ surrounding: restore phải xoá từ cũ khỏi
-          // ứng dụng theo snapshot, snapshot sai là xoá nhầm chữ. Tắt hẳn,
-          // không theo RestoreSurroundingText.
-          [] { return false; },
           [this](const fcitx::Key &key) {
             return isMacroBypassSpace(key, config_.macroBypassModifier.value());
           },
@@ -202,9 +198,6 @@ ArecaEngine::ArecaEngine(fcitx::Instance *instance)
         // và phục hồi được hoãn tới key press để không sửa Bamboo trong event
         // lifecycle và để nhận snapshot surrounding mới nhất.
         rewriteHandler_.onSurroundingTextUpdated(*inputContext);
-        if (auto *state = preeditHandler_.stateFor(*inputContext)) {
-          state->surroundingRestoreArmed = true;
-        }
         // Cuối cùng mới báo scheduler: nó có thể bắt đầu xoá ngay, và update
         // này là của lúc marker vừa vào, không phải xác nhận xoá.
         scheduler_.notifySurroundingTextUpdated(*inputContext);
@@ -572,16 +565,16 @@ void ArecaEngine::keyEvent(const fcitx::InputMethodEntry &,
     resolveProgram(*inputContext, state);
 
     // Sau click, bỏ state của caret cũ để phím kế tiếp có thể phục hồi phần từ
-    // nằm trước caret mới. Preedit chỉ làm việc này khi composition đã trống,
-    // tránh làm mất chữ nếu frontend chưa kết thúc preedit đang hiển thị.
+    // nằm trước caret mới. Preedit chỉ bỏ state Bamboo khi composition đã
+    // trống, tránh làm mất chữ nếu frontend chưa kết thúc preedit đang hiển
+    // thị.
     if (mouseTracker_ && mouseTracker_->hasPendingClick()) {
       const auto mode = effectivePresentationMode(*inputContext);
       if (mode == PresentationMode::Preedit) {
-        const bool prepared =
-            preeditHandler_.prepareSurroundingRestoreAfterClick(*inputContext);
+        const bool reset = preeditHandler_.resetAfterClick(*inputContext);
         if (debugEnabled())
-          FCITX_INFO() << "areca: preedit mouse restore "
-                       << (prepared ? "armed" : "skipped-active-composition");
+          FCITX_INFO() << "areca: preedit mouse reset "
+                       << (reset ? "applied" : "skipped-active-composition");
         mouseTracker_->clearPendingClick();
       } else if (mode != PresentationMode::Rewrite) {
         if (debugEnabled())

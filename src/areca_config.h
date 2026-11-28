@@ -247,6 +247,16 @@ FCITX_CONFIGURATION(
         this, "SurroundingProbeTimeoutMs",
         N_("Timeout kiểm tra surrounding text (ms)"), 80,
         fcitx::IntConstrain(1, 1000)};
+    // Surrounding đọc lại snapshot theo nhịp cho tới khi text trước con trỏ
+    // khớp từ đang gõ. Quá SurroundingCheckWaitMs thì lượt đó xoá bằng
+    // Backspace.
+    fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingCheckWaitMs{
+        this, "SurroundingCheckWaitMs",
+        N_("Chờ tối đa snapshot khớp trước khi xoá surrounding (ms)"), 50,
+        fcitx::IntConstrain(0, 5000)};
+    fcitx::HiddenOption<int, fcitx::IntConstrain> surroundingPollMs{
+        this, "SurroundingPollMs", N_("Nhịp đọc lại surrounding (ms)"), 1,
+        fcitx::IntConstrain(1, 1000)};
     // Khoá ini giữ tên từ thời còn XTest để không mất cấu hình đã lưu; các
     // option này giờ là thời gian của Native (libei).
     fcitx::Option<int, fcitx::IntConstrain> nativeBackspaceDelayMs{

@@ -122,6 +122,14 @@ frontend Fcitx4 thiếu `FormattedPreedit` và `SurroundingText`, hoặc fronten
 
 ### 5.1. `SurroundingTextBackend`
 
+Mọi lượt xoá bằng surrounding bắt đầu bằng bước kiểm tra: backend đọc lại
+snapshot mỗi `SurroundingPollMs` cho tới khi text trước con trỏ kết thúc bằng từ
+Bamboo đang giữ (`RewritePlan::expectedTextBeforeCursor`), tức ứng dụng đã xử lý
+xong các lượt trước. Quá `SurroundingCheckWaitMs` mà chưa khớp thì chưa có gì bị
+xoá, lượt đó chuyển sang backend fallback (Backspace) và verdict của app giữ
+nguyên. Scheduler và backend không tự sửa snapshot sau khi commit hay xoá, nên
+bước kiểm tra chỉ dựa vào snapshot ứng dụng gửi.
+
 #### A. Probe bằng `SurroundingTextUpdated`
 
 ```mermaid
@@ -135,6 +143,7 @@ sequenceDiagram
     participant FB as Backend fallback
 
     S->>B: apply(plan probe=true)
+    B->>B: Poll tới khi snapshot có từ đang gõ
     B->>B: Lưu snapshot gốc, tính snapshot kỳ vọng
     B->>IC: deleteSurroundingText(-N, N)
     B->>EL: Timer deadline 150 ms, retry 80 ms
@@ -157,9 +166,9 @@ sequenceDiagram
     end
 ```
 
-Update không khớp bị bỏ qua và backend tiếp tục chờ. Ngoài ra, nếu ngay lúc
-chọn backend snapshot không chứa từ đang gõ trước con trỏ, probe bị tính là thất
-bại trước khi gửi lệnh xoá và restore bị tắt cho context đó.
+Update không khớp bị bỏ qua và backend tiếp tục chờ. Snapshot trễ lúc thăm dò
+không làm probe thất bại: bước kiểm tra chờ snapshot có đủ từ đang gõ rồi mới
+xoá.
 
 #### B. Rewrite khi đã xác nhận
 
@@ -169,23 +178,21 @@ sequenceDiagram
     participant S as InputScheduler
     participant B as SurroundingTextBackend
     participant IC as InputContext
-    participant AW as AdaptiveWait
     participant EL as EventLoop
+    participant FB as Backend fallback
 
     S->>B: apply(plan probe=false)
-    B->>AW: beginTransaction
-    B->>IC: deleteSurroundingText(-N, N)
-    B->>B: updateSurroundingCacheAfterDelete
-    B->>EL: Timer SurroundingWaitMs + extra
-    EL-->>B: Timer, chuyển sang pha post
-    B->>AW: observeTimer
-    alt Extra tăng trong lúc chờ
-        B->>EL: Chờ thêm phần chênh lệch
+    loop Mỗi SurroundingPollMs, tối đa SurroundingCheckWaitMs
+        B->>IC: Đọc surroundingText()
     end
-    B->>IC: commitString(commitText)
-    B->>B: updateSurroundingCacheAfterCommit
-    B->>AW: completeTransaction
-    B->>S: onDone(Succeeded)
+    alt Text trước con trỏ khớp từ đang gõ
+        B->>EL: Pha post
+        B->>IC: deleteSurroundingText(-N, N)
+        B->>IC: commitString(commitText)
+        B->>S: onDone(Succeeded)
+    else Hết giờ
+        B->>FB: apply(plan probe=false), xoá đúng N
+    end
 ```
 
 ### 5.2. `UinputShiftSelectBackend`
@@ -307,7 +314,9 @@ theo tên frontend bắt đầu bằng `wayland`, `xim`, `fcitx4`, `dbus`, `ibus
 | `AfterUinputShiftSelectWaitMs` | Chờ sau khi thả Shift, frontend khác | 5 ms |
 | `WaylandAfterUinputShiftSelectWaitMs` | Như trên, Wayland | 5 ms |
 | `Xim`, `Fcitx4`, `Dbus`, `IBus` + `AfterUinputShiftSelectWaitMs` | Như trên theo frontend | 5 ms |
-| `SurroundingWaitMs` | Chờ sau lệnh xoá surrounding | 3 ms |
+| `SurroundingWaitMs` | Chờ giữa xoá và commit sau khi probe được xác nhận | 3 ms |
+| `SurroundingCheckWaitMs` | Chờ tối đa snapshot khớp từ đang gõ trước khi xoá, quá giờ dùng Backspace, ẩn | 50 ms |
+| `SurroundingPollMs` | Nhịp đọc lại snapshot khi chờ, ẩn | 1 ms |
 | `SurroundingProbeTimeoutMs` | Timeout probe chung, ẩn. Probe tự động dùng 150 ms rồi 80 ms | 80 ms |
 | `XTestBackspaceDelayMs` | Giữa các Backspace Native | 1 ms |
 | `AfterXTestBackspaceWaitMs` | Chờ sau Backspace Native cuối, frontend khác | 10 ms |

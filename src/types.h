@@ -58,6 +58,10 @@ struct RewriteTiming {
   uint32_t ibusAfterMarkerCommitWaitMs = 10;
   uint32_t postCommitDelayMs = 20;
   uint64_t timerAccuracyUsec = 1;
+  // Surrounding đọc lại snapshot mỗi `surroundingPollMs` cho tới khi text trước
+  // con trỏ đúng như kỳ vọng, tối đa `surroundingCheckWaitMs` rồi đổi backend.
+  uint32_t surroundingCheckWaitMs = 50;
+  uint32_t surroundingPollMs = 1;
 };
 
 inline uint32_t resolveAfterMarkerCommitWaitMs(const char *frontendName,
@@ -89,6 +93,9 @@ struct RewritePlan : RewriteTiming {
   // Backend phải tự gõ marker trước khi xoá vì scheduler không commit được
   // marker trên cùng kênh với nó.
   bool typeMarker = false;
+  // Từ Bamboo đang giữ trước lượt này, tức phần ứng dụng phải đang có ngay
+  // trước con trỏ nếu đã xử lý xong các lượt trước.
+  std::string expectedTextBeforeCursor;
 };
 
 template <typename Timing>

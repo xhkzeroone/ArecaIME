@@ -109,7 +109,7 @@ std::vector<MacroDefinition> ArecaEngine::macroDefinitions() const {
 }
 
 SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
-  return SchedulerTiming{
+  SchedulerTiming timing{
       static_cast<uint32_t>(advancedConfig_.backspaceDelayMs.value()),
       static_cast<uint32_t>(
           advancedConfig_.uinputBackspaceAckTimeoutMs.value()),
@@ -163,6 +163,11 @@ SchedulerTiming ArecaEngine::timing(fcitx::InputContext &) {
       // Timer luôn chạy độ chính xác 1 µs: độ trễ vài ms là đáng kể với
       // thứ tự xoá rồi chèn chữ.
       1U};
+  timing.surroundingCheckWaitMs =
+      static_cast<uint32_t>(advancedConfig_.surroundingCheckWaitMs.value());
+  timing.surroundingPollMs =
+      static_cast<uint32_t>(advancedConfig_.surroundingPollMs.value());
+  return timing;
 }
 
 void ArecaEngine::rebuildAppBackendOverridesMap() {

@@ -55,15 +55,14 @@ int main() {
     return new areca::PreeditInputState("Telex 2", true, true, true, "Unicode",
                                         true, false, 1, {{"bt", "Be There"}});
   });
-  manager.registerProperty("preedit-surrounding-restore-test", &factory);
+  manager.registerProperty("preedit-mode-test", &factory);
 
-  bool enabled = true;
   bool backspaceRecovery = true;
   uint32_t requestedBackspaces = 0;
   areca::PreeditModeHandler::FinalizedWordEraseDone eraseDone;
   areca::PreeditModeHandler handler(
       factory, [] { return false; }, [] { return false; },
-      [&] { return backspaceRecovery; }, [&] { return enabled; },
+      [&] { return backspaceRecovery; },
       [](const fcitx::Key &key) {
         return key.normalize().sym() == FcitxKey_space &&
                key.states().test(fcitx::KeyState::Shift);
@@ -80,14 +79,21 @@ int main() {
   context.surroundingText().setText("tưởng", 5, 5);
   handler.activate(context);
 
-  // Khi bật, từ cũ được xóa đúng một lần khỏi ứng dụng rồi chuyển vào preedit;
-  // phím mới tiếp tục sửa trên state Bamboo vừa phục hồi.
-  fcitx::KeyEvent toneKey(&context, fcitx::Key(FcitxKey_s));
-  handler.handleKeyEvent(toneKey);
-  assert(toneKey.accepted());
-  assert(context.deletes.size() == 1);
-  assert(context.deletes[0].offset == -5);
-  assert(context.deletes[0].count == 5);
+  // Preedit không nạp lại từ đã commit trước con trỏ: phím mới bắt đầu
+  // composition riêng và không xoá gì khỏi ứng dụng.
+  fcitx::KeyEvent plainKey(&context, fcitx::Key(FcitxKey_a));
+  handler.handleKeyEvent(plainKey);
+  assert(plainKey.accepted());
+  assert(context.deletes.empty());
+  assert(context.propertyFor(&factory)->composing == "a");
+  handler.resetContext(context);
+
+  for (const char key : std::string("tuwowngs")) {
+    fcitx::KeyEvent keyEvent(&context, fcitx::Key(fcitx::Key::keySymFromUnicode(
+                                           static_cast<unsigned char>(key))));
+    handler.handleKeyEvent(keyEvent);
+    assert(keyEvent.accepted());
+  }
   assert(context.propertyFor(&factory)->composing == "tướng");
 
   fcitx::KeyEvent boundary(&context, fcitx::Key(FcitxKey_space));
@@ -108,7 +114,7 @@ int main() {
                                       true);
   handler.handleKeyEvent(undoBoundaryRelease);
   assert(undoBoundaryRelease.accepted());
-  assert(context.deletes.size() == 1);
+  assert(context.deletes.empty());
   assert(requestedBackspaces == 6);
   assert(eraseDone);
   eraseDone(true);
@@ -135,103 +141,19 @@ int main() {
   assert(bypassSpace.accepted());
   assert(macroBypassContext.commits == std::vector<std::string>{"bt "});
 
-  // Click đặt caret giữa `tiến`, ngay sau `ế`: prefix `tiế` chưa hoàn chỉnh
-  // được thu hẹp tới `ế`. `ti` và `n` vẫn nằm trong app nên f tạo `tiền`.
-  TestInputContext middleContext(manager);
-  middleContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  middleContext.surroundingText().setText("tiến", 3, 3);
-  handler.activate(middleContext);
-  assert(handler.prepareSurroundingRestoreAfterClick(middleContext));
-  fcitx::KeyEvent middleTone(&middleContext, fcitx::Key(FcitxKey_f));
-  handler.handleKeyEvent(middleTone);
-  assert(middleTone.accepted());
-  assert(middleContext.deletes.size() == 1);
-  assert(middleContext.deletes[0].offset == -1);
-  assert(middleContext.deletes[0].count == 1);
-  assert(middleContext.propertyFor(&factory)->composing == "ề");
+  // Click chỉ bỏ state Bamboo khi preedit đã trống, không xoá preedit còn
+  // hiển thị.
+  TestInputContext clickContext(manager);
+  handler.activate(clickContext);
+  assert(handler.resetAfterClick(clickContext));
+  fcitx::KeyEvent clickKey(&clickContext, fcitx::Key(FcitxKey_a));
+  handler.handleKeyEvent(clickKey);
+  assert(clickContext.propertyFor(&factory)->composing == "a");
+  assert(!handler.resetAfterClick(clickContext));
+  assert(clickContext.propertyFor(&factory)->composing == "a");
 
-  // Không được reset ngầm một preedit còn hiển thị chỉ vì tracker thấy click.
-  assert(!handler.prepareSurroundingRestoreAfterClick(middleContext));
-  assert(middleContext.propertyFor(&factory)->composing == "ề");
-
-  // Snapshot trễ (log anvildroid-gui): Areca vừa commit "gõ " nhưng app gửi
-  // lại "gõ". Restore lần này phải bị bỏ qua, không xoá gì.
-  TestInputContext laggingContext(manager);
-  laggingContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  laggingContext.surroundingText().setText("", 0, 0);
-  handler.activate(laggingContext);
-  for (const char key : std::string("gox ")) {
-    fcitx::KeyEvent keyEvent(&laggingContext,
-                             fcitx::Key(fcitx::Key::keySymFromUnicode(
-                                 static_cast<unsigned char>(key))));
-    handler.handleKeyEvent(keyEvent);
-    assert(keyEvent.accepted());
-  }
-  assert(laggingContext.commits == std::vector<std::string>{"gõ "});
-  auto *laggingState = laggingContext.propertyFor(&factory);
-  assert(laggingState->knownTextBeforeCursor == "gõ ");
-  laggingContext.surroundingText().setText("gõ", 2, 2);
-  laggingState->surroundingRestoreArmed = true;
-  fcitx::KeyEvent laggingKey(&laggingContext, fcitx::Key(FcitxKey_n));
-  handler.handleKeyEvent(laggingKey);
-  assert(laggingKey.accepted());
-  assert(laggingContext.deletes.empty());
-  assert(laggingState->composing == "n");
-
-  // Bỏ qua chỉ áp dụng cho lần đó: sau khi đổi ô, snapshot đúng thì restore
-  // vẫn chạy bình thường.
-  handler.deactivate(laggingContext);
-  laggingContext.surroundingText().setText("tưởng", 5, 5);
-  handler.activate(laggingContext);
-  assert(laggingState->knownTextBeforeCursor.empty());
-  fcitx::KeyEvent nextRestoreKey(&laggingContext, fcitx::Key(FcitxKey_s));
-  handler.handleKeyEvent(nextRestoreKey);
-  assert(nextRestoreKey.accepted());
-  assert(laggingContext.deletes.size() == 1);
-  assert(laggingState->composing == "tướng");
-
-  // Chromium báo dấu cách cuối thành NBSP: không được coi là snapshot trễ.
-  TestInputContext nbspContext(manager);
-  nbspContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  nbspContext.surroundingText().setText("", 0, 0);
-  handler.activate(nbspContext);
-  for (const char key : std::string("gox")) {
-    fcitx::KeyEvent keyEvent(&nbspContext,
-                             fcitx::Key(fcitx::Key::keySymFromUnicode(
-                                 static_cast<unsigned char>(key))));
-    handler.handleKeyEvent(keyEvent);
-  }
-  fcitx::KeyEvent nbspSpace(&nbspContext, fcitx::Key(FcitxKey_space));
-  handler.handleKeyEvent(nbspSpace);
-  auto *nbspState = nbspContext.propertyFor(&factory);
-  assert(nbspState->knownTextBeforeCursor == "gõ ");
-  // Con trỏ lùi vào cuối "gõ" bằng phím di chuyển ứng dụng không báo: snapshot
-  // vẫn kết thúc bằng NBSP thay cho dấu cách nên restore không bị từ chối.
-  nbspContext.surroundingText().setText("gõ\u00a0", 3, 3);
-  nbspState->surroundingRestoreArmed = true;
-  fcitx::KeyEvent nbspKey(&nbspContext, fcitx::Key(FcitxKey_n));
-  handler.handleKeyEvent(nbspKey);
-  assert(nbspKey.accepted());
-  assert(nbspContext.deletes.empty());
-  assert(nbspState->composing == "n");
-
-  // Khi tắt, cùng snapshot chỉ tạo preedit từ phím mới và tuyệt đối không xóa
-  // phần text đã commit trước con trỏ.
-  enabled = false;
-  TestInputContext disabledContext(manager);
-  disabledContext.setCapabilityFlags(fcitx::CapabilityFlag::SurroundingText);
-  disabledContext.surroundingText().setText("tưởng", 5, 5);
-  handler.activate(disabledContext);
-  fcitx::KeyEvent plainKey(&disabledContext, fcitx::Key(FcitxKey_a));
-  handler.handleKeyEvent(plainKey);
-  assert(plainKey.accepted());
-  assert(disabledContext.deletes.empty());
-  assert(disabledContext.propertyFor(&factory)->composing == "a");
-
-  // Regression macro `k → không`: snapshot thiếu dấu chấm có thể tới trễ sau
-  // khi macro đã commit. Space là boundary nên không được hút "không" vào
-  // Bamboo; nếu restore nhầm sẽ xóa từ và tạo kết quả lặp kiểu "không.hông ".
-  enabled = true;
+  // Regression macro `k → không`: Space là boundary nên không được hút "không"
+  // trước con trỏ vào Bamboo, tránh kết quả lặp kiểu "không.hông ".
   TestInputContext macroBoundaryContext(manager);
   macroBoundaryContext.setCapabilityFlags(
       fcitx::CapabilityFlag::SurroundingText);
@@ -242,7 +164,6 @@ int main() {
   assert(!macroSpace.accepted());
   assert(macroBoundaryContext.deletes.empty());
   assert(macroBoundaryContext.propertyFor(&factory)->composing.empty());
-  assert(!macroBoundaryContext.propertyFor(&factory)->surroundingRestoreArmed);
 
   // App không có SurroundingText dùng backend Backspace để xóa chính xác từ
   // vừa commit cùng boundary rồi đưa từ trở lại preedit.
