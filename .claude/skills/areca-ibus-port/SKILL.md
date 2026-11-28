@@ -85,7 +85,7 @@ API IBus dưới đây là tên trong libibus 1.5. Kiểm tra lại với bản 
 |---|---|
 | `InputMethodEngine::keyEvent`, `filterAndAccept()` | Signal/vfunc `process-key-event(keyval, keycode, state)`, trả `TRUE` nghĩa là đã nhận. Phím nhả có `IBUS_RELEASE_MASK` |
 | Không filter để phím đi tiếp | Trả `FALSE` |
-| `forwardKey` | `ibus_eupdateSurroundingCacheAfterDeletengine_forward_key_event(keyval, keycode, state)` |
+| `forwardKey` | `ibus_engine_forward_key_event(keyval, keycode, state)` |
 | `commitString` | `ibus_engine_commit_text(IBusText*)`; gọi được bất cứ lúc nào, nên commit trễ sau timer vẫn được |
 | `deleteSurroundingText(offset, n)` | `ibus_engine_delete_surrounding_text(offset, nchars)` |
 | `surroundingText()` và `SurroundingTextUpdated` | `ibus_engine_get_surrounding_text(&text, &cursor, &anchor)` và signal `set-surrounding-text`. Client phải có `IBUS_CAP_SURROUNDING_TEXT`; IBus chỉ bắt đầu gửi snapshot sau khi engine gọi `get_surrounding_text` ít nhất một lần |
